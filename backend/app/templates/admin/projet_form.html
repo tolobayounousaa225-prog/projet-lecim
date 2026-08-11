@@ -1,0 +1,47 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouveau" }} projet{% endblock %}
+{% block content %}
+<h1>{{ "Modifier le projet" if item else "Nouveau projet" }}</h1>
+<div class="form-card">
+  <form method="post" action="{{ '/admin/projets/' ~ item.id ~ '/edit' if item else '/admin/projets/new' }}">
+    <div class="form-group">
+      <label for="titre">Titre</label>
+      <input type="text" id="titre" name="titre" required value="{{ item.titre if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea id="description" name="description">{{ item.description if item else '' }}</textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="statut">Statut</label>
+        <select id="statut" name="statut">
+          {% for key, label in statuts.items() %}
+          <option value="{{ key }}" {% if item and item.statut == key %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="responsable">Responsable</label>
+        <input type="text" id="responsable" name="responsable" value="{{ item.responsable if item else '' }}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="date_debut">Date de début</label>
+        <input type="date" id="date_debut" name="date_debut" value="{{ item.date_debut.isoformat() if item and item.date_debut else '' }}">
+      </div>
+      <div class="form-group">
+        <label for="date_fin_prevue">Fin prévue</label>
+        <input type="date" id="date_fin_prevue" name="date_fin_prevue" value="{{ item.date_fin_prevue.isoformat() if item and item.date_fin_prevue else '' }}">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="budget_estime">Budget estimé (FCFA)</label>
+      <input type="number" id="budget_estime" name="budget_estime" min="0" value="{{ item.budget_estime if item and item.budget_estime else '' }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/projets" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

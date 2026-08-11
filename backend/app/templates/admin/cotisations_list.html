@@ -1,0 +1,80 @@
+{% extends "admin/base.html" %}
+{% block title %}Cotisations annuelles{% endblock %}
+{% block content %}
+<h1>Cotisations annuelles</h1>
+<p style="margin-top:-14px;"><a href="/admin/finances">&larr; Retour aux finances</a></p>
+
+<div class="form-card" style="max-width:none; margin-bottom:10px;">
+  <strong style="color:var(--green-dark)">Barème statutaire</strong>
+  <ul style="margin:10px 0 0; padding-left:20px; color:var(--text-muted); font-size:0.9rem; line-height:1.8;">
+    {% for key, rule in cotisation_rules.items() %}
+    <li>{{ rule.label }} : {{ "{:,}".format(rule.montant_du).replace(",", " ") }} FCFA/an — dont {{ "{:,}".format(rule.part_bureau_local).replace(",", " ") }} FCFA reversés au bureau local</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="form-card" style="max-width:none; margin-bottom:26px;">
+  <strong style="color:var(--green-dark)">Enregistrer / mettre à jour un paiement</strong>
+  <form method="post" action="/admin/cotisations/new" style="margin-top:14px;">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="etablissement_id">Établissement</label>
+        <select id="etablissement_id" name="etablissement_id" required>
+          <option value="">— Sélectionner —</option>
+          {% for e in etablissements %}
+          <option value="{{ e.id }}">{{ e.nom }} ({{ e.statut_label }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="annee_scolaire">Année scolaire</label>
+        <input type="text" id="annee_scolaire" name="annee_scolaire" placeholder="ex : 2025-2026" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="montant_paye">Montant versé (FCFA)</label>
+        <input type="number" id="montant_paye" name="montant_paye" min="0" required>
+      </div>
+      <div class="form-group">
+        <label for="date_paiement">Date de paiement</label>
+        <input type="date" id="date_paiement" name="date_paiement">
+      </div>
+    </div>
+    <p class="form-note">Le montant dû et la part reversée au bureau local sont calculés automatiquement selon le statut de l'établissement.</p>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+  </form>
+</div>
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin-bottom:14px;">Cotisations enregistrées</h2>
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Année</th><th>Établissement</th><th>Dû</th><th>Versé</th><th>Part bureau local</th><th>Statut</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for c in items %}
+    <tr>
+      <td>{{ c.annee_scolaire }}</td>
+      <td>{{ c.etablissement.nom }}</td>
+      <td>{{ "{:,}".format(c.montant_du).replace(",", " ") }}</td>
+      <td>{{ "{:,}".format(c.montant_paye).replace(",", " ") }}</td>
+      <td>{{ "{:,}".format(c.part_bureau_local).replace(",", " ") }}</td>
+      <td>
+        {% if c.statut_paiement == "paye" %}<span class="pill pill-green">Payée</span>
+        {% elif c.statut_paiement == "partiel" %}<span class="pill pill-gold">Partielle</span>
+        {% else %}<span class="pill pill-muted">Impayée</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <form method="post" action="/admin/cotisations/{{ c.id }}/delete" onsubmit="return confirm('Supprimer cet enregistrement ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune cotisation enregistrée pour le moment.</div>
+{% endif %}
+{% endblock %}

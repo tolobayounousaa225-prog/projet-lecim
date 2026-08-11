@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lecim
+      POSTGRES_PASSWORD: lecim
+      POSTGRES_DB: lecim
+    volumes:
+      - lecim_db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://lecim:lecim@db:5432/lecim
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  lecim_db_data:

@@ -1,0 +1,95 @@
+{% extends "admin/base.html" %}
+{% block title %}Rapport comparatif{% endblock %}
+{% block content %}
+<h1>Rapport comparatif</h1>
+<p style="margin-top:-14px;"><a href="/admin/finances">&larr; Retour aux finances</a></p>
+
+<div class="form-card">
+  <p style="color:var(--text-muted); font-size:0.9rem; margin-top:0;">
+    Comparez deux périodes : totaux, écarts en valeur et en %, et graphiques
+    (entrées/dépenses/solde, recettes par catégorie). Par défaut : mois en cours
+    contre mois précédent.
+  </p>
+
+  <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
+    <button type="button" class="btn btn-outline btn-sm" onclick="applyPreset('mois')">Ce mois vs mois précédent</button>
+    <button type="button" class="btn btn-outline btn-sm" onclick="applyPreset('trimestre')">Ce trimestre vs trimestre précédent</button>
+    <button type="button" class="btn btn-outline btn-sm" onclick="applyPreset('annee')">Cette année vs année précédente</button>
+  </div>
+
+  <form method="post" action="/admin/finances/rapport-comparatif">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="label_a">Nom de la période A</label>
+        <input type="text" id="label_a" name="label_a" value="Mois précédent">
+      </div>
+      <div class="form-group">
+        <label for="label_b">Nom de la période B</label>
+        <input type="text" id="label_b" name="label_b" value="Mois en cours">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="date_debut_a">Période A — du</label>
+        <input type="date" id="date_debut_a" name="date_debut_a" required value="{{ date_debut_a.isoformat() }}">
+      </div>
+      <div class="form-group">
+        <label for="date_fin_a">Période A — au</label>
+        <input type="date" id="date_fin_a" name="date_fin_a" required value="{{ date_fin_a.isoformat() }}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="date_debut_b">Période B — du</label>
+        <input type="date" id="date_debut_b" name="date_debut_b" required value="{{ date_debut_b.isoformat() }}">
+      </div>
+      <div class="form-group">
+        <label for="date_fin_b">Période B — au</label>
+        <input type="date" id="date_fin_b" name="date_fin_b" required value="{{ date_fin_b.isoformat() }}">
+      </div>
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="archiver" name="archiver" value="true" checked>
+      <label for="archiver" style="margin:0">Archiver ce rapport dans « Documents &amp; PV »</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Générer le PDF comparatif</button>
+  </form>
+</div>
+
+<script>
+function toISO(d) { return d.toISOString().slice(0, 10); }
+
+function applyPreset(kind) {
+  var today = new Date();
+  var aStart, aEnd, bStart, bEnd, labelA, labelB;
+
+  if (kind === "mois") {
+    bStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    bEnd = today;
+    aEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+    aStart = new Date(aEnd.getFullYear(), aEnd.getMonth(), 1);
+    labelA = "Mois précédent"; labelB = "Mois en cours";
+  } else if (kind === "trimestre") {
+    var q = Math.floor(today.getMonth() / 3);
+    bStart = new Date(today.getFullYear(), q * 3, 1);
+    bEnd = today;
+    aEnd = new Date(bStart.getFullYear(), bStart.getMonth(), 0);
+    aStart = new Date(aEnd.getFullYear(), aEnd.getMonth() - 2, 1);
+    labelA = "Trimestre précédent"; labelB = "Trimestre en cours";
+  } else {
+    bStart = new Date(today.getFullYear(), 0, 1);
+    bEnd = today;
+    aStart = new Date(today.getFullYear() - 1, 0, 1);
+    aEnd = new Date(today.getFullYear() - 1, 11, 31);
+    labelA = "Année précédente"; labelB = "Année en cours";
+  }
+
+  document.getElementById("date_debut_a").value = toISO(aStart);
+  document.getElementById("date_fin_a").value = toISO(aEnd);
+  document.getElementById("date_debut_b").value = toISO(bStart);
+  document.getElementById("date_fin_b").value = toISO(bEnd);
+  document.getElementById("label_a").value = labelA;
+  document.getElementById("label_b").value = labelB;
+}
+</script>
+{% endblock %}

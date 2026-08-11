@@ -1,0 +1,52 @@
+{% extends "admin/base.html" %}
+{% block title %}Calendrier{% endblock %}
+{% block content %}
+<h1>Calendrier unifié</h1>
+<p style="color:var(--text-muted); margin-top:-14px;">Réunions, activités et échéances de cotisations réunies en un seul endroit.</p>
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin:26px 0 14px;">À venir</h2>
+{% if a_venir %}
+<div style="display:flex; flex-direction:column; gap:10px;">
+  {% for e in a_venir %}
+  <div class="form-card" style="max-width:none; margin:0; display:flex; justify-content:space-between; align-items:center; gap:16px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div style="text-align:center; min-width:52px;">
+        <div style="font-size:1.1rem; font-weight:800; color:var(--green-dark);">{{ e.date.strftime("%d") }}</div>
+        <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">{{ e.date.strftime("%m/%Y") }}</div>
+      </div>
+      <div>
+        {% if e.type == "reunion" %}<span class="pill pill-green">{{ e.type_label }}</span>
+        {% elif e.type == "cotisation" %}<span class="pill pill-gold">{{ e.type_label }}</span>
+        {% else %}<span class="pill pill-muted">{{ e.type_label }}</span>{% endif %}
+        <p style="margin:6px 0 0; font-weight:600; color:var(--text-dark);">{{ e.title }}</p>
+        {% if e.detail %}<p style="margin:2px 0 0; font-size:0.82rem; color:var(--text-muted);">{{ e.detail }}</p>{% endif %}
+      </div>
+    </div>
+    {% if e.link %}<a href="{{ e.link }}" class="btn btn-outline btn-sm">Ouvrir</a>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">Rien à venir pour le moment.</div>
+{% endif %}
+
+<h2 style="font-size:1.1rem; color:var(--text-muted); margin:34px 0 14px;">Passés</h2>
+{% if passes %}
+<div style="display:flex; flex-direction:column; gap:8px; opacity:.75;">
+  {% for e in passes[:15] %}
+  <div class="form-card" style="max-width:none; margin:0; padding:14px 22px; display:flex; justify-content:space-between; align-items:center; gap:16px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div style="font-size:0.82rem; color:var(--text-muted); min-width:70px;">{{ e.date.strftime("%d/%m/%Y") }}</div>
+      <div>
+        <span class="pill pill-muted">{{ e.type_label }}</span>
+        <span style="margin-left:8px; font-size:0.9rem;">{{ e.title }}</span>
+      </div>
+    </div>
+    {% if e.link %}<a href="{{ e.link }}" class="btn btn-outline btn-sm">Ouvrir</a>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">Aucun événement passé.</div>
+{% endif %}
+{% endblock %}

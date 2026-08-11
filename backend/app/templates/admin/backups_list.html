@@ -1,0 +1,35 @@
+{% extends "admin/base.html" %}
+{% block title %}Sauvegardes{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1 style="margin:0">Sauvegardes de la base de données</h1>
+    <p style="color:var(--text-muted); margin:4px 0 0;">Une sauvegarde automatique est effectuée chaque nuit à 2h. Les 30 plus récentes sont conservées.</p>
+  </div>
+  <form method="post" action="/admin/backups/new">
+    <button type="submit" class="btn btn-primary">Sauvegarder maintenant</button>
+  </form>
+</div>
+
+{% if error %}<div class="error-box" style="margin-bottom:16px;">Échec de la sauvegarde : {{ error }}</div>{% endif %}
+
+{% if items %}
+<table>
+  <thead><tr><th>Fichier</th><th>Date</th><th>Taille</th><th>Actions</th></tr></thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.filename }}</td>
+      <td>{{ item.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+      <td>{{ item.size_kb }} Ko</td>
+      <td class="actions-cell">
+        <a href="/admin/backups/{{ item.filename }}/download" class="btn btn-outline btn-sm">Télécharger</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune sauvegarde pour le moment. Cliquez sur « Sauvegarder maintenant » pour en créer une.</div>
+{% endif %}
+{% endblock %}

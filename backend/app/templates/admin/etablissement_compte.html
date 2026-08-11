@@ -1,0 +1,38 @@
+{% extends "admin/base.html" %}
+{% block title %}Compte de {{ etablissement.nom }}{% endblock %}
+{% block content %}
+<h1 style="margin-bottom:4px;">Espace établissement — {{ etablissement.nom }}</h1>
+<p style="color:var(--text-muted); margin-top:0;"><a href="/admin/etablissements">&larr; Retour aux établissements</a></p>
+
+{% if error %}<div class="error-box" style="margin-bottom:16px;">{{ error }}</div>{% endif %}
+
+{% if compte %}
+<div class="form-card" style="max-width:520px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:10px;">Compte actif</strong>
+  <p>{{ compte.full_name }}</p>
+  <p style="color:var(--text-muted);">{{ compte.email }}</p>
+  <form method="post" action="/admin/etablissements/{{ etablissement.id }}/compte/delete" onsubmit="return confirm('Révoquer l\'accès de cet établissement à son espace personnel ?');" style="margin-top:16px;">
+    <button type="submit" class="btn btn-danger btn-sm">Révoquer l'accès</button>
+  </form>
+</div>
+{% else %}
+<div class="form-card" style="max-width:520px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:14px;">Créer l'accès à l'espace établissement</strong>
+  <form method="post" action="/admin/etablissements/{{ etablissement.id }}/compte/new">
+    <div class="form-group">
+      <label for="full_name">Nom du contact (directeur/directrice, etc.)</label>
+      <input type="text" id="full_name" name="full_name" required>
+    </div>
+    <div class="form-group">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+    <div class="form-group">
+      <label for="password">Mot de passe</label>
+      <input type="password" id="password" name="password" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Créer l'accès</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

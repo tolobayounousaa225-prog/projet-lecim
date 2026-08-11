@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connexion — Délégations Régionales LECIM</title>
+<link rel="icon" type="image/jpeg" href="/static/img/logo.jpg">
+<link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+<div class="login-shell">
+  <div class="login-card">
+    <img src="/static/img/logo.jpg" alt="Logo LECIM" class="login-logo">
+    <h1>Espace Délégations Régionales</h1>
+    <p class="sub">LECIM — Comités locaux et délégations régionales</p>
+    {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+    <form method="post" action="/admin/login">
+      <input type="hidden" name="portal" value="delegation">
+      <div class="form-group">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" name="email" required autofocus>
+      </div>
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%">Se connecter</button>
+    </form>
+    <p style="text-align:center; margin-top:18px; font-size:0.82rem;"><a href="/admin/login">Vous êtes un membre du Bureau Exécutif National ? Connectez-vous ici →</a></p>
+    <p style="text-align:center; margin-top:6px; font-size:0.82rem;"><a href="/etablissement/login">Vous êtes un établissement affilié ? Connectez-vous ici →</a></p>
+  </div>
+</div>
+</body>
+</html>

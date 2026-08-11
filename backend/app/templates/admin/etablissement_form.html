@@ -1,0 +1,49 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouvel" }} établissement{% endblock %}
+{% block content %}
+<h1>{{ "Modifier l'établissement" if item else "Ajouter un établissement" }}</h1>
+<div class="form-card">
+  <form method="post" action="{{ '/admin/etablissements/' ~ item.id ~ '/edit' if item else '/admin/etablissements/new' }}">
+    <div class="form-group">
+      <label for="nom">Nom de l'établissement</label>
+      <input type="text" id="nom" name="nom" required value="{{ item.nom if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="bureau_local">Bureau local / région</label>
+      <input type="text" id="bureau_local" name="bureau_local" value="{{ item.bureau_local if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="statut">Statut</label>
+      <select id="statut" name="statut">
+        {% for key, rule in cotisation_rules.items() %}
+        <option value="{{ key }}" {% if item and item.statut == key or (not item and key == 'non_subventionne') %}selected{% endif %}>
+          {{ rule.label }} — cotisation {{ "{:,}".format(rule.montant_du).replace(",", " ") }} FCFA/an
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="date_adhesion">Date d'adhésion (si connue)</label>
+      <input type="date" id="date_adhesion" name="date_adhesion" value="{{ item.date_adhesion.isoformat() if item and item.date_adhesion else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="contact_email">E-mail de contact (pour les relances de cotisation)</label>
+      <input type="email" id="contact_email" name="contact_email" value="{{ item.contact_email if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="contact_telephone">Téléphone de contact</label>
+      <input type="text" id="contact_telephone" name="contact_telephone" value="{{ item.contact_telephone if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="latitude">Latitude (pour la carte interactive du site)</label>
+      <input type="text" id="latitude" name="latitude" placeholder="Ex : 5.345" value="{{ item.latitude if item and item.latitude is not none else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="longitude">Longitude</label>
+      <input type="text" id="longitude" name="longitude" placeholder="Ex : -4.024" value="{{ item.longitude if item and item.longitude is not none else '' }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/etablissements" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

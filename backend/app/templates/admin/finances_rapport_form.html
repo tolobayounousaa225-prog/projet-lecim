@@ -1,0 +1,60 @@
+{% extends "admin/base.html" %}
+{% block title %}Rapport financier{% endblock %}
+{% block content %}
+<h1>Générer un rapport financier</h1>
+<p style="margin-top:-14px;"><a href="/admin/finances">&larr; Retour aux finances</a></p>
+
+<div class="form-card">
+  <p style="color:var(--text-muted); font-size:0.9rem; margin-top:0;">
+    Choisissez une période — le mois en cours par défaut, mais vous pouvez couvrir n'importe
+    quelle plage (ex : les quatre derniers mois pour le rapport périodique au BEN). Le rapport
+    reprend les entrées/sorties de la période, le solde cumulé, et les établissements en retard
+    de cotisation pour l'année scolaire en cours.
+  </p>
+  <form method="post" action="/admin/finances/rapport">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="date_debut">Du</label>
+        <input type="date" id="date_debut" name="date_debut" required value="{{ date_debut.isoformat() }}">
+      </div>
+      <div class="form-group">
+        <label for="date_fin">Au</label>
+        <input type="date" id="date_fin" name="date_fin" required value="{{ date_fin.isoformat() }}">
+      </div>
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="archiver" name="archiver" value="true" checked>
+      <label for="archiver" style="margin:0">Archiver ce rapport dans « Documents &amp; PV »</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Générer le PDF</button>
+  </form>
+</div>
+
+<p style="margin:20px 0;">Besoin de comparer deux périodes (ex : ce mois contre le mois précédent) ?
+<a href="/admin/finances/rapport-comparatif">Générer un rapport comparatif &rarr;</a></p>
+
+<div class="form-card" style="margin-top:20px;">
+  <strong style="color:var(--green-dark)">Exporter les transactions</strong>
+  <p style="color:var(--text-muted); font-size:0.9rem;">Pour retravailler les données dans un tableur.</p>
+  <div class="form-row">
+    <div class="form-group">
+      <label for="export_debut">Du</label>
+      <input type="date" id="export_debut" value="{{ date_debut.isoformat() }}">
+    </div>
+    <div class="form-group">
+      <label for="export_fin">Au</label>
+      <input type="date" id="export_fin" value="{{ date_fin.isoformat() }}">
+    </div>
+  </div>
+  <button type="button" class="btn btn-outline" onclick="exportAs('csv')">Exporter en CSV</button>
+  <button type="button" class="btn btn-gold" onclick="exportAs('xlsx')">Exporter en Excel (.xlsx)</button>
+</div>
+
+<script>
+function exportAs(format) {
+  var debut = document.getElementById("export_debut").value;
+  var fin = document.getElementById("export_fin").value;
+  window.location.href = "/admin/finances/export." + format + "?date_debut=" + debut + "&date_fin=" + fin;
+}
+</script>
+{% endblock %}

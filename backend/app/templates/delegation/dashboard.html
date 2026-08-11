@@ -1,0 +1,25 @@
+{% extends "delegation/base.html" %}
+{% block title %}Tableau de bord{% endblock %}
+{% block content %}
+<h1 style="margin-bottom:4px;">Bienvenue, {{ user.full_name }}</h1>
+<p style="color:var(--text-muted); margin-top:0;">{{ delegation.nom }}{% if delegation.region %} — {{ delegation.region }}{% endif %}{% if user.role_local %} · {{ user.role_local }}{% endif %}</p>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:14px; margin:24px 0;">
+  <a href="/delegation/reunions" class="form-card" style="max-width:none; text-align:center; text-decoration:none;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ counts.reunions }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Réunions locales</div>
+  </a>
+  <a href="/delegation/membres" class="form-card" style="max-width:none; text-align:center; text-decoration:none;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ counts.membres }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Membres du comité local</div>
+  </a>
+  <a href="/delegation/cotisations" class="form-card" style="max-width:none; text-align:center; text-decoration:none;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ counts.etablissements }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Établissements rattachés</div>
+  </a>
+</div>
+
+<div class="empty-state">
+  Cet espace est dédié aux tâches confiées par le Bureau Exécutif National à votre délégation régionale. L'accès à d'autres fonctionnalités du site est géré par l'administrateur principal et le 2e Vice-Président chargé de l'Intérieur.
+</div>
+{% endblock %}

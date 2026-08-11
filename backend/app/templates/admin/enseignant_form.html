@@ -1,0 +1,48 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouvel" }} enseignant{% endblock %}
+{% block content %}
+<h1>{{ "Modifier l'enseignant" if item else "Ajouter un enseignant" }}</h1>
+<div class="form-card">
+  <form method="post" action="{{ '/admin/enseignants/' ~ item.id ~ '/edit' if item else '/admin/enseignants/new' }}">
+    <div class="form-group">
+      <label for="full_name">Nom complet</label>
+      <input type="text" id="full_name" name="full_name" required value="{{ item.full_name if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="etablissement_id">Établissement</label>
+      <select id="etablissement_id" name="etablissement_id" required>
+        <option value="">— Sélectionner —</option>
+        {% for e in etablissements %}
+        <option value="{{ e.id }}" {% if item and item.etablissement_id == e.id %}selected{% endif %}>{{ e.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="matiere">Matière enseignée</label>
+      <input type="text" id="matiere" name="matiere" value="{{ item.matiere if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="diplome">Diplôme / qualification</label>
+      <input type="text" id="diplome" name="diplome" value="{{ item.diplome if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="telephone">Téléphone</label>
+      <input type="text" id="telephone" name="telephone" value="{{ item.telephone if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email" value="{{ item.email if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="date_debut">En poste depuis</label>
+      <input type="date" id="date_debut" name="date_debut" value="{{ item.date_debut.isoformat() if item and item.date_debut else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="notes">Notes (optionnel)</label>
+      <textarea id="notes" name="notes">{{ item.notes if item else '' }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/enseignants" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

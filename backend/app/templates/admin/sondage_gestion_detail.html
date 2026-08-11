@@ -1,0 +1,61 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ sondage.titre }}{% endblock %}
+{% block content %}
+<p style="margin-top:0;"><a href="/admin/sondages/gestion/liste">&larr; Retour à la gestion des sondages</a></p>
+<div class="topbar">
+  <div>
+    <h1 style="margin:0">{{ sondage.titre }}</h1>
+    {% if sondage.description %}<p style="color:var(--text-muted); margin:4px 0 0; white-space:pre-line;">{{ sondage.description }}</p>{% endif %}
+  </div>
+  <div style="display:flex; gap:10px;">
+    {% if sondage.is_ouvert %}
+    <form method="post" action="/admin/sondages/gestion/{{ sondage.id }}/cloturer" onsubmit="return confirm('Clôturer ce sondage ? Plus aucun vote ne sera accepté.');">
+      <button type="submit" class="btn btn-outline">Clôturer</button>
+    </form>
+    {% else %}
+    <form method="post" action="/admin/sondages/gestion/{{ sondage.id }}/reouvrir">
+      <button type="submit" class="btn btn-outline">Rouvrir</button>
+    </form>
+    {% endif %}
+    <form method="post" action="/admin/sondages/gestion/{{ sondage.id }}/delete" onsubmit="return confirm('Supprimer définitivement ce sondage et tous ses votes ?');">
+      <button type="submit" class="btn btn-danger">Supprimer</button>
+    </form>
+  </div>
+</div>
+<p>
+  {% if sondage.is_ouvert %}<span class="pill pill-green">Ouvert</span>
+  {% else %}<span class="pill pill-muted">Clôturé le {{ sondage.cloture_at.strftime("%d/%m/%Y") if sondage.cloture_at else "" }}</span>{% endif %}
+</p>
+
+<h2 style="font-size:1.05rem; color:var(--green-dark); margin:24px 0 12px;">Résultats ({{ total_votes }} vote(s))</h2>
+{% for option in sondage.options %}
+{% set pct = (option.nombre_votes / total_votes * 100) if total_votes else 0 %}
+<div style="margin-bottom:14px; max-width:520px;">
+  <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-bottom:4px;">
+    <span>{{ option.texte }}</span>
+    <span>{{ option.nombre_votes }} ({{ "%.0f"|format(pct) }}%)</span>
+  </div>
+  <div style="background:var(--border); border-radius:6px; overflow:hidden; height:10px;">
+    <div style="width:{{ pct }}%; background:var(--green); height:100%;"></div>
+  </div>
+</div>
+{% endfor %}
+
+<h2 style="font-size:1.05rem; color:var(--green-dark); margin:28px 0 12px;">Détail des votes (nominatif)</h2>
+{% if votes %}
+<table>
+  <thead><tr><th>Membre</th><th>Choix</th><th>Date</th></tr></thead>
+  <tbody>
+    {% for v in votes %}
+    <tr>
+      <td>{{ v.user.full_name }}</td>
+      <td>{{ v.option.texte }}</td>
+      <td>{{ v.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun vote enregistré pour le moment.</div>
+{% endif %}
+{% endblock %}

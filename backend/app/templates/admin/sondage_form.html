@@ -1,0 +1,40 @@
+{% extends "admin/base.html" %}
+{% block title %}Nouveau sondage{% endblock %}
+{% block content %}
+<h1>Créer un sondage</h1>
+<div class="form-card">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <form method="post" action="/admin/sondages/gestion/new">
+    <div class="form-group">
+      <label for="titre">Titre / question posée</label>
+      <input type="text" id="titre" name="titre" required value="{{ titre if titre else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="description">Description (optionnel)</label>
+      <textarea id="description" name="description">{{ description if description else '' }}</textarea>
+    </div>
+    <div class="form-group">
+      <label>Options de réponse (au moins deux)</label>
+      <div id="options-container">
+        <input type="text" name="options" class="option-input" placeholder="Option 1" style="margin-bottom:8px;" required>
+        <input type="text" name="options" class="option-input" placeholder="Option 2" style="margin-bottom:8px;" required>
+      </div>
+      <button type="button" class="btn btn-outline btn-sm" onclick="ajouterOption()">+ Ajouter une option</button>
+    </div>
+    <button type="submit" class="btn btn-primary" style="margin-top:16px;">Créer le sondage</button>
+    <a href="/admin/sondages/gestion/liste" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+<script>
+function ajouterOption() {
+  var container = document.getElementById("options-container");
+  var input = document.createElement("input");
+  input.type = "text";
+  input.name = "options";
+  input.className = "option-input";
+  input.placeholder = "Autre option";
+  input.style.marginBottom = "8px";
+  container.appendChild(input);
+}
+</script>
+{% endblock %}

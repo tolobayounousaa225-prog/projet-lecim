@@ -1,0 +1,43 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ demande.nom_beneficiaire }}{% endblock %}
+{% block content %}
+<p style="margin-top:0;"><a href="/admin/social">&larr; Retour à la liste</a></p>
+<div class="topbar">
+  <h1 style="margin:0">{{ demande.nom_beneficiaire }}</h1>
+  {% if demande.statut == "traitee" %}<span class="pill pill-green">{{ statuts.get(demande.statut) }}</span>
+  {% elif demande.statut == "rejetee" %}<span class="pill pill-muted">{{ statuts.get(demande.statut) }}</span>
+  {% else %}<span class="pill pill-gold">{{ statuts.get(demande.statut) }}</span>{% endif %}
+</div>
+
+<div class="form-card" style="max-width:560px;">
+  {% if demande.structure %}<p><strong>Structure :</strong> {{ demande.structure }}</p>{% endif %}
+  <p><strong>Nature du besoin :</strong> {{ demande.nature_besoin }}</p>
+  {% if demande.description %}<p><strong>Description :</strong> {{ demande.description }}</p>{% endif %}
+  <p style="color:var(--text-muted); font-size:0.85rem;">Soumise le {{ demande.date_soumission.strftime("%d/%m/%Y à %H:%M") }}</p>
+  {% if demande.date_traitement %}<p style="color:var(--text-muted); font-size:0.85rem;">Traitée le {{ demande.date_traitement.strftime("%d/%m/%Y à %H:%M") }}</p>{% endif %}
+  {% if demande.notes_suivi %}<div class="form-card" style="background:var(--cream); margin-top:14px;"><strong>Notes de suivi</strong><p style="margin:8px 0 0;">{{ demande.notes_suivi }}</p></div>{% endif %}
+
+  <div class="form-card" style="margin-top:20px; background:var(--cream);">
+    <strong style="color:var(--green-dark)">Mettre à jour le suivi</strong>
+    <form method="post" action="/admin/social/{{ demande.id }}/statut" style="margin-top:10px;">
+      <div class="form-group">
+        <label for="statut">Statut</label>
+        <select id="statut" name="statut">
+          {% for key, label in statuts.items() %}
+          <option value="{{ key }}" {% if demande.statut == key %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="notes_suivi">Notes de suivi</label>
+        <textarea id="notes_suivi" name="notes_suivi">{{ demande.notes_suivi or '' }}</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Mettre à jour</button>
+    </form>
+  </div>
+
+  <form method="post" action="/admin/social/{{ demande.id }}/delete" style="margin-top:14px;" onsubmit="return confirm('Supprimer cette demande ?');">
+    <button type="submit" class="btn btn-danger btn-sm">Supprimer la demande</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouvelle" }} actualité{% endblock %}
+{% block content %}
+<h1>{{ "Modifier l'actualité" if item else "Nouvelle actualité" }}</h1>
+<div class="form-card">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <form method="post" action="{{ '/admin/news/' ~ item.id ~ '/edit' if item else '/admin/news/new' }}" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="title">Titre</label>
+      <input type="text" id="title" name="title" required value="{{ item.title if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="excerpt">Résumé (affiché sur la page d'accueil)</label>
+      <textarea id="excerpt" name="excerpt" required>{{ item.excerpt if item else '' }}</textarea>
+    </div>
+    <div class="form-group">
+      <label for="content">Contenu complet (optionnel)</label>
+      <textarea id="content" name="content">{{ item.content if item else '' }}</textarea>
+    </div>
+    <div class="form-group">
+      {% if item and item.image_url %}
+      <img src="{{ item.image_url }}" alt="" style="max-width:220px; border-radius:8px; display:block; margin-bottom:10px;">
+      {% endif %}
+      <label for="image">Photo de l'actualité{% if not item %} (optionnel){% endif %}</label>
+      <input type="file" id="image" name="image" accept=".jpg,.jpeg,.png,.webp,.gif">
+      {% if item and item.image_url %}<p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Laissez vide pour conserver la photo actuelle.</p>{% endif %}
+    </div>
+    <div class="form-group">
+      <label for="published_at">Date de publication</label>
+      <input type="date" id="published_at" name="published_at" required
+             value="{{ item.published_at.isoformat() if item else today.isoformat() }}">
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_published" name="is_published" value="true"
+             {% if (item and item.is_published) or not item %}checked{% endif %}>
+      <label for="is_published" style="margin:0">Visible sur le site</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/news" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

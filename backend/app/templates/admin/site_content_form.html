@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+{% block title %}Contenu du site{% endblock %}
+{% block content %}
+<h1>Contenu du site vitrine</h1>
+<p style="margin-top:-14px; color:var(--text-muted); font-size:0.9rem;">
+  Modifiez les textes affichés sur les pages publiques du site. Laissez un champ vide pour garder le texte par défaut.
+</p>
+
+{% if saved %}
+<div class="form-card" style="max-width:none; margin-bottom:20px; border-left:4px solid var(--green-dark);">
+  <strong style="color:var(--green-dark)">Contenu enregistré avec succès.</strong>
+</div>
+{% endif %}
+
+<form method="post" action="/admin/site-content">
+  {% for group_name, fields in groups %}
+  <div class="form-card" style="max-width:none; margin-bottom:22px;">
+    <strong style="color:var(--green-dark); display:block; margin-bottom:16px;">{{ group_name }}</strong>
+    {% for field in fields %}
+    <div class="form-group">
+      <label for="{{ field.key }}">{{ field.label }}</label>
+      {% if field.type == "textarea" %}
+      <textarea id="{{ field.key }}" name="{{ field.key }}" placeholder="{{ field.default }}">{{ field.value }}</textarea>
+      {% else %}
+      <input type="text" id="{{ field.key }}" name="{{ field.key }}" placeholder="{{ field.default }}" value="{{ field.value }}">
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+  <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+</form>
+{% endblock %}

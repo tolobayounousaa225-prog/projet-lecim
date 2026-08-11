@@ -1,0 +1,53 @@
+{% extends "admin/base.html" %}
+{% block title %}Comptes & accès{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Comptes &amp; accès</h1>
+  <a href="/admin/users/new" class="btn btn-primary">+ Créer un accès</a>
+</div>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Nom</th><th>Poste</th><th>E-mail</th><th>Niveau</th><th>Fonctionnalités visibles</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.full_name }}</td>
+      <td>{{ item.poste_label }}</td>
+      <td>{{ item.email }}</td>
+      <td>
+        {% if item.is_admin %}
+          <span class="pill pill-gold">Administrateur</span>
+        {% else %}
+          <span class="pill pill-green">Membre du bureau</span>
+        {% endif %}
+      </td>
+      <td style="font-size:0.82rem; color:var(--text-muted);">
+        {% if item.is_admin %}
+          Toutes (administrateur)
+        {% elif item.allowed_modules_list %}
+          {%- for key in item.allowed_modules_list -%}
+            {{ modules.get(key, key) }}{{ ', ' if not loop.last else '' }}
+          {%- endfor -%}
+        {% else %}
+          <em>Aucune</em>
+        {% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/users/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        {% if item.id != admin.id %}
+        <form method="post" action="/admin/users/{{ item.id }}/delete" onsubmit="return confirm('Révoquer l\'accès de {{ item.full_name }} ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Révoquer</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun compte pour le moment.</div>
+{% endif %}
+{% endblock %}

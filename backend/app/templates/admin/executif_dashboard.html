@@ -1,0 +1,86 @@
+{% extends "admin/base.html" %}
+{% block title %}Tableau de bord exécutif{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1 style="margin:0">Tableau de bord exécutif</h1>
+    <p style="color:var(--text-muted); margin:4px 0 0;">Vue d'ensemble consolidée — Année scolaire {{ annee_scolaire }}</p>
+  </div>
+  <a href="/admin/executif/rapport-annuel" class="btn btn-primary">Générer le rapport annuel (PDF)</a>
+</div>
+
+{% if mandats_a_surveiller %}
+<div class="form-card" style="max-width:none; margin-bottom:24px; border-left:4px solid var(--gold);">
+  <strong style="color:var(--green-dark)">⚠ {{ mandats_a_surveiller|length }} mandat(s) à surveiller</strong>
+  <ul style="margin:12px 0 0; padding-left:20px; color:var(--text-dark); font-size:0.9rem; line-height:1.8;">
+    {% for m in mandats_a_surveiller %}
+    <li>
+      {{ m.full_name }} ({{ m.poste_label }}) —
+      {% if m.mandat_status == "expire" %}mandat expiré depuis le {{ m.mandat_fin.strftime("%d/%m/%Y") }}
+      {% else %}mandat expire le {{ m.mandat_fin.strftime("%d/%m/%Y") }}{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  <p style="margin-top:10px;"><a href="/admin/membres">Voir le répertoire des membres →</a></p>
+</div>
+{% endif %}
+
+<h2 style="font-size:1.05rem; color:var(--green-dark); margin:24px 0 12px;">Finances</h2>
+<div class="stats-grid">
+  <div class="stat-box"><strong>{{ money(solde_cumule) }}</strong><span>Solde cumulé de trésorerie</span></div>
+  <div class="stat-box"><strong>{{ money(finances.total_entrees) }}</strong><span>Entrées depuis le 1er septembre</span></div>
+  <div class="stat-box"><strong>{{ money(finances.total_depenses) }}</strong><span>Dépenses depuis le 1er septembre</span></div>
+  <div class="stat-box"><strong>{{ en_retard_count }}</strong><span>Établissements en retard de cotisation</span></div>
+</div>
+{% if admin.can_manage_finances %}
+<p style="color:var(--text-muted); margin-top:8px;"><a href="/admin/finances">Ouvrir l'espace Finances →</a></p>
+{% endif %}
+
+<h2 style="font-size:1.05rem; color:var(--green-dark); margin:28px 0 12px;">Vie associative</h2>
+<div class="stats-grid">
+  <div class="stat-box"><strong>{{ reunions_nationales }}</strong><span>Réunions du BEN</span></div>
+  <div class="stat-box"><strong>{{ reunions_locales }}</strong><span>Réunions des délégations</span></div>
+  <div class="stat-box"><strong>{{ membres_ben }}</strong><span>Membres du BEN au répertoire</span></div>
+  <div class="stat-box"><strong>{{ etablissements_total }}</strong><span>Établissements affiliés</span></div>
+</div>
+
+<h2 style="font-size:1.05rem; color:var(--green-dark); margin:28px 0 12px;">Cartes de membres</h2>
+<div class="stats-grid">
+  <div class="stat-box"><strong>{{ cartes.soumise }}</strong><span>Demandes en attente de validation</span></div>
+  <div class="stat-box"><strong>{{ cartes.validee }}</strong><span>Validées — en impression</span></div>
+  <div class="stat-box"><strong>{{ cartes.imprimee }}</strong><span>Imprimées — en attente de disponibilité</span></div>
+  <div class="stat-box"><strong>{{ cartes.disponible }}</strong><span>Disponibles à récupérer</span></div>
+</div>
+
+<h2 style="font-size:1.05rem; color:var(--green-dark); margin:28px 0 12px;">Relations extérieures &amp; projets</h2>
+<div class="stats-grid">
+  <div class="stat-box"><strong>{{ partenaires_actifs }} / {{ partenaires_total }}</strong><span>Partenariats actifs</span></div>
+  <div class="stat-box"><strong>{{ projets_en_cours }} / {{ projets_total }}</strong><span>Projets en cours</span></div>
+  <div class="stat-box"><strong>{{ patrimoine_total }}</strong><span>Biens au patrimoine</span></div>
+  <div class="stat-box"><strong>{{ demandes_en_attente }} / {{ demandes_total }}</strong><span>Demandes d'assistance en attente</span></div>
+</div>
+
+<h2 style="font-size:1.05rem; color:var(--green-dark); margin:28px 0 12px;">Documentation &amp; publications</h2>
+<div class="stats-grid">
+  <div class="stat-box"><strong>{{ documents_total }}</strong><span>Documents &amp; PV internes</span></div>
+  <div class="stat-box"><strong>{{ publications_total }}</strong><span>Publications sur le site public</span></div>
+</div>
+
+<h2 style="font-size:1.05rem; color:var(--green-dark); margin:28px 0 12px;">Délégations régionales</h2>
+{% if delegations %}
+<table style="margin-bottom:10px;">
+  <thead><tr><th>Délégation</th><th>Région</th></tr></thead>
+  <tbody>
+    {% for d in delegations %}
+    <tr>
+      <td><a href="/admin/delegations/{{ d.id }}">{{ d.nom }}</a></td>
+      <td>{{ d.region or "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p style="color:var(--text-muted); font-size:0.85rem;">{{ delegations_comptes }} compte(s) d'accès actif(s) au total. <a href="/admin/delegations">Gérer les délégations →</a></p>
+{% else %}
+<div class="empty-state">Aucune délégation régionale enregistrée pour le moment.</div>
+{% endif %}
+{% endblock %}

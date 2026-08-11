@@ -1,0 +1,88 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ reunion.title }}{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1 style="margin:0">{{ reunion.title }}</h1>
+    <p style="color:var(--text-muted); margin:4px 0 0;">
+      {{ reunion.date.strftime("%d/%m/%Y") }}{% if reunion.lieu %} — {{ reunion.lieu }}{% endif %}
+      {% if reunion.reminder_sent %}<span class="pill pill-green" style="margin-left:8px;">Rappel envoyé</span>{% endif %}
+    </p>
+  </div>
+  <div style="display:flex; gap:10px;">
+    <form method="post" action="/admin/reunions/{{ reunion.id }}/rappel" onsubmit="return confirm('Envoyer un rappel par e-mail aux membres concernés dès maintenant ?');">
+      <button type="submit" class="btn btn-outline">Envoyer un rappel</button>
+    </form>
+    <a href="/admin/reunions/{{ reunion.id }}/edit" class="btn btn-outline">Modifier la réunion</a>
+  </div>
+</div>
+
+{% if reunion.ordre_du_jour %}
+<div class="form-card" style="max-width:none; margin-bottom:26px;">
+  <strong style="color:var(--green-dark)">Ordre du jour</strong>
+  <p style="color:var(--text-muted); white-space:pre-line; margin-top:10px;">{{ reunion.ordre_du_jour }}</p>
+</div>
+{% endif %}
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin-bottom:14px;">Présence des membres</h2>
+{% if presences %}
+<form method="post" action="/admin/reunions/{{ reunion.id }}/presence">
+  <table style="margin-bottom:16px;">
+    <thead>
+      <tr><th style="width:60px">Présent</th><th>Nom</th><th>Poste au BEN</th></tr>
+    </thead>
+    <tbody>
+      {% for p in presences %}
+      <tr>
+        <td><input type="checkbox" name="present" value="{{ p.membre_id }}" {% if p.present %}checked{% endif %}></td>
+        <td>{{ p.membre.full_name }}</td>
+        <td>{{ p.membre.poste_label }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <button type="submit" class="btn btn-primary">Enregistrer la présence</button>
+</form>
+{% else %}
+<div class="empty-state">Le répertoire des membres est vide. <a href="/admin/membres/new">Ajoutez des membres</a> pour enregistrer leur présence.</div>
+{% endif %}
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin:30px 0 14px;">Documents &amp; PV liés</h2>
+<div class="topbar">
+  <div></div>
+  <a href="/admin/documents/new?reunion_id={{ reunion.id }}" class="btn btn-primary btn-sm">+ Ajouter un document</a>
+</div>
+{% if reunion.documents %}
+<table style="margin-bottom:16px;">
+  <thead><tr><th>Titre</th><th>Catégorie</th><th>Fichier</th></tr></thead>
+  <tbody>
+    {% for doc in reunion.documents %}
+    <tr>
+      <td>{{ doc.title }}</td>
+      <td>{{ doc.category }}</td>
+      <td><a href="/admin/documents/{{ doc.id }}/file" target="_blank">{{ doc.original_filename }}</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun document lié à cette réunion.</div>
+{% endif %}
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin:30px 0 14px;">Photos liées</h2>
+<div class="topbar">
+  <div></div>
+  <a href="/admin/photos/new?reunion_id={{ reunion.id }}" class="btn btn-primary btn-sm">+ Ajouter une photo</a>
+</div>
+{% if reunion.photos %}
+<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:12px;">
+  {% for photo in reunion.photos %}
+  <a href="/admin/photos/{{ photo.id }}/file" target="_blank">
+    <img src="/admin/photos/{{ photo.id }}/file" alt="{{ photo.caption or '' }}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">Aucune photo liée à cette réunion.</div>
+{% endif %}
+{% endblock %}

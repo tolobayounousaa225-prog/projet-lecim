@@ -1,0 +1,300 @@
+import datetime
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, Form, Request, status
+from fastapi.responses import RedirectResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+
+from .. import models
+from ..database import get_db
+from ..deps import require_delegation_login_web
+from ..finances_constants import cotisation_rule
+from ..reminders import send_reminder_for_reunion
+
+router = APIRouter(tags=["delegation-portal"])
+
+templates_dir = Path(__file__).resolve().parent.parent / "templates"
+templates = Jinja2Templates(directory=str(templates_dir))
+
+
+# ---------- Connexion ----------
+
+@router.get("/delegation/login")
+def delegation_login_page(request: Request):
+    return templates.TemplateResponse(request, "delegation_login.html", {"error": None})
+
+
+@router.get("/delegation/logout")
+def delegation_logout():
+    response = RedirectResponse(url="/delegation/login", status_code=status.HTTP_303_SEE_OTHER)
+    response.delete_cookie("access_token")
+    return response
+
+
+# ---------- Tableau de bord ----------
+
+@router.get("/delegation")
+def delegation_dashboard(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_login_web),
+):
+    delegation_id = user.delegation_id
+    counts = {
+        "reunions": db.query(models.Reunion).filter(models.Reunion.delegation_id == delegation_id).count(),
+        "membres": db.query(models.Membre).filter(models.Membre.delegation_id == delegation_id).count(),
+        "etablissements": db.query(models.Etablissement)
+        .filter(models.Etablissement.delegation_id == delegation_id)
+        .count(),
+    }
+    return templates.TemplateResponse(
+        request,
+        "delegation/dashboard.html",
+        {"user": user, "delegation": user.delegation, "counts": counts, "active": "dashboard"},
+    )
+
+
+# ---------- Réunions locales ----------
+
+@router.get("/delegation/reunions")
+def delegation_reunions_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_login_web),
+):
+    items = (
+        db.query(models.Reunion)
+        .filter(models.Reunion.delegation_id == user.delegation_id)
+        .order_by(models.Reunion.date.desc())
+        .all()
+    )
+    return templates.TemplateResponse(
+        request,
+        "delegation/reunions_list.html",
+        {"user": user, "delegation": user.delegation, "items": items, "active": "reunions"},
+    )
+
+
+@router.get("/delegation/reunions/new")
+def delegation_reunions_new_form(
+    request: Request,
+    user: models.User = Depends(require_delegation_login_web),
+):
+    return templates.TemplateResponse(
+        request,
+        "delegation/reunion_form.html",
+        {"user": user, "delegation": user.delegation, "item": None, "today": datetime.date.today(), "active": "reunions"},
+    )
+
+
+@router.post("/delegation/reunions/new")
+def delegation_reunions_create(
+    title: str = Form(...),
+    date: datetime.date = Form(...),
+    lieu: str = Form(""),
+    ordre_du_jour: str = Form(""),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_login_web),
+):
+    reunion = models.Reunion(
+        title=title,
+        date=date,
+        lieu=lieu or None,
+        ordre_du_jour=ordre_du_jour or None,
+        created_by_id=user.id,
+        delegation_id=user.delegation_id,
+    )
+    db.add(reunion)
+    db.commit()
+    db.refresh(reunion)
+    return RedirectResponse(url=f"/delegation/reunions/{reunion.id}", status_code=status.HTTP_303_SEE_OTHER)
+
+
+def _get_scoped_reunion(db: Session, user: models.User, reunion_id: int) -> models.Reunion | None:
+    reunion = db.get(models.Reunion, reunion_id)
+    if reunion and reunion.delegation_id == user.delegation_id:
+        return reunion
+    return None
+
+
+@router.get("/delegation/reunions/{reunion_id}")
+def delegation_reunion_detail(
+    reunion_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_login_web),
+):
+    reunion = _get_scoped_reunion(db, user, reunion_id)
+    if not reunion:
+        return RedirectResponse(url="/delegation/reunions", status_code=status.HTTP_303_SEE_OTHER)
+
+    existing_membre_ids = {p.membre_id for p in reunion.presences}
+    all_membres = (
+        db.query(models.Membre)
+        .filter(models.Membre.delegation_id == user.delegation_id)
+        .order_by(models.Membre.full_name)
+        .all()
+    )
+    for membre in all_membres:
+        if membre.id not in existing_membre_ids:
+            db.add(models.Presence(reunion_id=reunion.id, membre_id=membre.id, present=False))
+    db.commit()
+    db.refresh(reunion)
+
+    presences = sorted(reunion.presences, key=lambda p: p.membre.full_name)
+    return templates.TemplateResponse(
+        request,
+        "delegation/reunion_detail.html",
+        {"user": user, "delegation": user.delegation, "reunion": reunion, "presences": presences, "active": "reunions"},
+    )
+
+
+@router.post("/delegation/reunions/{reunion_id}/rappel")
+def delegation_reunion_rappel(
+    reunion_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_login_web),
+):
+    reunion = _get_scoped_reunion(db, user, reunion_id)
+    if reunion:
+        send_reminder_for_reunion(db, reunion)
+    return RedirectResponse(url=f"/delegation/reunions/{reunion_id}", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/delegation/reunions/{reunion_id}/presence")
+async def delegation_reunion_presence_save(
+    reunion_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_login_web),
+):
+    reunion = _get_scoped_reunion(db, user, reunion_id)
+    if not reunion:
+        return RedirectResponse(url="/delegation/reunions", status_code=status.HTTP_303_SEE_OTHER)
+    form = await request.form()
+    present_ids = {int(v) for k, v in form.multi_items() if k == "present"}
+    for presence in reunion.presences:
+        presence.present = presence.membre_id in present_ids
+    db.commit()
+    return RedirectResponse(url=f"/delegation/reunions/{reunion_id}", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/delegation/reunions/{reunion_id}/delete")
+def delegation_reunion_delete(
+    reunion_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_login_web),
+):
+    reunion = _get_scoped_reunion(db, user, reunion_id)
+    if reunion:
+        db.delete(reunion)
+        db.commit()
+    return RedirectResponse(url="/delegation/reunions", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# ---------- Répertoire local des membres ----------
+
+@router.get("/delegation/membres")
+def delegation_membres_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_login_web),
+):
+    items = (
+        db.query(models.Membre)
+        .filter(models.Membre.delegation_id == user.delegation_id)
+        .order_by(models.Membre.full_name)
+        .all()
+    )
+    return templates.TemplateResponse(
+        request,
+        "delegation/membres_list.html",
+        {"user": user, "delegation": user.delegation, "items": items, "active": "membres"},
+    )
+
+
+@router.get("/delegation/membres/new")
+def delegation_membres_new_form(
+    request: Request,
+    user: models.User = Depends(require_delegation_login_web),
+):
+    return templates.TemplateResponse(
+        request,
+        "delegation/membre_form.html",
+        {"user": user, "delegation": user.delegation, "item": None, "active": "membres"},
+    )
+
+
+@router.post("/delegation/membres/new")
+def delegation_membres_create(
+    full_name: str = Form(...),
+    fonction: str = Form(""),
+    phone: str = Form(""),
+    email: str = Form(""),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_login_web),
+):
+    membre = models.Membre(
+        full_name=full_name,
+        poste=fonction or None,
+        phone=phone or None,
+        email=email or None,
+        delegation_id=user.delegation_id,
+    )
+    db.add(membre)
+    db.commit()
+    return RedirectResponse(url="/delegation/membres", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/delegation/membres/{membre_id}/delete")
+def delegation_membres_delete(
+    membre_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_login_web),
+):
+    membre = db.get(models.Membre, membre_id)
+    if membre and membre.delegation_id == user.delegation_id:
+        db.delete(membre)
+        db.commit()
+    return RedirectResponse(url="/delegation/membres", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# ---------- Cotisations de la délégation (lecture seule) ----------
+
+@router.get("/delegation/cotisations")
+def delegation_cotisations(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_login_web),
+):
+    etablissements = (
+        db.query(models.Etablissement)
+        .filter(models.Etablissement.delegation_id == user.delegation_id)
+        .order_by(models.Etablissement.nom)
+        .all()
+    )
+    from ..reports import current_annee_scolaire
+
+    annee = current_annee_scolaire()
+    rows = []
+    for e in etablissements:
+        cotisation = (
+            db.query(models.Cotisation)
+            .filter(models.Cotisation.etablissement_id == e.id, models.Cotisation.annee_scolaire == annee)
+            .first()
+        )
+        rule = cotisation_rule(e.statut)
+        rows.append(
+            {
+                "etablissement": e,
+                "montant_du": cotisation.montant_du if cotisation else rule["montant_du"],
+                "montant_paye": cotisation.montant_paye if cotisation else 0,
+                "statut": cotisation.statut_paiement if cotisation else "impaye",
+            }
+        )
+    return templates.TemplateResponse(
+        request,
+        "delegation/cotisations.html",
+        {"user": user, "delegation": user.delegation, "rows": rows, "annee": annee, "active": "cotisations"},
+    )

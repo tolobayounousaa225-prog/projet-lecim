@@ -1,0 +1,47 @@
+{% extends "admin/base.html" %}
+{% block title %}Répertoire des enseignants{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Répertoire des enseignants</h1>
+  <a href="/admin/enseignants/new" class="btn btn-primary">+ Ajouter un enseignant</a>
+</div>
+<p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">Enseignants des établissements membres — distinct du répertoire des membres du BEN.</p>
+
+<form method="get" action="/admin/enseignants" style="margin-bottom:20px;">
+  <div class="form-group" style="margin:0; max-width:320px;">
+    <label for="etablissement_id">Filtrer par établissement</label>
+    <select id="etablissement_id" name="etablissement_id" onchange="this.form.submit()">
+      <option value="">Tous les établissements</option>
+      {% for e in etablissements %}
+      <option value="{{ e.id }}" {% if selected_etablissement_id == e.id %}selected{% endif %}>{{ e.nom }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</form>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Nom</th><th>Établissement</th><th>Matière</th><th>Contact</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.full_name }}</td>
+      <td>{{ item.etablissement.nom }}</td>
+      <td>{{ item.matiere or "—" }}</td>
+      <td>{{ item.telephone or "" }}{% if item.telephone and item.email %}<br>{% endif %}{{ item.email or "" }}</td>
+      <td class="actions-cell">
+        <a href="/admin/enseignants/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/enseignants/{{ item.id }}/delete" onsubmit="return confirm('Retirer {{ item.full_name }} du répertoire ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Retirer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun enseignant enregistré pour le moment.</div>
+{% endif %}
+{% endblock %}

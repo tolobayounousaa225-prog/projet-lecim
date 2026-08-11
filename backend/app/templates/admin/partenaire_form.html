@@ -1,0 +1,55 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouveau" }} partenaire{% endblock %}
+{% block content %}
+<h1>{{ "Modifier le partenaire" if item else "Ajouter un partenaire" }}</h1>
+<div class="form-card">
+  <form method="post" action="{{ '/admin/partenaires/' ~ item.id ~ '/edit' if item else '/admin/partenaires/new' }}">
+    <div class="form-group">
+      <label for="nom">Nom</label>
+      <input type="text" id="nom" name="nom" required value="{{ item.nom if item else '' }}">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="type">Type</label>
+        <select id="type" name="type">
+          {% for key, label in types.items() %}
+          <option value="{{ key }}" {% if item and item.type == key %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="pays">Pays</label>
+        <input type="text" id="pays" name="pays" value="{{ item.pays if item else '' }}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="contact_nom">Contact — nom</label>
+        <input type="text" id="contact_nom" name="contact_nom" value="{{ item.contact_nom if item else '' }}">
+      </div>
+      <div class="form-group">
+        <label for="contact_telephone">Contact — téléphone</label>
+        <input type="text" id="contact_telephone" name="contact_telephone" value="{{ item.contact_telephone if item else '' }}">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="contact_email">Contact — e-mail</label>
+      <input type="email" id="contact_email" name="contact_email" value="{{ item.contact_email if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="statut">Statut du partenariat</label>
+      <select id="statut" name="statut">
+        {% for key, label in statuts.items() %}
+        <option value="{{ key }}" {% if item and item.statut == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="notes">Notes</label>
+      <textarea id="notes" name="notes">{{ item.notes if item else '' }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/partenaires" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

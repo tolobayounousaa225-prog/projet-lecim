@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+{% block title %}Demandes des établissements{% endblock %}
+{% block content %}
+<h1>Demandes soumises par les établissements</h1>
+
+{% if items %}
+{% for item in items %}
+<div class="form-card" style="max-width:none; margin-bottom:16px;">
+  <div class="topbar" style="margin-bottom:10px;">
+    <div>
+      <strong style="color:var(--green-dark);">{{ item.objet }}</strong>
+      <p style="color:var(--text-muted); margin:4px 0 0; font-size:0.85rem;">{{ item.etablissement.nom }} — {{ item.created_at.strftime("%d/%m/%Y %H:%M") }}</p>
+    </div>
+    {% if item.statut == "traitee" %}<span class="pill pill-green">Traitée</span>
+    {% else %}<span class="pill pill-gold">Nouvelle</span>{% endif %}
+  </div>
+  <p style="white-space:pre-line;">{{ item.message }}</p>
+  {% if item.reponse %}
+  <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+    <strong style="color:var(--green-dark); font-size:0.85rem;">Réponse de la LECIM</strong>
+    <p style="white-space:pre-line; margin-top:6px;">{{ item.reponse }}</p>
+  </div>
+  {% else %}
+  <form method="post" action="/admin/demandes-etablissements/{{ item.id }}/repondre" style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+    <div class="form-group">
+      <label for="reponse-{{ item.id }}">Répondre</label>
+      <textarea id="reponse-{{ item.id }}" name="reponse"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">Envoyer la réponse</button>
+  </form>
+  {% endif %}
+</div>
+{% endfor %}
+{% else %}
+<div class="empty-state">Aucune demande soumise pour le moment.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouveau" }} résultat{% endblock %}
+{% block content %}
+<h1>{{ "Modifier le résultat" if item else "Saisir un résultat d'examen" }}</h1>
+<div class="form-card">
+  <form method="post" action="{{ '/admin/resultats-examens/' ~ item.id ~ '/edit' if item else '/admin/resultats-examens/new' }}">
+    <div class="form-group">
+      <label for="etablissement_id">Établissement</label>
+      <select id="etablissement_id" name="etablissement_id" required>
+        <option value="">— Sélectionner —</option>
+        {% for e in etablissements %}
+        <option value="{{ e.id }}" {% if item and item.etablissement_id == e.id %}selected{% endif %}>{{ e.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="annee_scolaire">Année scolaire</label>
+      <input type="text" id="annee_scolaire" name="annee_scolaire" required placeholder="Ex : 2025-2026" value="{{ item.annee_scolaire if item else annee_par_defaut }}">
+    </div>
+    <div class="form-group">
+      <label for="type_examen">Examen</label>
+      <input type="text" id="type_examen" name="type_examen" required placeholder="Ex : Examen de fin d'études coraniques" value="{{ item.type_examen if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="nombre_inscrits">Nombre d'inscrits</label>
+      <input type="number" id="nombre_inscrits" name="nombre_inscrits" min="0" value="{{ item.nombre_inscrits if item else 0 }}">
+    </div>
+    <div class="form-group">
+      <label for="nombre_admis">Nombre d'admis</label>
+      <input type="number" id="nombre_admis" name="nombre_admis" min="0" value="{{ item.nombre_admis if item else 0 }}">
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_published" name="is_published" value="true" {% if (item and item.is_published) or not item %}checked{% endif %}>
+      <label for="is_published" style="margin:0">Visible sur le site</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/resultats-examens" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

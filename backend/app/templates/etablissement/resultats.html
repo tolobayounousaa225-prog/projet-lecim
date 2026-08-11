@@ -1,0 +1,29 @@
+{% extends "etablissement/base.html" %}
+{% block title %}Résultats aux examens{% endblock %}
+{% block content %}
+<h1>Résultats aux examens</h1>
+<p style="color:var(--text-muted); margin-top:-14px;">Résultats saisis par le Bureau Exécutif National pour votre établissement.</p>
+
+{% if items %}
+<table>
+  <thead><tr><th>Année</th><th>Examen</th><th>Inscrits</th><th>Admis</th><th>Taux</th><th>Visibilité</th></tr></thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.annee_scolaire }}</td>
+      <td>{{ item.type_examen }}</td>
+      <td>{{ item.nombre_inscrits }}</td>
+      <td>{{ item.nombre_admis }}</td>
+      <td><strong>{{ item.taux_reussite }}%</strong></td>
+      <td>
+        {% if item.is_published %}<span class="pill pill-green">Publié sur le site</span>
+        {% else %}<span class="pill pill-muted">Non publié</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun résultat saisi pour votre établissement pour le moment.</div>
+{% endif %}
+{% endblock %}

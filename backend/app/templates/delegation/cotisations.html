@@ -1,0 +1,35 @@
+{% extends "delegation/base.html" %}
+{% block title %}Cotisations{% endblock %}
+{% block content %}
+<h1 style="margin-bottom:4px;">Cotisations des établissements rattachés</h1>
+<p style="color:var(--text-muted); margin-top:0;">Année scolaire {{ annee }} — consultation en lecture seule. La gestion des paiements reste centralisée au niveau du Bureau Exécutif National.</p>
+
+{% if rows %}
+<table style="margin-top:20px;">
+  <thead>
+    <tr><th>Établissement</th><th>Statut</th><th>Montant dû</th><th>Montant payé</th><th>Situation</th></tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{{ row.etablissement.nom }}</td>
+      <td>{{ row.etablissement.statut_label }}</td>
+      <td>{{ "{:,}".format(row.montant_du).replace(",", " ") }} FCFA</td>
+      <td>{{ "{:,}".format(row.montant_paye).replace(",", " ") }} FCFA</td>
+      <td>
+        {% if row.statut == "paye" %}
+          <span class="pill pill-green">Payé</span>
+        {% elif row.statut == "partiel" %}
+          <span class="pill pill-gold">Partiel</span>
+        {% else %}
+          <span class="pill pill-red">Impayé</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun établissement rattaché à cette délégation pour le moment.</div>
+{% endif %}
+{% endblock %}

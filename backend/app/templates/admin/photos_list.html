@@ -1,0 +1,28 @@
+{% extends "admin/base.html" %}
+{% block title %}Galerie photo{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Galerie photo</h1>
+  <a href="/admin/photos/new" class="btn btn-primary">+ Publier une photo</a>
+</div>
+<p style="color:var(--text-muted); margin-top:-12px;">Réservée aux comptes connectés — non visible sur le site public.</p>
+
+{% if items %}
+<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:16px;">
+  {% for item in items %}
+  <div class="form-card" style="padding:10px;">
+    <a href="/admin/photos/{{ item.id }}/file" target="_blank">
+      <img src="/admin/photos/{{ item.id }}/file" alt="{{ item.caption or '' }}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px;">
+    </a>
+    <p style="font-size:0.82rem; color:var(--text-muted); margin:8px 0 4px;">{{ item.caption or "Sans légende" }}</p>
+    {% if item.reunion_id %}<p style="font-size:0.76rem; color:var(--text-muted); margin:0 0 8px;"><a href="/admin/reunions/{{ item.reunion_id }}">Réunion liée</a></p>{% endif %}
+    <form method="post" action="/admin/photos/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cette photo ?');">
+      <button type="submit" class="btn btn-danger btn-sm" style="width:100%;">Supprimer</button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">Aucune photo publiée pour le moment.</div>
+{% endif %}
+{% endblock %}

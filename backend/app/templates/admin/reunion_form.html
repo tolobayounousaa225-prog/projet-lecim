@@ -1,0 +1,27 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouvelle" }} réunion{% endblock %}
+{% block content %}
+<h1>{{ "Modifier la réunion" if item else "Convoquer une réunion" }}</h1>
+<div class="form-card">
+  <form method="post" action="{{ '/admin/reunions/' ~ item.id ~ '/edit' if item else '/admin/reunions/new' }}">
+    <div class="form-group">
+      <label for="title">Titre</label>
+      <input type="text" id="title" name="title" required value="{{ item.title if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="date">Date</label>
+      <input type="date" id="date" name="date" required value="{{ item.date.isoformat() if item else today.isoformat() }}">
+    </div>
+    <div class="form-group">
+      <label for="lieu">Lieu</label>
+      <input type="text" id="lieu" name="lieu" value="{{ item.lieu if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="ordre_du_jour">Ordre du jour</label>
+      <textarea id="ordre_du_jour" name="ordre_du_jour">{{ item.ordre_du_jour if item else '' }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/reunions" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

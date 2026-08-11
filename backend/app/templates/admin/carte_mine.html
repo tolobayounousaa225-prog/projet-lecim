@@ -1,0 +1,94 @@
+{% extends "admin/base.html" %}
+{% block title %}Ma carte de membre{% endblock %}
+{% block content %}
+<h1>Ma carte de membre</h1>
+
+{% if carte and not can_request %}
+<div class="form-card" style="max-width:520px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <strong style="color:var(--green-dark); font-size:1.05rem;">{{ carte.full_name_snapshot }}</strong>
+    {% if carte.status == "disponible" %}<span class="pill pill-green">{{ carte.status_label }}</span>
+    {% elif carte.status == "rejetee" %}<span class="pill pill-muted">{{ carte.status_label }}</span>
+    {% else %}<span class="pill pill-gold">{{ carte.status_label }}</span>{% endif %}
+  </div>
+
+  <ul style="list-style:none; padding:0; margin:0; font-size:0.88rem; color:var(--text-muted);">
+    <li style="padding:8px 0; border-bottom:1px solid var(--border);">📨 Demande soumise le {{ carte.date_soumission.strftime("%d/%m/%Y à %H:%M") }}</li>
+    {% if carte.date_validation %}
+    <li style="padding:8px 0; border-bottom:1px solid var(--border);">✅ Validée le {{ carte.date_validation.strftime("%d/%m/%Y à %H:%M") }}{% if carte.numero_carte %} — N° {{ carte.numero_carte }}{% endif %}{% if carte.date_validite %} — valable jusqu'au {{ carte.date_validite.strftime("%d/%m/%Y") }}{% endif %}</li>
+    {% endif %}
+    {% if carte.date_impression %}
+    <li style="padding:8px 0; border-bottom:1px solid var(--border);">🖨️ Imprimée le {{ carte.date_impression.strftime("%d/%m/%Y à %H:%M") }}</li>
+    {% endif %}
+    {% if carte.date_disponibilite %}
+    <li style="padding:8px 0;">📬 Disponible depuis le {{ carte.date_disponibilite.strftime("%d/%m/%Y à %H:%M") }} — à récupérer auprès du secrétariat</li>
+    {% endif %}
+  </ul>
+
+  {% if carte.status == "rejetee" and carte.commentaire_rejet %}
+  <div class="error-box" style="margin-top:16px;">Motif du rejet : {{ carte.commentaire_rejet }}</div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if can_request %}
+<div class="form-card" style="max-width:520px;">
+  {% if carte and carte.status == "rejetee" %}
+  <div class="error-box">
+    Votre précédente demande a été rejetée{% if carte.commentaire_rejet %} : {{ carte.commentaire_rejet }}{% endif %}.
+    Vous pouvez soumettre une nouvelle demande ci-dessous.
+  </div>
+  {% endif %}
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <p style="color:var(--text-muted); font-size:0.9rem; margin-top:0;">
+    Renseignez les informations qui figureront sur votre carte de membre. Votre poste
+    ({{ admin.poste_label }}) est repris automatiquement.
+  </p>
+  <form method="post" action="/admin/cartes/mine/new" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="full_name">Nom complet (tel qu'il doit apparaître sur la carte)</label>
+      <input type="text" id="full_name" name="full_name" required value="{{ admin.full_name }}">
+    </div>
+    <div class="form-group">
+      <label for="photo">Photo d'identité (JPG, PNG — format portrait recommandé)</label>
+      <input type="file" id="photo" name="photo" accept=".jpg,.jpeg,.png,.webp">
+    </div>
+    <div class="form-group">
+      <label for="date_naissance">Date de naissance</label>
+      <input type="date" id="date_naissance" name="date_naissance">
+    </div>
+    <div class="form-group">
+      <label for="cni_numero">N° CNI / pièce d'identité</label>
+      <input type="text" id="cni_numero" name="cni_numero">
+    </div>
+    <div class="form-group">
+      <label for="ville">Ville / résidence</label>
+      <input type="text" id="ville" name="ville">
+    </div>
+    <div class="form-group">
+      <label for="adresse">Adresse complète (quartier, commune)</label>
+      <input type="text" id="adresse" name="adresse">
+    </div>
+    <div class="form-group">
+      <label for="telephone">Téléphone</label>
+      <input type="text" id="telephone" name="telephone">
+    </div>
+    <div class="form-group">
+      <label for="email_personnel">E-mail personnel</label>
+      <input type="email" id="email_personnel" name="email_personnel">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="contact_urgence_nom">Contact d'urgence — nom</label>
+        <input type="text" id="contact_urgence_nom" name="contact_urgence_nom">
+      </div>
+      <div class="form-group">
+        <label for="contact_urgence_telephone">Contact d'urgence — téléphone</label>
+        <input type="text" id="contact_urgence_telephone" name="contact_urgence_telephone">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Soumettre la demande</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

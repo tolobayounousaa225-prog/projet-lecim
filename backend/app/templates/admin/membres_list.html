@@ -1,0 +1,41 @@
+{% extends "admin/base.html" %}
+{% block title %}Répertoire des membres{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Répertoire des membres</h1>
+  <a href="/admin/membres/new" class="btn btn-primary">+ Ajouter un membre</a>
+</div>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Nom</th><th>Poste au BEN</th><th>Contact</th><th>Mandat</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.full_name }}</td>
+      <td>{{ item.poste_label }}</td>
+      <td>{{ item.phone or "" }}{% if item.phone and item.email %}<br>{% endif %}{{ item.email or "" }}</td>
+      <td>
+        {% if item.mandat_fin %}
+          {{ item.mandat_fin.strftime("%d/%m/%Y") }}
+          {% if item.mandat_status == "expire" %}<span class="pill pill-muted">Expiré</span>
+          {% elif item.mandat_status == "bientot" %}<span class="pill pill-gold">Expire bientôt</span>
+          {% else %}<span class="pill pill-green">En cours</span>{% endif %}
+        {% else %}<span style="color:var(--text-muted); font-size:0.8rem;">—</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/membres/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/membres/{{ item.id }}/delete" onsubmit="return confirm('Retirer {{ item.full_name }} du répertoire ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Retirer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Le répertoire est vide. Ajoutez les membres pour pouvoir suivre leur présence aux réunions.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+{% block title %}Retards de cotisation{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1 style="margin:0">Établissements en retard de cotisation</h1>
+    <p style="margin:4px 0 0;"><a href="/admin/finances">&larr; Retour aux finances</a> — année scolaire {{ annee }}.</p>
+  </div>
+  {% if retards %}
+  <form method="post" action="/admin/finances/retards/relances" onsubmit="return confirm('Envoyer une relance par e-mail à tous les établissements en retard disposant d\'une adresse e-mail de contact ?');">
+    <button type="submit" class="btn btn-primary">Envoyer les relances par e-mail</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if envoyees is not none %}
+<div class="form-card" style="max-width:none; margin-bottom:20px; border-left:4px solid var(--green-dark);">
+  <strong style="color:var(--green-dark)">{{ envoyees }} relance(s) envoyée(s)</strong>
+  {% if ignorees %}
+  <p style="color:var(--text-muted); margin:6px 0 0;">{{ ignorees }} établissement(s) ignoré(s) — aucune adresse e-mail de contact renseignée, ou envoi échoué. Complétez la fiche de l'établissement pour permettre l'envoi.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if retards %}
+<table>
+  <thead><tr><th>Établissement</th><th>Bureau local</th><th>E-mail de contact</th><th>Dû</th><th>Versé</th><th>Reste à recouvrer</th></tr></thead>
+  <tbody>
+    {% for r in retards %}
+    <tr>
+      <td>{{ r.etablissement.nom }}</td>
+      <td>{{ r.etablissement.bureau_local or "—" }}</td>
+      <td>
+        {% if r.etablissement.contact_email %}
+          {{ r.etablissement.contact_email }}
+        {% else %}
+          <span style="color:var(--text-muted);">Non renseigné — <a href="/admin/etablissements/{{ r.etablissement.id }}/edit">compléter</a></span>
+        {% endif %}
+      </td>
+      <td>{{ "{:,}".format(r.montant_du).replace(",", " ") }} FCFA</td>
+      <td>{{ "{:,}".format(r.montant_paye).replace(",", " ") }} FCFA</td>
+      <td><span class="pill pill-gold">{{ "{:,}".format(r.reste).replace(",", " ") }} FCFA</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Tous les établissements affiliés sont à jour de leur cotisation {{ annee }}.</div>
+{% endif %}
+{% endblock %}

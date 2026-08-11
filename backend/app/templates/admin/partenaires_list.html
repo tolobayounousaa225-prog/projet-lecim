@@ -1,0 +1,39 @@
+{% extends "admin/base.html" %}
+{% block title %}Partenaires{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Relations extérieures — Partenaires</h1>
+  <a href="/admin/partenaires/new" class="btn btn-primary">+ Ajouter un partenaire</a>
+</div>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Nom</th><th>Type</th><th>Pays</th><th>Contact</th><th>Statut</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.nom }}</td>
+      <td>{{ types.get(item.type, item.type) }}</td>
+      <td>{{ item.pays or "—" }}</td>
+      <td>{{ item.contact_nom or "" }}{% if item.contact_email %}<br>{{ item.contact_email }}{% endif %}</td>
+      <td>
+        {% if item.statut == "actif" %}<span class="pill pill-green">{{ statuts.get(item.statut) }}</span>
+        {% elif item.statut == "inactif" %}<span class="pill pill-muted">{{ statuts.get(item.statut) }}</span>
+        {% else %}<span class="pill pill-gold">{{ statuts.get(item.statut) }}</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/partenaires/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/partenaires/{{ item.id }}/delete" onsubmit="return confirm('Retirer {{ item.nom }} des partenaires ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Retirer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun partenaire enregistré pour le moment.</div>
+{% endif %}
+{% endblock %}

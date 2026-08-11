@@ -1,0 +1,29 @@
+{% extends "admin/base.html" %}
+{% block title %}Publier une photo{% endblock %}
+{% block content %}
+<h1>Publier une photo</h1>
+<div class="form-card">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <form method="post" action="/admin/photos/new" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="caption">Légende</label>
+      <input type="text" id="caption" name="caption" placeholder="Ex : Réunion du Bureau Exécutif National — 28 décembre 2025">
+    </div>
+    <div class="form-group">
+      <label for="reunion_id">Réunion liée (optionnel)</label>
+      <select id="reunion_id" name="reunion_id">
+        <option value="">— Aucune —</option>
+        {% for r in reunions %}
+        <option value="{{ r.id }}" {% if selected_reunion_id and r.id == selected_reunion_id %}selected{% endif %}>{{ r.date.strftime("%d/%m/%Y") }} — {{ r.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="file">Image (JPG, PNG, WEBP, GIF — 15 Mo max)</label>
+      <input type="file" id="file" name="file" required accept=".jpg,.jpeg,.png,.webp,.gif">
+    </div>
+    <button type="submit" class="btn btn-primary">Publier</button>
+    <a href="/admin/photos" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

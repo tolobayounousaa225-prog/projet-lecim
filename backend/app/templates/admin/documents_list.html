@@ -1,0 +1,39 @@
+{% extends "admin/base.html" %}
+{% block title %}Documents & PV{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Documents &amp; PV</h1>
+  <a href="/admin/documents/new" class="btn btn-primary">+ Publier un document</a>
+</div>
+<p style="color:var(--text-muted); margin-top:-12px;">Réservés aux comptes connectés — non visibles sur le site public.</p>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Date</th><th>Titre</th><th>Catégorie</th><th>Réunion liée</th><th>Fichier</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.created_at.strftime("%d/%m/%Y") }}</td>
+      <td>{{ item.title }}</td>
+      <td>
+        {% if item.category == "pv" %}<span class="pill pill-green">PV</span>
+        {% elif item.category == "rapport" %}<span class="pill pill-gold">Rapport</span>
+        {% else %}<span class="pill pill-muted">Autre</span>{% endif %}
+      </td>
+      <td>{% if item.reunion_id %}<a href="/admin/reunions/{{ item.reunion_id }}">Voir la réunion</a>{% else %}—{% endif %}</td>
+      <td><a href="/admin/documents/{{ item.id }}/file" target="_blank">{{ item.original_filename }}</a></td>
+      <td class="actions-cell">
+        <form method="post" action="/admin/documents/{{ item.id }}/delete" onsubmit="return confirm('Supprimer ce document ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun document publié pour le moment.</div>
+{% endif %}
+{% endblock %}

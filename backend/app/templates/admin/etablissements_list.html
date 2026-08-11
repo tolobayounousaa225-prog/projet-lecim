@@ -1,0 +1,39 @@
+{% extends "admin/base.html" %}
+{% block title %}Établissements affiliés{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Établissements affiliés</h1>
+  <a href="/admin/etablissements/new" class="btn btn-primary">+ Ajouter un établissement</a>
+</div>
+<p style="margin-top:-12px;"><a href="/admin/finances">&larr; Retour aux finances</a></p>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Nom</th><th>Bureau local</th><th>Statut</th><th>Adhésion</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.nom }}</td>
+      <td>{{ item.bureau_local or "—" }}</td>
+      <td>
+        {% if item.statut == "subventionne" %}<span class="pill pill-gold">Subventionné</span>
+        {% else %}<span class="pill pill-muted">Non subventionné</span>{% endif %}
+      </td>
+      <td>{{ item.date_adhesion.strftime("%d/%m/%Y") if item.date_adhesion else "—" }}</td>
+      <td class="actions-cell">
+        <a href="/admin/etablissements/{{ item.id }}/compte" class="btn btn-outline btn-sm">Espace établissement</a>
+        <a href="/admin/etablissements/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/etablissements/{{ item.id }}/delete" onsubmit="return confirm('Retirer {{ item.nom }} des établissements affiliés ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Retirer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun établissement affilié pour le moment.</div>
+{% endif %}
+{% endblock %}

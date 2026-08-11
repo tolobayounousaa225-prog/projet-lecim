@@ -1,0 +1,60 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouveau" }} poste{% endblock %}
+{% block content %}
+<h1>{{ "Modifier le poste" if item else "Ajouter un poste à l'organigramme" }}</h1>
+<div class="form-card">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <form method="post" action="{{ '/admin/gouvernance/' ~ item.id ~ '/edit' if item else '/admin/gouvernance/new' }}" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="poste_title">Intitulé du poste</label>
+      <input type="text" id="poste_title" name="poste_title" required placeholder="Ex : Président National" value="{{ item.poste_title if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="poste_subtitle">Sous-titre (optionnel)</label>
+      <input type="text" id="poste_subtitle" name="poste_subtitle" placeholder="Ex : Bureau Exécutif National" value="{{ item.poste_subtitle if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="ordre">Ordre d'affichage</label>
+      <input type="number" id="ordre" name="ordre" value="{{ item.ordre if item else 0 }}">
+    </div>
+
+    <hr style="border:none; border-top:1px solid var(--border); margin:22px 0;">
+    <strong style="color:var(--green-dark); display:block; margin-bottom:14px;">Titulaire</strong>
+    {% if item and item.titulaire_photo_url %}
+    <div class="form-group"><img src="{{ item.titulaire_photo_url }}" alt="" style="width:80px; height:80px; border-radius:50%; object-fit:cover;"></div>
+    {% endif %}
+    <div class="form-group">
+      <label for="titulaire_nom">Nom du titulaire</label>
+      <input type="text" id="titulaire_nom" name="titulaire_nom" value="{{ item.titulaire_nom if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="titulaire_photo">Photo du titulaire</label>
+      <input type="file" id="titulaire_photo" name="titulaire_photo" accept=".jpg,.jpeg,.png,.webp,.gif">
+      {% if item and item.titulaire_photo_url %}<p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Laissez vide pour conserver la photo actuelle.</p>{% endif %}
+    </div>
+
+    <hr style="border:none; border-top:1px solid var(--border); margin:22px 0;">
+    <strong style="color:var(--green-dark); display:block; margin-bottom:14px;">Adjoint (si le poste en comporte un)</strong>
+    {% if item and item.adjoint_photo_url %}
+    <div class="form-group"><img src="{{ item.adjoint_photo_url }}" alt="" style="width:80px; height:80px; border-radius:50%; object-fit:cover;"></div>
+    {% endif %}
+    <div class="form-group">
+      <label for="adjoint_nom">Nom de l'adjoint</label>
+      <input type="text" id="adjoint_nom" name="adjoint_nom" value="{{ item.adjoint_nom if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="adjoint_photo">Photo de l'adjoint</label>
+      <input type="file" id="adjoint_photo" name="adjoint_photo" accept=".jpg,.jpeg,.png,.webp,.gif">
+      {% if item and item.adjoint_photo_url %}<p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Laissez vide pour conserver la photo actuelle.</p>{% endif %}
+    </div>
+
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_published" name="is_published" value="true"
+             {% if (item and item.is_published) or not item %}checked{% endif %}>
+      <label for="is_published" style="margin:0">Visible sur le site</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/gouvernance" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

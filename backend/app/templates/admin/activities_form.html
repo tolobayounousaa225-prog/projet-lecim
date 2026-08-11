@@ -1,0 +1,25 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouvelle" }} activité{% endblock %}
+{% block content %}
+<h1>{{ "Modifier l'activité" if item else "Nouvelle activité" }}</h1>
+<div class="form-card">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <form method="post" action="{{ '/admin/activities/' ~ item.id ~ '/edit' if item else '/admin/activities/new' }}">
+    <div class="form-group">
+      <label for="title">Titre</label>
+      <input type="text" id="title" name="title" required value="{{ item.title if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea id="description" name="description" required>{{ item.description if item else '' }}</textarea>
+    </div>
+    <div class="form-group">
+      <label for="event_date">Date de l'activité</label>
+      <input type="date" id="event_date" name="event_date" required
+             value="{{ item.event_date.isoformat() if item else '' }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/activities" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

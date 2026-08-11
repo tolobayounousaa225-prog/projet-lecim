@@ -1,0 +1,54 @@
+{% extends "admin/base.html" %}
+{% block title %}Gouvernance{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Gouvernance — Organigramme public</h1>
+  <a href="/admin/gouvernance/new" class="btn btn-primary">+ Ajouter un poste</a>
+</div>
+<p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">
+  Visible par tous les visiteurs dans la section "Gouvernance" de la page À propos du site — photo du titulaire et de son adjoint le cas échéant.
+</p>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Ordre</th><th>Titulaire</th><th>Adjoint</th><th>Poste</th><th>Visibilité</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.ordre }}</td>
+      <td>
+        {% if item.titulaire_photo_url %}
+        <img src="{{ item.titulaire_photo_url }}" alt="" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+        {% else %}<span style="color:var(--text-muted); font-size:0.8rem;">—</span>{% endif %}
+        {{ item.titulaire_nom or "" }}
+      </td>
+      <td>
+        {% if item.adjoint_photo_url %}
+        <img src="{{ item.adjoint_photo_url }}" alt="" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+        {% else %}<span style="color:var(--text-muted); font-size:0.8rem;">—</span>{% endif %}
+        {{ item.adjoint_nom or "" }}
+      </td>
+      <td>{{ item.poste_title }}{% if item.poste_subtitle %}<br><span style="color:var(--text-muted); font-size:0.8rem;">{{ item.poste_subtitle }}</span>{% endif %}</td>
+      <td>
+        {% if item.is_published %}<span class="pill pill-green">Publié</span>
+        {% else %}<span class="pill pill-muted">Brouillon</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/gouvernance/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/gouvernance/{{ item.id }}/toggle">
+          <button type="submit" class="btn btn-outline btn-sm">{{ "Dépublier" if item.is_published else "Publier" }}</button>
+        </form>
+        <form method="post" action="/admin/gouvernance/{{ item.id }}/delete" onsubmit="return confirm('Supprimer ce poste de l\'organigramme ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun poste enregistré pour le moment.</div>
+{% endif %}
+{% endblock %}

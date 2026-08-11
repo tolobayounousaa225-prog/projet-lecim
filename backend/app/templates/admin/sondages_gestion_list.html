@@ -1,0 +1,32 @@
+{% extends "admin/base.html" %}
+{% block title %}Gestion des sondages{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Gestion des sondages</h1>
+  <a href="/admin/sondages/gestion/new" class="btn btn-primary">+ Créer un sondage</a>
+</div>
+
+{% if items %}
+<table>
+  <thead><tr><th>Titre</th><th>Créé le</th><th>Statut</th><th>Votes</th><th>Actions</th></tr></thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.titre }}</td>
+      <td>{{ item.created_at.strftime("%d/%m/%Y") }}</td>
+      <td>
+        {% if item.is_ouvert %}<span class="pill pill-green">Ouvert</span>
+        {% else %}<span class="pill pill-muted">Clôturé</span>{% endif %}
+      </td>
+      <td>{{ item.votes|length }}</td>
+      <td class="actions-cell">
+        <a href="/admin/sondages/gestion/{{ item.id }}" class="btn btn-outline btn-sm">Détails</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun sondage créé pour le moment.</div>
+{% endif %}
+{% endblock %}

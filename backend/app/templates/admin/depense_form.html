@@ -1,0 +1,28 @@
+{% extends "admin/base.html" %}
+{% block title %}Enregistrer une dépense{% endblock %}
+{% block content %}
+<h1>Enregistrer une dépense</h1>
+<div class="form-card">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <form method="post" action="/admin/depenses/new" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="libelle">Libellé</label>
+      <input type="text" id="libelle" name="libelle" required>
+    </div>
+    <div class="form-group">
+      <label for="montant">Montant (FCFA)</label>
+      <input type="number" id="montant" name="montant" min="0" required>
+    </div>
+    <div class="form-group">
+      <label for="date">Date</label>
+      <input type="date" id="date" name="date" required value="{{ today.isoformat() }}">
+    </div>
+    <div class="form-group">
+      <label for="justificatif">Pièce justificative (optionnel — PDF, image, Word)</label>
+      <input type="file" id="justificatif" name="justificatif" accept=".pdf,.doc,.docx,.odt,.jpg,.jpeg,.png,.webp,.gif">
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/depenses" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

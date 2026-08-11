@@ -1,0 +1,48 @@
+{% extends "admin/base.html" %}
+{% block title %}Finances{% endblock %}
+{% block content %}
+<h1>Finances de la LECIM</h1>
+
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:26px;">
+  <a href="/admin/etablissements" class="btn btn-outline btn-sm">Établissements affiliés ({{ nb_etablissements }})</a>
+  <a href="/admin/adhesions" class="btn btn-outline btn-sm">Droits d'adhésion</a>
+  <a href="/admin/cotisations" class="btn btn-outline btn-sm">Cotisations{% if nb_cotisations_impayees %} — {{ nb_cotisations_impayees }} en attente{% endif %}</a>
+  <a href="/admin/recettes" class="btn btn-outline btn-sm">Autres recettes</a>
+  <a href="/admin/depenses" class="btn btn-outline btn-sm">Dépenses</a>
+  <a href="/admin/finances/retards" class="btn btn-outline btn-sm">Retards de cotisation</a>
+  <a href="/admin/finances/evolution" class="btn btn-outline btn-sm">Évolution pluriannuelle</a>
+  <a href="/admin/finances/rapport" class="btn btn-gold btn-sm">Générer un rapport</a>
+  <a href="/admin/finances/rapport-comparatif" class="btn btn-gold btn-sm">Rapport comparatif</a>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-box"><strong>{{ "{:,}".format(total_adhesions).replace(",", " ") }}</strong><span>FCFA — Droits d'adhésion encaissés</span></div>
+  <div class="stat-box"><strong>{{ "{:,}".format(total_cotisations).replace(",", " ") }}</strong><span>FCFA — Cotisations encaissées</span></div>
+  <div class="stat-box"><strong>{{ "{:,}".format(total_recettes).replace(",", " ") }}</strong><span>FCFA — Autres recettes</span></div>
+  <div class="stat-box"><strong>{{ "{:,}".format(total_depenses).replace(",", " ") }}</strong><span>FCFA — Dépenses</span></div>
+</div>
+
+<div class="form-card" style="max-width:none; margin-bottom:26px;">
+  <strong style="color:var(--green-dark)">Solde global</strong>
+  <p style="font-size:2rem; font-weight:800; color:{{ 'var(--green)' if solde >= 0 else '#c0392b' }}; margin:10px 0 0;">
+    {{ "{:,}".format(solde).replace(",", " ") }} FCFA
+  </p>
+</div>
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin-bottom:14px;">Autres recettes par catégorie</h2>
+{% if recettes_par_categorie %}
+<table>
+  <thead><tr><th>Catégorie</th><th>Total</th></tr></thead>
+  <tbody>
+    {% for categorie, total in recettes_par_categorie %}
+    <tr>
+      <td>{{ categories_labels.get(categorie, categorie) }}</td>
+      <td>{{ "{:,}".format(total).replace(",", " ") }} FCFA</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune recette enregistrée hors adhésions et cotisations.</div>
+{% endif %}
+{% endblock %}

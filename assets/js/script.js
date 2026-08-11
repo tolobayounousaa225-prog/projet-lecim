@@ -1,0 +1,419 @@
+var API_BASE = window.LECIM_API_BASE || "http://localhost:8000";
+
+document.addEventListener("DOMContentLoaded", function () {
+  initNavToggle();
+  initLoginLink();
+  initContactForm();
+  loadNews();
+  loadActivities();
+  loadPublications();
+  loadHistorique();
+  loadGouvernance();
+  loadSiteContent();
+  loadCarte();
+  loadResultatsExamens();
+});
+
+function loadSiteContent() {
+  var elements = document.querySelectorAll("[data-content-key]");
+  if (!elements.length) return;
+
+  fetch(API_BASE + "/api/site-content")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (values) {
+      elements.forEach(function (el) {
+        var value = values[el.getAttribute("data-content-key")];
+        if (value) el.textContent = value;
+      });
+    })
+    .catch(function () {
+      // API indisponible : les textes par défaut codés dans la page restent affichés.
+    });
+}
+
+function loadCarte() {
+  var container = document.getElementById("carte-lecim");
+  if (!container || typeof L === "undefined") return;
+
+  var map = L.map(container).setView([7.54, -5.55], 7); // Centre approximatif de la Côte d'Ivoire
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; contributeurs OpenStreetMap",
+    maxZoom: 18,
+  }).addTo(map);
+
+  fetch(API_BASE + "/api/carte")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (markers) {
+      if (!markers || !markers.length) {
+        document.getElementById("carte-empty").style.display = "block";
+        return;
+      }
+      var bounds = [];
+      markers.forEach(function (m) {
+        var color = m.type === "delegation" ? "#e0a52c" : "#0f7a4c";
+        var icon = L.divIcon({
+          className: "",
+          html: '<div style="width:16px;height:16px;border-radius:50%;background:' + color + ';border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>',
+          iconSize: [16, 16],
+          iconAnchor: [8, 8],
+        });
+        var label = m.type === "delegation" ? "Délégation régionale" : "Établissement affilié";
+        var popup = "<strong>" + escapeHtml(m.nom) + "</strong><br>" + label + (m.detail ? "<br>" + escapeHtml(m.detail) : "");
+        L.marker([m.latitude, m.longitude], { icon: icon }).addTo(map).bindPopup(popup);
+        bounds.push([m.latitude, m.longitude]);
+      });
+      if (bounds.length) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 10 });
+    })
+    .catch(function () {
+      document.getElementById("carte-empty").style.display = "block";
+    });
+}
+
+function loadResultatsExamens() {
+  var tbody = document.getElementById("resultats-tbody");
+  if (!tbody) return;
+
+  fetch(API_BASE + "/api/resultats-examens")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) {
+        document.getElementById("resultats-empty").style.display = "block";
+        return;
+      }
+
+      var select = document.getElementById("resultats-filtre-annee");
+      var annees = [];
+      items.forEach(function (r) {
+        if (annees.indexOf(r.annee_scolaire) === -1) annees.push(r.annee_scolaire);
+      });
+      annees.forEach(function (annee) {
+        var opt = document.createElement("option");
+        opt.value = annee;
+        opt.textContent = annee;
+        select.appendChild(opt);
+      });
+
+      function render() {
+        var filtre = select.value;
+        tbody.innerHTML = "";
+        items
+          .filter(function (r) { return !filtre || r.annee_scolaire === filtre; })
+          .forEach(function (r) {
+            var tr = document.createElement("tr");
+            tr.innerHTML =
+              '<td style="padding:10px; border-bottom:1px solid var(--border);">' + escapeHtml(r.etablissement_nom) + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border);">' + escapeHtml(r.annee_scolaire) + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border);">' + escapeHtml(r.type_examen) + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;">' + r.nombre_inscrits + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;">' + r.nombre_admis + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right; font-weight:700; color:var(--green-dark);">' + r.taux_reussite + "%</td>";
+            tbody.appendChild(tr);
+          });
+      }
+
+      select.addEventListener("change", render);
+      render();
+    })
+    .catch(function () {
+      document.getElementById("resultats-empty").style.display = "block";
+    });
+}
+
+function initLoginLink() {
+  var link = document.getElementById("nav-login-link");
+  if (link) {
+    link.href = API_BASE + "/admin/login";
+  }
+}
+
+function initNavToggle() {
+  var toggle = document.querySelector(".nav-toggle");
+  var links = document.querySelector(".nav-links");
+  if (toggle && links) {
+    toggle.addEventListener("click", function () {
+      links.classList.toggle("open");
+    });
+  }
+}
+
+function initContactForm() {
+  var form = document.querySelector(".contact-form form");
+  if (!form) return;
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var btn = form.querySelector("button[type=submit]");
+    var original = btn.textContent;
+
+    var payload = {
+      full_name: valueOf(form, "#nom"),
+      phone: valueOf(form, "#tel") || null,
+      email: valueOf(form, "#email"),
+      establishment: valueOf(form, "#etablissement") || null,
+      subject: valueOf(form, "#sujet"),
+      message: valueOf(form, "#message"),
+    };
+
+    btn.disabled = true;
+    btn.textContent = "Envoi en cours…";
+
+    fetch(API_BASE + "/api/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error("Échec de l'envoi");
+        btn.textContent = "Message envoyé ✓";
+        form.reset();
+      })
+      .catch(function () {
+        btn.textContent = "Erreur — merci de réessayer";
+      })
+      .finally(function () {
+        setTimeout(function () {
+          btn.textContent = original;
+          btn.disabled = false;
+        }, 3500);
+      });
+  });
+}
+
+function valueOf(form, selector) {
+  var el = form.querySelector(selector);
+  return el ? el.value.trim() : "";
+}
+
+function loadNews() {
+  var container = document.querySelector(".news-list");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/news?limit=3")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) return;
+      container.innerHTML = "";
+      items.forEach(function (item, index) {
+        var reverse = index % 2 === 1;
+        var el = document.createElement("div");
+        el.className = "news-item" + (reverse ? " reverse" : "");
+        var media = item.image_url
+          ? '<img src="' + API_BASE + item.image_url + '" alt="' + escapeHtml(item.title) + '">'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg>';
+        el.innerHTML =
+          '<div class="news-media">' + media + "</div>" +
+          "<div>" +
+          '<span class="news-date">' + formatDateFr(item.published_at) + "</span>" +
+          "<h3>" + escapeHtml(item.title) + "</h3>" +
+          "<p>" + escapeHtml(item.excerpt) + "</p>" +
+          "</div>";
+        container.appendChild(el);
+      });
+    })
+    .catch(function () {
+      // API indisponible (ex. ouverture locale du fichier) : le contenu statique reste affiché.
+    });
+}
+
+function loadActivities() {
+  var container = document.querySelector(".timeline");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/activities")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) return;
+      container.innerHTML = "";
+      items.forEach(function (item) {
+        var isPast = item.status === "past";
+        var el = document.createElement("div");
+        el.className = "timeline-item" + (isPast ? " past" : "");
+        el.innerHTML =
+          '<div class="timeline-dot"></div>' +
+          '<div class="timeline-card">' +
+          '<span class="timeline-tag">' + (isPast ? "Terminé" : "À venir") + "</span>" +
+          '<div class="tdate">' + formatDateFr(item.event_date) + "</div>" +
+          "<h3>" + escapeHtml(item.title) + "</h3>" +
+          "<p>" + escapeHtml(item.description) + "</p>" +
+          "</div>";
+        container.appendChild(el);
+      });
+    })
+    .catch(function () {
+      // API indisponible : le contenu statique reste affiché.
+    });
+}
+
+var PUBLICATION_CATEGORY_LABELS = {
+  reglement_interieur: "Règlement Intérieur",
+  statuts: "Statuts de la LECIM",
+  resultats_examens: "Résultats aux examens nationaux",
+  autre: "Autres documents",
+};
+var PUBLICATION_CATEGORY_ORDER = ["reglement_interieur", "statuts", "resultats_examens", "autre"];
+
+function loadPublications() {
+  var container = document.getElementById("doc-categories");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/publications")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) return;
+
+      var byCategory = {};
+      items.forEach(function (item) {
+        var cat = item.category || "autre";
+        if (!byCategory[cat]) byCategory[cat] = [];
+        byCategory[cat].push(item);
+      });
+
+      container.innerHTML = "";
+      PUBLICATION_CATEGORY_ORDER.forEach(function (cat) {
+        var docs = byCategory[cat];
+        if (!docs || !docs.length) return;
+
+        var section = document.createElement("div");
+        section.className = "doc-category";
+
+        var heading = document.createElement("h2");
+        heading.textContent = PUBLICATION_CATEGORY_LABELS[cat] || cat;
+        section.appendChild(heading);
+
+        var grid = document.createElement("div");
+        grid.className = "doc-grid";
+
+        docs.forEach(function (doc) {
+          var card = document.createElement("div");
+          card.className = "doc-card";
+          card.innerHTML =
+            '<div class="doc-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5">' +
+            '<path d="M4 19V6a2 2 0 0 1 2-2h9l5 5v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M14 4v5h5"/></svg></div>' +
+            "<div>" +
+            "<h3>" + escapeHtml(doc.title) + "</h3>" +
+            (doc.description ? "<p>" + escapeHtml(doc.description) + "</p>" : "") +
+            '<div class="doc-meta">Publié le ' + formatDateFr(doc.published_at) + "</div>" +
+            '<a href="' + API_BASE + doc.file_url + '" class="btn btn-primary" target="_blank">Télécharger</a>' +
+            "</div>";
+          grid.appendChild(card);
+        });
+
+        section.appendChild(grid);
+        container.appendChild(section);
+      });
+    })
+    .catch(function () {
+      // API indisponible : le message par défaut ("aucun document") reste affiché.
+    });
+}
+
+function loadHistorique() {
+  var container = document.getElementById("historique-grid");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/historique")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) return;
+      container.innerHTML = "";
+      items.forEach(function (item) {
+        var card = document.createElement("div");
+        card.className = "historique-card";
+        card.innerHTML =
+          '<img class="historique-photo" src="' + API_BASE + item.photo_url + '" alt="' + escapeHtml(item.full_name) + '">' +
+          "<h4>" + escapeHtml(item.full_name) + "</h4>" +
+          (item.periode ? '<span class="historique-period">' + escapeHtml(item.periode) + "</span>" : "") +
+          (item.mot ? '<p class="historique-mot">' + escapeHtml(item.mot) + "</p>" : "");
+        container.appendChild(card);
+      });
+    })
+    .catch(function () {
+      // API indisponible : le message par défaut ("aucun ancien président") reste affiché.
+    });
+}
+
+function initialsFrom(text) {
+  if (!text) return "?";
+  var words = text.split(/\s+/).filter(function (w) { return w.length > 1; });
+  var letters = words.slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); });
+  return letters.join("") || text.charAt(0).toUpperCase();
+}
+
+function loadGouvernance() {
+  var container = document.getElementById("gouvernance-grid");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/gouvernance")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) return;
+      container.innerHTML = "";
+      items.forEach(function (item) {
+        var card = document.createElement("div");
+        card.className = "org-card";
+
+        var titulaireInner = item.titulaire_photo_url
+          ? '<img src="' + API_BASE + item.titulaire_photo_url + '" alt="' + escapeHtml(item.titulaire_nom || item.poste_title) + '">'
+          : initialsFrom(item.titulaire_nom || item.poste_title);
+
+        var adjointBadge = "";
+        if (item.adjoint_nom || item.adjoint_photo_url) {
+          var adjointInner = item.adjoint_photo_url
+            ? '<img src="' + API_BASE + item.adjoint_photo_url + '" alt="' + escapeHtml(item.adjoint_nom || "") + '">'
+            : initialsFrom(item.adjoint_nom);
+          adjointBadge = '<div class="org-adjoint-badge" title="Adjoint' + (item.adjoint_nom ? " : " + escapeHtml(item.adjoint_nom) : "") + '">' + adjointInner + "</div>";
+        }
+
+        card.innerHTML =
+          '<div class="org-avatar-wrap">' +
+          '<div class="org-avatar">' + titulaireInner + "</div>" +
+          adjointBadge +
+          "</div>" +
+          "<h4>" + escapeHtml(item.titulaire_nom || item.poste_title) + "</h4>" +
+          '<span>' + escapeHtml(item.poste_subtitle || item.poste_title) + "</span>";
+        container.appendChild(card);
+      });
+    })
+    .catch(function () {
+      // API indisponible : l'organigramme statique par défaut reste affiché.
+    });
+}
+
+function formatDateFr(isoDate) {
+  try {
+    var d = new Date(isoDate + "T00:00:00");
+    return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  } catch (e) {
+    return isoDate;
+  }
+}
+
+function escapeHtml(value) {
+  var div = document.createElement("div");
+  div.textContent = value == null ? "" : value;
+  return div.innerHTML;
+}

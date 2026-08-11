@@ -1,0 +1,35 @@
+{% extends "admin/base.html" %}
+{% block title %}Sondages{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Sondages du BEN</h1>
+  {% if admin.can_manage_sondages %}
+  <a href="/admin/sondages/gestion/liste" class="btn btn-outline">Gérer les sondages</a>
+  {% endif %}
+</div>
+
+{% if items %}
+<table>
+  <thead><tr><th>Titre</th><th>Statut</th><th>Votes</th><th>Actions</th></tr></thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.titre }}</td>
+      <td>
+        {% if item.is_ouvert %}<span class="pill pill-green">Ouvert</span>
+        {% else %}<span class="pill pill-muted">Clôturé</span>{% endif %}
+      </td>
+      <td>{{ item.votes|length }}</td>
+      <td class="actions-cell">
+        <a href="/admin/sondages/{{ item.id }}" class="btn btn-outline btn-sm">
+          {% if item.a_vote(admin.id) or not item.is_ouvert %}Voir les résultats{% else %}Voter{% endif %}
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun sondage pour le moment.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+{% block title %}Gestion des cartes de membres{% endblock %}
+{% block content %}
+<h1>Gestion des cartes de membres</h1>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Demandeur</th><th>Poste</th><th>Soumise le</th><th>Statut</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.full_name_snapshot }}</td>
+      <td>{{ item.user.poste_label }}</td>
+      <td>{{ item.date_soumission.strftime("%d/%m/%Y") }}</td>
+      <td>
+        {% if item.status == "disponible" %}<span class="pill pill-green">{{ item.status_label }}</span>
+        {% elif item.status == "rejetee" %}<span class="pill pill-muted">{{ item.status_label }}</span>
+        {% elif item.status == "soumise" %}<span class="pill pill-gold">{{ item.status_label }}</span>
+        {% else %}<span class="pill pill-gold">{{ item.status_label }}</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/cartes/{{ item.id }}" class="btn btn-outline btn-sm">Ouvrir</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune demande de carte de membre pour le moment.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "etablissement/base.html" %}
+{% block title %}Tableau de bord{% endblock %}
+{% block content %}
+<h1 style="margin-bottom:4px;">Bienvenue, {{ etablissement.nom }}</h1>
+<p style="color:var(--text-muted); margin-top:0;">Espace personnel de votre établissement affilié à la LECIM.</p>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:14px; margin:24px 0;">
+  <a href="/etablissement/cotisation" class="form-card" style="max-width:none; text-align:center; text-decoration:none;">
+    <div style="font-size:1.1rem; font-weight:700; color:var(--green-dark);">
+      {% if cotisation and cotisation.statut_paiement == "paye" %}À jour
+      {% elif cotisation %}{{ "{:,}".format(cotisation.montant_du - cotisation.montant_paye).replace(",", " ") }} FCFA restant
+      {% else %}Non renseignée{% endif %}
+    </div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Cotisation {{ annee }}</div>
+  </a>
+  <a href="/etablissement/resultats" class="form-card" style="max-width:none; text-align:center; text-decoration:none;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ counts.resultats }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Résultats publiés</div>
+  </a>
+  <a href="/etablissement/enseignants" class="form-card" style="max-width:none; text-align:center; text-decoration:none;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ counts.enseignants }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Enseignants au répertoire</div>
+  </a>
+  <a href="/etablissement/demandes" class="form-card" style="max-width:none; text-align:center; text-decoration:none;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ counts.demandes_ouvertes }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Demande(s) en attente de réponse</div>
+  </a>
+</div>
+
+<div class="empty-state">
+  Cet espace vous permet de suivre votre situation auprès du Bureau Exécutif National de la LECIM. Pour toute correction sur vos informations, utilisez l'espace « Mes demandes ».
+</div>
+{% endblock %}

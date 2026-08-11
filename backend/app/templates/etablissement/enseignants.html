@@ -1,0 +1,24 @@
+{% extends "etablissement/base.html" %}
+{% block title %}Mes enseignants{% endblock %}
+{% block content %}
+<h1>Enseignants de votre établissement</h1>
+<p style="color:var(--text-muted); margin-top:-14px;">Répertoire tenu par le Bureau Exécutif National. Pour toute correction, utilisez « Mes demandes ».</p>
+
+{% if items %}
+<table>
+  <thead><tr><th>Nom</th><th>Matière</th><th>Diplôme</th><th>En poste depuis</th></tr></thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.full_name }}</td>
+      <td>{{ item.matiere or "—" }}</td>
+      <td>{{ item.diplome or "—" }}</td>
+      <td>{{ item.date_debut.strftime("%d/%m/%Y") if item.date_debut else "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun enseignant enregistré pour votre établissement pour le moment.</div>
+{% endif %}
+{% endblock %}

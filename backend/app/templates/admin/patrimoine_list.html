@@ -1,0 +1,43 @@
+{% extends "admin/base.html" %}
+{% block title %}Patrimoine & équipement{% endblock %}
+{% block content %}
+<div style="display:flex; gap:10px; margin-bottom:20px;">
+  <a href="/admin/projets" class="btn btn-outline btn-sm">Projets</a>
+  <a href="/admin/patrimoine" class="btn btn-primary btn-sm">Patrimoine &amp; équipement</a>
+</div>
+<div class="topbar">
+  <h1 style="margin:0">Patrimoine &amp; équipement</h1>
+  <a href="/admin/patrimoine/new" class="btn btn-primary">+ Ajouter un bien</a>
+</div>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Désignation</th><th>Catégorie</th><th>Qté</th><th>État</th><th>Localisation</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.designation }}</td>
+      <td>{{ categories.get(item.categorie, item.categorie) }}</td>
+      <td>{{ item.quantite }}</td>
+      <td>
+        {% if item.etat == "bon" %}<span class="pill pill-green">{{ etats.get(item.etat) }}</span>
+        {% elif item.etat in ["mauvais", "hors_service"] %}<span class="pill pill-muted">{{ etats.get(item.etat) }}</span>
+        {% else %}<span class="pill pill-gold">{{ etats.get(item.etat) }}</span>{% endif %}
+      </td>
+      <td>{{ item.localisation or "—" }}</td>
+      <td class="actions-cell">
+        <a href="/admin/patrimoine/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/patrimoine/{{ item.id }}/delete" onsubmit="return confirm('Supprimer ce bien ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun bien enregistré pour le moment.</div>
+{% endif %}
+{% endblock %}

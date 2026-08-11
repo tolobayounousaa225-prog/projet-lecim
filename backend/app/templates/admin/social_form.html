@@ -1,0 +1,27 @@
+{% extends "admin/base.html" %}
+{% block title %}Nouvelle demande d'assistance{% endblock %}
+{% block content %}
+<h1>Nouvelle demande d'assistance</h1>
+<div class="form-card">
+  <form method="post" action="/admin/social/new">
+    <div class="form-group">
+      <label for="nom_beneficiaire">Nom du bénéficiaire</label>
+      <input type="text" id="nom_beneficiaire" name="nom_beneficiaire" required>
+    </div>
+    <div class="form-group">
+      <label for="structure">Structure / établissement lié (optionnel)</label>
+      <input type="text" id="structure" name="structure">
+    </div>
+    <div class="form-group">
+      <label for="nature_besoin">Nature du besoin</label>
+      <input type="text" id="nature_besoin" name="nature_besoin" required placeholder="Ex : soutien financier, médical, matériel scolaire...">
+    </div>
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea id="description" name="description"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/social" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "admin/base.html" %}
+{% block title %}Demande de {{ carte.full_name_snapshot }}{% endblock %}
+{% block content %}
+<p style="margin-top:0;"><a href="/admin/cartes">&larr; Retour à la liste</a></p>
+<div class="topbar">
+  <h1 style="margin:0">{{ carte.full_name_snapshot }}</h1>
+  {% if carte.status == "disponible" %}<span class="pill pill-green">{{ carte.status_label }}</span>
+  {% elif carte.status == "rejetee" %}<span class="pill pill-muted">{{ carte.status_label }}</span>
+  {% else %}<span class="pill pill-gold">{{ carte.status_label }}</span>{% endif %}
+</div>
+
+<div class="form-card" style="max-width:560px;">
+  <p><strong>Poste :</strong> {{ carte.user.poste_label }}</p>
+  <p><strong>E-mail :</strong> {{ carte.user.email }}</p>
+  {% if carte.date_naissance %}<p><strong>Date de naissance :</strong> {{ carte.date_naissance.strftime("%d/%m/%Y") }}</p>{% endif %}
+  {% if carte.cni_numero %}<p><strong>N° CNI :</strong> {{ carte.cni_numero }}</p>{% endif %}
+  {% if carte.ville %}<p><strong>Ville :</strong> {{ carte.ville }}</p>{% endif %}
+  {% if carte.adresse %}<p><strong>Adresse :</strong> {{ carte.adresse }}</p>{% endif %}
+  {% if carte.telephone %}<p><strong>Téléphone :</strong> {{ carte.telephone }}</p>{% endif %}
+  {% if carte.email_personnel %}<p><strong>E-mail personnel :</strong> {{ carte.email_personnel }}</p>{% endif %}
+  {% if carte.contact_urgence_nom %}<p><strong>Contact d'urgence :</strong> {{ carte.contact_urgence_nom }}{% if carte.contact_urgence_telephone %} — {{ carte.contact_urgence_telephone }}{% endif %}</p>{% endif %}
+  {% if carte.numero_carte %}<p><strong>N° de carte :</strong> {{ carte.numero_carte }}</p>{% endif %}
+  {% if carte.date_validite %}<p><strong>Valable jusqu'au :</strong> {{ carte.date_validite.strftime("%d/%m/%Y") }}</p>{% endif %}
+  {% if carte.photo_path %}
+  <p><strong>Photo :</strong></p>
+  <img src="/admin/cartes/{{ carte.id }}/photo" alt="Photo" style="width:100px; border-radius:6px; border:1px solid var(--border);" onerror="this.style.display='none'">
+  {% endif %}
+  <p style="color:var(--text-muted); font-size:0.85rem;">Demande soumise le {{ carte.date_soumission.strftime("%d/%m/%Y à %H:%M") }}</p>
+
+  {% if carte.status == "rejetee" and carte.commentaire_rejet %}
+  <div class="error-box">Motif du rejet : {{ carte.commentaire_rejet }}</div>
+  {% endif %}
+
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:20px;">
+    {% if carte.status in ["validee", "imprimee", "disponible"] %}
+    <a href="/admin/cartes/{{ carte.id }}/pdf" class="btn btn-gold" target="_blank">Télécharger le PDF de la carte</a>
+    {% endif %}
+
+    {% if carte.status == "soumise" %}
+    <form method="post" action="/admin/cartes/{{ carte.id }}/valider">
+      <button type="submit" class="btn btn-primary">Valider la demande</button>
+    </form>
+    {% endif %}
+
+    {% if carte.status == "validee" %}
+    <form method="post" action="/admin/cartes/{{ carte.id }}/imprimer">
+      <button type="submit" class="btn btn-primary">Marquer comme imprimée</button>
+    </form>
+    {% endif %}
+
+    {% if carte.status == "imprimee" %}
+    <form method="post" action="/admin/cartes/{{ carte.id }}/disponible">
+      <button type="submit" class="btn btn-primary">Marquer comme disponible</button>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if carte.status == "soumise" %}
+  <div class="form-card" style="margin-top:20px; background:var(--cream);">
+    <strong style="color:var(--green-dark)">Rejeter la demande</strong>
+    <form method="post" action="/admin/cartes/{{ carte.id }}/rejeter" style="margin-top:10px;">
+      <div class="form-group">
+        <label for="commentaire_rejet">Motif (visible par le demandeur)</label>
+        <textarea id="commentaire_rejet" name="commentaire_rejet" placeholder="Ex : photo illisible, merci d'en soumettre une autre"></textarea>
+      </div>
+      <button type="submit" class="btn btn-danger">Rejeter la demande</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

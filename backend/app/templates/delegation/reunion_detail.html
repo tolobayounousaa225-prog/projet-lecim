@@ -1,0 +1,46 @@
+{% extends "delegation/base.html" %}
+{% block title %}{{ reunion.title }}{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1 style="margin:0">{{ reunion.title }}</h1>
+    <p style="color:var(--text-muted); margin:4px 0 0;">
+      {{ reunion.date.strftime("%d/%m/%Y") }}{% if reunion.lieu %} — {{ reunion.lieu }}{% endif %}
+      {% if reunion.reminder_sent %}<span class="pill pill-green" style="margin-left:8px;">Rappel envoyé</span>{% endif %}
+    </p>
+  </div>
+  <form method="post" action="/delegation/reunions/{{ reunion.id }}/rappel" onsubmit="return confirm('Envoyer un rappel par e-mail aux membres du comité local dès maintenant ?');">
+    <button type="submit" class="btn btn-outline">Envoyer un rappel</button>
+  </form>
+</div>
+
+{% if reunion.ordre_du_jour %}
+<div class="form-card" style="max-width:none; margin-bottom:26px;">
+  <strong style="color:var(--green-dark)">Ordre du jour</strong>
+  <p style="color:var(--text-muted); white-space:pre-line; margin-top:10px;">{{ reunion.ordre_du_jour }}</p>
+</div>
+{% endif %}
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin-bottom:14px;">Présence des membres</h2>
+{% if presences %}
+<form method="post" action="/delegation/reunions/{{ reunion.id }}/presence">
+  <table style="margin-bottom:16px;">
+    <thead>
+      <tr><th style="width:60px">Présent</th><th>Nom</th><th>Fonction locale</th></tr>
+    </thead>
+    <tbody>
+      {% for p in presences %}
+      <tr>
+        <td><input type="checkbox" name="present" value="{{ p.membre_id }}" {% if p.present %}checked{% endif %}></td>
+        <td>{{ p.membre.full_name }}</td>
+        <td>{{ p.membre.poste_label }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <button type="submit" class="btn btn-primary">Enregistrer la présence</button>
+</form>
+{% else %}
+<div class="empty-state">Le comité local est vide. <a href="/delegation/membres/new">Ajoutez des membres</a> pour enregistrer leur présence.</div>
+{% endif %}
+{% endblock %}

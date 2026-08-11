@@ -1,0 +1,92 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ delegation.nom }}{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1 style="margin:0">{{ delegation.nom }}</h1>
+    <p style="color:var(--text-muted); margin:4px 0 0;">{{ delegation.region or "Région non précisée" }}</p>
+  </div>
+  <a href="/admin/delegations/{{ delegation.id }}/edit" class="btn btn-outline">Modifier la délégation</a>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:14px; margin-bottom:30px;">
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ reunions_count }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Réunions locales</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ membres_count }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Membres du comité local</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ etablissements|length }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Établissements rattachés</div>
+  </div>
+</div>
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin-bottom:14px;">Comptes d'accès de la délégation</h2>
+{% if comptes %}
+<table style="margin-bottom:20px;">
+  <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle local</th><th>Actions</th></tr></thead>
+  <tbody>
+    {% for c in comptes %}
+    <tr>
+      <td>{{ c.full_name }}</td>
+      <td>{{ c.email }}</td>
+      <td>{{ c.role_local or "—" }}</td>
+      <td class="actions-cell">
+        <form method="post" action="/admin/delegations/{{ delegation.id }}/users/{{ c.id }}/delete" onsubmit="return confirm('Révoquer l\'accès de {{ c.full_name }} ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Révoquer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state" style="margin-bottom:20px;">Aucun compte créé pour cette délégation.</div>
+{% endif %}
+
+{% if error %}<div class="error-box" style="margin-bottom:16px;">{{ error }}</div>{% endif %}
+
+<div class="form-card" style="max-width:520px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:14px;">Créer un accès pour cette délégation</strong>
+  <form method="post" action="/admin/delegations/{{ delegation.id }}/users/new">
+    <div class="form-group">
+      <label for="full_name">Nom complet</label>
+      <input type="text" id="full_name" name="full_name" required>
+    </div>
+    <div class="form-group">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+    <div class="form-group">
+      <label for="password">Mot de passe</label>
+      <input type="password" id="password" name="password" required>
+    </div>
+    <div class="form-group">
+      <label for="role_local">Rôle au sein du comité local</label>
+      <input type="text" id="role_local" name="role_local" placeholder="Ex. Secrétaire de la délégation">
+    </div>
+    <button type="submit" class="btn btn-primary">Créer l'accès</button>
+  </form>
+</div>
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin:30px 0 14px;">Établissements rattachés</h2>
+{% if etablissements %}
+<table>
+  <thead><tr><th>Nom</th><th>Statut</th><th>Bureau local</th></tr></thead>
+  <tbody>
+    {% for e in etablissements %}
+    <tr>
+      <td>{{ e.nom }}</td>
+      <td>{{ e.statut_label }}</td>
+      <td>{{ e.bureau_local or "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun établissement rattaché à cette délégation pour le moment.</div>
+{% endif %}
+{% endblock %}

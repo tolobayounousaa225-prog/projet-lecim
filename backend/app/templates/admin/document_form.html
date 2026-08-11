@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+{% block title %}Publier un document{% endblock %}
+{% block content %}
+<h1>Publier un document</h1>
+<div class="form-card">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <form method="post" action="/admin/documents/new" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="title">Titre</label>
+      <input type="text" id="title" name="title" required placeholder="Ex : PV — Réunion du Bureau Exécutif National du ...">
+    </div>
+    <div class="form-group">
+      <label for="category">Catégorie</label>
+      <select id="category" name="category">
+        <option value="pv">Procès-verbal (PV)</option>
+        <option value="rapport">Rapport</option>
+        <option value="autre">Autre document</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="reunion_id">Réunion liée (optionnel)</label>
+      <select id="reunion_id" name="reunion_id">
+        <option value="">— Aucune —</option>
+        {% for r in reunions %}
+        <option value="{{ r.id }}" {% if selected_reunion_id and r.id == selected_reunion_id %}selected{% endif %}>{{ r.date.strftime("%d/%m/%Y") }} — {{ r.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="file">Fichier (PDF, Word, ODT — 15 Mo max)</label>
+      <input type="file" id="file" name="file" required accept=".pdf,.doc,.docx,.odt">
+    </div>
+    <button type="submit" class="btn btn-primary">Publier</button>
+    <a href="/admin/documents" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

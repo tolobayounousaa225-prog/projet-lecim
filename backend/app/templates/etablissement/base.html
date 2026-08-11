@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Espace établissement{% endblock %} — LECIM</title>
+<link rel="icon" type="image/jpeg" href="/static/img/logo.jpg">
+<link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+<div class="admin-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="/static/img/logo.jpg" alt="Logo LECIM">
+      <h2>LECIM</h2>
+    </div>
+    <span class="tag">{{ etablissement.nom }}</span>
+    <nav>
+      <a href="/etablissement" class="{{ 'active' if active == 'dashboard' else '' }}">Tableau de bord</a>
+      <a href="/etablissement/cotisation" class="{{ 'active' if active == 'cotisation' else '' }}">Ma cotisation</a>
+      <a href="/etablissement/resultats" class="{{ 'active' if active == 'resultats' else '' }}">Résultats aux examens</a>
+      <a href="/etablissement/enseignants" class="{{ 'active' if active == 'enseignants' else '' }}">Mes enseignants</a>
+      <a href="/etablissement/demandes" class="{{ 'active' if active == 'demandes' else '' }}">Mes demandes</a>
+    </nav>
+    <div class="logout">
+      <a href="/etablissement/logout">Se déconnecter</a>
+    </div>
+  </aside>
+  <main class="main">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

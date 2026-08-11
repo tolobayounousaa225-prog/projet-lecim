@@ -1,0 +1,86 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouvel" }} accès{% endblock %}
+{% block content %}
+<h1>{{ "Modifier l'accès" if item else "Créer un accès" }}</h1>
+<div class="form-card" style="max-width:640px;">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <form method="post" action="{{ '/admin/users/' ~ item.id ~ '/edit' if item else '/admin/users/new' }}">
+    <div class="form-group">
+      <label for="full_name">Nom complet</label>
+      <input type="text" id="full_name" name="full_name" required value="{{ item.full_name if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="email">E-mail (identifiant de connexion)</label>
+      <input type="email" id="email" name="email" required value="{{ item.email if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="password">Mot de passe {% if item %}(laisser vide pour ne pas changer){% endif %}</label>
+      <input type="password" id="password" name="password" {{ "required" if not item else "" }} minlength="6">
+    </div>
+    <div class="form-group">
+      <label for="poste">Poste au Bureau Exécutif National</label>
+      <select id="poste" name="poste" onchange="applyPosteDefaults()">
+        <option value="">— Aucun (accès technique uniquement) —</option>
+        {% for key, info in postes.items() %}
+        <option value="{{ key }}" {% if item and item.poste == key %}selected{% endif %}>{{ info.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_adjoint" name="is_adjoint" value="true" {% if item and item.is_adjoint %}checked{% endif %}>
+      <label for="is_adjoint" style="margin:0">Cette personne est l'adjoint(e) du poste sélectionné</label>
+    </div>
+    <div class="form-group">
+      <label for="access_level">Niveau d'accès</label>
+      <select id="access_level" name="access_level" onchange="toggleModulesBox()">
+        <option value="bureau" {% if not item or item.access_level == 'bureau' %}selected{% endif %}>Membre du bureau — voit uniquement les fonctionnalités cochées ci-dessous</option>
+        <option value="admin" {% if item and item.access_level == 'admin' %}selected{% endif %}>Administrateur — accès complet à tout, y compris la gestion des comptes</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="modules-box">
+      <label>Fonctionnalités visibles pour ce compte</label>
+      <p class="form-note" style="margin-top:0;">
+        Cochez uniquement ce qui concerne directement cette personne — rien n'est
+        activé par défaut. Choisir un poste ci-dessus suggère une sélection de départ,
+        que vous pouvez librement ajuster avant d'enregistrer.
+      </p>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+        {% for key, label in modules.items() %}
+        <label style="display:flex; align-items:center; gap:8px; font-weight:400; font-size:0.92rem;">
+          <input type="checkbox" name="modules" value="{{ key }}" style="width:auto;"
+                 {% if item and key in item.allowed_modules_list %}checked{% endif %}>
+          {{ label }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div id="modules-admin-note" class="form-note" style="display:none;">
+      Un compte Administrateur a accès à toutes les fonctionnalités — la sélection ci-dessus n'est pas nécessaire.
+    </div>
+
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/users" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+
+<script>
+var DEFAULTS_BY_POSTE = {{ defaults_by_poste | tojson }};
+
+function applyPosteDefaults() {
+  var poste = document.getElementById("poste").value;
+  var defaults = DEFAULTS_BY_POSTE[poste] || [];
+  document.querySelectorAll('input[name="modules"]').forEach(function (box) {
+    box.checked = defaults.indexOf(box.value) !== -1;
+  });
+}
+
+function toggleModulesBox() {
+  var isAdmin = document.getElementById("access_level").value === "admin";
+  document.getElementById("modules-box").style.display = isAdmin ? "none" : "block";
+  document.getElementById("modules-admin-note").style.display = isAdmin ? "block" : "none";
+}
+
+toggleModulesBox();
+</script>
+{% endblock %}

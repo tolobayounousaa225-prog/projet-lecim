@@ -1,0 +1,69 @@
+{% extends "admin/base.html" %}
+{% block title %}Tableau de bord{% endblock %}
+{% block content %}
+<h1>Bienvenue, {{ admin.full_name }}</h1>
+<p style="color:var(--text-muted); margin-top:-14px; margin-bottom:26px;">{{ admin.poste_label }}</p>
+
+{% if unread_notifications %}
+<div class="form-card" style="max-width:none; margin-bottom:24px; border-left:4px solid var(--gold);">
+  <strong style="color:var(--green-dark)">🔔 {{ unread_notifications|length }} nouvelle(s) notification(s)</strong>
+  <ul style="margin:12px 0 0; padding-left:20px; color:var(--text-dark); font-size:0.9rem; line-height:1.8;">
+    {% for n in unread_notifications[:5] %}
+    <li>{{ n.message }} <span style="color:var(--text-muted); font-size:0.8rem;">— {{ n.created_at.strftime("%d/%m/%Y %H:%M") }}</span></li>
+    {% endfor %}
+  </ul>
+  <p style="margin-top:10px;"><a href="/admin/notifications">Voir toutes les notifications →</a></p>
+</div>
+{% endif %}
+
+{% if ma_carte %}
+<div class="form-card" style="max-width:none; margin-bottom:24px;">
+  <strong style="color:var(--green-dark)">Ma carte de membre</strong>
+  <p style="color:var(--text-muted); margin:8px 0 0;">Statut : {{ ma_carte.status_label }}</p>
+  <p style="margin-top:8px;"><a href="/admin/cartes/mine">Voir le détail →</a></p>
+</div>
+{% endif %}
+
+{% if admin.attributions %}
+<div class="form-card" style="max-width:none; margin-bottom:30px;">
+  <strong style="color:var(--green-dark)">Vos attributions</strong>
+  <ul style="margin:12px 0 0; padding-left:20px; color:var(--text-muted); font-size:0.9rem; line-height:1.8;">
+    {% for item in admin.attributions %}
+    <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% if counts.reunions is defined or counts.membres is defined or counts.documents is defined or counts.photos is defined %}
+<div class="stats-grid">
+  {% if counts.reunions is defined %}<div class="stat-box"><strong>{{ counts.reunions }}</strong><span>Réunions enregistrées</span></div>{% endif %}
+  {% if counts.membres is defined %}<div class="stat-box"><strong>{{ counts.membres }}</strong><span>Membres au répertoire</span></div>{% endif %}
+  {% if counts.documents is defined %}<div class="stat-box"><strong>{{ counts.documents }}</strong><span>Documents &amp; PV</span></div>{% endif %}
+  {% if counts.photos is defined %}<div class="stat-box"><strong>{{ counts.photos }}</strong><span>Photos publiées</span></div>{% endif %}
+</div>
+{% endif %}
+
+{% if counts.news is defined or counts.activities is defined or counts.messages is defined %}
+<div class="stats-grid">
+  {% if counts.news is defined %}<div class="stat-box"><strong>{{ counts.news }}</strong><span>Actualités publiées</span></div>{% endif %}
+  {% if counts.activities is defined %}<div class="stat-box"><strong>{{ counts.activities }}</strong><span>Activités programmées</span></div>{% endif %}
+  {% if counts.messages is defined %}<div class="stat-box"><strong>{{ counts.messages }}</strong><span>Messages reçus</span></div>{% endif %}
+  {% if counts.unread_messages is defined %}<div class="stat-box"><strong>{{ counts.unread_messages }}</strong><span>Messages non lus</span></div>{% endif %}
+</div>
+{% endif %}
+
+{% if admin.can_manage_finances %}
+<p style="color:var(--text-muted)"><a href="/admin/finances">Ouvrir l'espace Finances →</a></p>
+{% endif %}
+
+{% if admin.is_admin %}
+<p style="color:var(--text-muted)">{{ counts.users }} compte(s) créé(s) sur la plateforme. <a href="/admin/users">Gérer les comptes &amp; accès →</a></p>
+{% endif %}
+
+{% if not has_any_module %}
+<div class="empty-state">Aucun module métier ne vous a encore été attribué. Vous pouvez toujours consulter vos notifications et gérer votre carte de membre depuis le menu — contactez l'administrateur pour le reste.</div>
+{% else %}
+<p style="color:var(--text-muted)">Utilisez le menu à gauche pour accéder aux fonctionnalités qui vous ont été attribuées.</p>
+{% endif %}
+{% endblock %}

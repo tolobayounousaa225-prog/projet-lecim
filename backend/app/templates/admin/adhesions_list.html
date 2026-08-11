@@ -1,0 +1,53 @@
+{% extends "admin/base.html" %}
+{% block title %}Droits d'adhésion{% endblock %}
+{% block content %}
+<h1>Droits d'adhésion</h1>
+<p style="margin-top:-14px;"><a href="/admin/finances">&larr; Retour aux finances</a> — montant statutaire : <strong>{{ "{:,}".format(montant).replace(",", " ") }} FCFA</strong> par établissement, versé une fois.</p>
+
+<div class="form-card" style="max-width:none; margin-bottom:26px;">
+  <strong style="color:var(--green-dark)">Enregistrer un paiement</strong>
+  <form method="post" action="/admin/adhesions/new" style="margin-top:14px;">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="etablissement_id">Établissement</label>
+        <select id="etablissement_id" name="etablissement_id" required>
+          <option value="">— Sélectionner —</option>
+          {% for e in etablissements %}
+          {% if e.id not in paid_ids %}
+          <option value="{{ e.id }}">{{ e.nom }}</option>
+          {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="date_paiement">Date de paiement</label>
+        <input type="date" id="date_paiement" name="date_paiement" required>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer le paiement</button>
+  </form>
+</div>
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin-bottom:14px;">Adhésions réglées</h2>
+{% if adhesions %}
+<table>
+  <thead><tr><th>Établissement</th><th>Montant</th><th>Date de paiement</th><th>Actions</th></tr></thead>
+  <tbody>
+    {% for a in adhesions %}
+    <tr>
+      <td>{{ a.etablissement.nom }}</td>
+      <td>{{ "{:,}".format(a.montant).replace(",", " ") }} FCFA</td>
+      <td>{{ a.date_paiement.strftime("%d/%m/%Y") }}</td>
+      <td class="actions-cell">
+        <form method="post" action="/admin/adhesions/{{ a.id }}/delete" onsubmit="return confirm('Annuler ce paiement d\'adhésion ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Annuler</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune adhésion réglée pour le moment.</div>
+{% endif %}
+{% endblock %}

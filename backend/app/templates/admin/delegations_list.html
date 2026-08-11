@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+{% block title %}Délégations régionales{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Délégations régionales</h1>
+  <a href="/admin/delegations/new" class="btn btn-primary">+ Créer une délégation</a>
+</div>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Nom</th><th>Région</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.nom }}</td>
+      <td>{{ item.region or "—" }}</td>
+      <td class="actions-cell">
+        <a href="/admin/delegations/{{ item.id }}" class="btn btn-outline btn-sm">Ouvrir</a>
+        <a href="/admin/delegations/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/delegations/{{ item.id }}/delete" onsubmit="return confirm('Supprimer la délégation {{ item.nom }} et tous ses comptes rattachés ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune délégation régionale enregistrée. Cliquez sur « Créer une délégation » pour commencer.</div>
+{% endif %}
+{% endblock %}

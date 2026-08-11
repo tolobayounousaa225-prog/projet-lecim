@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+backend/venv/
+backend/.venv/
+
+# Environnement (secrets) — garder uniquement .env.example en dépôt
+backend/.env
+
+# Base de données locale et fichiers générés
+backend/lecim_dev.db
+backend/backups/
+backend/uploads/
+
+# Éditeurs / OS
+.DS_Store
+Thumbs.db
+
+# Configuration locale de l'outil Claude Code (spécifique à la machine)
+.claude/
+
+# Fichier dupliqué non utilisé (original de assets/img/logo.jpg)
+assets/img/WhatsApp Image*.jpeg

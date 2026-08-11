@@ -1,0 +1,44 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouveau" }} membre{% endblock %}
+{% block content %}
+<h1>{{ "Modifier le membre" if item else "Ajouter un membre" }}</h1>
+<div class="form-card">
+  <form method="post" action="{{ '/admin/membres/' ~ item.id ~ '/edit' if item else '/admin/membres/new' }}">
+    <div class="form-group">
+      <label for="full_name">Nom complet</label>
+      <input type="text" id="full_name" name="full_name" required value="{{ item.full_name if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="poste">Poste occupé au sein du BEN</label>
+      <select id="poste" name="poste">
+        <option value="">— Non renseigné —</option>
+        {% for key, info in postes.items() %}
+        <option value="{{ key }}" {% if item and item.poste == key %}selected{% endif %}>{{ info.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_adjoint" name="is_adjoint" value="true" {% if item and item.is_adjoint %}checked{% endif %}>
+      <label for="is_adjoint" style="margin:0">Cette personne est l'adjoint(e) du poste sélectionné</label>
+    </div>
+    <div class="form-group">
+      <label for="phone">Téléphone</label>
+      <input type="text" id="phone" name="phone" value="{{ item.phone if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email" value="{{ item.email if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="mandat_debut">Début du mandat</label>
+      <input type="date" id="mandat_debut" name="mandat_debut" value="{{ item.mandat_debut.isoformat() if item and item.mandat_debut else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="mandat_fin">Fin du mandat (pour le suivi des échéances électives)</label>
+      <input type="date" id="mandat_fin" name="mandat_fin" value="{{ item.mandat_fin.isoformat() if item and item.mandat_fin else '' }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/membres" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

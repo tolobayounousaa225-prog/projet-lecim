@@ -1,0 +1,36 @@
+{% extends "admin/base.html" %}
+{% block title %}Affaires sociales{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Affaires sociales &amp; solidarité</h1>
+  <a href="/admin/social/new" class="btn btn-primary">+ Nouvelle demande</a>
+</div>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Bénéficiaire</th><th>Structure</th><th>Besoin</th><th>Soumise le</th><th>Statut</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.nom_beneficiaire }}</td>
+      <td>{{ item.structure or "—" }}</td>
+      <td>{{ item.nature_besoin }}</td>
+      <td>{{ item.date_soumission.strftime("%d/%m/%Y") }}</td>
+      <td>
+        {% if item.statut == "traitee" %}<span class="pill pill-green">{{ statuts.get(item.statut) }}</span>
+        {% elif item.statut == "rejetee" %}<span class="pill pill-muted">{{ statuts.get(item.statut) }}</span>
+        {% else %}<span class="pill pill-gold">{{ statuts.get(item.statut) }}</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/social/{{ item.id }}" class="btn btn-outline btn-sm">Ouvrir</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune demande d'assistance pour le moment.</div>
+{% endif %}
+{% endblock %}

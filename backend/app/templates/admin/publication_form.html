@@ -1,0 +1,40 @@
+{% extends "admin/base.html" %}
+{% block title %}Publier un document{% endblock %}
+{% block content %}
+<h1>Publier un document sur le site</h1>
+<div class="form-card">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <form method="post" action="/admin/publications/new" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="title">Titre</label>
+      <input type="text" id="title" name="title" required placeholder="Ex : Règlement Intérieur de la LECIM">
+    </div>
+    <div class="form-group">
+      <label for="category">Catégorie</label>
+      <select id="category" name="category">
+        {% for key, label in categories.items() %}
+        <option value="{{ key }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="description">Description (optionnel)</label>
+      <textarea id="description" name="description"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="published_at">Date de publication</label>
+      <input type="date" id="published_at" name="published_at" required value="{{ today.isoformat() }}">
+    </div>
+    <div class="form-group">
+      <label for="file">Fichier (PDF, Word, image — 15 Mo max)</label>
+      <input type="file" id="file" name="file" required accept=".pdf,.doc,.docx,.odt,.jpg,.jpeg,.png,.webp,.gif">
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_published" name="is_published" value="true" checked>
+      <label for="is_published" style="margin:0">Visible immédiatement sur le site</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Publier</button>
+    <a href="/admin/publications" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}
