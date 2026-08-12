@@ -277,13 +277,16 @@ def delegation_cotisations(
     from ..reports import current_annee_scolaire
 
     annee = current_annee_scolaire()
+    cotisations_by_etab = {
+        c.etablissement_id: c
+        for c in db.query(models.Cotisation).filter(
+            models.Cotisation.etablissement_id.in_([e.id for e in etablissements]),
+            models.Cotisation.annee_scolaire == annee,
+        )
+    }
     rows = []
     for e in etablissements:
-        cotisation = (
-            db.query(models.Cotisation)
-            .filter(models.Cotisation.etablissement_id == e.id, models.Cotisation.annee_scolaire == annee)
-            .first()
-        )
+        cotisation = cotisations_by_etab.get(e.id)
         rule = cotisation_rule(e.statut)
         rows.append(
             {
@@ -298,3 +301,55 @@ def delegation_cotisations(
         "delegation/cotisations.html",
         {"user": user, "delegation": user.delegation, "rows": rows, "annee": annee, "active": "cotisations"},
     )
+
+
+# ---------- Annonces ciblées vers les établissements de la délégation ----------
+
+@router.get("/delegation/annonces")
+def delegation_annonces_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_login_web),
+):
+    items = (
+        db.query(models.AnnonceDelegation)
+        .filter(models.AnnonceDelegation.delegation_id == user.delegation_id)
+        .order_by(models.AnnonceDelegation.created_at.desc())
+        .all()
+    )
+    return templates.TemplateResponse(
+        request,
+        "delegation/annonces_list.html",
+        {"user": user, "delegation": user.delegation, "items": items, "active": "annonces"},
+    )
+
+
+@router.post("/delegation/annonces/new")
+def delegation_annonces_create(
+    titre: str = Form(...),
+    message: str = Form(...),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_login_web),
+):
+    annonce = models.AnnonceDelegation(
+        delegation_id=user.delegation_id,
+        titre=titre,
+        message=message,
+        created_by_id=user.id,
+    )
+    db.add(annonce)
+    db.commit()
+    return RedirectResponse(url="/delegation/annonces", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/delegation/annonces/{annonce_id}/delete")
+def delegation_annonces_delete(
+    annonce_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_login_web),
+):
+    annonce = db.get(models.AnnonceDelegation, annonce_id)
+    if annonce and annonce.delegation_id == user.delegation_id:
+        db.delete(annonce)
+        db.commit()
+    return RedirectResponse(url="/delegation/annonces", status_code=status.HTTP_303_SEE_OTHER)

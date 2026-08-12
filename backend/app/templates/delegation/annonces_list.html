@@ -1,0 +1,43 @@
+{% extends "delegation/base.html" %}
+{% block title %}Annonces{% endblock %}
+{% block content %}
+<h1>Annonces vers les établissements</h1>
+<p style="color:var(--text-muted); margin-top:-14px;">Visible uniquement par les établissements affiliés rattachés à votre délégation.</p>
+
+<div class="form-card" style="max-width:560px; margin-bottom:24px;">
+  <strong style="display:block; margin-bottom:14px;">Publier une annonce</strong>
+  <form method="post" action="/delegation/annonces/new">
+    <div class="form-group">
+      <label for="titre">Titre</label>
+      <input type="text" id="titre" name="titre" required>
+    </div>
+    <div class="form-group">
+      <label for="message">Message</label>
+      <textarea id="message" name="message" required rows="5"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Publier</button>
+  </form>
+</div>
+
+{% if items %}
+<table>
+  <thead><tr><th>Titre</th><th>Message</th><th>Publiée le</th><th></th></tr></thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.titre }}</td>
+      <td style="max-width:320px;">{{ item.message }}</td>
+      <td>{{ item.created_at.strftime("%d/%m/%Y") }}</td>
+      <td>
+        <form method="post" action="/delegation/annonces/{{ item.id }}/delete" onsubmit="return confirm('Retirer cette annonce ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Retirer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune annonce publiée pour le moment.</div>
+{% endif %}
+{% endblock %}

@@ -1,14 +1,14 @@
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, Request, status
+from fastapi import APIRouter, Depends, Form, Request, Response, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from .. import audit, models
 from ..database import get_db
 from ..deps import require_resultats_examens_access_web
-from ..reports import current_annee_scolaire
+from ..reports import current_annee_scolaire, export_resultats_csv
 
 router = APIRouter(prefix="/admin/resultats-examens", tags=["admin-resultats-examens"])
 
@@ -24,6 +24,7 @@ def resultats_list(
 ):
     items = (
         db.query(models.ResultatExamen)
+        .options(joinedload(models.ResultatExamen.etablissement))
         .order_by(models.ResultatExamen.annee_scolaire.desc(), models.ResultatExamen.id.desc())
         .all()
     )
@@ -31,6 +32,19 @@ def resultats_list(
         request,
         "admin/resultats_examens_list.html",
         {"admin": user, "items": items, "active": "resultats_examens"},
+    )
+
+
+@router.get("/export.csv")
+def resultats_export_csv(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_resultats_examens_access_web),
+):
+    csv_content = export_resultats_csv(db)
+    return Response(
+        content="﻿" + csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="resultats_examens.csv"'},
     )
 
 

@@ -3,7 +3,10 @@
 {% block content %}
 <div class="topbar">
   <h1 style="margin:0">Résultats aux examens scolaires islamiques</h1>
-  <a href="/admin/resultats-examens/new" class="btn btn-primary">+ Saisir un résultat</a>
+  <div style="display:flex; gap:8px;">
+    <a href="/admin/resultats-examens/export.csv" class="btn btn-outline">Exporter en CSV</a>
+    <a href="/admin/resultats-examens/new" class="btn btn-primary">+ Saisir un résultat</a>
+  </div>
 </div>
 <p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">Visible par tous les visiteurs sur la page "Documents" du site, une fois publié.</p>
 

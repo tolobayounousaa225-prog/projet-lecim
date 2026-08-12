@@ -1,14 +1,14 @@
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, Request, status
+from fastapi import APIRouter, Depends, Form, Request, Response, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from .. import audit, models
 from ..database import get_db
 from ..deps import require_effectifs_access_web
-from ..reports import current_annee_scolaire
+from ..reports import current_annee_scolaire, export_effectifs_csv
 
 router = APIRouter(prefix="/admin/effectifs", tags=["admin-effectifs"])
 
@@ -24,6 +24,7 @@ def effectifs_list(
 ):
     items = (
         db.query(models.Effectif)
+        .options(joinedload(models.Effectif.etablissement))
         .order_by(models.Effectif.annee_scolaire.desc(), models.Effectif.id.desc())
         .all()
     )
@@ -31,6 +32,19 @@ def effectifs_list(
         request,
         "admin/effectifs_list.html",
         {"admin": user, "items": items, "active": "effectifs"},
+    )
+
+
+@router.get("/export.csv")
+def effectifs_export_csv(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_effectifs_access_web),
+):
+    csv_content = export_effectifs_csv(db)
+    return Response(
+        content="﻿" + csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="effectifs.csv"'},
     )
 
 

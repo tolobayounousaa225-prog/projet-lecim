@@ -25,6 +25,7 @@ from .routers import (
     admin_calendar,
     admin_cartes,
     admin_cartes_scolaires,
+    admin_connexions,
     admin_delegations,
     admin_effectifs,
     admin_enseignants,
@@ -34,6 +35,7 @@ from .routers import (
     admin_finances,
     admin_gouvernance,
     admin_historique,
+    admin_messagerie,
     admin_partenaires,
     admin_projets,
     admin_publications,
@@ -56,6 +58,7 @@ from .routers import (
     resultats_examens,
     site_content,
     verify,
+    verify_attestations,
     verify_eleve,
 )
 
@@ -174,6 +177,7 @@ app.include_router(admin_social.router)
 app.include_router(admin_publications.router)
 app.include_router(verify.router)
 app.include_router(verify_eleve.router)
+app.include_router(verify_attestations.router)
 app.include_router(admin_calendar.router)
 app.include_router(admin_delegations.router)
 app.include_router(admin_executif.router)
@@ -190,6 +194,8 @@ app.include_router(site_content.router)
 app.include_router(admin_sondages.router)
 app.include_router(delegation_portal.router)
 app.include_router(admin_etablissement_portail.router)
+app.include_router(admin_messagerie.router)
+app.include_router(admin_connexions.router)
 app.include_router(etablissement_portal.router)
 
 

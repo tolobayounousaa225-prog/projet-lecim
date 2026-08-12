@@ -6,6 +6,21 @@ from jose import JWTError, jwt
 from .config import settings
 
 
+PASSWORD_MIN_LENGTH = 8
+
+
+def password_policy_error(password: str) -> str | None:
+    """Retourne un message d'erreur si le mot de passe ne respecte pas la politique
+    minimale (longueur, présence d'au moins une lettre et un chiffre), sinon None."""
+    if len(password) < PASSWORD_MIN_LENGTH:
+        return f"Le mot de passe doit contenir au moins {PASSWORD_MIN_LENGTH} caractères."
+    if not any(c.isalpha() for c in password):
+        return "Le mot de passe doit contenir au moins une lettre."
+    if not any(c.isdigit() for c in password):
+        return "Le mot de passe doit contenir au moins un chiffre."
+    return None
+
+
 def hash_password(password: str) -> str:
     hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
     return hashed.decode("utf-8")

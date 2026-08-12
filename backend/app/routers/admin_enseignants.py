@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from .. import audit, models
 from ..database import get_db
@@ -23,7 +23,7 @@ def enseignants_list(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_enseignants_access_web),
 ):
-    query = db.query(models.Enseignant)
+    query = db.query(models.Enseignant).options(joinedload(models.Enseignant.etablissement))
     if etablissement_id:
         query = query.filter(models.Enseignant.etablissement_id == etablissement_id)
     items = query.order_by(models.Enseignant.full_name).all()

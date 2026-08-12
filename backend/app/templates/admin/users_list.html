@@ -39,6 +39,11 @@
       </td>
       <td class="actions-cell">
         <a href="/admin/users/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        {% if item.is_locked %}
+        <form method="post" action="/admin/users/{{ item.id }}/deverrouiller">
+          <button type="submit" class="btn btn-outline btn-sm">🔒 Déverrouiller</button>
+        </form>
+        {% endif %}
         {% if item.id != admin.id %}
         <form method="post" action="/admin/users/{{ item.id }}/delete" onsubmit="return confirm('Révoquer l\'accès de {{ item.full_name }} ?');">
           <button type="submit" class="btn btn-danger btn-sm">Révoquer</button>

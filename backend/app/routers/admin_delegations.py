@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from .. import audit, models
 from ..database import get_db
 from ..deps import require_delegation_management_web
-from ..security import hash_password
+from ..security import hash_password, password_policy_error
 
 router = APIRouter(prefix="/admin/delegations", tags=["admin-delegations"])
 
@@ -162,7 +162,8 @@ def delegation_user_create(
         return RedirectResponse(url="/admin/delegations", status_code=status.HTTP_303_SEE_OTHER)
 
     existing = db.query(models.User).filter(models.User.email == email).first()
-    if existing:
+    password_error = password_policy_error(password)
+    if existing or password_error:
         comptes = db.query(models.User).filter(models.User.delegation_id == delegation_id).all()
         etablissements = (
             db.query(models.Etablissement)
@@ -184,7 +185,7 @@ def delegation_user_create(
                 .filter(models.Membre.delegation_id == delegation_id)
                 .count(),
                 "active": "delegations",
-                "error": "Un compte existe déjà avec cet e-mail.",
+                "error": "Un compte existe déjà avec cet e-mail." if existing else password_error,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )

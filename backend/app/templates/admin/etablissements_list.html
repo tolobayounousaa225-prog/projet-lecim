@@ -24,6 +24,7 @@
       <td>{{ item.date_adhesion.strftime("%d/%m/%Y") if item.date_adhesion else "—" }}</td>
       <td class="actions-cell">
         <a href="/admin/etablissements/{{ item.id }}/compte" class="btn btn-outline btn-sm">Espace établissement</a>
+        <a href="/admin/etablissements/{{ item.id }}/attestation/pdf" class="btn btn-outline btn-sm" target="_blank">Attestation</a>
         <a href="/admin/etablissements/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
         <form method="post" action="/admin/etablissements/{{ item.id }}/delete" onsubmit="return confirm('Retirer {{ item.nom }} des établissements affiliés ?');">
           <button type="submit" class="btn btn-danger btn-sm">Retirer</button>

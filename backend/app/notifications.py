@@ -23,3 +23,11 @@ def notify_cartes_scolaires_gestionnaires(db: Session, message: str, link: str |
     for user in users:
         if user.is_admin or user.can_manage_cartes_scolaires:
             notify(db, user.id, message, link)
+
+
+def notify_messagerie_gestionnaires(db: Session, message: str, link: str | None = None) -> None:
+    """Notifie tous les comptes habilités à gérer la messagerie établissements (+ les administrateurs)."""
+    users = db.query(models.User).all()
+    for user in users:
+        if user.is_admin or user.can_manage_messagerie:
+            notify(db, user.id, message, link)

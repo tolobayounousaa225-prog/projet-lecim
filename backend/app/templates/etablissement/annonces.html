@@ -1,0 +1,22 @@
+{% extends "etablissement/base.html" %}
+{% block title %}Annonces{% endblock %}
+{% block content %}
+<h1>Annonces de votre délégation régionale</h1>
+<p style="color:var(--text-muted); margin-top:-14px;">Publiées par le délégué régional dont dépend votre établissement.</p>
+
+{% if not etablissement.delegation_id %}
+<div class="empty-state">Votre établissement n'est pas encore rattaché à une délégation régionale.</div>
+{% elif items %}
+<div style="display:flex; flex-direction:column; gap:14px;">
+  {% for item in items %}
+  <div class="form-card" style="max-width:none;">
+    <strong style="color:var(--green-dark); display:block; margin-bottom:6px;">{{ item.titre }}</strong>
+    <p style="white-space:pre-line; margin:0 0 10px;">{{ item.message }}</p>
+    <span style="color:var(--text-muted); font-size:0.8rem;">Publiée le {{ item.created_at.strftime("%d/%m/%Y") }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">Aucune annonce publiée par votre délégation pour le moment.</div>
+{% endif %}
+{% endblock %}

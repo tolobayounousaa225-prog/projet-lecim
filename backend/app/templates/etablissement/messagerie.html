@@ -1,0 +1,27 @@
+{% extends "etablissement/base.html" %}
+{% block title %}Messagerie{% endblock %}
+{% block content %}
+<h1>Messagerie avec le BEN</h1>
+<p style="color:var(--text-muted); margin-top:-14px;">Échangez directement avec le secrétariat du Bureau Exécutif National.</p>
+
+<div class="form-card" style="max-width:640px;">
+  <div style="display:flex; flex-direction:column; gap:10px; max-height:420px; overflow-y:auto; margin-bottom:16px;">
+    {% for m in messages %}
+    <div style="align-self:{{ 'flex-start' if m.is_from_ben else 'flex-end' }}; max-width:80%;">
+      <div style="background:{{ 'var(--cream)' if m.is_from_ben else 'var(--green)' }}; color:{{ 'var(--text-dark)' if m.is_from_ben else '#fff' }}; border-radius:10px; padding:9px 13px; font-size:0.9rem; white-space:pre-line;">{{ m.body }}</div>
+      <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px; text-align:{{ 'left' if m.is_from_ben else 'right' }};">
+        {{ "BEN" if m.is_from_ben else "Vous" }} — {{ m.created_at.strftime("%d/%m/%Y %H:%M") }}
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state">Aucun message pour le moment.</div>
+    {% endfor %}
+  </div>
+  <form method="post" action="/etablissement/messagerie/new">
+    <div class="form-group">
+      <textarea name="body" required rows="3" placeholder="Écrire un message..."></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Envoyer</button>
+  </form>
+</div>
+{% endblock %}

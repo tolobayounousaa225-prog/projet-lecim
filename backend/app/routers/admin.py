@@ -2,12 +2,14 @@ import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from .. import audit, models
+from ..attestations_pdf import generate_membre_attestation_pdf
+from ..connexion_log import record_login
 from ..database import get_db
 from ..deps import (
     require_activities_access_web,
@@ -34,6 +36,10 @@ def login_page(request: Request):
     return templates.TemplateResponse(request, "admin/login.html", {"error": None})
 
 
+MAX_FAILED_LOGIN_ATTEMPTS = 5
+LOCKOUT_MINUTES = 15
+
+
 @router.post("/login")
 def login_submit(
     request: Request,
@@ -43,13 +49,32 @@ def login_submit(
     db: Session = Depends(get_db),
 ):
     user = db.query(models.User).filter(models.User.email == email).first()
+
+    if user and user.locked_until and user.locked_until > datetime.datetime.utcnow():
+        minutes_left = max(1, int((user.locked_until - datetime.datetime.utcnow()).total_seconds() // 60) + 1)
+        return templates.TemplateResponse(
+            request,
+            "admin/login.html",
+            {"error": f"Compte temporairement verrouillé après plusieurs échecs. Réessayez dans {minutes_left} min."},
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+
     if not user or not verify_password(password, user.hashed_password):
+        if user:
+            user.failed_login_attempts += 1
+            if user.failed_login_attempts >= MAX_FAILED_LOGIN_ATTEMPTS:
+                user.locked_until = datetime.datetime.utcnow() + datetime.timedelta(minutes=LOCKOUT_MINUTES)
+                user.failed_login_attempts = 0
+            db.commit()
         return templates.TemplateResponse(
             request,
             "admin/login.html",
             {"error": "Identifiants incorrects."},
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
+
+    user.failed_login_attempts = 0
+    user.locked_until = None
 
     account_portal = (
         "delegation" if user.is_delegation_account
@@ -77,6 +102,7 @@ def login_submit(
     token = create_access_token(subject=user.email)
     redirect_url = {"delegation": "/delegation", "etablissement": "/etablissement", "ben": "/admin"}[account_portal]
     audit.log(db, user, "login", "Connexion", user.id, f"{user.full_name} s'est connecté ({account_portal})")
+    record_login(db, user, request)
     db.commit()
     response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie("access_token", token, httponly=True, samesite="lax", max_age=60 * 60 * 6)
@@ -88,6 +114,19 @@ def logout():
     response = RedirectResponse(url="/admin/login", status_code=status.HTTP_303_SEE_OTHER)
     response.delete_cookie("access_token")
     return response
+
+
+@router.get("/attestation/pdf")
+def attestation_membre_pdf(
+    user: models.User = Depends(require_login_web),
+):
+    pdf_bytes = generate_membre_attestation_pdf(user)
+    filename = f"attestation_appartenance_{user.id}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # ---------- Dashboard ----------
