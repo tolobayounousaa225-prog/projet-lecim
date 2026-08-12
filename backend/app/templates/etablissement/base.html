@@ -17,10 +17,12 @@
     <span class="tag">{{ etablissement.nom }}</span>
     <nav>
       <a href="/etablissement" class="{{ 'active' if active == 'dashboard' else '' }}">Tableau de bord</a>
-      <a href="/etablissement/cotisation" class="{{ 'active' if active == 'cotisation' else '' }}">Ma cotisation</a>
-      <a href="/etablissement/resultats" class="{{ 'active' if active == 'resultats' else '' }}">Résultats aux examens</a>
-      <a href="/etablissement/enseignants" class="{{ 'active' if active == 'enseignants' else '' }}">Mes enseignants</a>
-      <a href="/etablissement/demandes" class="{{ 'active' if active == 'demandes' else '' }}">Mes demandes</a>
+      {% if user.has_etab_module('cotisation') %}<a href="/etablissement/cotisation" class="{{ 'active' if active == 'cotisation' else '' }}">Ma cotisation</a>{% endif %}
+      {% if user.has_etab_module('resultats') %}<a href="/etablissement/resultats" class="{{ 'active' if active == 'resultats' else '' }}">Résultats aux examens</a>{% endif %}
+      {% if user.has_etab_module('enseignants') %}<a href="/etablissement/enseignants" class="{{ 'active' if active == 'enseignants' else '' }}">Mes enseignants</a>{% endif %}
+      {% if user.has_etab_module('effectifs') %}<a href="/etablissement/effectifs" class="{{ 'active' if active == 'effectifs' else '' }}">Effectifs élèves</a>{% endif %}
+      {% if user.has_etab_module('cartes_scolaires') %}<a href="/etablissement/cartes-scolaires" class="{{ 'active' if active == 'cartes_scolaires' else '' }}">Cartes scolaires</a>{% endif %}
+      {% if user.has_etab_module('demandes') %}<a href="/etablissement/demandes" class="{{ 'active' if active == 'demandes' else '' }}">Mes demandes</a>{% endif %}
     </nav>
     <div class="logout">
       <a href="/etablissement/logout">Se déconnecter</a>

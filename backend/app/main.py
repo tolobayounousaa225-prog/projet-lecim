@@ -24,7 +24,9 @@ from .routers import (
     admin_backups,
     admin_calendar,
     admin_cartes,
+    admin_cartes_scolaires,
     admin_delegations,
+    admin_effectifs,
     admin_enseignants,
     admin_etablissement_portail,
     admin_executif,
@@ -46,6 +48,7 @@ from .routers import (
     contact,
     delegation_portal,
     etablissement_portal,
+    etablissements_public,
     gouvernance,
     historique,
     news,
@@ -53,6 +56,7 @@ from .routers import (
     resultats_examens,
     site_content,
     verify,
+    verify_eleve,
 )
 
 @asynccontextmanager
@@ -119,6 +123,8 @@ upload_dir.mkdir(parents=True, exist_ok=True)
 (upload_dir / "historique").mkdir(exist_ok=True)
 (upload_dir / "news").mkdir(exist_ok=True)
 (upload_dir / "gouvernance").mkdir(exist_ok=True)
+(upload_dir / "etablissements_logos").mkdir(exist_ok=True)
+(upload_dir / "cartes_scolaires").mkdir(exist_ok=True)
 
 
 @app.exception_handler(NotAuthenticatedException)
@@ -148,6 +154,7 @@ def delegation_not_authenticated_handler(request: Request, exc: DelegationNotAut
 
 app.include_router(auth.router)
 app.include_router(carte.router)
+app.include_router(etablissements_public.router)
 app.include_router(news.router)
 app.include_router(activities.router)
 app.include_router(contact.router)
@@ -160,15 +167,18 @@ app.include_router(admin_reunions.router)
 app.include_router(admin_files.router)
 app.include_router(admin_finances.router)
 app.include_router(admin_cartes.router)
+app.include_router(admin_cartes_scolaires.router)
 app.include_router(admin_partenaires.router)
 app.include_router(admin_projets.router)
 app.include_router(admin_social.router)
 app.include_router(admin_publications.router)
 app.include_router(verify.router)
+app.include_router(verify_eleve.router)
 app.include_router(admin_calendar.router)
 app.include_router(admin_delegations.router)
 app.include_router(admin_executif.router)
 app.include_router(admin_enseignants.router)
+app.include_router(admin_effectifs.router)
 app.include_router(admin_resultats_examens.router)
 app.include_router(resultats_examens.router)
 app.include_router(admin_historique.router)

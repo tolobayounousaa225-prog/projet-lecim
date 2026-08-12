@@ -1,0 +1,34 @@
+{% extends "admin/base.html" %}
+{% block title %}Cartes scolaires{% endblock %}
+{% block content %}
+<h1>Cartes scolaires des élèves</h1>
+<p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">Demandes soumises par les établissements depuis leur espace personnel.</p>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Élève</th><th>Établissement</th><th>Classe</th><th>Soumise le</th><th>Statut</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.eleve_nom }}</td>
+      <td>{{ item.etablissement.nom }}</td>
+      <td>{{ item.classe }}</td>
+      <td>{{ item.date_soumission.strftime("%d/%m/%Y") }}</td>
+      <td>
+        {% if item.status == "disponible" %}<span class="pill pill-green">{{ item.status_label }}</span>
+        {% elif item.status == "rejetee" %}<span class="pill pill-red">{{ item.status_label }}</span>
+        {% else %}<span class="pill pill-gold">{{ item.status_label }}</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/cartes-scolaires/{{ item.id }}" class="btn btn-outline btn-sm">Ouvrir</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune demande de carte scolaire pour le moment.</div>
+{% endif %}
+{% endblock %}

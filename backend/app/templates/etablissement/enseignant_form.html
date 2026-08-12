@@ -1,0 +1,35 @@
+{% extends "etablissement/base.html" %}
+{% block title %}Modifier un enseignant{% endblock %}
+{% block content %}
+<h1>Modifier l'enseignant</h1>
+<div class="form-card" style="max-width:560px;">
+  <form method="post" action="/etablissement/enseignants/{{ item.id }}/edit">
+    <div class="form-group">
+      <label for="full_name">Nom complet</label>
+      <input type="text" id="full_name" name="full_name" required value="{{ item.full_name }}">
+    </div>
+    <div class="form-group">
+      <label for="matiere">Matière enseignée</label>
+      <input type="text" id="matiere" name="matiere" value="{{ item.matiere or '' }}">
+    </div>
+    <div class="form-group">
+      <label for="diplome">Diplôme</label>
+      <input type="text" id="diplome" name="diplome" value="{{ item.diplome or '' }}">
+    </div>
+    <div class="form-group">
+      <label for="telephone">Téléphone</label>
+      <input type="text" id="telephone" name="telephone" value="{{ item.telephone or '' }}">
+    </div>
+    <div class="form-group">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email" value="{{ item.email or '' }}">
+    </div>
+    <div class="form-group">
+      <label for="date_debut">En poste depuis</label>
+      <input type="date" id="date_debut" name="date_debut" value="{{ item.date_debut.isoformat() if item.date_debut else '' }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/etablissement/enseignants" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

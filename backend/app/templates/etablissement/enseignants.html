@@ -2,11 +2,42 @@
 {% block title %}Mes enseignants{% endblock %}
 {% block content %}
 <h1>Enseignants de votre établissement</h1>
-<p style="color:var(--text-muted); margin-top:-14px;">Répertoire tenu par le Bureau Exécutif National. Pour toute correction, utilisez « Mes demandes ».</p>
+<p style="color:var(--text-muted); margin-top:-14px;">Gérez vous-même le répertoire de vos enseignants.</p>
+
+<div class="form-card" style="max-width:560px; margin-bottom:24px;">
+  <strong style="display:block; margin-bottom:14px;">Ajouter un enseignant</strong>
+  <form method="post" action="/etablissement/enseignants/new">
+    <div class="form-group">
+      <label for="full_name">Nom complet</label>
+      <input type="text" id="full_name" name="full_name" required>
+    </div>
+    <div class="form-group">
+      <label for="matiere">Matière enseignée</label>
+      <input type="text" id="matiere" name="matiere">
+    </div>
+    <div class="form-group">
+      <label for="diplome">Diplôme</label>
+      <input type="text" id="diplome" name="diplome">
+    </div>
+    <div class="form-group">
+      <label for="telephone">Téléphone</label>
+      <input type="text" id="telephone" name="telephone">
+    </div>
+    <div class="form-group">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email">
+    </div>
+    <div class="form-group">
+      <label for="date_debut">En poste depuis</label>
+      <input type="date" id="date_debut" name="date_debut">
+    </div>
+    <button type="submit" class="btn btn-primary">Ajouter</button>
+  </form>
+</div>
 
 {% if items %}
 <table>
-  <thead><tr><th>Nom</th><th>Matière</th><th>Diplôme</th><th>En poste depuis</th></tr></thead>
+  <thead><tr><th>Nom</th><th>Matière</th><th>Diplôme</th><th>En poste depuis</th><th></th></tr></thead>
   <tbody>
     {% for item in items %}
     <tr>
@@ -14,6 +45,12 @@
       <td>{{ item.matiere or "—" }}</td>
       <td>{{ item.diplome or "—" }}</td>
       <td>{{ item.date_debut.strftime("%d/%m/%Y") if item.date_debut else "—" }}</td>
+      <td style="white-space:nowrap;">
+        <a href="/etablissement/enseignants/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/etablissement/enseignants/{{ item.id }}/delete" style="display:inline;" onsubmit="return confirm('Retirer cet enseignant ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Retirer</button>
+        </form>
+      </td>
     </tr>
     {% endfor %}
   </tbody>

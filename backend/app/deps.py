@@ -132,6 +132,26 @@ def require_etablissement_login_web(
     return user
 
 
+def _etab_module_dependency_web(module_key: str):
+    """Fabrique une dépendance exigeant l'accès à une rubrique de l'espace établissement
+    (titulaire : accès total ; secrétaire : uniquement les rubriques accordées)."""
+
+    def _dependency(user: models.User = Depends(require_etablissement_login_web)) -> models.User:
+        if not user.has_etab_module(module_key):
+            raise NotAuthorizedException()
+        return user
+
+    return _dependency
+
+
+require_etab_cotisation_web = _etab_module_dependency_web("cotisation")
+require_etab_resultats_web = _etab_module_dependency_web("resultats")
+require_etab_enseignants_web = _etab_module_dependency_web("enseignants")
+require_etab_effectifs_web = _etab_module_dependency_web("effectifs")
+require_etab_cartes_web = _etab_module_dependency_web("cartes_scolaires")
+require_etab_demandes_web = _etab_module_dependency_web("demandes")
+
+
 def require_admin_web(
     user: models.User = Depends(require_login_web),
 ) -> models.User:
@@ -185,6 +205,8 @@ require_site_content_access_web = _module_dependency_web("site_content")
 require_enseignants_access_web = _module_dependency_web("enseignants")
 require_resultats_examens_access_web = _module_dependency_web("resultats_examens")
 require_sondages_access_web = _module_dependency_web("sondages")
+require_effectifs_access_web = _module_dependency_web("effectifs")
+require_cartes_scolaires_access_web = _module_dependency_web("cartes_scolaires")
 
 
 def require_delegation_management_web(

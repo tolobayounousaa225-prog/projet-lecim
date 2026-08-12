@@ -29,6 +29,10 @@ class User(Base):
     # Si renseigné, ce compte est un compte "établissement" (portail séparé, en lecture
     # quasi totale) rattaché à un établissement affilié précis.
     etablissement_id: Mapped[int | None] = mapped_column(ForeignKey("etablissements.id"), nullable=True)
+    # Pour un compte établissement : le titulaire (créé en premier, en général le
+    # directeur/directrice) a accès à tout son espace ; un compte secrétaire n'a
+    # accès qu'aux rubriques explicitement cochées par l'administrateur (allowed_modules).
+    is_etablissement_titulaire: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -64,6 +68,13 @@ class User(Base):
 
     def has_module(self, key: str) -> bool:
         return self.is_admin or key in self.allowed_modules_list
+
+    def has_etab_module(self, key: str) -> bool:
+        """Pour les comptes établissement : le titulaire voit tout, un compte
+        secrétaire ne voit que les rubriques cochées par l'administrateur."""
+        if not self.is_etablissement_account:
+            return False
+        return self.is_etablissement_titulaire or key in self.allowed_modules_list
 
     @property
     def can_manage_reunions(self) -> bool:
@@ -148,6 +159,14 @@ class User(Base):
     @property
     def can_manage_sondages(self) -> bool:
         return self.has_module("sondages")
+
+    @property
+    def can_manage_effectifs(self) -> bool:
+        return self.has_module("effectifs")
+
+    @property
+    def can_manage_cartes_scolaires(self) -> bool:
+        return self.has_module("cartes_scolaires")
 
     @property
     def is_delegation_account(self) -> bool:
@@ -350,6 +369,11 @@ class Etablissement(Base):
     contact_telephone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    logo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    directeur_nom: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # primaire | secondaire | les_deux — détermine les niveaux d'effectifs pertinents
+    type_enseignement: Mapped[str] = mapped_column(String(20), default="les_deux")
+    numero_agrement: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -359,6 +383,10 @@ class Etablissement(Base):
     @property
     def statut_label(self) -> str:
         return cotisation_rule(self.statut)["label"]
+
+    @property
+    def logo_url(self) -> str | None:
+        return f"/api/etablissements/{self.id}/logo" if self.logo_path else None
 
 
 class Enseignant(Base):
@@ -411,6 +439,40 @@ class ResultatExamen(Base):
     @property
     def etablissement_nom(self) -> str:
         return self.etablissement.nom
+
+
+class Effectif(Base):
+    """Effectif d'élèves d'un établissement membre, par niveau (primaire/secondaire)
+    et par année scolaire — déclaré par l'établissement, consultable par le BEN."""
+
+    __tablename__ = "effectifs"
+    __table_args__ = (
+        UniqueConstraint("etablissement_id", "annee_scolaire", "niveau", name="uq_effectif_etab_annee_niveau"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    etablissement_id: Mapped[int] = mapped_column(ForeignKey("etablissements.id"), nullable=False)
+    annee_scolaire: Mapped[str] = mapped_column(String(20), nullable=False)
+    niveau: Mapped[str] = mapped_column(String(20), nullable=False)  # "primaire" | "secondaire"
+    nombre_garcons: Mapped[int] = mapped_column(Integer, default=0)
+    nombre_filles: Mapped[int] = mapped_column(Integer, default=0)
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
+    )
+
+    etablissement: Mapped["Etablissement"] = relationship()
+
+    @property
+    def total(self) -> int:
+        return self.nombre_garcons + self.nombre_filles
+
+    @property
+    def niveau_label(self) -> str:
+        return "Primaire" if self.niveau == "primaire" else "Secondaire"
 
 
 class DemandeEtablissement(Base):
@@ -573,6 +635,51 @@ class CarteMembre(Base):
     validated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
+    validated_by: Mapped["User | None"] = relationship(foreign_keys=[validated_by_id])
+
+    @property
+    def status_label(self) -> str:
+        return {
+            "soumise": "Soumise — en attente de validation",
+            "validee": "Validée — en cours d'impression",
+            "rejetee": "Rejetée",
+            "imprimee": "Imprimée — en attente de disponibilité",
+            "disponible": "Disponible — à récupérer",
+        }.get(self.status, self.status)
+
+
+class CarteScolaire(Base):
+    """Demande de carte scolaire d'un élève, soumise par son établissement — porte le
+    logo de l'établissement, un matricule LECIM et un QR code de certification."""
+
+    __tablename__ = "cartes_scolaires"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    etablissement_id: Mapped[int] = mapped_column(ForeignKey("etablissements.id"), nullable=False)
+    requested_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    eleve_nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    eleve_sexe: Mapped[str | None] = mapped_column(String(1), nullable=True)  # "M" | "F"
+    eleve_date_naissance: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    classe: Mapped[str] = mapped_column(String(100), nullable=False)
+    annee_scolaire: Mapped[str] = mapped_column(String(20), nullable=False)
+    photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    matricule: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="soumise")
+    commentaire_rejet: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    date_soumission: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    date_validation: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+    date_validite: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    date_impression: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+    date_disponibilite: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+    validated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    etablissement: Mapped["Etablissement"] = relationship(foreign_keys=[etablissement_id])
+    requested_by: Mapped["User | None"] = relationship(foreign_keys=[requested_by_id])
     validated_by: Mapped["User | None"] = relationship(foreign_keys=[validated_by_id])
 
     @property

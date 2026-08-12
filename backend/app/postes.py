@@ -176,6 +176,8 @@ MODULES: dict[str, str] = {
     "enseignants": "Répertoire des enseignants des écoles membres",
     "resultats_examens": "Résultats aux examens scolaires islamiques (par établissement)",
     "sondages": "Gestion des sondages et votes électroniques (création, dépouillement)",
+    "effectifs": "Effectifs des élèves des écoles membres (primaire/secondaire)",
+    "cartes_scolaires": "Cartes scolaires des élèves (validation, impression)",
 }
 
 # Suggestion de cases pré-cochées lorsqu'un poste est sélectionné à la création
@@ -187,15 +189,29 @@ DEFAULT_MODULES_BY_POSTE: dict[str, list[str]] = {
     "vp2_interieur": ["reunions", "membres", "delegations"],
     "sec_relations_exterieures": ["reunions", "partenaires"],
     "sec_administratif": ["reunions", "membres", "documents", "photos", "contact", "cartes_gestion", "sondages"],
-    "sec_education_formation": ["reunions", "activities", "enseignants", "resultats_examens"],
-    "sec_pedagogie_vie_scolaire": ["reunions", "activities", "enseignants", "resultats_examens"],
+    "sec_education_formation": ["reunions", "activities", "enseignants", "resultats_examens", "effectifs"],
+    "sec_pedagogie_vie_scolaire": ["reunions", "activities", "enseignants", "resultats_examens", "effectifs", "cartes_scolaires"],
     "sec_interieur": ["reunions", "membres", "delegations"],
     "sec_finances": ["finances"],
     "sec_communication_tic": ["reunions", "news", "photos", "publications", "historique", "gouvernance", "site_content"],
     "sec_affaires_sociales": ["reunions", "membres", "affaires_sociales"],
     "sec_projets_patrimoine": ["reunions", "documents", "projets_patrimoine"],
-    "directeur_enseignement": ["reunions", "documents", "resultats_examens"],
+    "directeur_enseignement": ["reunions", "documents", "resultats_examens", "effectifs"],
     "secretariat_permanent": ["reunions", "membres", "documents", "photos", "contact", "cartes_gestion"],
+}
+
+
+# ---------- Rubriques de l'espace établissement ----------
+# L'administrateur crée un compte "titulaire" (accès complet à son espace) et peut
+# en plus autoriser un ou plusieurs comptes "secrétaire", chacun limité aux rubriques
+# explicitement cochées ci-dessous.
+ETAB_MODULES: dict[str, str] = {
+    "cotisation": "Suivi de la cotisation",
+    "resultats": "Résultats aux examens (CEPE, BEPC, BAC...)",
+    "enseignants": "Gestion des enseignants",
+    "effectifs": "Effectifs des élèves (primaire/secondaire)",
+    "cartes_scolaires": "Demandes de cartes scolaires des élèves",
+    "demandes": "Demandes administratives auprès du BEN",
 }
 
 

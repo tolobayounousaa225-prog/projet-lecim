@@ -33,6 +33,7 @@ templates = Jinja2Templates(directory=str(templates_dir))
 
 PIECES_DIR = UPLOAD_ROOT / "justificatifs"
 ALLOWED_PIECE_EXT = ALLOWED_DOCUMENT_EXT | ALLOWED_PHOTO_EXT
+ETABLISSEMENT_LOGOS_DIR = UPLOAD_ROOT / "etablissements_logos"
 
 
 # ---------- Tableau de bord finances ----------
@@ -379,7 +380,7 @@ def etablissements_new_form(
 
 
 @router.post("/etablissements/new")
-def etablissements_create(
+async def etablissements_create(
     nom: str = Form(...),
     bureau_local: str = Form(""),
     statut: str = Form("non_subventionne"),
@@ -388,9 +389,21 @@ def etablissements_create(
     contact_telephone: str = Form(""),
     latitude: str = Form(""),
     longitude: str = Form(""),
+    directeur_nom: str = Form(""),
+    type_enseignement: str = Form("les_deux"),
+    numero_agrement: str = Form(""),
+    logo: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
+    logo_path = None
+    if logo is not None and logo.filename:
+        try:
+            stored_name, _ = await _save_upload(logo, ETABLISSEMENT_LOGOS_DIR, ALLOWED_PHOTO_EXT)
+            logo_path = f"etablissements_logos/{stored_name}"
+        except ValueError:
+            pass
+
     etablissement = models.Etablissement(
         nom=nom,
         bureau_local=bureau_local or None,
@@ -400,6 +413,10 @@ def etablissements_create(
         contact_telephone=contact_telephone or None,
         latitude=float(latitude) if latitude else None,
         longitude=float(longitude) if longitude else None,
+        directeur_nom=directeur_nom or None,
+        type_enseignement=type_enseignement if type_enseignement in {"primaire", "secondaire", "les_deux"} else "les_deux",
+        numero_agrement=numero_agrement or None,
+        logo_path=logo_path,
     )
     db.add(etablissement)
     db.flush()
@@ -424,7 +441,7 @@ def etablissements_edit_form(
 
 
 @router.post("/etablissements/{etablissement_id}/edit")
-def etablissements_update(
+async def etablissements_update(
     etablissement_id: int,
     nom: str = Form(...),
     bureau_local: str = Form(""),
@@ -434,11 +451,25 @@ def etablissements_update(
     contact_telephone: str = Form(""),
     latitude: str = Form(""),
     longitude: str = Form(""),
+    directeur_nom: str = Form(""),
+    type_enseignement: str = Form("les_deux"),
+    numero_agrement: str = Form(""),
+    logo: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
     etablissement = db.get(models.Etablissement, etablissement_id)
     if etablissement:
+        if logo is not None and logo.filename:
+            try:
+                stored_name, _ = await _save_upload(logo, ETABLISSEMENT_LOGOS_DIR, ALLOWED_PHOTO_EXT)
+                old_path = UPLOAD_ROOT / etablissement.logo_path if etablissement.logo_path else None
+                etablissement.logo_path = f"etablissements_logos/{stored_name}"
+                if old_path and old_path.exists():
+                    old_path.unlink()
+            except ValueError:
+                pass
+
         etablissement.nom = nom
         etablissement.bureau_local = bureau_local or None
         etablissement.statut = statut if statut in COTISATION_RULES else "non_subventionne"
@@ -449,6 +480,9 @@ def etablissements_update(
         etablissement.contact_telephone = contact_telephone or None
         etablissement.latitude = float(latitude) if latitude else None
         etablissement.longitude = float(longitude) if longitude else None
+        etablissement.directeur_nom = directeur_nom or None
+        etablissement.type_enseignement = type_enseignement if type_enseignement in {"primaire", "secondaire", "les_deux"} else "les_deux"
+        etablissement.numero_agrement = numero_agrement or None
         audit.log(db, user, "update", "Établissement", etablissement.id, f"A modifié l'établissement {etablissement.nom}")
         db.commit()
     return RedirectResponse(url="/admin/etablissements", status_code=status.HTTP_303_SEE_OTHER)

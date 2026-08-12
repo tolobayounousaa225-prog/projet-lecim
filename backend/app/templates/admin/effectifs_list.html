@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+{% block title %}Effectifs des élèves{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Effectifs des élèves</h1>
+  <a href="/admin/effectifs/new" class="btn btn-primary">+ Saisir un effectif</a>
+</div>
+<p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">Déclarés par les établissements eux-mêmes depuis leur espace, ou saisis directement ici.</p>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Année</th><th>Établissement</th><th>Niveau</th><th>Garçons</th><th>Filles</th><th>Total</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.annee_scolaire }}</td>
+      <td>{{ item.etablissement.nom }}</td>
+      <td>{{ item.niveau_label }}</td>
+      <td>{{ item.nombre_garcons }}</td>
+      <td>{{ item.nombre_filles }}</td>
+      <td><strong>{{ item.total }}</strong></td>
+      <td class="actions-cell">
+        <a href="/admin/effectifs/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/effectifs/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cet effectif ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun effectif saisi pour le moment.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "etablissement/base.html" %}
+{% block title %}Effectifs des élèves{% endblock %}
+{% block content %}
+<h1>Effectifs des élèves</h1>
+<p style="color:var(--text-muted); margin-top:-14px;">Déclarez le nombre d'élèves de votre établissement par niveau, pour chaque année scolaire.</p>
+
+<div class="form-card" style="max-width:480px; margin-bottom:24px;">
+  <strong style="display:block; margin-bottom:14px;">Déclarer / mettre à jour un effectif</strong>
+  <form method="post" action="/etablissement/effectifs/new">
+    <div class="form-group">
+      <label for="annee_scolaire">Année scolaire</label>
+      <input type="text" id="annee_scolaire" name="annee_scolaire" required placeholder="Ex : 2025-2026" value="{{ annee_par_defaut }}">
+    </div>
+    <div class="form-group">
+      <label for="niveau">Niveau</label>
+      <select id="niveau" name="niveau" required>
+        {% for n in niveaux %}
+        <option value="{{ n }}">{{ "Primaire" if n == "primaire" else "Secondaire" }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="nombre_garcons">Nombre de garçons</label>
+      <input type="number" id="nombre_garcons" name="nombre_garcons" min="0" required value="0">
+    </div>
+    <div class="form-group">
+      <label for="nombre_filles">Nombre de filles</label>
+      <input type="number" id="nombre_filles" name="nombre_filles" min="0" required value="0">
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+  </form>
+  <p style="font-size:0.8rem; color:var(--text-muted); margin-top:10px;">Si un effectif existe déjà pour cette année et ce niveau, il sera mis à jour.</p>
+</div>
+
+{% if items %}
+<table>
+  <thead><tr><th>Année</th><th>Niveau</th><th>Garçons</th><th>Filles</th><th>Total</th></tr></thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.annee_scolaire }}</td>
+      <td>{{ item.niveau_label }}</td>
+      <td>{{ item.nombre_garcons }}</td>
+      <td>{{ item.nombre_filles }}</td>
+      <td><strong>{{ item.total }}</strong></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun effectif déclaré pour votre établissement pour le moment.</div>
+{% endif %}
+{% endblock %}
