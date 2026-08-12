@@ -3,7 +3,10 @@
 {% block content %}
 <div class="topbar">
   <h1 style="margin:0">Effectifs des élèves</h1>
-  <a href="/admin/effectifs/new" class="btn btn-primary">+ Saisir un effectif</a>
+  <div style="display:flex; gap:8px;">
+    <a href="/admin/effectifs/export.csv" class="btn btn-outline">Exporter en CSV</a>
+    <a href="/admin/effectifs/new" class="btn btn-primary">+ Saisir un effectif</a>
+  </div>
 </div>
 <p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">Déclarés par les établissements eux-mêmes depuis leur espace, ou saisis directement ici.</p>
 

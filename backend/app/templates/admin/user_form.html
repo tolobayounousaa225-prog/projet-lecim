@@ -15,7 +15,8 @@
     </div>
     <div class="form-group">
       <label for="password">Mot de passe {% if item %}(laisser vide pour ne pas changer){% endif %}</label>
-      <input type="password" id="password" name="password" {{ "required" if not item else "" }} minlength="6">
+      <input type="password" id="password" name="password" {{ "required" if not item else "" }} minlength="8">
+      <p style="font-size:0.78rem; color:var(--text-muted); margin:4px 0 0;">Au moins 8 caractères, avec une lettre et un chiffre.</p>
     </div>
     <div class="form-group">
       <label for="poste">Poste au Bureau Exécutif National</label>

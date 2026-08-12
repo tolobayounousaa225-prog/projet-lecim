@@ -22,6 +22,8 @@
       {% if user.has_etab_module('enseignants') %}<a href="/etablissement/enseignants" class="{{ 'active' if active == 'enseignants' else '' }}">Mes enseignants</a>{% endif %}
       {% if user.has_etab_module('effectifs') %}<a href="/etablissement/effectifs" class="{{ 'active' if active == 'effectifs' else '' }}">Effectifs élèves</a>{% endif %}
       {% if user.has_etab_module('cartes_scolaires') %}<a href="/etablissement/cartes-scolaires" class="{{ 'active' if active == 'cartes_scolaires' else '' }}">Cartes scolaires</a>{% endif %}
+      {% if user.has_etab_module('annonces') %}<a href="/etablissement/annonces" class="{{ 'active' if active == 'annonces' else '' }}">Annonces</a>{% endif %}
+      {% if user.has_etab_module('messagerie') %}<a href="/etablissement/messagerie" class="{{ 'active' if active == 'messagerie' else '' }}">Messagerie</a>{% endif %}
       {% if user.has_etab_module('demandes') %}<a href="/etablissement/demandes" class="{{ 'active' if active == 'demandes' else '' }}">Mes demandes</a>{% endif %}
     </nav>
     <div class="logout">

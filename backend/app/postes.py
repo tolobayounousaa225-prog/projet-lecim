@@ -178,6 +178,7 @@ MODULES: dict[str, str] = {
     "sondages": "Gestion des sondages et votes électroniques (création, dépouillement)",
     "effectifs": "Effectifs des élèves des écoles membres (primaire/secondaire)",
     "cartes_scolaires": "Cartes scolaires des élèves (validation, impression)",
+    "messagerie": "Messagerie avec les établissements membres",
 }
 
 # Suggestion de cases pré-cochées lorsqu'un poste est sélectionné à la création
@@ -188,7 +189,7 @@ DEFAULT_MODULES_BY_POSTE: dict[str, list[str]] = {
     "vp1_education": ["reunions", "membres"],
     "vp2_interieur": ["reunions", "membres", "delegations"],
     "sec_relations_exterieures": ["reunions", "partenaires"],
-    "sec_administratif": ["reunions", "membres", "documents", "photos", "contact", "cartes_gestion", "sondages"],
+    "sec_administratif": ["reunions", "membres", "documents", "photos", "contact", "cartes_gestion", "sondages", "messagerie"],
     "sec_education_formation": ["reunions", "activities", "enseignants", "resultats_examens", "effectifs"],
     "sec_pedagogie_vie_scolaire": ["reunions", "activities", "enseignants", "resultats_examens", "effectifs", "cartes_scolaires"],
     "sec_interieur": ["reunions", "membres", "delegations"],
@@ -212,6 +213,8 @@ ETAB_MODULES: dict[str, str] = {
     "effectifs": "Effectifs des élèves (primaire/secondaire)",
     "cartes_scolaires": "Demandes de cartes scolaires des élèves",
     "demandes": "Demandes administratives auprès du BEN",
+    "annonces": "Annonces de la délégation régionale",
+    "messagerie": "Messagerie avec le BEN",
 }
 
 

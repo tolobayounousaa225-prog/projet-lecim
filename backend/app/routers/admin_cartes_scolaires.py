@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from .. import audit, models
 from ..card_pdf import generate_student_card_pdf
@@ -40,7 +40,12 @@ def cartes_scolaires_list(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_cartes_scolaires_access_web),
 ):
-    items = db.query(models.CarteScolaire).order_by(models.CarteScolaire.date_soumission.desc()).all()
+    items = (
+        db.query(models.CarteScolaire)
+        .options(joinedload(models.CarteScolaire.etablissement))
+        .order_by(models.CarteScolaire.date_soumission.desc())
+        .all()
+    )
     return templates.TemplateResponse(
         request,
         "admin/cartes_scolaires_list.html",

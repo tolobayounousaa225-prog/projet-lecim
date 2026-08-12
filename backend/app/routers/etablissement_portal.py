@@ -9,19 +9,22 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from .. import audit, models
+from ..attestations_pdf import generate_etablissement_attestation_pdf
 from ..card_pdf import generate_student_card_pdf
 from ..database import get_db
 from ..deps import (
+    require_etab_annonces_web,
     require_etab_cartes_web,
     require_etab_cotisation_web,
     require_etab_demandes_web,
     require_etab_effectifs_web,
     require_etab_enseignants_web,
+    require_etab_messagerie_web,
     require_etab_resultats_web,
     require_etablissement_login_web,
 )
 from ..finances_constants import cotisation_rule
-from ..notifications import notify_cartes_scolaires_gestionnaires
+from ..notifications import notify_cartes_scolaires_gestionnaires, notify_messagerie_gestionnaires
 from ..reports import current_annee_scolaire
 from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
 
@@ -79,6 +82,89 @@ def etablissement_dashboard(
             "counts": counts,
             "active": "dashboard",
         },
+    )
+
+
+@router.get("/etablissement/attestation/pdf")
+def etablissement_attestation_pdf(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_etablissement_login_web),
+):
+    etablissement = user.etablissement
+    pdf_bytes = generate_etablissement_attestation_pdf(etablissement)
+    filename = f"attestation_affiliation_{etablissement.id}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/etablissement/messagerie")
+def etablissement_messagerie(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_etab_messagerie_web),
+):
+    etablissement = user.etablissement
+    messages = (
+        db.query(models.MessageEtablissement)
+        .filter(models.MessageEtablissement.etablissement_id == etablissement.id)
+        .order_by(models.MessageEtablissement.created_at)
+        .all()
+    )
+    unread = [m for m in messages if m.is_from_ben and not m.is_read_by_etablissement]
+    for m in unread:
+        m.is_read_by_etablissement = True
+    if unread:
+        db.commit()
+    return templates.TemplateResponse(
+        request,
+        "etablissement/messagerie.html",
+        {"user": user, "etablissement": etablissement, "messages": messages, "active": "messagerie"},
+    )
+
+
+@router.post("/etablissement/messagerie/new")
+def etablissement_messagerie_send(
+    body: str = Form(...),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_etab_messagerie_web),
+):
+    etablissement = user.etablissement
+    message = models.MessageEtablissement(
+        etablissement_id=etablissement.id,
+        sender_id=user.id,
+        is_from_ben=False,
+        body=body,
+    )
+    db.add(message)
+    notify_messagerie_gestionnaires(
+        db, f"Nouveau message de {etablissement.nom}.", link=f"/admin/messagerie/{etablissement.id}",
+    )
+    db.commit()
+    return RedirectResponse(url="/etablissement/messagerie", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.get("/etablissement/annonces")
+def etablissement_annonces(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_etab_annonces_web),
+):
+    etablissement = user.etablissement
+    items = []
+    if etablissement.delegation_id:
+        items = (
+            db.query(models.AnnonceDelegation)
+            .filter(models.AnnonceDelegation.delegation_id == etablissement.delegation_id)
+            .order_by(models.AnnonceDelegation.created_at.desc())
+            .all()
+        )
+    return templates.TemplateResponse(
+        request,
+        "etablissement/annonces.html",
+        {"user": user, "etablissement": etablissement, "items": items, "active": "annonces"},
     )
 
 

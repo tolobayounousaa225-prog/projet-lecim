@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vérification d'appartenance — LECIM</title>
+<link rel="icon" type="image/jpeg" href="/static/img/logo.jpg">
+<style>
+  :root {
+    --green-dark: #0b3d2e; --green: #0f7a4c; --gold: #e0a52c;
+    --cream: #f8f6ee; --red: #c0392b; --border: #e4e0d0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: linear-gradient(160deg, var(--green-dark), var(--green));
+    font-family: "Segoe UI", Arial, sans-serif; display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .card {
+    background: #fff; border-radius: 16px; max-width: 380px; width: 100%;
+    box-shadow: 0 20px 50px rgba(0,0,0,.25); overflow: hidden; text-align: center;
+  }
+  .card-header { padding: 24px 20px 16px; }
+  .card-header img.logo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; }
+  .card-header h1 { font-size: 1rem; color: var(--green-dark); margin: 0; }
+  .badge {
+    padding: 14px; font-weight: 700; font-size: 1.05rem; color: #fff; display: flex;
+    align-items: center; justify-content: center; gap: 8px;
+  }
+  .badge.authentique { background: var(--green); }
+  .badge.introuvable { background: var(--red); }
+  .info { padding: 22px 24px 26px; }
+  .info h2 { font-size: 1.2rem; color: var(--green-dark); margin: 6px 0 2px; }
+  .info .poste { color: #5b6a62; font-size: 0.9rem; margin-bottom: 4px; }
+  .not-found { padding: 30px 24px 34px; color: #5b6a62; font-size: 0.92rem; }
+  .footer-note { padding: 14px; font-size: 0.72rem; color: #9aa39c; background: var(--cream); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-header">
+    <img class="logo" src="/static/img/logo.jpg" alt="Logo LECIM">
+    <h1>Vérification d'appartenance — LECIM</h1>
+  </div>
+
+  {% if found %}
+  <div class="badge authentique">✓ Membre du BEN</div>
+  <div class="info">
+    <h2>{{ user.full_name }}</h2>
+    <p class="poste">{{ user.poste_label }}</p>
+  </div>
+  {% else %}
+  <div class="badge introuvable">✗ Non reconnu</div>
+  <div class="not-found">
+    Aucun membre du Bureau Exécutif National ne correspond à cette référence. Si vous
+    pensez qu'il s'agit d'une erreur, contactez le secrétariat administratif de la LECIM.
+  </div>
+  {% endif %}
+
+  <div class="footer-note">Ligue des Établissements Confessionnels et Madrassas en Côte d'Ivoire</div>
+</div>
+</body>
+</html>

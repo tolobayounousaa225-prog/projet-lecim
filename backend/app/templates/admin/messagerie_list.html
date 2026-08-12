@@ -1,0 +1,28 @@
+{% extends "admin/base.html" %}
+{% block title %}Messagerie établissements{% endblock %}
+{% block content %}
+<h1>Messagerie avec les établissements</h1>
+<p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">Échangez directement avec chaque établissement affilié.</p>
+
+{% if rows %}
+<table>
+  <thead><tr><th>Établissement</th><th>Dernier message</th><th></th></tr></thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>
+        {{ row.etablissement.nom }}
+        {% if row.unread %}<span class="pill pill-gold" style="margin-left:8px;">{{ row.unread }} non lu(s)</span>{% endif %}
+      </td>
+      <td>{{ row.last_message_at.strftime("%d/%m/%Y %H:%M") if row.last_message_at else "—" }}</td>
+      <td class="actions-cell">
+        <a href="/admin/messagerie/{{ row.etablissement.id }}" class="btn btn-outline btn-sm">Ouvrir</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun établissement affilié pour le moment.</div>
+{% endif %}
+{% endblock %}

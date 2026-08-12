@@ -2,15 +2,16 @@ import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from .. import audit, models
+from ..attestations_pdf import generate_etablissement_attestation_pdf
 from ..database import get_db
 from ..deps import require_finance_access_web
 from ..postes import ETAB_MODULES
-from ..security import hash_password
+from ..security import hash_password, password_policy_error
 
 router = APIRouter(prefix="/admin", tags=["admin-etablissement-portail"])
 
@@ -72,10 +73,11 @@ async def etablissement_compte_create(
     titulaire_existe = any(c.is_etablissement_titulaire for c in comptes)
 
     existing = db.query(models.User).filter(models.User.email == email).first()
-    if existing or (role == "titulaire" and titulaire_existe):
+    password_error = password_policy_error(password)
+    if existing or password_error or (role == "titulaire" and titulaire_existe):
         error = (
-            "Un compte existe déjà avec cet e-mail."
-            if existing
+            "Un compte existe déjà avec cet e-mail." if existing
+            else password_error if password_error
             else "Un compte titulaire existe déjà pour cet établissement — créez un compte secrétaire à la place."
         )
         return templates.TemplateResponse(
@@ -124,6 +126,24 @@ def etablissement_compte_delete(
         db.delete(compte)
         db.commit()
     return RedirectResponse(url=f"/admin/etablissements/{etablissement_id}/compte", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.get("/etablissements/{etablissement_id}/attestation/pdf")
+def etablissement_attestation_pdf(
+    etablissement_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    etablissement = db.get(models.Etablissement, etablissement_id)
+    if not etablissement:
+        return RedirectResponse(url="/admin/etablissements", status_code=status.HTTP_303_SEE_OTHER)
+    pdf_bytes = generate_etablissement_attestation_pdf(etablissement)
+    filename = f"attestation_affiliation_{etablissement.id}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # ---------- Demandes soumises par les établissements ----------

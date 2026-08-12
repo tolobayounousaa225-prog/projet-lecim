@@ -9,7 +9,7 @@ from .. import audit, models
 from ..database import get_db
 from ..deps import require_admin_web
 from ..postes import DEFAULT_MODULES_BY_POSTE, MODULES, POSTES
-from ..security import hash_password
+from ..security import hash_password, password_policy_error
 
 router = APIRouter(prefix="/admin/users", tags=["admin-users"])
 
@@ -65,7 +65,8 @@ def users_create(
     admin: models.User = Depends(require_admin_web),
 ):
     existing = db.query(models.User).filter(models.User.email == email).first()
-    if existing:
+    password_error = password_policy_error(password)
+    if existing or password_error:
         return templates.TemplateResponse(
             request,
             "admin/user_form.html",
@@ -76,7 +77,7 @@ def users_create(
                 "modules": MODULES,
                 "defaults_by_poste": DEFAULT_MODULES_BY_POSTE,
                 "active": "users",
-                "error": "Un compte existe déjà avec cet e-mail.",
+                "error": "Un compte existe déjà avec cet e-mail." if existing else password_error,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -141,7 +142,8 @@ def users_update(
             .filter(models.User.email == email, models.User.id != user_id)
             .first()
         )
-        if duplicate:
+        password_error = password_policy_error(password) if password else None
+        if duplicate or password_error:
             return templates.TemplateResponse(
                 request,
                 "admin/user_form.html",
@@ -152,7 +154,7 @@ def users_update(
                     "modules": MODULES,
                     "defaults_by_poste": DEFAULT_MODULES_BY_POSTE,
                     "active": "users",
-                    "error": "Un autre compte utilise déjà cet e-mail.",
+                    "error": "Un autre compte utilise déjà cet e-mail." if duplicate else password_error,
                 },
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
@@ -166,6 +168,21 @@ def users_update(
         if password:
             user.hashed_password = hash_password(password)
         audit.log(db, admin, "update", "Compte utilisateur", user.id, f"A modifié le compte de {user.full_name} ({user.email})")
+        db.commit()
+    return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/{user_id}/deverrouiller")
+def users_unlock(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(require_admin_web),
+):
+    user = db.get(models.User, user_id)
+    if user:
+        user.failed_login_attempts = 0
+        user.locked_until = None
+        audit.log(db, admin, "update", "Compte utilisateur", user.id, f"A déverrouillé le compte de {user.full_name}")
         db.commit()
     return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
 

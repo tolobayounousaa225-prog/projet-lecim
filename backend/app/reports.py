@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fpdf import FPDF
 from fpdf.fonts import FontFace
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from . import models
 from .finances_constants import RECETTE_CATEGORIES
@@ -130,11 +130,13 @@ def multi_year_financial_summary(db: Session) -> list[dict]:
 def _period_data(db: Session, date_debut: datetime.date, date_fin: datetime.date) -> dict:
     adhesions = (
         db.query(models.Adhesion)
+        .options(joinedload(models.Adhesion.etablissement))
         .filter(models.Adhesion.date_paiement >= date_debut, models.Adhesion.date_paiement <= date_fin)
         .all()
     )
     cotisations = (
         db.query(models.Cotisation)
+        .options(joinedload(models.Cotisation.etablissement))
         .filter(
             models.Cotisation.date_paiement.isnot(None),
             models.Cotisation.date_paiement >= date_debut,
@@ -718,6 +720,39 @@ def export_transactions_csv(db: Session, date_debut: datetime.date, date_fin: da
     for d in data["depenses"]:
         writer.writerow([d.date.isoformat(), "Depense", "-", d.libelle, -d.montant])
 
+    return buffer.getvalue()
+
+
+def export_resultats_csv(db: Session) -> str:
+    items = (
+        db.query(models.ResultatExamen)
+        .options(joinedload(models.ResultatExamen.etablissement))
+        .order_by(models.ResultatExamen.annee_scolaire.desc(), models.ResultatExamen.id.desc())
+        .all()
+    )
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, delimiter=";")
+    writer.writerow(["Annee scolaire", "Etablissement", "Examen", "Inscrits", "Admis", "Taux de reussite (%)", "Publie"])
+    for r in items:
+        writer.writerow([
+            r.annee_scolaire, r.etablissement.nom, r.type_examen,
+            r.nombre_inscrits, r.nombre_admis, r.taux_reussite, "Oui" if r.is_published else "Non",
+        ])
+    return buffer.getvalue()
+
+
+def export_effectifs_csv(db: Session) -> str:
+    items = (
+        db.query(models.Effectif)
+        .options(joinedload(models.Effectif.etablissement))
+        .order_by(models.Effectif.annee_scolaire.desc(), models.Effectif.niveau)
+        .all()
+    )
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, delimiter=";")
+    writer.writerow(["Annee scolaire", "Etablissement", "Niveau", "Garcons", "Filles", "Total"])
+    for e in items:
+        writer.writerow([e.annee_scolaire, e.etablissement.nom, e.niveau_label, e.nombre_garcons, e.nombre_filles, e.total])
     return buffer.getvalue()
 
 

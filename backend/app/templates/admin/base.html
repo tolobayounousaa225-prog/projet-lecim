@@ -19,6 +19,7 @@
       <a href="/admin" class="{{ 'active' if active == 'dashboard' else '' }}">Tableau de bord</a>
       <a href="/admin/notifications" class="{{ 'active' if active == 'notifications' else '' }}">Notifications</a>
       <a href="/admin/cartes/mine" class="{{ 'active' if active == 'carte_mine' else '' }}">Ma carte de membre</a>
+      <a href="/admin/attestation/pdf" target="_blank">Mon attestation d'appartenance</a>
       <a href="/admin/calendrier" class="{{ 'active' if active == 'calendrier' else '' }}">Calendrier</a>
       <a href="/admin/sondages" class="{{ 'active' if active == 'sondages' else '' }}">Sondages</a>
 
@@ -36,7 +37,7 @@
       </div>
       {% endif %}
 
-      {% if admin.can_manage_enseignants or admin.can_manage_resultats_examens or admin.can_manage_effectifs or admin.can_manage_cartes_scolaires or admin.can_manage_finances %}
+      {% if admin.can_manage_enseignants or admin.can_manage_resultats_examens or admin.can_manage_effectifs or admin.can_manage_cartes_scolaires or admin.can_manage_finances or admin.can_manage_messagerie %}
       <div class="nav-section">
         <span class="nav-section-title">Écoles membres</span>
         {% if admin.can_manage_enseignants %}<a href="/admin/enseignants" class="{{ 'active' if active == 'enseignants' else '' }}">Répertoire des enseignants</a>{% endif %}
@@ -44,6 +45,7 @@
         {% if admin.can_manage_effectifs %}<a href="/admin/effectifs" class="{{ 'active' if active == 'effectifs' else '' }}">Effectifs des élèves</a>{% endif %}
         {% if admin.can_manage_cartes_scolaires %}<a href="/admin/cartes-scolaires" class="{{ 'active' if active == 'cartes_scolaires' else '' }}">Cartes scolaires</a>{% endif %}
         {% if admin.can_manage_finances %}<a href="/admin/demandes-etablissements" class="{{ 'active' if active == 'demandes_etablissements' else '' }}">Demandes des établissements</a>{% endif %}
+        {% if admin.can_manage_messagerie %}<a href="/admin/messagerie" class="{{ 'active' if active == 'messagerie' else '' }}">Messagerie établissements</a>{% endif %}
       </div>
       {% endif %}
 
@@ -81,6 +83,7 @@
         <span class="nav-section-title">Administration</span>
         <a href="/admin/users" class="{{ 'active' if active == 'users' else '' }}">Comptes &amp; accès</a>
         <a href="/admin/audit" class="{{ 'active' if active == 'audit' else '' }}">Journal d'audit</a>
+        <a href="/admin/connexions" class="{{ 'active' if active == 'connexions' else '' }}">Journal des connexions</a>
         <a href="/admin/backups" class="{{ 'active' if active == 'backups' else '' }}">Sauvegardes</a>
       </div>
       {% endif %}

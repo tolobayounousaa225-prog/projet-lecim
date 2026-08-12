@@ -33,6 +33,9 @@ class User(Base):
     # directeur/directrice) a accès à tout son espace ; un compte secrétaire n'a
     # accès qu'aux rubriques explicitement cochées par l'administrateur (allowed_modules).
     is_etablissement_titulaire: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Verrouillage temporaire après plusieurs échecs de connexion consécutifs.
+    failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    locked_until: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -61,6 +64,10 @@ class User(Base):
     @property
     def is_observer(self) -> bool:
         return self.access_level == "observateur"
+
+    @property
+    def is_locked(self) -> bool:
+        return bool(self.locked_until and self.locked_until > datetime.datetime.utcnow())
 
     @property
     def allowed_modules_list(self) -> list[str]:
@@ -167,6 +174,10 @@ class User(Base):
     @property
     def can_manage_cartes_scolaires(self) -> bool:
         return self.has_module("cartes_scolaires")
+
+    @property
+    def can_manage_messagerie(self) -> bool:
+        return self.has_module("messagerie")
 
     @property
     def is_delegation_account(self) -> bool:
@@ -499,6 +510,27 @@ class DemandeEtablissement(Base):
         return "Traitée" if self.statut == "traitee" else "Nouvelle"
 
 
+class MessageEtablissement(Base):
+    """Message d'un fil de discussion continu entre le BEN et un établissement
+    affilié — remplace le système "Demandes" à sens unique par un vrai échange."""
+
+    __tablename__ = "messages_etablissements"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    etablissement_id: Mapped[int] = mapped_column(ForeignKey("etablissements.id"), nullable=False)
+    sender_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    is_from_ben: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    is_read_by_ben: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_read_by_etablissement: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    etablissement: Mapped["Etablissement"] = relationship()
+    sender: Mapped["User | None"] = relationship()
+
+
 class Adhesion(Base):
     """Droit d'adhésion (12 000 FCFA), versé une fois par l'établissement."""
 
@@ -578,6 +610,24 @@ class Depense(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
+
+
+class ConnexionLog(Base):
+    """Journal des connexions réussies — un enregistrement par connexion, avec l'IP et
+    le navigateur utilisés, pour repérer les connexions depuis un appareil inconnu."""
+
+    __tablename__ = "connexions_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    is_new_device: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    user: Mapped["User | None"] = relationship()
 
 
 # ---------- Notifications ----------
@@ -1019,6 +1069,24 @@ class SondageVote(Base):
 
 
 # ---------- Délégations régionales ----------
+
+class AnnonceDelegation(Base):
+    """Annonce publiée par une délégation régionale, visible uniquement par les
+    établissements affiliés rattachés à cette délégation."""
+
+    __tablename__ = "annonces_delegations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    delegation_id: Mapped[int] = mapped_column(ForeignKey("delegations.id"), nullable=False)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    delegation: Mapped["Delegation"] = relationship()
+
 
 class Delegation(Base):
     """Comité local / délégation régionale de la LECIM."""

@@ -150,6 +150,8 @@ require_etab_enseignants_web = _etab_module_dependency_web("enseignants")
 require_etab_effectifs_web = _etab_module_dependency_web("effectifs")
 require_etab_cartes_web = _etab_module_dependency_web("cartes_scolaires")
 require_etab_demandes_web = _etab_module_dependency_web("demandes")
+require_etab_annonces_web = _etab_module_dependency_web("annonces")
+require_etab_messagerie_web = _etab_module_dependency_web("messagerie")
 
 
 def require_admin_web(
@@ -207,6 +209,7 @@ require_resultats_examens_access_web = _module_dependency_web("resultats_examens
 require_sondages_access_web = _module_dependency_web("sondages")
 require_effectifs_access_web = _module_dependency_web("effectifs")
 require_cartes_scolaires_access_web = _module_dependency_web("cartes_scolaires")
+require_messagerie_access_web = _module_dependency_web("messagerie")
 
 
 def require_delegation_management_web(
