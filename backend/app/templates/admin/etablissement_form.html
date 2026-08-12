@@ -3,10 +3,34 @@
 {% block content %}
 <h1>{{ "Modifier l'établissement" if item else "Ajouter un établissement" }}</h1>
 <div class="form-card">
-  <form method="post" action="{{ '/admin/etablissements/' ~ item.id ~ '/edit' if item else '/admin/etablissements/new' }}">
+  <form method="post" action="{{ '/admin/etablissements/' ~ item.id ~ '/edit' if item else '/admin/etablissements/new' }}" enctype="multipart/form-data">
     <div class="form-group">
       <label for="nom">Nom de l'établissement</label>
       <input type="text" id="nom" name="nom" required value="{{ item.nom if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="directeur_nom">Nom du directeur / responsable</label>
+      <input type="text" id="directeur_nom" name="directeur_nom" value="{{ item.directeur_nom if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="type_enseignement">Niveaux d'enseignement</label>
+      <select id="type_enseignement" name="type_enseignement">
+        <option value="primaire" {% if item and item.type_enseignement == 'primaire' %}selected{% endif %}>Primaire uniquement</option>
+        <option value="secondaire" {% if item and item.type_enseignement == 'secondaire' %}selected{% endif %}>Secondaire uniquement</option>
+        <option value="les_deux" {% if not item or item.type_enseignement == 'les_deux' %}selected{% endif %}>Primaire et secondaire</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="numero_agrement">Numéro d'agrément (ministère)</label>
+      <input type="text" id="numero_agrement" name="numero_agrement" value="{{ item.numero_agrement if item else '' }}">
+    </div>
+    <div class="form-group">
+      {% if item and item.logo_url %}
+      <img src="{{ item.logo_url }}" alt="" style="max-width:120px; border-radius:8px; display:block; margin-bottom:10px;">
+      {% endif %}
+      <label for="logo">Logo de l'établissement (affiché sur les cartes scolaires de ses élèves)</label>
+      <input type="file" id="logo" name="logo" accept=".jpg,.jpeg,.png,.webp,.gif">
+      {% if item and item.logo_url %}<p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Laissez vide pour conserver le logo actuel.</p>{% endif %}
     </div>
     <div class="form-group">
       <label for="bureau_local">Bureau local / région</label>

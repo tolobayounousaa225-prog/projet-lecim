@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from .. import audit, models
 from ..database import get_db
 from ..deps import require_finance_access_web
+from ..postes import ETAB_MODULES
 from ..security import hash_password
 
 router = APIRouter(prefix="/admin", tags=["admin-etablissement-portail"])
@@ -27,21 +28,36 @@ def etablissement_compte(
     etablissement = db.get(models.Etablissement, etablissement_id)
     if not etablissement:
         return RedirectResponse(url="/admin/etablissements", status_code=status.HTTP_303_SEE_OTHER)
-    compte = db.query(models.User).filter(models.User.etablissement_id == etablissement_id).first()
+    comptes = (
+        db.query(models.User)
+        .filter(models.User.etablissement_id == etablissement_id)
+        .order_by(models.User.is_etablissement_titulaire.desc(), models.User.created_at)
+        .all()
+    )
+    titulaire_existe = any(c.is_etablissement_titulaire for c in comptes)
     return templates.TemplateResponse(
         request,
         "admin/etablissement_compte.html",
-        {"admin": user, "etablissement": etablissement, "compte": compte, "active": "finances", "error": None},
+        {
+            "admin": user,
+            "etablissement": etablissement,
+            "comptes": comptes,
+            "titulaire_existe": titulaire_existe,
+            "etab_modules": ETAB_MODULES,
+            "active": "finances",
+            "error": None,
+        },
     )
 
 
 @router.post("/etablissements/{etablissement_id}/compte/new")
-def etablissement_compte_create(
+async def etablissement_compte_create(
     etablissement_id: int,
     request: Request,
     full_name: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
+    role: str = Form("titulaire"),
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
@@ -49,44 +65,62 @@ def etablissement_compte_create(
     if not etablissement:
         return RedirectResponse(url="/admin/etablissements", status_code=status.HTTP_303_SEE_OTHER)
 
+    form = await request.form()
+    modules = [m for m in form.getlist("modules") if m in ETAB_MODULES]
+
+    comptes = db.query(models.User).filter(models.User.etablissement_id == etablissement_id).all()
+    titulaire_existe = any(c.is_etablissement_titulaire for c in comptes)
+
     existing = db.query(models.User).filter(models.User.email == email).first()
-    if existing:
+    if existing or (role == "titulaire" and titulaire_existe):
+        error = (
+            "Un compte existe déjà avec cet e-mail."
+            if existing
+            else "Un compte titulaire existe déjà pour cet établissement — créez un compte secrétaire à la place."
+        )
         return templates.TemplateResponse(
             request,
             "admin/etablissement_compte.html",
             {
                 "admin": user,
                 "etablissement": etablissement,
-                "compte": None,
+                "comptes": comptes,
+                "titulaire_existe": titulaire_existe,
+                "etab_modules": ETAB_MODULES,
                 "active": "finances",
-                "error": "Un compte existe déjà avec cet e-mail.",
+                "error": error,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
+    is_titulaire = role == "titulaire"
     compte = models.User(
         full_name=full_name,
         email=email,
         hashed_password=hash_password(password),
         access_level="bureau",
         etablissement_id=etablissement_id,
+        is_etablissement_titulaire=is_titulaire,
+        allowed_modules="" if is_titulaire else ",".join(modules),
     )
     db.add(compte)
     db.flush()
-    audit.log(db, user, "create", "Compte établissement", compte.id, f"A créé le compte de {etablissement.nom}")
+    role_label = "titulaire" if is_titulaire else "secrétaire"
+    audit.log(db, user, "create", "Compte établissement", compte.id, f"A créé un compte {role_label} pour {etablissement.nom} ({email})")
     db.commit()
     return RedirectResponse(url=f"/admin/etablissements/{etablissement_id}/compte", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/etablissements/{etablissement_id}/compte/delete")
+@router.post("/etablissements/{etablissement_id}/compte/{compte_id}/delete")
 def etablissement_compte_delete(
     etablissement_id: int,
+    compte_id: int,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
-    compte = db.query(models.User).filter(models.User.etablissement_id == etablissement_id).first()
-    if compte:
-        audit.log(db, user, "delete", "Compte établissement", compte.id, f"A révoqué le compte établissement #{etablissement_id}")
+    compte = db.get(models.User, compte_id)
+    if compte and compte.etablissement_id == etablissement_id:
+        audit.log(db, user, "delete", "Compte établissement", compte.id, f"A révoqué le compte {compte.email} de l'établissement #{etablissement_id}")
         db.delete(compte)
         db.commit()
     return RedirectResponse(url=f"/admin/etablissements/{etablissement_id}/compte", status_code=status.HTTP_303_SEE_OTHER)

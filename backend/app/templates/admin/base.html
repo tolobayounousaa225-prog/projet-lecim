@@ -21,74 +21,80 @@
       <a href="/admin/cartes/mine" class="{{ 'active' if active == 'carte_mine' else '' }}">Ma carte de membre</a>
       <a href="/admin/calendrier" class="{{ 'active' if active == 'calendrier' else '' }}">Calendrier</a>
       <a href="/admin/sondages" class="{{ 'active' if active == 'sondages' else '' }}">Sondages</a>
-      {% if admin.can_manage_sondages %}
-      <a href="/admin/sondages/gestion/liste" class="{{ 'active' if active == 'sondages_gestion' else '' }}">Gestion des sondages</a>
+
+      {% if admin.can_manage_reunions or admin.can_manage_membres or admin.can_manage_cartes or admin.can_manage_sondages or admin.can_manage_executif or admin.can_manage_delegations or admin.can_manage_historique or admin.can_manage_gouvernance %}
+      <details {% if active in ['reunions', 'membres', 'cartes', 'sondages_gestion', 'executif', 'delegations', 'historique', 'gouvernance'] %}open{% endif %}>
+        <summary>Vie associative</summary>
+        <div class="group-links">
+          {% if admin.can_manage_reunions %}<a href="/admin/reunions" class="{{ 'active' if active == 'reunions' else '' }}">Réunions</a>{% endif %}
+          {% if admin.can_manage_membres %}<a href="/admin/membres" class="{{ 'active' if active == 'membres' else '' }}">Répertoire des membres</a>{% endif %}
+          {% if admin.can_manage_cartes %}<a href="/admin/cartes" class="{{ 'active' if active == 'cartes' else '' }}">Gestion des cartes de membres</a>{% endif %}
+          {% if admin.can_manage_sondages %}<a href="/admin/sondages/gestion/liste" class="{{ 'active' if active == 'sondages_gestion' else '' }}">Gestion des sondages</a>{% endif %}
+          {% if admin.can_manage_executif %}<a href="/admin/executif" class="{{ 'active' if active == 'executif' else '' }}">Tableau de bord exécutif</a>{% endif %}
+          {% if admin.can_manage_delegations %}<a href="/admin/delegations" class="{{ 'active' if active == 'delegations' else '' }}">Délégations régionales</a>{% endif %}
+          {% if admin.can_manage_historique %}<a href="/admin/historique" class="{{ 'active' if active == 'historique' else '' }}">Historique des présidents</a>{% endif %}
+          {% if admin.can_manage_gouvernance %}<a href="/admin/gouvernance" class="{{ 'active' if active == 'gouvernance' else '' }}">Gouvernance (photos du BEN)</a>{% endif %}
+        </div>
+      </details>
       {% endif %}
-      {% if admin.can_manage_executif %}
-      <a href="/admin/executif" class="{{ 'active' if active == 'executif' else '' }}">Tableau de bord exécutif</a>
+
+      {% if admin.can_manage_enseignants or admin.can_manage_resultats_examens or admin.can_manage_effectifs or admin.can_manage_cartes_scolaires or admin.can_manage_finances %}
+      <details {% if active in ['enseignants', 'resultats_examens', 'effectifs', 'cartes_scolaires', 'demandes_etablissements'] %}open{% endif %}>
+        <summary>Écoles membres</summary>
+        <div class="group-links">
+          {% if admin.can_manage_enseignants %}<a href="/admin/enseignants" class="{{ 'active' if active == 'enseignants' else '' }}">Répertoire des enseignants</a>{% endif %}
+          {% if admin.can_manage_resultats_examens %}<a href="/admin/resultats-examens" class="{{ 'active' if active == 'resultats_examens' else '' }}">Résultats aux examens</a>{% endif %}
+          {% if admin.can_manage_effectifs %}<a href="/admin/effectifs" class="{{ 'active' if active == 'effectifs' else '' }}">Effectifs des élèves</a>{% endif %}
+          {% if admin.can_manage_cartes_scolaires %}<a href="/admin/cartes-scolaires" class="{{ 'active' if active == 'cartes_scolaires' else '' }}">Cartes scolaires</a>{% endif %}
+          {% if admin.can_manage_finances %}<a href="/admin/demandes-etablissements" class="{{ 'active' if active == 'demandes_etablissements' else '' }}">Demandes des établissements</a>{% endif %}
+        </div>
+      </details>
       {% endif %}
-      {% if admin.can_manage_delegations %}
-      <a href="/admin/delegations" class="{{ 'active' if active == 'delegations' else '' }}">Délégations régionales</a>
-      {% endif %}
-      {% if admin.can_manage_cartes %}
-      <a href="/admin/cartes" class="{{ 'active' if active == 'cartes' else '' }}">Gestion des cartes de membres</a>
-      {% endif %}
-      {% if admin.can_manage_reunions %}
-      <a href="/admin/reunions" class="{{ 'active' if active == 'reunions' else '' }}">Réunions</a>
-      {% endif %}
-      {% if admin.can_manage_membres %}
-      <a href="/admin/membres" class="{{ 'active' if active == 'membres' else '' }}">Répertoire des membres</a>
-      {% endif %}
-      {% if admin.can_manage_enseignants %}
-      <a href="/admin/enseignants" class="{{ 'active' if active == 'enseignants' else '' }}">Répertoire des enseignants</a>
-      {% endif %}
-      {% if admin.can_manage_resultats_examens %}
-      <a href="/admin/resultats-examens" class="{{ 'active' if active == 'resultats_examens' else '' }}">Résultats aux examens</a>
-      {% endif %}
-      {% if admin.can_manage_documents %}
-      <a href="/admin/documents" class="{{ 'active' if active == 'documents' else '' }}">Documents &amp; PV</a>
-      {% endif %}
-      {% if admin.can_manage_photos %}
-      <a href="/admin/photos" class="{{ 'active' if active == 'photos' else '' }}">Galerie photo</a>
-      {% endif %}
-      {% if admin.can_manage_news %}
-      <a href="/admin/news" class="{{ 'active' if active == 'news' else '' }}">Actualités du site</a>
-      {% endif %}
-      {% if admin.can_manage_activities %}
-      <a href="/admin/activities" class="{{ 'active' if active == 'activities' else '' }}">Activités du site</a>
-      {% endif %}
-      {% if admin.can_manage_contact %}
-      <a href="/admin/messages" class="{{ 'active' if active == 'messages' else '' }}">Messages de contact</a>
-      {% endif %}
+
       {% if admin.can_manage_finances %}
-      <a href="/admin/finances" class="{{ 'active' if active == 'finances' else '' }}">Finances</a>
-      <a href="/admin/demandes-etablissements" class="{{ 'active' if active == 'demandes_etablissements' else '' }}">Demandes des établissements</a>
+      <details {% if active == 'finances' %}open{% endif %}>
+        <summary>Finances</summary>
+        <div class="group-links">
+          <a href="/admin/finances" class="{{ 'active' if active == 'finances' else '' }}">Finances</a>
+        </div>
+      </details>
       {% endif %}
-      {% if admin.can_manage_partenaires %}
-      <a href="/admin/partenaires" class="{{ 'active' if active == 'partenaires' else '' }}">Relations extérieures</a>
+
+      {% if admin.can_manage_documents or admin.can_manage_photos or admin.can_manage_news or admin.can_manage_activities or admin.can_manage_contact or admin.can_manage_publications or admin.can_manage_site_content %}
+      <details {% if active in ['documents', 'photos', 'news', 'activities', 'messages', 'publications', 'site_content'] %}open{% endif %}>
+        <summary>Communication &amp; site vitrine</summary>
+        <div class="group-links">
+          {% if admin.can_manage_documents %}<a href="/admin/documents" class="{{ 'active' if active == 'documents' else '' }}">Documents &amp; PV</a>{% endif %}
+          {% if admin.can_manage_photos %}<a href="/admin/photos" class="{{ 'active' if active == 'photos' else '' }}">Galerie photo</a>{% endif %}
+          {% if admin.can_manage_news %}<a href="/admin/news" class="{{ 'active' if active == 'news' else '' }}">Actualités du site</a>{% endif %}
+          {% if admin.can_manage_activities %}<a href="/admin/activities" class="{{ 'active' if active == 'activities' else '' }}">Activités du site</a>{% endif %}
+          {% if admin.can_manage_contact %}<a href="/admin/messages" class="{{ 'active' if active == 'messages' else '' }}">Messages de contact</a>{% endif %}
+          {% if admin.can_manage_publications %}<a href="/admin/publications" class="{{ 'active' if active == 'publications' else '' }}">Publications du site</a>{% endif %}
+          {% if admin.can_manage_site_content %}<a href="/admin/site-content" class="{{ 'active' if active == 'site_content' else '' }}">Contenu du site</a>{% endif %}
+        </div>
+      </details>
       {% endif %}
-      {% if admin.can_manage_projets_patrimoine %}
-      <a href="/admin/projets" class="{{ 'active' if active in ['projets', 'patrimoine'] else '' }}">Projets &amp; patrimoine</a>
+
+      {% if admin.can_manage_partenaires or admin.can_manage_projets_patrimoine or admin.can_manage_affaires_sociales %}
+      <details {% if active in ['partenaires', 'projets', 'patrimoine', 'social'] %}open{% endif %}>
+        <summary>Relations extérieures &amp; projets</summary>
+        <div class="group-links">
+          {% if admin.can_manage_partenaires %}<a href="/admin/partenaires" class="{{ 'active' if active == 'partenaires' else '' }}">Relations extérieures</a>{% endif %}
+          {% if admin.can_manage_projets_patrimoine %}<a href="/admin/projets" class="{{ 'active' if active in ['projets', 'patrimoine'] else '' }}">Projets &amp; patrimoine</a>{% endif %}
+          {% if admin.can_manage_affaires_sociales %}<a href="/admin/social" class="{{ 'active' if active == 'social' else '' }}">Affaires sociales</a>{% endif %}
+        </div>
+      </details>
       {% endif %}
-      {% if admin.can_manage_affaires_sociales %}
-      <a href="/admin/social" class="{{ 'active' if active == 'social' else '' }}">Affaires sociales</a>
-      {% endif %}
-      {% if admin.can_manage_publications %}
-      <a href="/admin/publications" class="{{ 'active' if active == 'publications' else '' }}">Publications du site</a>
-      {% endif %}
-      {% if admin.can_manage_historique %}
-      <a href="/admin/historique" class="{{ 'active' if active == 'historique' else '' }}">Historique des présidents</a>
-      {% endif %}
-      {% if admin.can_manage_gouvernance %}
-      <a href="/admin/gouvernance" class="{{ 'active' if active == 'gouvernance' else '' }}">Gouvernance (photos du BEN)</a>
-      {% endif %}
-      {% if admin.can_manage_site_content %}
-      <a href="/admin/site-content" class="{{ 'active' if active == 'site_content' else '' }}">Contenu du site</a>
-      {% endif %}
+
       {% if admin.is_admin %}
-      <a href="/admin/users" class="{{ 'active' if active == 'users' else '' }}">Comptes &amp; accès</a>
-      <a href="/admin/audit" class="{{ 'active' if active == 'audit' else '' }}">Journal d'audit</a>
-      <a href="/admin/backups" class="{{ 'active' if active == 'backups' else '' }}">Sauvegardes</a>
+      <details {% if active in ['users', 'audit', 'backups'] %}open{% endif %}>
+        <summary>Administration</summary>
+        <div class="group-links">
+          <a href="/admin/users" class="{{ 'active' if active == 'users' else '' }}">Comptes &amp; accès</a>
+          <a href="/admin/audit" class="{{ 'active' if active == 'audit' else '' }}">Journal d'audit</a>
+          <a href="/admin/backups" class="{{ 'active' if active == 'backups' else '' }}">Sauvegardes</a>
+        </div>
+      </details>
       {% endif %}
     </nav>
     <div class="logout">

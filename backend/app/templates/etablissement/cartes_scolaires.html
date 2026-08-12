@@ -1,0 +1,72 @@
+{% extends "etablissement/base.html" %}
+{% block title %}Cartes scolaires{% endblock %}
+{% block content %}
+<h1>Cartes scolaires de vos élèves</h1>
+<p style="color:var(--text-muted); margin-top:-14px;">Chaque carte porte le logo de votre établissement, un matricule LECIM et un QR code de certification. Elle est vérifiée par le BEN avant impression.</p>
+
+{% if error %}<div class="error-box" style="margin-bottom:16px;">{{ error }}</div>{% endif %}
+
+<div class="form-card" style="max-width:560px; margin-bottom:24px;">
+  <strong style="display:block; margin-bottom:14px;">Demander une carte scolaire</strong>
+  <form method="post" action="/etablissement/cartes-scolaires/new" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="eleve_nom">Nom complet de l'élève</label>
+      <input type="text" id="eleve_nom" name="eleve_nom" required>
+    </div>
+    <div class="form-group">
+      <label for="eleve_sexe">Sexe</label>
+      <select id="eleve_sexe" name="eleve_sexe">
+        <option value="">—</option>
+        <option value="M">Masculin</option>
+        <option value="F">Féminin</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="eleve_date_naissance">Date de naissance</label>
+      <input type="date" id="eleve_date_naissance" name="eleve_date_naissance">
+    </div>
+    <div class="form-group">
+      <label for="classe">Classe</label>
+      <input type="text" id="classe" name="classe" required placeholder="Ex : CM2, 3ème...">
+    </div>
+    <div class="form-group">
+      <label for="annee_scolaire">Année scolaire</label>
+      <input type="text" id="annee_scolaire" name="annee_scolaire" required value="{{ annee_par_defaut }}">
+    </div>
+    <div class="form-group">
+      <label for="photo">Photo de l'élève</label>
+      <input type="file" id="photo" name="photo" accept=".jpg,.jpeg,.png,.webp,.gif">
+    </div>
+    <button type="submit" class="btn btn-primary">Envoyer la demande</button>
+  </form>
+</div>
+
+{% if items %}
+<table>
+  <thead><tr><th>Élève</th><th>Classe</th><th>Année</th><th>Matricule</th><th>Statut</th><th></th></tr></thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.eleve_nom }}</td>
+      <td>{{ item.classe }}</td>
+      <td>{{ item.annee_scolaire }}</td>
+      <td>{{ item.matricule or "—" }}</td>
+      <td>
+        {% if item.status == "disponible" %}<span class="pill pill-green">{{ item.status_label }}</span>
+        {% elif item.status == "rejetee" %}<span class="pill pill-red">{{ item.status_label }}</span>
+        {% else %}<span class="pill pill-muted">{{ item.status_label }}</span>{% endif %}
+        {% if item.status == "rejetee" and item.commentaire_rejet %}<div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">{{ item.commentaire_rejet }}</div>{% endif %}
+      </td>
+      <td>
+        {% if item.status in ("validee", "imprimee", "disponible") %}
+        <a href="/etablissement/cartes-scolaires/{{ item.id }}/pdf" class="btn btn-outline btn-sm">PDF</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune carte scolaire demandée pour le moment.</div>
+{% endif %}
+{% endblock %}

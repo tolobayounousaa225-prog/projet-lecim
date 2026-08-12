@@ -1,0 +1,39 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouvel" }} effectif{% endblock %}
+{% block content %}
+<h1>{{ "Modifier l'effectif" if item else "Saisir un effectif" }}</h1>
+<div class="form-card">
+  <form method="post" action="{{ '/admin/effectifs/' ~ item.id ~ '/edit' if item else '/admin/effectifs/new' }}">
+    <div class="form-group">
+      <label for="etablissement_id">Établissement</label>
+      <select id="etablissement_id" name="etablissement_id" required>
+        <option value="">— Sélectionner —</option>
+        {% for e in etablissements %}
+        <option value="{{ e.id }}" {% if item and item.etablissement_id == e.id %}selected{% endif %}>{{ e.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="annee_scolaire">Année scolaire</label>
+      <input type="text" id="annee_scolaire" name="annee_scolaire" required placeholder="Ex : 2025-2026" value="{{ item.annee_scolaire if item else annee_par_defaut }}">
+    </div>
+    <div class="form-group">
+      <label for="niveau">Niveau</label>
+      <select id="niveau" name="niveau">
+        <option value="primaire" {% if item and item.niveau == 'primaire' %}selected{% endif %}>Primaire</option>
+        <option value="secondaire" {% if item and item.niveau == 'secondaire' %}selected{% endif %}>Secondaire</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="nombre_garcons">Nombre de garçons</label>
+      <input type="number" id="nombre_garcons" name="nombre_garcons" min="0" value="{{ item.nombre_garcons if item else 0 }}">
+    </div>
+    <div class="form-group">
+      <label for="nombre_filles">Nombre de filles</label>
+      <input type="number" id="nombre_filles" name="nombre_filles" min="0" value="{{ item.nombre_filles if item else 0 }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/effectifs" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

@@ -15,3 +15,11 @@ def notify_cartes_gestionnaires(db: Session, message: str, link: str | None = No
     for user in users:
         if user.is_admin or user.can_manage_cartes:
             notify(db, user.id, message, link)
+
+
+def notify_cartes_scolaires_gestionnaires(db: Session, message: str, link: str | None = None) -> None:
+    """Notifie tous les comptes habilités à gérer les cartes scolaires (+ les administrateurs)."""
+    users = db.query(models.User).all()
+    for user in users:
+        if user.is_admin or user.can_manage_cartes_scolaires:
+            notify(db, user.id, message, link)

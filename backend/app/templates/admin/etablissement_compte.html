@@ -6,21 +6,46 @@
 
 {% if error %}<div class="error-box" style="margin-bottom:16px;">{{ error }}</div>{% endif %}
 
-{% if compte %}
-<div class="form-card" style="max-width:520px;">
-  <strong style="color:var(--green-dark); display:block; margin-bottom:10px;">Compte actif</strong>
-  <p>{{ compte.full_name }}</p>
-  <p style="color:var(--text-muted);">{{ compte.email }}</p>
-  <form method="post" action="/admin/etablissements/{{ etablissement.id }}/compte/delete" onsubmit="return confirm('Révoquer l\'accès de cet établissement à son espace personnel ?');" style="margin-top:16px;">
-    <button type="submit" class="btn btn-danger btn-sm">Révoquer l'accès</button>
-  </form>
+{% if comptes %}
+<div class="form-card" style="max-width:640px; margin-bottom:24px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:10px;">Comptes actifs</strong>
+  <table>
+    <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th>Rubriques accordées</th><th></th></tr></thead>
+    <tbody>
+      {% for compte in comptes %}
+      <tr>
+        <td>{{ compte.full_name }}</td>
+        <td>{{ compte.email }}</td>
+        <td>
+          {% if compte.is_etablissement_titulaire %}<span class="pill pill-green">Titulaire — accès complet</span>
+          {% else %}<span class="pill pill-muted">Secrétaire</span>{% endif %}
+        </td>
+        <td>
+          {% if compte.is_etablissement_titulaire %}—
+          {% else %}
+            {% for key in compte.allowed_modules_list %}<span class="pill pill-muted" style="margin:2px;">{{ etab_modules.get(key, key) }}</span>{% endfor %}
+            {% if not compte.allowed_modules_list %}<span style="color:var(--text-muted);">Aucune</span>{% endif %}
+          {% endif %}
+        </td>
+        <td>
+          <form method="post" action="/admin/etablissements/{{ etablissement.id }}/compte/{{ compte.id }}/delete" onsubmit="return confirm('Révoquer ce compte ?');">
+            <button type="submit" class="btn btn-danger btn-sm">Révoquer</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
-{% else %}
-<div class="form-card" style="max-width:520px;">
-  <strong style="color:var(--green-dark); display:block; margin-bottom:14px;">Créer l'accès à l'espace établissement</strong>
+{% endif %}
+
+<div class="form-card" style="max-width:560px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:14px;">
+    {% if titulaire_existe %}Créer un compte secrétaire{% else %}Créer l'accès à l'espace établissement{% endif %}
+  </strong>
   <form method="post" action="/admin/etablissements/{{ etablissement.id }}/compte/new">
     <div class="form-group">
-      <label for="full_name">Nom du contact (directeur/directrice, etc.)</label>
+      <label for="full_name">Nom du contact</label>
       <input type="text" id="full_name" name="full_name" required>
     </div>
     <div class="form-group">
@@ -31,8 +56,28 @@
       <label for="password">Mot de passe</label>
       <input type="password" id="password" name="password" required>
     </div>
-    <button type="submit" class="btn btn-primary">Créer l'accès</button>
+    {% if not titulaire_existe %}
+    <div class="form-group">
+      <label for="role">Type de compte</label>
+      <select id="role" name="role" onchange="document.getElementById('modules-box').style.display = this.value === 'secretaire' ? 'block' : 'none';">
+        <option value="titulaire">Titulaire — accès complet à l'espace établissement</option>
+        <option value="secretaire">Secrétaire — accès limité aux rubriques choisies</option>
+      </select>
+    </div>
+    {% else %}
+    <input type="hidden" name="role" value="secretaire">
+    <p style="color:var(--text-muted); font-size:0.85rem;">Un titulaire existe déjà pour cet établissement : ce nouveau compte sera un compte secrétaire à accès limité.</p>
+    {% endif %}
+    <div class="form-group" id="modules-box" style="{{ 'display:none;' if not titulaire_existe else '' }}">
+      <label>Rubriques accordées à ce secrétaire</label>
+      {% for key, label in etab_modules.items() %}
+      <div class="checkbox-row">
+        <input type="checkbox" id="mod_{{ key }}" name="modules" value="{{ key }}">
+        <label for="mod_{{ key }}" style="margin:0; font-weight:normal;">{{ label }}</label>
+      </div>
+      {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-primary" style="margin-top:10px;">Créer l'accès</button>
   </form>
 </div>
-{% endif %}
 {% endblock %}
