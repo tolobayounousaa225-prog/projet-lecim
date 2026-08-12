@@ -55,6 +55,10 @@ class User(Base):
         return self.access_level == "admin"
 
     @property
+    def is_observer(self) -> bool:
+        return self.access_level == "observateur"
+
+    @property
     def allowed_modules_list(self) -> list[str]:
         return [m for m in (self.allowed_modules or "").split(",") if m]
 
@@ -259,7 +263,7 @@ class Reunion(Base):
     date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     lieu: Mapped[str] = mapped_column(String(255), nullable=True)
     ordre_du_jour: Mapped[str] = mapped_column(Text, nullable=True)
-    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     # NULL = réunion nationale du BEN ; renseigné = réunion locale d'une délégation.
     delegation_id: Mapped[int | None] = mapped_column(ForeignKey("delegations.id"), nullable=True)
     reminder_sent: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -303,7 +307,7 @@ class Document(Base):
     reunion_id: Mapped[int | None] = mapped_column(ForeignKey("reunions.id"), nullable=True)
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
-    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -321,7 +325,7 @@ class Photo(Base):
     reunion_id: Mapped[int | None] = mapped_column(ForeignKey("reunions.id"), nullable=True)
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
-    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -391,7 +395,7 @@ class ResultatExamen(Base):
     nombre_inscrits: Mapped[int] = mapped_column(Integer, default=0)
     nombre_admis: Mapped[int] = mapped_column(Integer, default=0)
     is_published: Mapped[bool] = mapped_column(Boolean, default=True)
-    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -442,7 +446,7 @@ class Adhesion(Base):
     etablissement_id: Mapped[int] = mapped_column(ForeignKey("etablissements.id"), nullable=False)
     montant: Mapped[int] = mapped_column(Integer, default=12000)
     date_paiement: Mapped[datetime.date] = mapped_column(Date, nullable=False)
-    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -465,7 +469,7 @@ class Cotisation(Base):
     montant_paye: Mapped[int] = mapped_column(Integer, default=0)
     part_bureau_local: Mapped[int] = mapped_column(Integer, default=0)
     date_paiement: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
-    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -491,7 +495,7 @@ class Recette(Base):
     libelle: Mapped[str] = mapped_column(String(255), nullable=False)
     montant: Mapped[int] = mapped_column(Integer, nullable=False)
     date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
-    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -508,7 +512,7 @@ class Depense(Base):
     date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     justificatif_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     justificatif_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -522,7 +526,7 @@ class Notification(Base):
     __tablename__ = "notifications"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     link: Mapped[str | None] = mapped_column(String(500), nullable=True)
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -542,7 +546,7 @@ class CarteMembre(Base):
     __tablename__ = "cartes_membres"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     full_name_snapshot: Mapped[str] = mapped_column(String(255), nullable=False)
     photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -566,7 +570,7 @@ class CarteMembre(Base):
     date_validite: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
     date_impression: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     date_disponibilite: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
-    validated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    validated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
     validated_by: Mapped["User | None"] = relationship(foreign_keys=[validated_by_id])
@@ -596,7 +600,7 @@ class Partenaire(Base):
     contact_telephone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     statut: Mapped[str] = mapped_column(String(20), default="en_discussion")  # actif | en_discussion | inactif
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -629,7 +633,7 @@ class Projet(Base):
     date_debut: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
     date_fin_prevue: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
     budget_estime: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -655,7 +659,7 @@ class Patrimoine(Base):
     date_acquisition: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
     valeur_estimee: Mapped[int | None] = mapped_column(Integer, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -692,7 +696,7 @@ class DemandeAssistance(Base):
         DateTime, default=datetime.datetime.utcnow
     )
     date_traitement: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
-    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
 
 DEMANDE_ASSISTANCE_STATUTS = {
@@ -719,7 +723,7 @@ class PublicationPublique(Base):
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
     published_at: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     is_published: Mapped[bool] = mapped_column(Boolean, default=True)
-    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -754,7 +758,7 @@ class HistoriquePresident(Base):
     photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     ordre: Mapped[int] = mapped_column(Integer, default=0)
     is_published: Mapped[bool] = mapped_column(Boolean, default=True)
-    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -783,7 +787,7 @@ class GouvernanceMembre(Base):
     adjoint_photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     ordre: Mapped[int] = mapped_column(Integer, default=0)
     is_published: Mapped[bool] = mapped_column(Boolean, default=True)
-    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -810,7 +814,7 @@ class SiteContent(Base):
 
     key: Mapped[str] = mapped_column(String(100), primary_key=True)
     value: Mapped[str | None] = mapped_column(Text, nullable=True)
-    updated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    updated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     updated_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
     )
@@ -825,7 +829,7 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     action: Mapped[str] = mapped_column(String(30), nullable=False)  # create | update | delete | login
     entity_type: Mapped[str] = mapped_column(String(60), nullable=False)
     entity_id: Mapped[str | None] = mapped_column(String(60), nullable=True)
@@ -857,7 +861,7 @@ class Sondage(Base):
     titre: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_ouvert: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -898,7 +902,7 @@ class SondageVote(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     sondage_id: Mapped[int] = mapped_column(ForeignKey("sondages.id"), nullable=False)
     option_id: Mapped[int] = mapped_column(ForeignKey("sondage_options.id"), nullable=False)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -919,7 +923,7 @@ class Delegation(Base):
     region: Mapped[str | None] = mapped_column(String(255), nullable=True)
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
-    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )

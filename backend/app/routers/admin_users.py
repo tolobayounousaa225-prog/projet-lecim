@@ -85,7 +85,7 @@ def users_create(
         full_name=full_name,
         email=email,
         hashed_password=hash_password(password),
-        access_level=access_level if access_level in {"admin", "bureau"} else "bureau",
+        access_level=access_level if access_level in {"admin", "bureau", "observateur"} else "bureau",
         poste=poste or None,
         is_adjoint=is_adjoint,
         allowed_modules=",".join(valid_modules),
@@ -159,7 +159,7 @@ def users_update(
         valid_modules = [m for m in modules if m in MODULES]
         user.full_name = full_name
         user.email = email
-        user.access_level = access_level if access_level in {"admin", "bureau"} else "bureau"
+        user.access_level = access_level if access_level in {"admin", "bureau", "observateur"} else "bureau"
         user.poste = poste or None
         user.is_adjoint = is_adjoint
         user.allowed_modules = ",".join(valid_modules)

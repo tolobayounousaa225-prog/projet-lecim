@@ -3,11 +3,13 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import scheduler
+from . import models, scheduler
 from .config import settings
+from .database import SessionLocal
+from .security import decode_access_token
 from .deps import (
     DelegationNotAuthenticatedException,
     EtablissementNotAuthenticatedException,
@@ -69,6 +71,40 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+PORTAL_PREFIXES = ("/admin", "/delegation", "/etablissement")
+OBSERVER_EXEMPT_PATHS = {"/admin/login"}
+
+
+@app.middleware("http")
+async def enforce_observer_read_only(request: Request, call_next):
+    """Un compte "observateur" peut consulter les modules qui lui sont accordés
+    mais ne peut déclencher aucune action qui modifie des données."""
+    path = request.url.path
+    if (
+        request.method in ("POST", "PUT", "PATCH", "DELETE")
+        and path.startswith(PORTAL_PREFIXES)
+        and path not in OBSERVER_EXEMPT_PATHS
+    ):
+        token = request.cookies.get("access_token")
+        if token:
+            email = decode_access_token(token)
+            if email:
+                db = SessionLocal()
+                try:
+                    user = db.query(models.User).filter(models.User.email == email).first()
+                finally:
+                    db.close()
+                if user and user.is_observer:
+                    return HTMLResponse(
+                        "<h1>Action non autorisée</h1>"
+                        "<p>Votre compte est en mode observateur (lecture seule) — "
+                        "aucune modification n'est autorisée.</p>"
+                        "<p><a href=\"javascript:history.back()\">&larr; Retour</a></p>",
+                        status_code=403,
+                    )
+    return await call_next(request)
+
 
 static_dir = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")

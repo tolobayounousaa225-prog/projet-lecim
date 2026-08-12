@@ -96,8 +96,24 @@
     </div>
   </aside>
   <main class="main">
+    {% if admin.is_observer %}
+    <div style="background:#fff3cd; color:#664d03; border:1px solid #ffe69c; border-radius:8px; padding:10px 16px; margin-bottom:20px; font-size:0.85rem; font-weight:600;">
+      👁 Mode observateur — vous consultez cet espace en lecture seule, aucune modification n'est possible.
+    </div>
+    {% endif %}
     {% block content %}{% endblock %}
   </main>
 </div>
+{% if admin.is_observer %}
+<script>
+document.addEventListener("submit", function (e) {
+  var form = e.target;
+  if (form.tagName === "FORM" && (form.getAttribute("method") || "get").toLowerCase() === "post") {
+    e.preventDefault();
+    alert("Votre compte est en mode observateur (lecture seule). Aucune modification n'est autorisée.");
+  }
+}, true);
+</script>
+{% endif %}
 </body>
 </html>

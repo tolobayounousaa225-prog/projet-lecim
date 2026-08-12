@@ -20,6 +20,8 @@
       <td>
         {% if item.is_admin %}
           <span class="pill pill-gold">Administrateur</span>
+        {% elif item.is_observer %}
+          <span class="pill pill-muted">👁 Observateur (lecture seule)</span>
         {% else %}
           <span class="pill pill-green">Membre du bureau</span>
         {% endif %}

@@ -33,7 +33,8 @@
     <div class="form-group">
       <label for="access_level">Niveau d'accès</label>
       <select id="access_level" name="access_level" onchange="toggleModulesBox()">
-        <option value="bureau" {% if not item or item.access_level == 'bureau' %}selected{% endif %}>Membre du bureau — voit uniquement les fonctionnalités cochées ci-dessous</option>
+        <option value="bureau" {% if not item or item.access_level == 'bureau' %}selected{% endif %}>Membre du bureau — voit et modifie uniquement les fonctionnalités cochées ci-dessous</option>
+        <option value="observateur" {% if item and item.access_level == 'observateur' %}selected{% endif %}>Observateur — voit uniquement les fonctionnalités cochées ci-dessous, sans pouvoir rien modifier</option>
         <option value="admin" {% if item and item.access_level == 'admin' %}selected{% endif %}>Administrateur — accès complet à tout, y compris la gestion des comptes</option>
       </select>
     </div>
