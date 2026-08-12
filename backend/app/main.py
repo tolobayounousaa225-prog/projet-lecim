@@ -200,4 +200,4 @@ def root():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "build": "diag-20260812-0233"}
