@@ -12,4 +12,6 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Forme shell (pas exec) pour permettre l'expansion de $PORT — Railway et d'autres
+# hébergeurs assignent dynamiquement leur propre port via cette variable.
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
