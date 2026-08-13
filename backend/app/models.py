@@ -612,6 +612,25 @@ class Depense(Base):
     )
 
 
+class PasswordResetRequest(Base):
+    """Demande de réinitialisation de mot de passe — un mot de passe temporaire est
+    généré, envoyé par e-mail, et conservé ici en clair jusqu'à utilisation pour que
+    le secrétariat puisse le communiquer à la main si l'e-mail n'arrive pas."""
+
+    __tablename__ = "password_reset_requests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    temp_password: Mapped[str] = mapped_column(String(50), nullable=False)
+    email_sent: Mapped[bool] = mapped_column(Boolean, default=False)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    user: Mapped["User"] = relationship()
+
+
 class ConnexionLog(Base):
     """Journal des connexions réussies — un enregistrement par connexion, avec l'IP et
     le navigateur utilisés, pour repérer les connexions depuis un appareil inconnu."""

@@ -37,6 +37,7 @@ from .routers import (
     admin_historique,
     admin_messagerie,
     admin_partenaires,
+    admin_password_resets,
     admin_projets,
     admin_publications,
     admin_resultats_examens,
@@ -54,6 +55,7 @@ from .routers import (
     gouvernance,
     historique,
     news,
+    password_reset,
     publications,
     resultats_examens,
     site_content,
@@ -156,6 +158,7 @@ def delegation_not_authenticated_handler(request: Request, exc: DelegationNotAut
 
 
 app.include_router(auth.router)
+app.include_router(password_reset.router)
 app.include_router(carte.router)
 app.include_router(etablissements_public.router)
 app.include_router(news.router)
@@ -196,6 +199,7 @@ app.include_router(delegation_portal.router)
 app.include_router(admin_etablissement_portail.router)
 app.include_router(admin_messagerie.router)
 app.include_router(admin_connexions.router)
+app.include_router(admin_password_resets.router)
 app.include_router(etablissement_portal.router)
 
 

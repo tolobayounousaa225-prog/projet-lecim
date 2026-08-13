@@ -25,6 +25,7 @@
       {% if user.has_etab_module('annonces') %}<a href="/etablissement/annonces" class="{{ 'active' if active == 'annonces' else '' }}">Annonces</a>{% endif %}
       {% if user.has_etab_module('messagerie') %}<a href="/etablissement/messagerie" class="{{ 'active' if active == 'messagerie' else '' }}">Messagerie</a>{% endif %}
       {% if user.has_etab_module('demandes') %}<a href="/etablissement/demandes" class="{{ 'active' if active == 'demandes' else '' }}">Mes demandes</a>{% endif %}
+      <a href="/etablissement/mon-compte/mot-de-passe" class="{{ 'active' if active == 'mon_compte' else '' }}">Changer mon mot de passe</a>
     </nav>
     <div class="logout">
       <a href="/etablissement/logout">Se déconnecter</a>

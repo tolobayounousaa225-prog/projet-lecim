@@ -1,4 +1,6 @@
 import datetime
+import secrets
+import string
 
 import bcrypt
 from jose import JWTError, jwt
@@ -19,6 +21,16 @@ def password_policy_error(password: str) -> str | None:
     if not any(c.isdigit() for c in password):
         return "Le mot de passe doit contenir au moins un chiffre."
     return None
+
+
+def generate_temp_password() -> str:
+    """Mot de passe temporaire lisible (sans caractères ambigus 0/O/1/l), qui
+    respecte toujours la politique minimale (lettres + chiffres)."""
+    alphabet = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"
+    while True:
+        candidate = "".join(secrets.choice(alphabet) for _ in range(10))
+        if not password_policy_error(candidate):
+            return candidate
 
 
 def hash_password(password: str) -> str:

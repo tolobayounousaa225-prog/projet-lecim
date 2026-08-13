@@ -20,6 +20,7 @@
       <a href="/admin/notifications" class="{{ 'active' if active == 'notifications' else '' }}">Notifications</a>
       <a href="/admin/cartes/mine" class="{{ 'active' if active == 'carte_mine' else '' }}">Ma carte de membre</a>
       <a href="/admin/attestation/pdf" target="_blank">Mon attestation d'appartenance</a>
+      <a href="/admin/mon-compte/mot-de-passe" class="{{ 'active' if active == 'mon_compte' else '' }}">Changer mon mot de passe</a>
       <a href="/admin/calendrier" class="{{ 'active' if active == 'calendrier' else '' }}">Calendrier</a>
       <a href="/admin/sondages" class="{{ 'active' if active == 'sondages' else '' }}">Sondages</a>
 
@@ -84,6 +85,7 @@
         <a href="/admin/users" class="{{ 'active' if active == 'users' else '' }}">Comptes &amp; accès</a>
         <a href="/admin/audit" class="{{ 'active' if active == 'audit' else '' }}">Journal d'audit</a>
         <a href="/admin/connexions" class="{{ 'active' if active == 'connexions' else '' }}">Journal des connexions</a>
+        <a href="/admin/reinitialisations" class="{{ 'active' if active == 'reinitialisations' else '' }}">Réinitialisations de mot de passe</a>
         <a href="/admin/backups" class="{{ 'active' if active == 'backups' else '' }}">Sauvegardes</a>
       </div>
       {% endif %}
