@@ -1,0 +1,38 @@
+{% extends "admin/base.html" %}
+{% block title %}Droits d'examens{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Droits d'examens</h1>
+  <a href="/admin/droits-examens/new" class="btn btn-primary">+ Enregistrer un droit d'examen</a>
+</div>
+<p style="margin-top:-12px;"><a href="/admin/finances">&larr; Retour aux finances</a> — section dédiée, distincte des autres recettes.</p>
+
+<div class="form-card" style="max-width:none; margin-bottom:20px;">
+  <strong style="color:var(--green-dark)">Total des droits d'examens</strong>
+  <p style="font-size:1.6rem; font-weight:800; color:var(--green); margin:8px 0 0;">{{ "{:,}".format(total).replace(",", " ") }} FCFA</p>
+</div>
+
+{% if items %}
+<table>
+  <thead><tr><th>Date</th><th>Libellé</th><th>Examen</th><th>Établissement</th><th>Montant</th><th>Actions</th></tr></thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.date.strftime("%d/%m/%Y") }}</td>
+      <td>{{ item.libelle }}</td>
+      <td>{{ item.type_examen or "—" }}</td>
+      <td>{{ item.etablissement.nom if item.etablissement else "—" }}</td>
+      <td>{{ "{:,}".format(item.montant).replace(",", " ") }} FCFA</td>
+      <td class="actions-cell">
+        <form method="post" action="/admin/droits-examens/{{ item.id }}/delete" onsubmit="return confirm('Supprimer ce droit d\'examen ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun droit d'examen enregistré pour le moment.</div>
+{% endif %}
+{% endblock %}

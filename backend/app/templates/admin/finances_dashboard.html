@@ -8,6 +8,8 @@
   <a href="/admin/adhesions" class="btn btn-outline btn-sm">Droits d'adhésion</a>
   <a href="/admin/cotisations" class="btn btn-outline btn-sm">Cotisations{% if nb_cotisations_impayees %} — {{ nb_cotisations_impayees }} en attente{% endif %}</a>
   <a href="/admin/recettes" class="btn btn-outline btn-sm">Autres recettes</a>
+  <a href="/admin/ventes-livres" class="btn btn-outline btn-sm">Ventes de livres</a>
+  <a href="/admin/droits-examens" class="btn btn-outline btn-sm">Droits d'examens</a>
   <a href="/admin/depenses" class="btn btn-outline btn-sm">Dépenses</a>
   <a href="/admin/finances/retards" class="btn btn-outline btn-sm">Retards de cotisation</a>
   <a href="/admin/finances/evolution" class="btn btn-outline btn-sm">Évolution pluriannuelle</a>
@@ -19,6 +21,8 @@
   <div class="stat-box"><strong>{{ "{:,}".format(total_adhesions).replace(",", " ") }}</strong><span>FCFA — Droits d'adhésion encaissés</span></div>
   <div class="stat-box"><strong>{{ "{:,}".format(total_cotisations).replace(",", " ") }}</strong><span>FCFA — Cotisations encaissées</span></div>
   <div class="stat-box"><strong>{{ "{:,}".format(total_recettes).replace(",", " ") }}</strong><span>FCFA — Autres recettes</span></div>
+  <div class="stat-box"><strong>{{ "{:,}".format(total_ventes_livres).replace(",", " ") }}</strong><span>FCFA — Ventes de livres</span></div>
+  <div class="stat-box"><strong>{{ "{:,}".format(total_droits_examens).replace(",", " ") }}</strong><span>FCFA — Droits d'examens</span></div>
   <div class="stat-box"><strong>{{ "{:,}".format(total_depenses).replace(",", " ") }}</strong><span>FCFA — Dépenses</span></div>
 </div>
 

@@ -97,7 +97,8 @@ def multi_year_financial_summary(db: Session) -> list[dict]:
 
     def bucket(annee: str) -> dict:
         return buckets.setdefault(
-            annee, {"adhesions": 0, "cotisations": 0, "recettes": 0, "depenses": 0}
+            annee,
+            {"adhesions": 0, "cotisations": 0, "recettes": 0, "ventes_livres": 0, "droits_examens": 0, "depenses": 0},
         )
 
     for a in db.query(models.Adhesion).all():
@@ -106,19 +107,25 @@ def multi_year_financial_summary(db: Session) -> list[dict]:
         bucket(c.annee_scolaire)["cotisations"] += c.montant_paye
     for r in db.query(models.Recette).all():
         bucket(current_annee_scolaire(r.date))["recettes"] += r.montant
+    for v in db.query(models.VenteLivre).all():
+        bucket(current_annee_scolaire(v.date))["ventes_livres"] += v.montant
+    for de in db.query(models.DroitExamen).all():
+        bucket(current_annee_scolaire(de.date))["droits_examens"] += de.montant
     for d in db.query(models.Depense).all():
         bucket(current_annee_scolaire(d.date))["depenses"] += d.montant
 
     result = []
     for annee in sorted(buckets.keys()):
         b = buckets[annee]
-        total_entrees = b["adhesions"] + b["cotisations"] + b["recettes"]
+        total_entrees = b["adhesions"] + b["cotisations"] + b["recettes"] + b["ventes_livres"] + b["droits_examens"]
         result.append(
             {
                 "annee": annee,
                 "adhesions": b["adhesions"],
                 "cotisations": b["cotisations"],
                 "recettes": b["recettes"],
+                "ventes_livres": b["ventes_livres"],
+                "droits_examens": b["droits_examens"],
                 "depenses": b["depenses"],
                 "total_entrees": total_entrees,
                 "solde": total_entrees - b["depenses"],
@@ -149,6 +156,17 @@ def _period_data(db: Session, date_debut: datetime.date, date_fin: datetime.date
         .filter(models.Recette.date >= date_debut, models.Recette.date <= date_fin)
         .all()
     )
+    ventes_livres = (
+        db.query(models.VenteLivre)
+        .filter(models.VenteLivre.date >= date_debut, models.VenteLivre.date <= date_fin)
+        .all()
+    )
+    droits_examens = (
+        db.query(models.DroitExamen)
+        .options(joinedload(models.DroitExamen.etablissement))
+        .filter(models.DroitExamen.date >= date_debut, models.DroitExamen.date <= date_fin)
+        .all()
+    )
     depenses = (
         db.query(models.Depense)
         .filter(models.Depense.date >= date_debut, models.Depense.date <= date_fin)
@@ -158,24 +176,32 @@ def _period_data(db: Session, date_debut: datetime.date, date_fin: datetime.date
     total_adhesions = sum(a.montant for a in adhesions)
     total_cotisations = sum(c.montant_paye for c in cotisations)
     total_recettes = sum(r.montant for r in recettes)
+    total_ventes_livres = sum(v.montant for v in ventes_livres)
+    total_droits_examens = sum(d.montant for d in droits_examens)
     total_depenses = sum(d.montant for d in depenses)
 
     recettes_par_categorie: dict[str, int] = {}
     for r in recettes:
         recettes_par_categorie[r.categorie] = recettes_par_categorie.get(r.categorie, 0) + r.montant
 
+    total_entrees = total_adhesions + total_cotisations + total_recettes + total_ventes_livres + total_droits_examens
+
     return {
         "adhesions": adhesions,
         "cotisations": cotisations,
         "recettes": recettes,
+        "ventes_livres": ventes_livres,
+        "droits_examens": droits_examens,
         "depenses": depenses,
         "total_adhesions": total_adhesions,
         "total_cotisations": total_cotisations,
         "total_recettes": total_recettes,
+        "total_ventes_livres": total_ventes_livres,
+        "total_droits_examens": total_droits_examens,
         "total_depenses": total_depenses,
         "recettes_par_categorie": recettes_par_categorie,
-        "total_entrees": total_adhesions + total_cotisations + total_recettes,
-        "solde_periode": total_adhesions + total_cotisations + total_recettes - total_depenses,
+        "total_entrees": total_entrees,
+        "solde_periode": total_entrees - total_depenses,
     }
 
 
@@ -190,8 +216,17 @@ def _solde_cumule_au(db: Session, date_fin: datetime.date) -> int:
         )
     )
     total_recettes = sum(r.montant for r in db.query(models.Recette).filter(models.Recette.date <= date_fin))
+    total_ventes_livres = sum(
+        v.montant for v in db.query(models.VenteLivre).filter(models.VenteLivre.date <= date_fin)
+    )
+    total_droits_examens = sum(
+        d.montant for d in db.query(models.DroitExamen).filter(models.DroitExamen.date <= date_fin)
+    )
     total_depenses = sum(d.montant for d in db.query(models.Depense).filter(models.Depense.date <= date_fin))
-    return total_adhesions + total_cotisations + total_recettes - total_depenses
+    return (
+        total_adhesions + total_cotisations + total_recettes + total_ventes_livres + total_droits_examens
+        - total_depenses
+    )
 
 
 GREEN = (15, 122, 76)
@@ -343,6 +378,8 @@ def generate_financial_report_pdf(
     kv_row("Droits d'adhesion encaisses", money(data["total_adhesions"]))
     kv_row("Cotisations encaissees", money(data["total_cotisations"]))
     kv_row("Autres recettes", money(data["total_recettes"]))
+    kv_row("Ventes de livres", money(data["total_ventes_livres"]))
+    kv_row("Droits d'examens", money(data["total_droits_examens"]))
     kv_row("Total des entrees", money(data["total_entrees"]), bold=True)
     kv_row("Depenses", money(data["total_depenses"]))
     kv_row("Solde de la periode", money(data["solde_periode"]), bold=True)
@@ -381,6 +418,36 @@ def generate_financial_report_pdf(
                 row = table.row()
                 row.cell(RECETTE_CATEGORIES.get(categorie, categorie))
                 row.cell(money(montant))
+        pdf.ln(4)
+
+    if data["ventes_livres"]:
+        section_title("Ventes de livres sur la periode")
+        pdf.set_font("Helvetica", "", 10)
+        with pdf.table(col_widths=(40, 90, 30, 40), text_align=("LEFT", "LEFT", "RIGHT", "RIGHT")) as table:
+            row = table.row()
+            for h in ("Date", "Titre", "Quantite", "Montant"):
+                row.cell(h, style=FontFace(emphasis="BOLD"))
+            for v in data["ventes_livres"]:
+                row = table.row()
+                row.cell(v.date.strftime("%d/%m/%Y"))
+                row.cell(pdf_safe(v.titre))
+                row.cell(str(v.quantite))
+                row.cell(money(v.montant))
+        pdf.ln(4)
+
+    if data["droits_examens"]:
+        section_title("Droits d'examens sur la periode")
+        pdf.set_font("Helvetica", "", 10)
+        with pdf.table(col_widths=(35, 60, 45, 40), text_align=("LEFT", "LEFT", "LEFT", "RIGHT")) as table:
+            row = table.row()
+            for h in ("Date", "Libelle", "Etablissement", "Montant"):
+                row.cell(h, style=FontFace(emphasis="BOLD"))
+            for de in data["droits_examens"]:
+                row = table.row()
+                row.cell(de.date.strftime("%d/%m/%Y"))
+                row.cell(pdf_safe(de.libelle))
+                row.cell(pdf_safe(de.etablissement.nom) if de.etablissement else "-")
+                row.cell(money(de.montant))
         pdf.ln(4)
 
     if data["cotisations"]:
@@ -508,6 +575,8 @@ def generate_annual_report_pdf(
     kv_row("Droits d'adhesion encaisses", money(finances["total_adhesions"]))
     kv_row("Cotisations encaissees", money(finances["total_cotisations"]))
     kv_row("Autres recettes", money(finances["total_recettes"]))
+    kv_row("Ventes de livres", money(finances["total_ventes_livres"]))
+    kv_row("Droits d'examens", money(finances["total_droits_examens"]))
     kv_row("Total des entrees", money(finances["total_entrees"]), bold=True)
     kv_row("Depenses", money(finances["total_depenses"]))
     kv_row("Solde de l'annee", money(finances["solde_periode"]), bold=True)
@@ -648,6 +717,8 @@ def generate_comparative_report_pdf(
         ("Droits d'adhesion", data_a["total_adhesions"], data_b["total_adhesions"]),
         ("Cotisations", data_a["total_cotisations"], data_b["total_cotisations"]),
         ("Autres recettes", data_a["total_recettes"], data_b["total_recettes"]),
+        ("Ventes de livres", data_a["total_ventes_livres"], data_b["total_ventes_livres"]),
+        ("Droits d'examens", data_a["total_droits_examens"], data_b["total_droits_examens"]),
         ("Total des entrees", data_a["total_entrees"], data_b["total_entrees"]),
         ("Depenses", data_a["total_depenses"], data_b["total_depenses"]),
         ("Solde de la periode", data_a["solde_periode"], data_b["solde_periode"]),
@@ -717,6 +788,13 @@ def export_transactions_csv(db: Session, date_debut: datetime.date, date_fin: da
         writer.writerow(
             [r.date.isoformat(), "Recette", RECETTE_CATEGORIES.get(r.categorie, r.categorie), r.libelle, r.montant]
         )
+    for v in data["ventes_livres"]:
+        writer.writerow([v.date.isoformat(), "Vente de livre", f"Qte {v.quantite}", v.titre, v.montant])
+    for de in data["droits_examens"]:
+        writer.writerow([
+            de.date.isoformat(), "Droit d'examen", de.type_examen or "-",
+            de.libelle + (f" ({de.etablissement.nom})" if de.etablissement else ""), de.montant,
+        ])
     for d in data["depenses"]:
         writer.writerow([d.date.isoformat(), "Depense", "-", d.libelle, -d.montant])
 
@@ -790,6 +868,8 @@ def export_transactions_xlsx(db: Session, date_debut: datetime.date, date_fin: d
         ("Droits d'adhésion encaissés", data["total_adhesions"]),
         ("Cotisations encaissées", data["total_cotisations"]),
         ("Autres recettes", data["total_recettes"]),
+        ("Ventes de livres", data["total_ventes_livres"]),
+        ("Droits d'examens", data["total_droits_examens"]),
         ("Total des entrées", data["total_entrees"]),
         ("Dépenses", data["total_depenses"]),
         ("Solde de la période", data["solde_periode"]),
@@ -855,6 +935,13 @@ def export_transactions_xlsx(db: Session, date_debut: datetime.date, date_fin: d
         sheet.append(
             [r.date, "Recette", RECETTE_CATEGORIES.get(r.categorie, r.categorie), r.libelle, r.montant]
         )
+    for v in data["ventes_livres"]:
+        sheet.append([v.date, "Vente de livre", f"Qté {v.quantite}", v.titre, v.montant])
+    for de in data["droits_examens"]:
+        sheet.append([
+            de.date, "Droit d'examen", de.type_examen or "-",
+            de.libelle + (f" ({de.etablissement.nom})" if de.etablissement else ""), de.montant,
+        ])
     for d in data["depenses"]:
         sheet.append([d.date, "Dépense", "-", d.libelle, -d.montant])
 

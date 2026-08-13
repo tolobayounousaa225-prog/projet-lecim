@@ -13,11 +13,13 @@ COTISATION_RULES = {
 RECETTE_CATEGORIES = {
     "subvention": "Subvention",
     "don_legs": "Don ou legs",
-    "vente_produit": "Vente de produits (livres, cartes, gadgets...)",
+    "vente_produit": "Vente de produits (cartes, gadgets...)",
     "produit_activite": "Produit des activités",
-    "droit_examen": "Droits d'examens",
     "autre": "Autre ressource",
 }
+# Les ventes de livres et les droits d'examens ont leur propre section dédiée
+# (modèles VenteLivre et DroitExamen) pour une meilleure clarté comptable —
+# ils ne figurent plus dans les catégories de "Autres recettes" ci-dessus.
 
 
 def cotisation_rule(statut: str) -> dict:

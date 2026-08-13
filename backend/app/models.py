@@ -579,6 +579,42 @@ class Cotisation(Base):
         return "paye"
 
 
+class VenteLivre(Base):
+    """Vente de livres — détachée des autres recettes pour un suivi clair et dédié."""
+
+    __tablename__ = "ventes_livres"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    quantite: Mapped[int] = mapped_column(Integer, default=1)
+    montant: Mapped[int] = mapped_column(Integer, nullable=False)
+    date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+
+class DroitExamen(Base):
+    """Droits d'examens perçus par la LECIM — détachés des autres recettes pour un
+    suivi clair et dédié, avec un rattachement optionnel à un établissement."""
+
+    __tablename__ = "droits_examens"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    etablissement_id: Mapped[int | None] = mapped_column(ForeignKey("etablissements.id"), nullable=True)
+    type_examen: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    libelle: Mapped[str] = mapped_column(String(255), nullable=False)
+    montant: Mapped[int] = mapped_column(Integer, nullable=False)
+    date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    etablissement: Mapped["Etablissement | None"] = relationship()
+
+
 class Recette(Base):
     """Ressources hors droits d'adhésion / cotisations : subventions, dons, ventes, activités, examens."""
 

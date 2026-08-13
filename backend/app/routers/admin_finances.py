@@ -47,8 +47,13 @@ def finances_dashboard(
     total_adhesions = db.query(func.coalesce(func.sum(models.Adhesion.montant), 0)).scalar()
     total_cotisations = db.query(func.coalesce(func.sum(models.Cotisation.montant_paye), 0)).scalar()
     total_recettes = db.query(func.coalesce(func.sum(models.Recette.montant), 0)).scalar()
+    total_ventes_livres = db.query(func.coalesce(func.sum(models.VenteLivre.montant), 0)).scalar()
+    total_droits_examens = db.query(func.coalesce(func.sum(models.DroitExamen.montant), 0)).scalar()
     total_depenses = db.query(func.coalesce(func.sum(models.Depense.montant), 0)).scalar()
-    solde = total_adhesions + total_cotisations + total_recettes - total_depenses
+    solde = (
+        total_adhesions + total_cotisations + total_recettes + total_ventes_livres + total_droits_examens
+        - total_depenses
+    )
 
     recettes_par_categorie = (
         db.query(models.Recette.categorie, func.coalesce(func.sum(models.Recette.montant), 0))
@@ -69,6 +74,8 @@ def finances_dashboard(
             "total_adhesions": total_adhesions,
             "total_cotisations": total_cotisations,
             "total_recettes": total_recettes,
+            "total_ventes_livres": total_ventes_livres,
+            "total_droits_examens": total_droits_examens,
             "total_depenses": total_depenses,
             "solde": solde,
             "recettes_par_categorie": recettes_par_categorie,
@@ -718,6 +725,136 @@ def recettes_delete(
         db.delete(recette)
         db.commit()
     return RedirectResponse(url="/admin/recettes", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# ---------- Ventes de livres ----------
+
+@router.get("/ventes-livres")
+def ventes_livres_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    items = db.query(models.VenteLivre).order_by(models.VenteLivre.date.desc()).all()
+    total = sum(v.montant for v in items)
+    return templates.TemplateResponse(
+        request,
+        "admin/ventes_livres_list.html",
+        {"admin": user, "items": items, "total": total, "active": "finances"},
+    )
+
+
+@router.get("/ventes-livres/new")
+def ventes_livres_new_form(
+    request: Request,
+    user: models.User = Depends(require_finance_access_web),
+):
+    return templates.TemplateResponse(
+        request,
+        "admin/vente_livre_form.html",
+        {"admin": user, "today": datetime.date.today(), "active": "finances"},
+    )
+
+
+@router.post("/ventes-livres/new")
+def ventes_livres_create(
+    titre: str = Form(...),
+    quantite: int = Form(1),
+    montant: int = Form(...),
+    date: datetime.date = Form(...),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    vente = models.VenteLivre(titre=titre, quantite=quantite, montant=montant, date=date, recorded_by_id=user.id)
+    db.add(vente)
+    db.flush()
+    audit.log(db, user, "create", "Vente de livre", vente.id, f"A enregistré une vente de livre : {vente.titre} ({money(vente.montant)})")
+    db.commit()
+    return RedirectResponse(url="/admin/ventes-livres", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/ventes-livres/{vente_id}/delete")
+def ventes_livres_delete(
+    vente_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    vente = db.get(models.VenteLivre, vente_id)
+    if vente:
+        audit.log(db, user, "delete", "Vente de livre", vente.id, f"A supprimé la vente de livre : {vente.titre} ({money(vente.montant)})")
+        db.delete(vente)
+        db.commit()
+    return RedirectResponse(url="/admin/ventes-livres", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# ---------- Droits d'examens ----------
+
+@router.get("/droits-examens")
+def droits_examens_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    items = db.query(models.DroitExamen).order_by(models.DroitExamen.date.desc()).all()
+    total = sum(d.montant for d in items)
+    return templates.TemplateResponse(
+        request,
+        "admin/droits_examens_list.html",
+        {"admin": user, "items": items, "total": total, "active": "finances"},
+    )
+
+
+@router.get("/droits-examens/new")
+def droits_examens_new_form(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    etablissements = db.query(models.Etablissement).order_by(models.Etablissement.nom).all()
+    return templates.TemplateResponse(
+        request,
+        "admin/droit_examen_form.html",
+        {"admin": user, "etablissements": etablissements, "today": datetime.date.today(), "active": "finances"},
+    )
+
+
+@router.post("/droits-examens/new")
+def droits_examens_create(
+    libelle: str = Form(...),
+    type_examen: str = Form(""),
+    etablissement_id: str = Form(""),
+    montant: int = Form(...),
+    date: datetime.date = Form(...),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    droit = models.DroitExamen(
+        libelle=libelle,
+        type_examen=type_examen or None,
+        etablissement_id=int(etablissement_id) if etablissement_id else None,
+        montant=montant,
+        date=date,
+        recorded_by_id=user.id,
+    )
+    db.add(droit)
+    db.flush()
+    audit.log(db, user, "create", "Droit d'examen", droit.id, f"A enregistré un droit d'examen : {droit.libelle} ({money(droit.montant)})")
+    db.commit()
+    return RedirectResponse(url="/admin/droits-examens", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/droits-examens/{droit_id}/delete")
+def droits_examens_delete(
+    droit_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    droit = db.get(models.DroitExamen, droit_id)
+    if droit:
+        audit.log(db, user, "delete", "Droit d'examen", droit.id, f"A supprimé le droit d'examen : {droit.libelle} ({money(droit.montant)})")
+        db.delete(droit)
+        db.commit()
+    return RedirectResponse(url="/admin/droits-examens", status_code=status.HTTP_303_SEE_OTHER)
 
 
 # ---------- Dépenses ----------
