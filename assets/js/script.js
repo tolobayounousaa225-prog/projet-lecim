@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadSiteContent();
   loadCarte();
   loadResultatsExamens();
+  loadEcoles();
 });
 
 function loadSiteContent() {
@@ -72,6 +73,95 @@ function loadCarte() {
     })
     .catch(function () {
       document.getElementById("carte-empty").style.display = "block";
+    });
+}
+
+function loadEcoles() {
+  var list = document.getElementById("ecoles-list");
+  if (!list) return;
+
+  var regionsNav = document.getElementById("ecoles-regions-nav");
+  var countEl = document.getElementById("ecoles-count-num");
+  var emptyEl = document.getElementById("ecoles-empty");
+  var searchInput = document.getElementById("ecoles-search-input");
+
+  fetch(API_BASE + "/api/etablissements")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (ecoles) {
+      if (!ecoles || !ecoles.length) {
+        emptyEl.style.display = "block";
+        return;
+      }
+
+      var groups = {};
+      ecoles.forEach(function (e) {
+        var region = (e.bureau_local || "").trim() || "Non précisé";
+        if (!groups[region]) groups[region] = [];
+        groups[region].push(e);
+      });
+      var regionNames = Object.keys(groups).sort(function (a, b) {
+        if (a === "Non précisé") return 1;
+        if (b === "Non précisé") return -1;
+        return a.localeCompare(b, "fr");
+      });
+
+      var slug = function (s) {
+        return "region-" + s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-");
+      };
+
+      var navHtml = "";
+      regionNames.forEach(function (region) {
+        navHtml += '<a href="#' + slug(region) + '">' + escapeHtml(region) + " (" + groups[region].length + ")</a>";
+      });
+      regionsNav.innerHTML = navHtml;
+
+      var niveauLabels = { primaire: "Primaire", secondaire: "Secondaire", les_deux: "Primaire & secondaire" };
+
+      var listHtml = "";
+      regionNames.forEach(function (region) {
+        var items = groups[region];
+        listHtml += '<div class="ecole-region" id="' + slug(region) + '" data-region="' + escapeHtml(region.toLowerCase()) + '">';
+        listHtml += "<h2>" + escapeHtml(region) + ' <span class="count">' + items.length + "</span></h2>";
+        listHtml += '<div class="ecole-grid">';
+        items.forEach(function (e) {
+          var logo = e.logo_url ? API_BASE + e.logo_url : "assets/img/logo.jpg";
+          var niveau = niveauLabels[e.type_enseignement] || "";
+          listHtml += '<div class="ecole-card" data-nom="' + escapeHtml(e.nom.toLowerCase()) + '">';
+          listHtml += '<img src="' + logo + '" alt="" loading="lazy" onerror="this.src=\'assets/img/logo.jpg\'">';
+          listHtml += '<div class="ecole-card-body"><h3>' + escapeHtml(e.nom) + "</h3>";
+          if (niveau) listHtml += '<span class="niveau">' + niveau + "</span>";
+          listHtml += "</div></div>";
+        });
+        listHtml += "</div></div>";
+      });
+      list.innerHTML = listHtml;
+      countEl.textContent = ecoles.length;
+
+      if (searchInput) {
+        searchInput.addEventListener("input", function () {
+          var term = searchInput.value.trim().toLowerCase();
+          var visibleTotal = 0;
+          document.querySelectorAll(".ecole-region").forEach(function (regionEl) {
+            var regionMatches = regionEl.getAttribute("data-region").indexOf(term) !== -1;
+            var visibleInRegion = 0;
+            regionEl.querySelectorAll(".ecole-card").forEach(function (card) {
+              var match = regionMatches || card.getAttribute("data-nom").indexOf(term) !== -1;
+              card.style.display = match ? "" : "none";
+              if (match) visibleInRegion++;
+            });
+            regionEl.style.display = visibleInRegion ? "" : "none";
+            visibleTotal += visibleInRegion;
+          });
+          countEl.textContent = visibleTotal;
+          emptyEl.style.display = visibleTotal ? "none" : "block";
+        });
+      }
+    })
+    .catch(function () {
+      emptyEl.style.display = "block";
     });
 }
 

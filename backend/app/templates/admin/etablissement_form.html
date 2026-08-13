@@ -9,6 +9,10 @@
       <input type="text" id="nom" name="nom" required value="{{ item.nom if item else '' }}">
     </div>
     <div class="form-group">
+      <label for="code_adhesion">Code d'adhésion LECIM (si connu)</label>
+      <input type="text" id="code_adhesion" name="code_adhesion" placeholder="Ex : LCM1000" value="{{ item.code_adhesion if item and item.code_adhesion else '' }}">
+    </div>
+    <div class="form-group">
       <label for="directeur_nom">Nom du directeur / responsable</label>
       <input type="text" id="directeur_nom" name="directeur_nom" value="{{ item.directeur_nom if item else '' }}">
     </div>

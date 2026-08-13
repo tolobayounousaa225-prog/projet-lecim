@@ -371,6 +371,7 @@ class Etablissement(Base):
     __tablename__ = "etablissements"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code_adhesion: Mapped[str | None] = mapped_column(String(30), nullable=True)
     nom: Mapped[str] = mapped_column(String(255), nullable=False)
     bureau_local: Mapped[str] = mapped_column(String(255), nullable=True)
     delegation_id: Mapped[int | None] = mapped_column(ForeignKey("delegations.id"), nullable=True)

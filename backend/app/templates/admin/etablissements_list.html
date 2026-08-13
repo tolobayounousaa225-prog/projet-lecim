@@ -2,19 +2,38 @@
 {% block title %}Établissements affiliés{% endblock %}
 {% block content %}
 <div class="topbar">
-  <h1 style="margin:0">Établissements affiliés</h1>
-  <a href="/admin/etablissements/new" class="btn btn-primary">+ Ajouter un établissement</a>
+  <h1 style="margin:0">Établissements affiliés ({{ items|length }})</h1>
+  <div style="display:flex; gap:8px;">
+    <a href="/admin/etablissements/export.csv" class="btn btn-outline">Exporter en CSV</a>
+    <a href="/admin/etablissements/new" class="btn btn-primary">+ Ajouter un établissement</a>
+  </div>
 </div>
 <p style="margin-top:-12px;"><a href="/admin/finances">&larr; Retour aux finances</a></p>
+
+<form method="get" action="/admin/etablissements" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; align-items:flex-end;">
+  <div class="form-group" style="margin:0;">
+    <label for="bureau_local">Bureau local / région</label>
+    <select id="bureau_local" name="bureau_local" onchange="this.form.submit()">
+      <option value="">Tous</option>
+      {% for b in bureaux_locaux %}
+      <option value="{{ b }}" {% if selected_bureau_local == b %}selected{% endif %}>{{ b }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% if selected_bureau_local %}
+  <a href="/admin/etablissements" class="btn btn-outline btn-sm">Réinitialiser</a>
+  {% endif %}
+</form>
 
 {% if items %}
 <table>
   <thead>
-    <tr><th>Nom</th><th>Bureau local</th><th>Statut</th><th>Adhésion</th><th>Actions</th></tr>
+    <tr><th>Code</th><th>Nom</th><th>Bureau local</th><th>Statut</th><th>Adhésion</th><th>Actions</th></tr>
   </thead>
   <tbody>
     {% for item in items %}
     <tr>
+      <td>{{ item.code_adhesion or "—" }}</td>
       <td>{{ item.nom }}</td>
       <td>{{ item.bureau_local or "—" }}</td>
       <td>
