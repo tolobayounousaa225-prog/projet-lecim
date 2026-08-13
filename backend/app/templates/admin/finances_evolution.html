@@ -23,7 +23,7 @@
 
 <table>
   <thead>
-    <tr><th>Année scolaire</th><th>Adhésions</th><th>Cotisations</th><th>Autres recettes</th><th>Total entrées</th><th>Dépenses</th><th>Solde</th></tr>
+    <tr><th>Année scolaire</th><th>Adhésions</th><th>Cotisations</th><th>Autres recettes</th><th>Ventes de livres</th><th>Droits d'examens</th><th>Total entrées</th><th>Dépenses</th><th>Solde</th></tr>
   </thead>
   <tbody>
     {% for d in data %}
@@ -32,6 +32,8 @@
       <td>{{ "{:,}".format(d.adhesions).replace(",", " ") }} FCFA</td>
       <td>{{ "{:,}".format(d.cotisations).replace(",", " ") }} FCFA</td>
       <td>{{ "{:,}".format(d.recettes).replace(",", " ") }} FCFA</td>
+      <td>{{ "{:,}".format(d.ventes_livres).replace(",", " ") }} FCFA</td>
+      <td>{{ "{:,}".format(d.droits_examens).replace(",", " ") }} FCFA</td>
       <td>{{ "{:,}".format(d.total_entrees).replace(",", " ") }} FCFA</td>
       <td>{{ "{:,}".format(d.depenses).replace(",", " ") }} FCFA</td>
       <td style="color:{{ 'var(--green)' if d.solde >= 0 else '#c0392b' }}; font-weight:700;">{{ "{:,}".format(d.solde).replace(",", " ") }} FCFA</td>

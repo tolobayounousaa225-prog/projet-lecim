@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+{% block title %}Ventes de livres{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Ventes de livres</h1>
+  <a href="/admin/ventes-livres/new" class="btn btn-primary">+ Enregistrer une vente</a>
+</div>
+<p style="margin-top:-12px;"><a href="/admin/finances">&larr; Retour aux finances</a> — section dédiée, distincte des autres recettes.</p>
+
+<div class="form-card" style="max-width:none; margin-bottom:20px;">
+  <strong style="color:var(--green-dark)">Total des ventes de livres</strong>
+  <p style="font-size:1.6rem; font-weight:800; color:var(--green); margin:8px 0 0;">{{ "{:,}".format(total).replace(",", " ") }} FCFA</p>
+</div>
+
+{% if items %}
+<table>
+  <thead><tr><th>Date</th><th>Titre</th><th>Quantité</th><th>Montant</th><th>Actions</th></tr></thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.date.strftime("%d/%m/%Y") }}</td>
+      <td>{{ item.titre }}</td>
+      <td>{{ item.quantite }}</td>
+      <td>{{ "{:,}".format(item.montant).replace(",", " ") }} FCFA</td>
+      <td class="actions-cell">
+        <form method="post" action="/admin/ventes-livres/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cette vente ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune vente de livre enregistrée pour le moment.</div>
+{% endif %}
+{% endblock %}
