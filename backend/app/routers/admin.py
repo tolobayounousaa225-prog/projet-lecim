@@ -18,7 +18,7 @@ from ..deps import (
     require_login_web,
     require_news_access_web,
 )
-from ..security import create_access_token, verify_password
+from ..security import create_access_token, hash_password, password_policy_error, verify_password
 from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
 
 router = APIRouter(prefix="/admin", tags=["admin-panel"])
@@ -114,6 +114,52 @@ def logout():
     response = RedirectResponse(url="/admin/login", status_code=status.HTTP_303_SEE_OTHER)
     response.delete_cookie("access_token")
     return response
+
+
+@router.get("/mon-compte/mot-de-passe")
+def change_password_page(
+    request: Request,
+    user: models.User = Depends(require_login_web),
+):
+    return templates.TemplateResponse(request, "admin/change_password.html", {"admin": user, "active": "mon_compte", "error": None, "success": None})
+
+
+@router.post("/mon-compte/mot-de-passe")
+def change_password_submit(
+    request: Request,
+    mot_de_passe_actuel: str = Form(...),
+    nouveau_mot_de_passe: str = Form(...),
+    confirmation: str = Form(...),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_login_web),
+):
+    error = None
+    if not verify_password(mot_de_passe_actuel, user.hashed_password):
+        error = "Mot de passe actuel incorrect."
+    elif nouveau_mot_de_passe != confirmation:
+        error = "Les deux mots de passe ne correspondent pas."
+    else:
+        error = password_policy_error(nouveau_mot_de_passe)
+
+    if error:
+        return templates.TemplateResponse(
+            request,
+            "admin/change_password.html",
+            {"admin": user, "active": "mon_compte", "error": error, "success": None},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    user.hashed_password = hash_password(nouveau_mot_de_passe)
+    db.query(models.PasswordResetRequest).filter(
+        models.PasswordResetRequest.user_id == user.id, models.PasswordResetRequest.used.is_(False)
+    ).update({"used": True})
+    audit.log(db, user, "update", "Mot de passe", user.id, f"{user.full_name} a changé son mot de passe")
+    db.commit()
+    return templates.TemplateResponse(
+        request,
+        "admin/change_password.html",
+        {"admin": user, "active": "mon_compte", "error": None, "success": "Mot de passe mis à jour."},
+    )
 
 
 @router.get("/attestation/pdf")
