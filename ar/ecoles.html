@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>الوثائق — LECIM</title>
-<meta name="description" content="الوثائق الرسمية لـ LECIM: النظام الداخلي، القانون الأساسي، نتائج الامتحانات الوطنية ومنشورات أخرى.">
+<title>مدارسنا المنتسبة — LECIM</title>
+<meta name="description" content="قائمة المؤسسات الدينية والمدارس القرآنية المنتسبة لـ LECIM، مصنّفة حسب المنطقة، عبر كوت ديفوار.">
 <link rel="icon" type="image/jpeg" href="../assets/img/logo.jpg">
 <link rel="stylesheet" href="../assets/css/style.css">
 </head>
@@ -20,11 +20,11 @@
       <li><a href="index.html">الرئيسية</a></li>
       <li><a href="apropos.html">من نحن</a></li>
       <li><a href="activites.html">أنشطتنا</a></li>
-      <li><a href="ecoles.html">مدارسنا</a></li>
+      <li><a href="ecoles.html" class="active">مدارسنا</a></li>
       <li><a href="carte.html">الخريطة</a></li>
-      <li><a href="documents.html" class="active">الوثائق</a></li>
+      <li><a href="documents.html">الوثائق</a></li>
       <li><a href="contact.html">اتصل بنا</a></li>
-      <li><a href="../documents.html" class="lang-switch">Français</a></li>
+      <li><a href="../ecoles.html" class="lang-switch">Français</a></li>
       <li><a href="#" id="nav-login-link">تسجيل الدخول</a></li>
       <li><a href="contact.html" class="btn btn-primary">اتصل بنا</a></li>
     </ul>
@@ -33,47 +33,25 @@
 </header>
 
 <section class="page-banner">
-  <div class="breadcrumb"><a href="index.html">الرئيسية</a> / الوثائق</div>
-  <h1>الوثائق</h1>
-  <p>النظام الداخلي، القانون الأساسي، نتائج الامتحانات الوطنية والوثائق الرسمية الأخرى لـ LECIM.</p>
+  <div class="breadcrumb"><a href="index.html">الرئيسية</a> / مدارسنا</div>
+  <h1>مدارسنا المنتسبة</h1>
+  <p>المؤسسات الدينية والمدارس القرآنية المنتسبة لـ LECIM، مصنّفة حسب المنطقة، عبر كوت ديفوار.</p>
 </section>
 
 <section>
   <div class="container">
-    <div id="doc-categories">
-      <div class="empty-state">لا توجد وثيقة منشورة حاليًا.</div>
+    <div class="ecoles-toolbar">
+      <div class="ecoles-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="ecoles-search-input" placeholder="ابحث عن مدرسة أو منطقة...">
+      </div>
+      <div class="ecoles-count"><strong id="ecoles-count-num">0</strong> مؤسسة منتسبة</div>
     </div>
-  </div>
-</section>
 
-<section class="section-alt">
-  <div class="container">
-    <div class="section-head">
-      <span class="eyebrow">نتائج الامتحانات</span>
-      <h2>النتائج حسب المؤسسة</h2>
-      <p>نسبة النجاح في الامتحانات المدرسية الإسلامية، لكل مؤسسة على حدة.</p>
-    </div>
-    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px;" id="resultats-filtres">
-      <select id="resultats-filtre-annee" class="form-group" style="max-width:220px;">
-        <option value="">كل السنوات</option>
-      </select>
-    </div>
-    <div style="overflow-x:auto;">
-      <table id="resultats-table" style="width:100%; border-collapse:collapse;">
-        <thead>
-          <tr>
-            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">المؤسسة</th>
-            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">السنة</th>
-            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">الامتحان</th>
-            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">المسجلون</th>
-            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">الناجحون</th>
-            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">النسبة</th>
-          </tr>
-        </thead>
-        <tbody id="resultats-tbody"></tbody>
-      </table>
-      <p id="resultats-empty" style="display:none; text-align:center; color:var(--text-muted); margin-top:20px;">لا توجد نتائج منشورة حاليًا.</p>
-    </div>
+    <div class="ecoles-regions" id="ecoles-regions-nav"></div>
+
+    <div id="ecoles-list"></div>
+    <p id="ecoles-empty">لا توجد مؤسسة مطابقة لبحثك.</p>
   </div>
 </section>
 
@@ -93,8 +71,7 @@
           <li><a href="index.html">الرئيسية</a></li>
           <li><a href="apropos.html">من نحن</a></li>
           <li><a href="activites.html">أنشطتنا</a></li>
-      <li><a href="ecoles.html">مدارسنا</a></li>
-          <li><a href="carte.html">الخريطة</a></li>
+          <li><a href="ecoles.html">مدارسنا</a></li>
           <li><a href="documents.html">الوثائق</a></li>
           <li><a href="contact.html">اتصل بنا</a></li>
         </ul>

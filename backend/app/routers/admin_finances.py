@@ -363,14 +363,57 @@ def finances_rapport_comparatif_generate(
 @router.get("/etablissements")
 def etablissements_list(
     request: Request,
+    bureau_local: str | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
-    items = db.query(models.Etablissement).order_by(models.Etablissement.nom).all()
+    query = db.query(models.Etablissement)
+    if bureau_local:
+        query = query.filter(models.Etablissement.bureau_local == bureau_local)
+    items = query.order_by(models.Etablissement.nom).all()
+    bureaux_locaux = [
+        row[0] for row in db.query(models.Etablissement.bureau_local)
+        .filter(models.Etablissement.bureau_local.isnot(None))
+        .distinct()
+        .order_by(models.Etablissement.bureau_local)
+        .all()
+    ]
     return templates.TemplateResponse(
         request,
         "admin/etablissements_list.html",
-        {"admin": user, "items": items, "active": "finances"},
+        {
+            "admin": user,
+            "items": items,
+            "bureaux_locaux": bureaux_locaux,
+            "selected_bureau_local": bureau_local,
+            "active": "finances",
+        },
+    )
+
+
+@router.get("/etablissements/export.csv")
+def etablissements_export_csv(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    import csv
+    import io as _io
+
+    items = db.query(models.Etablissement).order_by(models.Etablissement.nom).all()
+    buffer = _io.StringIO()
+    writer = csv.writer(buffer, delimiter=";")
+    writer.writerow(["Code adhesion", "Nom", "Bureau local", "Statut", "Date adhesion", "Telephone", "Email", "Agrement"])
+    for e in items:
+        writer.writerow([
+            e.code_adhesion or "", e.nom, e.bureau_local or "",
+            "Subventionne" if e.statut == "subventionne" else "Non subventionne",
+            e.date_adhesion.isoformat() if e.date_adhesion else "",
+            e.contact_telephone or "", e.contact_email or "", e.numero_agrement or "",
+        ])
+    return Response(
+        content="﻿" + buffer.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="etablissements_affilies.csv"'},
     )
 
 
@@ -389,6 +432,7 @@ def etablissements_new_form(
 @router.post("/etablissements/new")
 async def etablissements_create(
     nom: str = Form(...),
+    code_adhesion: str = Form(""),
     bureau_local: str = Form(""),
     statut: str = Form("non_subventionne"),
     date_adhesion: str = Form(""),
@@ -413,6 +457,7 @@ async def etablissements_create(
 
     etablissement = models.Etablissement(
         nom=nom,
+        code_adhesion=code_adhesion or None,
         bureau_local=bureau_local or None,
         statut=statut if statut in COTISATION_RULES else "non_subventionne",
         date_adhesion=datetime.date.fromisoformat(date_adhesion) if date_adhesion else None,
@@ -451,6 +496,7 @@ def etablissements_edit_form(
 async def etablissements_update(
     etablissement_id: int,
     nom: str = Form(...),
+    code_adhesion: str = Form(""),
     bureau_local: str = Form(""),
     statut: str = Form("non_subventionne"),
     date_adhesion: str = Form(""),
@@ -478,6 +524,7 @@ async def etablissements_update(
                 pass
 
         etablissement.nom = nom
+        etablissement.code_adhesion = code_adhesion or None
         etablissement.bureau_local = bureau_local or None
         etablissement.statut = statut if statut in COTISATION_RULES else "non_subventionne"
         etablissement.date_adhesion = (

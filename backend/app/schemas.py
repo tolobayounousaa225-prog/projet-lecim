@@ -145,6 +145,16 @@ class ResultatExamenOut(BaseModel):
 
 # ---------- Carte interactive (établissements & délégations) ----------
 
+class EtablissementPublicOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    nom: str
+    bureau_local: str | None = None
+    directeur_nom: str | None = None
+    type_enseignement: str
+    logo_url: str | None = None
+
+
 class CarteMarkerOut(BaseModel):
     type: str  # "etablissement" | "delegation"
     nom: str

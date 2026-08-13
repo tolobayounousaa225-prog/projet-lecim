@@ -8,13 +8,25 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import models, schemas
 from ..database import get_db
 from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/api/etablissements", tags=["etablissements"])
 
 LOGO_PATH = Path(__file__).resolve().parent.parent / "static" / "img" / "logo.jpg"
+
+
+@router.get("", response_model=list[schemas.EtablissementPublicOut])
+def list_etablissements(db: Session = Depends(get_db)):
+    """Liste publique des établissements affiliés, pour la page vitrine dédiée —
+    triée par région (bureau local) puis par nom."""
+    items = (
+        db.query(models.Etablissement)
+        .order_by(models.Etablissement.bureau_local, models.Etablissement.nom)
+        .all()
+    )
+    return items
 
 
 @router.get("/{etablissement_id}/logo")
