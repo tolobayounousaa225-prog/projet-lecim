@@ -74,29 +74,53 @@ ul { list-style: none; }
 
 .nav-links {
   display: flex;
-  gap: 16px;
+  gap: 14px;
   align-items: center;
 }
 
-.nav-links a {
+.nav-pill {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px;
+}
+
+.nav-pill a {
   font-weight: 600;
   color: var(--text-dark);
-  font-size: 0.88rem;
-  position: relative;
-  padding: 6px 0;
+  font-size: 0.86rem;
+  white-space: nowrap;
+  padding: 9px 16px;
+  border-radius: 999px;
+  transition: background .15s ease, color .15s ease;
+}
+
+.nav-pill a:hover { color: var(--green); background: rgba(14,165,233,.08); }
+
+.nav-pill a.active {
+  color: var(--green);
+  background: rgba(14,165,233,.14);
+}
+
+.nav-utility {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.nav-utility a {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.82rem;
   white-space: nowrap;
 }
 
-.nav-links a.active,
-.nav-links a:hover { color: var(--green); }
+.nav-utility a:hover { color: var(--green); }
 
-.nav-links a.active::after {
-  content: "";
-  position: absolute;
-  left: 0; bottom: 0;
-  width: 100%; height: 2px;
-  background: var(--gold);
-}
+.nav-cta { padding: 11px 26px; }
 
 .btn {
   display: inline-block;
@@ -823,9 +847,18 @@ section { padding: 80px 0; }
 }
 
 @media (max-width: 1340px) {
-  .nav-links { position: fixed; top: 68px; left: 0; right: 0; background: var(--white); flex-direction: column; padding: 20px 24px; gap: 18px; box-shadow: var(--shadow); display: none; max-height: calc(100vh - 68px); overflow-y: auto; }
+  .nav-links {
+    position: fixed; top: 68px; left: 0; right: 0; background: var(--white);
+    flex-direction: column; align-items: stretch; padding: 20px 24px; gap: 18px;
+    box-shadow: var(--shadow); display: none; max-height: calc(100vh - 68px); overflow-y: auto;
+  }
   .nav-links.open { display: flex; }
   .nav-toggle { display: flex; }
+  .nav-pill { flex-direction: column; align-items: stretch; background: none; border: none; padding: 0; gap: 4px; }
+  .nav-pill a { padding: 12px 16px; }
+  .nav-pill a.active { background: rgba(14,165,233,.10); }
+  .nav-utility { flex-direction: column; align-items: flex-start; gap: 12px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .nav-cta { text-align: center; }
 }
 
 @media (max-width: 680px) {
