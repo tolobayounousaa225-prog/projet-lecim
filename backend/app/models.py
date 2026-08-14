@@ -456,6 +456,43 @@ class Faq(Base):
     )
 
 
+class RessourcePedagogique(Base):
+    """Support pédagogique partagé entre écoles membres (manuel, fiche de cours...),
+    déposé par un établissement puis modéré par le BEN avant publication."""
+
+    __tablename__ = "ressources_pedagogiques"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    categorie: Mapped[str] = mapped_column(String(30), default="autre")  # manuel | fiche_cours | support_examen | autre
+    niveau: Mapped[str] = mapped_column(String(20), default="les_deux")  # primaire | secondaire | les_deux
+    file_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=False)
+    etablissement_id: Mapped[int] = mapped_column(ForeignKey("etablissements.id"), nullable=False)
+    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    moderated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    etablissement: Mapped["Etablissement"] = relationship(foreign_keys=[etablissement_id])
+    uploaded_by: Mapped["User | None"] = relationship(foreign_keys=[uploaded_by_id])
+
+    @property
+    def categorie_label(self) -> str:
+        return RESSOURCE_CATEGORIES.get(self.categorie, "Autre")
+
+
+RESSOURCE_CATEGORIES: dict[str, str] = {
+    "manuel": "Manuel scolaire",
+    "fiche_cours": "Fiche de cours",
+    "support_examen": "Support d'examen blanc",
+    "autre": "Autre",
+}
+
+
 # ---------- Finances ----------
 
 class Etablissement(Base):

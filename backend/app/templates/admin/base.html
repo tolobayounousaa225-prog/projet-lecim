@@ -68,6 +68,7 @@
         {% if admin.can_manage_contact %}<a href="/admin/messages" class="{{ 'active' if active == 'messages' else '' }}">Messages de contact</a>{% endif %}
         {% if admin.can_manage_publications %}<a href="/admin/publications" class="{{ 'active' if active == 'publications' else '' }}">Publications du site</a>{% endif %}
         {% if admin.can_manage_publications %}<a href="/admin/faq" class="{{ 'active' if active == 'faq' else '' }}">FAQ</a>{% endif %}
+        {% if admin.can_manage_publications %}<a href="/admin/ressources-pedagogiques" class="{{ 'active' if active == 'ressources' else '' }}">Bibliothèque pédagogique</a>{% endif %}
         {% if admin.can_manage_site_content %}<a href="/admin/site-content" class="{{ 'active' if active == 'site_content' else '' }}">Contenu du site</a>{% endif %}
       </div>
       {% endif %}

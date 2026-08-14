@@ -1,0 +1,87 @@
+{% extends "etablissement/base.html" %}
+{% block title %}Bibliothèque pédagogique{% endblock %}
+{% block content %}
+<h1>Bibliothèque pédagogique</h1>
+<p style="color:var(--text-muted); margin-top:-14px;">Partagez des supports pédagogiques avec les autres écoles membres. Chaque dépôt est vérifié par le BEN avant d'être visible aux autres établissements.</p>
+
+<div class="form-card" style="max-width:560px; margin-bottom:24px;">
+  <strong style="display:block; margin-bottom:14px;">Déposer un support</strong>
+  {% if error %}<p style="color:#dc3545; margin-bottom:14px;">{{ error }}</p>{% endif %}
+  <form method="post" action="/etablissement/ressources/new" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="titre">Titre</label>
+      <input type="text" id="titre" name="titre" required>
+    </div>
+    <div class="form-group">
+      <label for="categorie">Catégorie</label>
+      <select id="categorie" name="categorie">
+        {% for key, label in categories.items() %}
+        <option value="{{ key }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="niveau">Niveau</label>
+      <select id="niveau" name="niveau">
+        <option value="primaire">Primaire</option>
+        <option value="secondaire">Secondaire</option>
+        <option value="les_deux" selected>Primaire et secondaire</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="description">Description (facultatif)</label>
+      <textarea id="description" name="description"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="file">Fichier (PDF, Word, ODT)</label>
+      <input type="file" id="file" name="file" accept=".pdf,.doc,.docx,.odt" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Déposer</button>
+  </form>
+</div>
+
+<h2 style="margin-bottom:12px;">Mes dépôts</h2>
+{% if mes_depots %}
+<table style="margin-bottom:32px;">
+  <thead><tr><th>Titre</th><th>Catégorie</th><th>Statut</th><th>Déposé le</th><th></th></tr></thead>
+  <tbody>
+    {% for item in mes_depots %}
+    <tr>
+      <td>{{ item.titre }}</td>
+      <td>{{ item.categorie_label }}</td>
+      <td>{% if item.is_published %}<span style="color:var(--green,#0f7a4c); font-weight:600;">Publié</span>{% else %}<span style="color:#b8860b; font-weight:600;">En attente de validation</span>{% endif %}</td>
+      <td>{{ item.created_at.strftime("%d/%m/%Y") }}</td>
+      <td style="white-space:nowrap;">
+        <a href="/etablissement/ressources/{{ item.id }}/file" class="btn btn-outline btn-sm" target="_blank" rel="noopener">Télécharger</a>
+        <form method="post" action="/etablissement/ressources/{{ item.id }}/delete" style="display:inline;" onsubmit="return confirm('Retirer ce dépôt ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Retirer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state" style="margin-bottom:32px;">Vous n'avez encore déposé aucun support.</div>
+{% endif %}
+
+<h2 style="margin-bottom:12px;">Partagés par les écoles membres</h2>
+{% if partagees %}
+<table>
+  <thead><tr><th>Titre</th><th>École</th><th>Catégorie</th><th>Niveau</th><th></th></tr></thead>
+  <tbody>
+    {% for item in partagees %}
+    <tr>
+      <td>{{ item.titre }}</td>
+      <td>{{ item.etablissement.nom }}</td>
+      <td>{{ item.categorie_label }}</td>
+      <td>{{ {"primaire": "Primaire", "secondaire": "Secondaire", "les_deux": "Primaire & secondaire"}[item.niveau] }}</td>
+      <td><a href="/etablissement/ressources/{{ item.id }}/file" class="btn btn-outline btn-sm" target="_blank" rel="noopener">Télécharger</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune ressource partagée pour le moment.</div>
+{% endif %}
+{% endblock %}
