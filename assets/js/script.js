@@ -335,20 +335,35 @@ function initAdhesionForm() {
   var form = document.getElementById("adhesion-form");
   if (!form) return;
 
+  var successBox = document.getElementById("adhesion-success");
+  var codeEl = document.getElementById("adhesion-code");
+  var recepisseLink = document.getElementById("adhesion-recepisse-link");
+
+  var intOrNull = function (selector) {
+    var v = valueOf(form, selector);
+    return v ? parseInt(v, 10) : null;
+  };
+
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     var btn = form.querySelector("button[type=submit]");
     var original = btn.textContent;
 
-    var effectif = valueOf(form, "#ad-effectif");
     var payload = {
       nom_etablissement: valueOf(form, "#ad-nom-etablissement"),
       nom_directeur: valueOf(form, "#ad-nom-directeur"),
+      cycle: valueOf(form, "#ad-cycle") || null,
+      type_enseignement: valueOf(form, "#ad-type"),
       telephone: valueOf(form, "#ad-tel"),
+      telephone_fixe: valueOf(form, "#ad-tel-fixe") || null,
       email: valueOf(form, "#ad-email") || null,
       localite: valueOf(form, "#ad-localite"),
-      type_enseignement: valueOf(form, "#ad-type"),
-      effectif_estime: effectif ? parseInt(effectif, 10) : null,
+      boite_postale: valueOf(form, "#ad-boite-postale") || null,
+      propriete_terrain: valueOf(form, "#ad-propriete") || null,
+      superficie_m2: intOrNull("#ad-superficie"),
+      nombre_classes: intOrNull("#ad-classes"),
+      nombre_garcons: intOrNull("#ad-garcons"),
+      nombre_filles: intOrNull("#ad-filles"),
       message: valueOf(form, "#ad-message") || null,
     };
 
@@ -362,13 +377,16 @@ function initAdhesionForm() {
     })
       .then(function (res) {
         if (!res.ok) throw new Error("Échec de l'envoi");
-        btn.textContent = "Demande envoyée ✓";
-        form.reset();
+        return res.json();
+      })
+      .then(function (data) {
+        form.style.display = "none";
+        if (codeEl) codeEl.textContent = data.code_demande;
+        if (recepisseLink) recepisseLink.href = API_BASE + "/api/adhesion-requests/" + data.code_demande + "/recepisse.pdf";
+        if (successBox) successBox.style.display = "block";
       })
       .catch(function () {
         btn.textContent = "Erreur — merci de réessayer";
-      })
-      .finally(function () {
         setTimeout(function () {
           btn.textContent = original;
           btn.disabled = false;

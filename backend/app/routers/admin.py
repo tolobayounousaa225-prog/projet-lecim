@@ -12,6 +12,7 @@ from ..attestations_pdf import generate_membre_attestation_pdf
 from ..connexion_log import record_login
 from ..database import get_db
 from ..deps import (
+    require_adhesion_examen_access_web,
     require_activities_access_web,
     require_admin_web,
     require_contact_access_web,
@@ -201,8 +202,9 @@ def dashboard(
         counts["unread_messages"] = (
             db.query(models.ContactMessage).filter(models.ContactMessage.is_read.is_(False)).count()
         )
-        counts["unread_adhesion_requests"] = (
-            db.query(models.AdhesionRequest).filter(models.AdhesionRequest.is_read.is_(False)).count()
+    if user.can_examine_adhesions:
+        counts["nouvelles_adhesion_requests"] = (
+            db.query(models.AdhesionRequest).filter(models.AdhesionRequest.etat_demande == "nouvelle").count()
         )
     if user.is_admin:
         counts["users"] = db.query(models.User).count()
@@ -575,7 +577,7 @@ def message_delete(
 def adhesion_requests_list(
     request: Request,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_contact_access_web),
+    user: models.User = Depends(require_adhesion_examen_access_web),
 ):
     items = db.query(models.AdhesionRequest).order_by(desc(models.AdhesionRequest.created_at)).all()
     return templates.TemplateResponse(
@@ -585,24 +587,92 @@ def adhesion_requests_list(
     )
 
 
-@router.post("/adhesion-requests/{request_id}/read")
-def adhesion_request_mark_read(
+@router.get("/adhesion-requests/{request_id}")
+def adhesion_request_detail(
     request_id: int,
+    request: Request,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_contact_access_web),
+    user: models.User = Depends(require_adhesion_examen_access_web),
 ):
     item = db.get(models.AdhesionRequest, request_id)
-    if item:
-        item.is_read = True
-        db.commit()
-    return RedirectResponse(url="/admin/adhesion-requests", status_code=status.HTTP_303_SEE_OTHER)
+    if not item:
+        return RedirectResponse(url="/admin/adhesion-requests", status_code=status.HTTP_303_SEE_OTHER)
+    return templates.TemplateResponse(
+        request,
+        "admin/adhesion_request_detail.html",
+        {
+            "admin": user,
+            "item": item,
+            "active": "adhesion_requests",
+            "cycles": models.ADHESION_CYCLES,
+            "proprietes": models.ADHESION_PROPRIETES,
+            "etats": models.ADHESION_ETATS,
+        },
+    )
+
+
+@router.post("/adhesion-requests/{request_id}/examen")
+def adhesion_request_examen(
+    request_id: int,
+    etat_demande: str = Form(...),
+    cycle: str = Form(""),
+    type_enseignement: str = Form(""),
+    nombre_classes: str = Form(""),
+    nombre_garcons: str = Form(""),
+    nombre_filles: str = Form(""),
+    propriete_terrain: str = Form(""),
+    superficie_m2: str = Form(""),
+    agree: str = Form(""),
+    numero_agrement: str = Form(""),
+    date_adhesion: str = Form(""),
+    notes_examen: str = Form(""),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_adhesion_examen_access_web),
+):
+    item = db.get(models.AdhesionRequest, request_id)
+    if not item:
+        return RedirectResponse(url="/admin/adhesion-requests", status_code=status.HTTP_303_SEE_OTHER)
+
+    def _int_or_none(v: str) -> int | None:
+        return int(v) if v.strip().isdigit() else None
+
+    item.etat_demande = etat_demande
+    if cycle:
+        item.cycle = cycle
+    if type_enseignement:
+        item.type_enseignement = type_enseignement
+    if propriete_terrain:
+        item.propriete_terrain = propriete_terrain
+    item.nombre_classes = _int_or_none(nombre_classes)
+    item.nombre_garcons = _int_or_none(nombre_garcons)
+    item.nombre_filles = _int_or_none(nombre_filles)
+    item.superficie_m2 = _int_or_none(superficie_m2)
+    item.agree = agree == "oui" if agree else None
+    item.numero_agrement = numero_agrement or None
+    item.notes_examen = notes_examen or None
+    if date_adhesion:
+        item.date_adhesion = datetime.date.fromisoformat(date_adhesion)
+
+    now = datetime.datetime.utcnow()
+    if item.examinee_par_id is None:
+        item.examinee_par_id = user.id
+        item.examinee_at = now
+
+    if etat_demande == "validee":
+        item.valide_par_id = user.id
+        item.valide_at = now
+        if not item.date_adhesion:
+            item.date_adhesion = now.date()
+
+    db.commit()
+    return RedirectResponse(url=f"/admin/adhesion-requests/{request_id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/adhesion-requests/{request_id}/delete")
 def adhesion_request_delete(
     request_id: int,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_contact_access_web),
+    user: models.User = Depends(require_adhesion_examen_access_web),
 ):
     item = db.get(models.AdhesionRequest, request_id)
     if item:

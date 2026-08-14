@@ -181,3 +181,75 @@ def generate_membre_attestation_pdf(user) -> bytes:
     _footer_qr_and_signature(pdf, verify_url, numero)
 
     return bytes(pdf.output())
+
+
+def generate_adhesion_recepisse_pdf(demande) -> bytes:
+    pdf = FPDF(orientation="P", unit="mm", format="A4")
+    pdf.set_auto_page_break(auto=False)
+    _header(pdf, "RECEPISSE DE DEMANDE D'ADHESION")
+
+    _body_paragraph(
+        pdf,
+        "La Ligue des Etablissements Confessionnels et Madrassas en Cote d'Ivoire (LECIM) "
+        "accuse reception de la demande d'adhesion ci-dessous. Ce recepisse doit etre "
+        "presente, avec les pieces justificatives utiles, lors de l'entretien de validation "
+        "au siege de la LECIM.",
+    )
+
+    pdf.ln(2)
+    _kv_line(pdf, "Code de demande :", demande.code_demande)
+    _kv_line(pdf, "Etablissement :", demande.nom_etablissement)
+    _kv_line(pdf, "Nom du directeur :", demande.nom_directeur)
+    _kv_line(pdf, "Localite :", demande.localite)
+    _kv_line(pdf, "Contact :", demande.telephone)
+    _kv_line(pdf, "Date de soumission :", demande.created_at.strftime("%d/%m/%Y"))
+
+    pdf.ln(6)
+    _body_paragraph(
+        pdf,
+        "Ce recepisse ne constitue pas une adhesion validee. Il confirme uniquement "
+        "l'enregistrement de la demande, qui sera examinee lors d'un entretien avec le "
+        "secretariat de la LECIM. Le statut de la demande peut etre suivi a tout moment "
+        "via le code QR ci-dessous.",
+    )
+
+    verify_url = f"{settings.public_base_url}/verify-adhesion/{demande.code_demande}"
+    _footer_qr_and_signature(pdf, verify_url, demande.code_demande)
+
+    return bytes(pdf.output())
+
+
+def generate_adhesion_certificat_pdf(demande) -> bytes:
+    pdf = FPDF(orientation="P", unit="mm", format="A4")
+    pdf.set_auto_page_break(auto=False)
+    _header(pdf, "CERTIFICAT D'ADHESION")
+
+    _body_paragraph(
+        pdf,
+        "La Ligue des Etablissements Confessionnels et Madrassas en Cote d'Ivoire (LECIM) "
+        "certifie par la presente que l'etablissement ci-dessous designe a ete examine et "
+        "valide comme membre de la ligue, a l'issue d'un entretien avec le secretariat "
+        "charge des affaires interieures.",
+    )
+
+    date_adhesion = demande.date_adhesion.strftime("%d/%m/%Y") if demande.date_adhesion else "non renseignee"
+
+    pdf.ln(2)
+    _kv_line(pdf, "Etablissement :", demande.nom_etablissement)
+    _kv_line(pdf, "Localite :", demande.localite)
+    if demande.numero_agrement:
+        _kv_line(pdf, "Numero d'agrement :", demande.numero_agrement)
+    _kv_line(pdf, "Date d'adhesion :", date_adhesion)
+    _kv_line(pdf, "Code de demande :", demande.code_demande)
+
+    pdf.ln(6)
+    _body_paragraph(
+        pdf,
+        "Ce certificat est delivre pour servir et valoir ce que de droit, et peut etre "
+        "verifie a tout moment via le code QR ci-dessous ou le lien de verification publique.",
+    )
+
+    verify_url = f"{settings.public_base_url}/verify-adhesion/{demande.code_demande}"
+    _footer_qr_and_signature(pdf, verify_url, demande.code_demande)
+
+    return bytes(pdf.output())

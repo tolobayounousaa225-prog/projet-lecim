@@ -76,9 +76,20 @@
         <form id="adhesion-form">
           <div class="form-row">
             <div class="form-group">
-              <label for="ad-nom-etablissement">Nom de l'établissement *</label>
+              <label for="ad-nom-etablissement">Nom de l'école *</label>
               <input type="text" id="ad-nom-etablissement" required>
             </div>
+            <div class="form-group">
+              <label for="ad-cycle">Cycle *</label>
+              <select id="ad-cycle" required>
+                <option value="">Sélectionnez</option>
+                <option value="maternelle">Maternelle</option>
+                <option value="primaire">Primaire</option>
+                <option value="secondaire">Secondaire</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
             <div class="form-group">
               <label for="ad-type">Type d'enseignement *</label>
               <select id="ad-type" required>
@@ -88,38 +99,85 @@
                 <option value="les_deux">Les deux</option>
               </select>
             </div>
-          </div>
-          <div class="form-row">
             <div class="form-group">
               <label for="ad-nom-directeur">Nom du directeur/de la directrice *</label>
               <input type="text" id="ad-nom-directeur" required>
             </div>
-            <div class="form-group">
-              <label for="ad-tel">Téléphone *</label>
-              <input type="tel" id="ad-tel" required>
-            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ad-localite">Localité / région *</label>
+            <input type="text" id="ad-localite" required>
           </div>
           <div class="form-row">
+            <div class="form-group">
+              <label for="ad-boite-postale">Boîte postale</label>
+              <input type="text" id="ad-boite-postale">
+            </div>
             <div class="form-group">
               <label for="ad-email">E-mail</label>
               <input type="email" id="ad-email">
             </div>
+          </div>
+          <div class="form-row">
             <div class="form-group">
-              <label for="ad-localite">Localité / région *</label>
-              <input type="text" id="ad-localite" required>
+              <label for="ad-tel">Téléphone portable *</label>
+              <input type="tel" id="ad-tel" required>
+            </div>
+            <div class="form-group">
+              <label for="ad-tel-fixe">Téléphone fixe</label>
+              <input type="tel" id="ad-tel-fixe">
             </div>
           </div>
-          <div class="form-group">
-            <label for="ad-effectif">Effectif estimé des élèves</label>
-            <input type="number" id="ad-effectif" min="0">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ad-propriete">Propriété du terrain</label>
+              <select id="ad-propriete">
+                <option value="">Sélectionnez</option>
+                <option value="location">Location</option>
+                <option value="proprietaire">Propriétaire</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="ad-superficie">Superficie (m²)</label>
+              <input type="number" id="ad-superficie" min="0">
+            </div>
           </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ad-classes">Nombre de classes</label>
+              <input type="number" id="ad-classes" min="0">
+            </div>
+            <div class="form-group">
+              <label for="ad-garcons">Nombre de garçons</label>
+              <input type="number" id="ad-garcons" min="0">
+            </div>
+            <div class="form-group">
+              <label for="ad-filles">Nombre de filles</label>
+              <input type="number" id="ad-filles" min="0">
+            </div>
+          </div>
+
           <div class="form-group">
             <label for="ad-message">Message (optionnel)</label>
             <textarea id="ad-message"></textarea>
           </div>
           <button type="submit" class="btn btn-primary">Soumettre ma demande</button>
-          <p class="form-note">Nous répondons habituellement sous 48 heures ouvrées.</p>
+          <p class="form-note">Après soumission, vous recevrez un récépissé avec un code de suivi. Présentez-le lors de votre entretien au siège de la LECIM pour la validation de votre demande.</p>
         </form>
+
+        <div id="adhesion-success" style="display:none;">
+          <div class="contact-row" style="align-items:flex-start;">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" style="color:var(--green); flex-shrink:0;"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+            <div>
+              <strong>Demande envoyée avec succès</strong>
+              <p style="margin:6px 0 0;">Votre code de demande : <strong id="adhesion-code"></strong></p>
+              <p style="margin:6px 0 0; color:var(--text-muted);">Conservez ce code et téléchargez votre récépissé ci-dessous. Présentez-vous ensuite au siège de la LECIM avec ce document pour un entretien de validation.</p>
+              <a id="adhesion-recepisse-link" href="#" target="_blank" class="btn btn-primary" style="margin-top:14px; display:inline-block;">Télécharger mon récépissé</a>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>

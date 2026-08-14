@@ -210,6 +210,7 @@ require_sondages_access_web = _module_dependency_web("sondages")
 require_effectifs_access_web = _module_dependency_web("effectifs")
 require_cartes_scolaires_access_web = _module_dependency_web("cartes_scolaires")
 require_messagerie_access_web = _module_dependency_web("messagerie")
+require_adhesion_examen_access_web = _module_dependency_web("adhesion_examen")
 
 
 def require_delegation_management_web(

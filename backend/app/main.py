@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import models, scheduler
 from .config import settings
+from .migrations import run_startup_migrations
 from .database import SessionLocal
 from .security import decode_access_token
 from .deps import (
@@ -69,6 +70,7 @@ from .routers import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    run_startup_migrations()
     scheduler.start()
     yield
     scheduler.shutdown()

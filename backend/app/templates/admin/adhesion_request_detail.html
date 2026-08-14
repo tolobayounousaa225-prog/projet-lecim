@@ -1,0 +1,129 @@
+{% extends "admin/base.html" %}
+{% block title %}Demande d'adhésion — {{ item.nom_etablissement }}{% endblock %}
+{% block content %}
+<h1>{{ item.nom_etablissement }}</h1>
+<p class="form-note" style="margin-top:-8px;">
+  Code de demande : <strong>{{ item.code_demande or "-" }}</strong> — soumise le {{ item.created_at.strftime("%d/%m/%Y à %H:%M") }}
+</p>
+
+<div class="form-card" style="margin-bottom:20px;">
+  <h3 style="margin-top:0;">Informations soumises par le demandeur</h3>
+  <table>
+    <tbody>
+      <tr><th style="width:220px;">Nom de l'école</th><td>{{ item.nom_etablissement }}</td></tr>
+      <tr><th>Nom du directeur</th><td>{{ item.nom_directeur }}</td></tr>
+      <tr><th>Type d'enseignement</th><td>{{ item.type_enseignement }}</td></tr>
+      <tr><th>Cycle</th><td>{{ cycles.get(item.cycle, item.cycle) if item.cycle else "-" }}</td></tr>
+      <tr><th>Localité</th><td>{{ item.localite }}</td></tr>
+      <tr><th>Boîte postale</th><td>{{ item.boite_postale or "-" }}</td></tr>
+      <tr><th>Téléphone portable</th><td>{{ item.telephone }}</td></tr>
+      <tr><th>Téléphone fixe</th><td>{{ item.telephone_fixe or "-" }}</td></tr>
+      <tr><th>Email</th><td>{{ item.email or "-" }}</td></tr>
+      <tr><th>Propriété du terrain</th><td>{{ proprietes.get(item.propriete_terrain, item.propriete_terrain) if item.propriete_terrain else "-" }}</td></tr>
+      <tr><th>Superficie</th><td>{{ (item.superficie_m2 ~ " m²") if item.superficie_m2 else "-" }}</td></tr>
+      <tr><th>Nombre de classes</th><td>{{ item.nombre_classes or "-" }}</td></tr>
+      <tr><th>Nombre de garçons</th><td>{{ item.nombre_garcons or "-" }}</td></tr>
+      <tr><th>Nombre de filles</th><td>{{ item.nombre_filles or "-" }}</td></tr>
+      {% if item.message %}<tr><th>Message</th><td>{{ item.message }}</td></tr>{% endif %}
+    </tbody>
+  </table>
+</div>
+
+<div class="form-card" style="margin-bottom:20px;">
+  <h3 style="margin-top:0;">Documents</h3>
+  <a href="/api/adhesion-requests/{{ item.code_demande }}/recepisse.pdf" target="_blank" class="btn btn-outline btn-sm">Télécharger le récépissé</a>
+  {% if item.etat_demande == "validee" %}
+  <a href="/api/adhesion-requests/{{ item.code_demande }}/certificat.pdf" target="_blank" class="btn btn-primary btn-sm">Télécharger le certificat signé</a>
+  {% endif %}
+</div>
+
+<div class="form-card">
+  <h3 style="margin-top:0;">Examen et validation</h3>
+  <p class="form-note" style="margin-top:0;">
+    À remplir à l'issue de l'entretien avec le demandeur au siège de la LECIM. Une fois
+    l'état passé à « Validée », un certificat signé par le Président est généré et peut
+    être imprimé et remis au demandeur.
+  </p>
+  <form method="post" action="/admin/adhesion-requests/{{ item.id }}/examen">
+    <div class="form-group">
+      <label for="etat_demande">État de la demande</label>
+      <select id="etat_demande" name="etat_demande" required>
+        {% for key, label in etats.items() %}
+        <option value="{{ key }}" {% if item.etat_demande == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="cycle">Cycle</label>
+      <select id="cycle" name="cycle">
+        <option value="">— Non précisé —</option>
+        {% for key, label in cycles.items() %}
+        <option value="{{ key }}" {% if item.cycle == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="type_enseignement">Type d'enseignement</label>
+      <select id="type_enseignement" name="type_enseignement">
+        <option value="madrassa" {% if item.type_enseignement == "madrassa" %}selected{% endif %}>Madrassa</option>
+        <option value="ecole_confessionnelle" {% if item.type_enseignement == "ecole_confessionnelle" %}selected{% endif %}>École confessionnelle</option>
+        <option value="les_deux" {% if item.type_enseignement == "les_deux" %}selected{% endif %}>Les deux</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="nombre_classes">Nombre de classes</label>
+      <input type="number" id="nombre_classes" name="nombre_classes" min="0" value="{{ item.nombre_classes or '' }}">
+    </div>
+    <div class="form-group">
+      <label for="nombre_garcons">Nombre de garçons</label>
+      <input type="number" id="nombre_garcons" name="nombre_garcons" min="0" value="{{ item.nombre_garcons or '' }}">
+    </div>
+    <div class="form-group">
+      <label for="nombre_filles">Nombre de filles</label>
+      <input type="number" id="nombre_filles" name="nombre_filles" min="0" value="{{ item.nombre_filles or '' }}">
+    </div>
+
+    <div class="form-group">
+      <label for="propriete_terrain">Propriété du terrain</label>
+      <select id="propriete_terrain" name="propriete_terrain">
+        <option value="">— Non précisé —</option>
+        {% for key, label in proprietes.items() %}
+        <option value="{{ key }}" {% if item.propriete_terrain == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="superficie_m2">Superficie (m²)</label>
+      <input type="number" id="superficie_m2" name="superficie_m2" min="0" value="{{ item.superficie_m2 or '' }}">
+    </div>
+
+    <div class="form-group">
+      <label for="agree">Agréée ?</label>
+      <select id="agree" name="agree">
+        <option value="" {% if item.agree is none %}selected{% endif %}>— Non précisé —</option>
+        <option value="oui" {% if item.agree == True %}selected{% endif %}>Oui</option>
+        <option value="non" {% if item.agree == False %}selected{% endif %}>Non</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="numero_agrement">Numéro d'agrément</label>
+      <input type="text" id="numero_agrement" name="numero_agrement" value="{{ item.numero_agrement or '' }}">
+    </div>
+    <div class="form-group">
+      <label for="date_adhesion">Date d'adhésion</label>
+      <input type="date" id="date_adhesion" name="date_adhesion" value="{{ item.date_adhesion.isoformat() if item.date_adhesion else '' }}">
+    </div>
+
+    <div class="form-group">
+      <label for="notes_examen">Notes d'entretien</label>
+      <textarea id="notes_examen" name="notes_examen" rows="4">{{ item.notes_examen or '' }}</textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Enregistrer l'examen</button>
+    <a href="/admin/adhesion-requests" class="btn btn-outline">Retour à la liste</a>
+  </form>
+</div>
+{% endblock %}

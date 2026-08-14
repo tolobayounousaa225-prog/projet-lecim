@@ -112,6 +112,10 @@ class User(Base):
         return self.has_module("contact")
 
     @property
+    def can_examine_adhesions(self) -> bool:
+        return self.has_module("adhesion_examen")
+
+    @property
     def can_manage_finances(self) -> bool:
         return self.has_module("finances")
 
@@ -247,23 +251,70 @@ class ContactMessage(Base):
 
 class AdhesionRequest(Base):
     """Demande d'adhésion soumise depuis la vitrine par une école ou madrassa
-    qui n'est pas encore membre de la LECIM."""
+    qui n'est pas encore membre de la LECIM. Circuit complet : soumission en ligne
+    (récépissé avec code de suivi) -> entretien physique au siège -> examen et
+    validation par le secrétariat chargé de l'intérieur -> certificat signé."""
 
     __tablename__ = "adhesion_requests"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code_demande: Mapped[str | None] = mapped_column(String(30), unique=True, nullable=True)
+
+    # --- Renseignés par le demandeur, lors de la soumission en ligne ---
     nom_etablissement: Mapped[str] = mapped_column(String(255), nullable=False)
     nom_directeur: Mapped[str] = mapped_column(String(255), nullable=False)
+    cycle: Mapped[str | None] = mapped_column(String(20), nullable=True)  # maternelle | primaire | secondaire
+    type_enseignement: Mapped[str] = mapped_column(String(30), nullable=False)
     telephone: Mapped[str] = mapped_column(String(50), nullable=False)
+    telephone_fixe: Mapped[str | None] = mapped_column(String(50), nullable=True)
     email: Mapped[str] = mapped_column(String(255), nullable=True)
     localite: Mapped[str] = mapped_column(String(255), nullable=False)
-    type_enseignement: Mapped[str] = mapped_column(String(30), nullable=False)
-    effectif_estime: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    boite_postale: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    propriete_terrain: Mapped[str | None] = mapped_column(String(20), nullable=True)  # location | proprietaire
+    superficie_m2: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    nombre_classes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    nombre_garcons: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    nombre_filles: Mapped[int | None] = mapped_column(Integer, nullable=True)
     message: Mapped[str] = mapped_column(Text, nullable=True)
-    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # --- Renseignés par le secrétariat lors de l'examen / entretien ---
+    etat_demande: Mapped[str] = mapped_column(String(20), default="nouvelle")  # nouvelle | en_cours | validee | rejetee
+    agree: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    numero_agrement: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    date_adhesion: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    notes_examen: Mapped[str | None] = mapped_column(Text, nullable=True)
+    examinee_par_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    examinee_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+    valide_par_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    valide_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
+
+    examinee_par: Mapped["User | None"] = relationship(foreign_keys=[examinee_par_id])
+    valide_par: Mapped["User | None"] = relationship(foreign_keys=[valide_par_id])
+
+    @property
+    def etat_label(self) -> str:
+        return ADHESION_ETATS.get(self.etat_demande, self.etat_demande)
+
+
+ADHESION_ETATS = {
+    "nouvelle": "Nouvelle demande",
+    "en_cours": "Entretien en cours",
+    "validee": "Validée",
+    "rejetee": "Rejetée",
+}
+ADHESION_CYCLES = {
+    "maternelle": "Maternelle",
+    "primaire": "Primaire",
+    "secondaire": "Secondaire",
+}
+ADHESION_PROPRIETES = {
+    "location": "Location",
+    "proprietaire": "Propriétaire",
+}
 
 
 class Membre(Base):

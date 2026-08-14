@@ -76,9 +76,20 @@
         <form id="adhesion-form">
           <div class="form-row">
             <div class="form-group">
-              <label for="ad-nom-etablissement">اسم المؤسسة *</label>
+              <label for="ad-nom-etablissement">اسم المدرسة *</label>
               <input type="text" id="ad-nom-etablissement" required>
             </div>
+            <div class="form-group">
+              <label for="ad-cycle">الطور *</label>
+              <select id="ad-cycle" required>
+                <option value="">اختاروا</option>
+                <option value="maternelle">الروضة</option>
+                <option value="primaire">الابتدائي</option>
+                <option value="secondaire">الثانوي</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
             <div class="form-group">
               <label for="ad-type">نوع التعليم *</label>
               <select id="ad-type" required>
@@ -88,38 +99,85 @@
                 <option value="les_deux">الاثنان معًا</option>
               </select>
             </div>
-          </div>
-          <div class="form-row">
             <div class="form-group">
               <label for="ad-nom-directeur">اسم المدير/ة *</label>
               <input type="text" id="ad-nom-directeur" required>
             </div>
-            <div class="form-group">
-              <label for="ad-tel">الهاتف *</label>
-              <input type="tel" id="ad-tel" required>
-            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ad-localite">المنطقة / الجهة *</label>
+            <input type="text" id="ad-localite" required>
           </div>
           <div class="form-row">
+            <div class="form-group">
+              <label for="ad-boite-postale">صندوق البريد</label>
+              <input type="text" id="ad-boite-postale">
+            </div>
             <div class="form-group">
               <label for="ad-email">البريد الإلكتروني</label>
               <input type="email" id="ad-email">
             </div>
+          </div>
+          <div class="form-row">
             <div class="form-group">
-              <label for="ad-localite">المنطقة / الجهة *</label>
-              <input type="text" id="ad-localite" required>
+              <label for="ad-tel">الهاتف المحمول *</label>
+              <input type="tel" id="ad-tel" required>
+            </div>
+            <div class="form-group">
+              <label for="ad-tel-fixe">الهاتف الثابت</label>
+              <input type="tel" id="ad-tel-fixe">
             </div>
           </div>
-          <div class="form-group">
-            <label for="ad-effectif">العدد التقديري للتلاميذ</label>
-            <input type="number" id="ad-effectif" min="0">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ad-propriete">ملكية الأرض</label>
+              <select id="ad-propriete">
+                <option value="">اختاروا</option>
+                <option value="location">إيجار</option>
+                <option value="proprietaire">ملك</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="ad-superficie">المساحة (م²)</label>
+              <input type="number" id="ad-superficie" min="0">
+            </div>
           </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ad-classes">عدد الأقسام</label>
+              <input type="number" id="ad-classes" min="0">
+            </div>
+            <div class="form-group">
+              <label for="ad-garcons">عدد الذكور</label>
+              <input type="number" id="ad-garcons" min="0">
+            </div>
+            <div class="form-group">
+              <label for="ad-filles">عدد الإناث</label>
+              <input type="number" id="ad-filles" min="0">
+            </div>
+          </div>
+
           <div class="form-group">
             <label for="ad-message">رسالة (اختياري)</label>
             <textarea id="ad-message"></textarea>
           </div>
           <button type="submit" class="btn btn-primary">إرسال الطلب</button>
-          <p class="form-note">نجيب عادة خلال 48 ساعة عمل.</p>
+          <p class="form-note">بعد الإرسال، ستحصلون على رمز متابعة. قدّموه أثناء المقابلة بمقر LECIM لإتمام التحقق من طلبكم.</p>
         </form>
+
+        <div id="adhesion-success" style="display:none;">
+          <div class="contact-row" style="align-items:flex-start;">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" style="color:var(--green); flex-shrink:0;"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+            <div>
+              <strong>تم إرسال الطلب بنجاح</strong>
+              <p style="margin:6px 0 0;">رمز الطلب : <strong id="adhesion-code"></strong></p>
+              <p style="margin:6px 0 0; color:var(--text-muted);">احتفظوا بهذا الرمز وحمّلوا الوصل أدناه. توجّهوا بعد ذلك إلى مقر LECIM بهذا المستند لإجراء مقابلة التحقق.</p>
+              <a id="adhesion-recepisse-link" href="#" target="_blank" class="btn btn-primary" style="margin-top:14px; display:inline-block;">تحميل الوصل</a>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
