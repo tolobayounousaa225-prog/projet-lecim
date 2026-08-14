@@ -7,6 +7,9 @@
 <meta name="description" content="تواصلوا مع LECIM، رابطة المؤسسات الدينية والمدارس القرآنية في كوت ديفوار، لأي سؤال أو طلب انضمام.">
 <link rel="icon" type="image/jpeg" href="../assets/img/logo.jpg">
 <link rel="stylesheet" href="../assets/css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a3d63">
+<link rel="apple-touch-icon" href="../assets/img/icons/apple-touch-icon.png">
 </head>
 <body>
 
@@ -156,6 +159,7 @@
           <li><a href="actualites.html">الأخبار</a></li>
           <li><a href="galerie.html">معرض الصور</a></li>
           <li><a href="faq.html">الأسئلة الشائعة</a></li>
+                    <li><a href="transparence.html">الشفافية المالية</a></li>
           <li><a href="contact.html">اتصل بنا</a></li>
         </ul>
       </div>
@@ -192,5 +196,12 @@
 
 <script>window.LECIM_API_BASE = "https://projet-lecim-production.up.railway.app";</script>
 <script src="../assets/js/script.js"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("/sw.js").catch(function () {});
+  });
+}
+</script>
 </body>
 </html>

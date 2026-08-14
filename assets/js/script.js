@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadActualiteDetail();
   loadGalerie();
   loadFaq();
+  loadTransparence();
 });
 
 function loadHeroStats() {
@@ -198,7 +199,9 @@ function loadEcoles() {
           listHtml += '<img src="' + logo + '" alt="" loading="lazy" onerror="this.src=\'assets/img/logo.jpg\'">';
           listHtml += '<div class="ecole-card-body"><h3>' + escapeHtml(e.nom) + "</h3>";
           if (niveau) listHtml += '<span class="niveau">' + niveau + "</span>";
-          if (e.numero_agrement) listHtml += '<span class="agrement-badge">Agréée</span>';
+          if (e.statut_agrement_label) {
+            listHtml += '<span class="agrement-badge ' + escapeHtml(e.statut_agrement || "") + '">' + escapeHtml(e.statut_agrement_label) + "</span>";
+          }
           listHtml += "</div></div>";
         });
         listHtml += "</div></div>";
@@ -516,6 +519,58 @@ function loadFaq() {
           }
         });
       });
+    })
+    .catch(function () {
+      if (emptyEl) emptyEl.style.display = "block";
+    });
+}
+
+function loadTransparence() {
+  var container = document.getElementById("transparence-list");
+  var emptyEl = document.getElementById("transparence-empty");
+  if (!container) return;
+
+  function fcfa(n) {
+    return (n || 0).toLocaleString("fr-FR").replace(/ |,/g, " ") + " FCFA";
+  }
+
+  fetch(API_BASE + "/api/transparence")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) {
+        if (emptyEl) emptyEl.style.display = "block";
+        return;
+      }
+      var ordered = items.slice().reverse();
+      container.innerHTML = ordered
+        .map(function (a) {
+          var solde = a.solde || 0;
+          var soldeClass = solde >= 0 ? "positive" : "negative";
+          var soldeSign = solde >= 0 ? "+" : "";
+          return (
+            '<div class="transparence-card">' +
+            '<div class="transparence-head">' +
+            "<h3>" + escapeHtml(a.annee) + "</h3>" +
+            '<span class="transparence-solde ' + soldeClass + '">Solde : ' + soldeSign + fcfa(solde) + "</span>" +
+            "</div>" +
+            '<div class="transparence-totals">' +
+            "<div><strong>" + fcfa(a.total_entrees) + "</strong><span>Total recettes</span></div>" +
+            "<div><strong>" + fcfa(a.depenses) + "</strong><span>Total dépenses</span></div>" +
+            "</div>" +
+            '<div class="transparence-breakdown">' +
+            "<div><span>Cotisations</span><strong>" + fcfa(a.cotisations) + "</strong></div>" +
+            "<div><span>Adhésions</span><strong>" + fcfa(a.adhesions) + "</strong></div>" +
+            "<div><span>Ventes de livres</span><strong>" + fcfa(a.ventes_livres) + "</strong></div>" +
+            "<div><span>Droits d'examens</span><strong>" + fcfa(a.droits_examens) + "</strong></div>" +
+            "<div><span>Autres recettes</span><strong>" + fcfa(a.recettes) + "</strong></div>" +
+            "</div>" +
+            "</div>"
+          );
+        })
+        .join("");
     })
     .catch(function () {
       if (emptyEl) emptyEl.style.display = "block";

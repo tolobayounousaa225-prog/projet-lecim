@@ -104,6 +104,15 @@ def run_startup_migrations() -> None:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE photos ADD COLUMN is_public BOOLEAN DEFAULT FALSE"))
 
+    if inspector.has_table("etablissements"):
+        columns = {c["name"] for c in inspector.get_columns("etablissements")}
+        if "statut_agrement" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE etablissements ADD COLUMN statut_agrement VARCHAR(20) DEFAULT 'en_cours'"))
+        if "date_expiration_agrement" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE etablissements ADD COLUMN date_expiration_agrement DATE"))
+
     Base.metadata.create_all(bind=engine)
 
     if inspector.has_table("etablissements"):
