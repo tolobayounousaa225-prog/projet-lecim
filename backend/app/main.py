@@ -29,6 +29,7 @@ from .routers import (
     admin_cartes_scolaires,
     admin_connexions,
     admin_delegations,
+    admin_dons,
     admin_effectifs,
     admin_enseignants,
     admin_etablissement_portail,
@@ -54,6 +55,7 @@ from .routers import (
     carte,
     contact,
     delegation_portal,
+    dons_public,
     etablissement_portal,
     etablissement_ressources,
     etablissements_public,
@@ -183,6 +185,7 @@ app.include_router(contact.router)
 app.include_router(adhesion.router)
 app.include_router(partenaires_public.router)
 app.include_router(partenariat_requests.router)
+app.include_router(dons_public.router)
 app.include_router(projets_public.router)
 app.include_router(photos_public.router)
 app.include_router(faq_public.router)
@@ -210,6 +213,7 @@ app.include_router(verify_eleve.router)
 app.include_router(verify_attestations.router)
 app.include_router(admin_calendar.router)
 app.include_router(admin_delegations.router)
+app.include_router(admin_dons.router)
 app.include_router(admin_executif.router)
 app.include_router(admin_enseignants.router)
 app.include_router(admin_effectifs.router)

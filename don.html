@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Documents — LECIM</title>
-<meta name="description" content="Documents officiels de la LECIM : Règlement Intérieur, Statuts, résultats aux examens nationaux et autres publications.">
+<title>Faire un don — LECIM</title>
+<meta name="description" content="Soutenez la LECIM par un don : coordonnées bancaires et formulaire de déclaration pour que le Bureau Exécutif National puisse le rapprocher.">
 <link rel="icon" type="image/jpeg" href="assets/img/logo.jpg">
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="manifest" href="manifest.json">
@@ -26,13 +26,13 @@
         <li><a href="services.html">Services</a></li>
         <li><a href="activites.html">Activités</a></li>
         <li><a href="ecoles.html">Établissements</a></li>
-        <li><a href="documents.html" class="active">Documents</a></li>
+        <li><a href="documents.html">Documents</a></li>
         <li><a href="initiatives.html">Initiatives</a></li>
         <li><a href="adhesion.html">Adhésion</a></li>
         <li><a href="contact.html">Contact</a></li>
       </ul>
       <div class="nav-utility">
-        <a href="ar/documents.html" class="lang-switch">العربية</a>
+        <a href="ar/don.html" class="lang-switch">العربية</a>
         <a href="#" id="nav-login-link">Connecter</a>
       </div>
       <a href="adhesion.html" class="btn btn-primary nav-cta">Adhérer</a>
@@ -58,46 +58,56 @@
 </div>
 
 <section class="page-banner">
-  <div class="breadcrumb"><a href="index.html">Accueil</a> / Documents</div>
-  <h1>Documents</h1>
-  <p>Règlement Intérieur, Statuts, résultats aux examens nationaux et autres documents officiels de la LECIM.</p>
+  <div class="breadcrumb"><a href="index.html">Accueil</a> / Faire un don</div>
+  <h1>Faire un don</h1>
+  <p>Soutenez les actions de la LECIM par un don. Effectuez votre versement puis déclarez-le ci-dessous pour que nous puissions le rapprocher.</p>
 </section>
 
 <section>
   <div class="container">
-    <div id="doc-categories">
-      <div class="empty-state">Aucun document publié pour le moment.</div>
+    <div class="transparence-note" style="max-width:640px; margin-left:auto; margin-right:auto;">
+      <strong style="display:block; margin-bottom:8px; color:var(--green-dark);">Coordonnées bancaires</strong>
+      <p data-content-key="don_coordonnees" style="white-space:pre-line; margin:0;">Les coordonnées bancaires seront communiquées prochainement. Contactez-nous à lecimnational@gmail.com pour effectuer un don.</p>
     </div>
-  </div>
-</section>
 
-<section class="section-alt">
-  <div class="container">
-    <div class="section-head">
-      <span class="eyebrow">Résultats aux examens</span>
-      <h2>Résultats par établissement</h2>
-      <p>Taux de réussite aux examens scolaires islamiques, établissement par établissement. Pour une vue d'ensemble par année et par région, consultez le <a href="baremetre.html">baromètre des résultats</a>.</p>
+    <div class="contact-form" id="don-form-card" style="max-width:640px; margin:24px auto 0;">
+      <strong style="display:block; margin-bottom:14px;">Déclarer mon don</strong>
+      <form id="don-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="don-nom">Nom complet *</label>
+            <input type="text" id="don-nom" required>
+          </div>
+          <div class="form-group">
+            <label for="don-montant">Montant (FCFA) *</label>
+            <input type="number" id="don-montant" min="1" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="don-email">E-mail</label>
+            <input type="email" id="don-email">
+          </div>
+          <div class="form-group">
+            <label for="don-telephone">Téléphone</label>
+            <input type="tel" id="don-telephone">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="don-date">Date du versement *</label>
+          <input type="date" id="don-date" required>
+        </div>
+        <div class="form-group">
+          <label for="don-message">Message (facultatif)</label>
+          <textarea id="don-message" placeholder="Référence du virement, dédicace du don..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Déclarer mon don</button>
+        <p class="form-note">Votre don sera comptabilisé après vérification par le Bureau Exécutif National.</p>
+      </form>
     </div>
-    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px;" id="resultats-filtres">
-      <select id="resultats-filtre-annee" class="form-group" style="max-width:220px;">
-        <option value="">Toutes les années</option>
-      </select>
-    </div>
-    <div style="overflow-x:auto;">
-      <table id="resultats-table" style="width:100%; border-collapse:collapse;">
-        <thead>
-          <tr>
-            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">Établissement</th>
-            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">Année</th>
-            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">Examen</th>
-            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">Inscrits</th>
-            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">Admis</th>
-            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">Taux</th>
-          </tr>
-        </thead>
-        <tbody id="resultats-tbody"></tbody>
-      </table>
-      <p id="resultats-empty" style="display:none; text-align:center; color:var(--text-muted); margin-top:20px;">Aucun résultat publié pour le moment.</p>
+    <div id="don-success" class="contact-form" style="max-width:640px; margin:24px auto 0; display:none; text-align:center;">
+      <h3>Merci pour votre générosité !</h3>
+      <p style="color:var(--text-muted); margin-top:10px;">Votre don a bien été déclaré. Le Bureau Exécutif National le rapprochera de son relevé bancaire prochainement.</p>
     </div>
   </div>
 </section>
@@ -126,7 +136,7 @@
           <li><a href="actualites.html">Actualités</a></li>
           <li><a href="galerie.html">Galerie photo</a></li>
           <li><a href="faq.html">FAQ</a></li>
-                    <li><a href="transparence.html">Transparence financière</a></li>
+          <li><a href="transparence.html">Transparence financière</a></li>
           <li><a href="baremetre.html">Baromètre des résultats</a></li>
           <li><a href="contact.html">Contact</a></li>
         </ul>
