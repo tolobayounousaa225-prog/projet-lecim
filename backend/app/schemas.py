@@ -108,26 +108,48 @@ class ContactOut(BaseModel):
 class AdhesionRequestCreate(BaseModel):
     nom_etablissement: str = Field(min_length=2, max_length=255)
     nom_directeur: str = Field(min_length=2, max_length=255)
+    cycle: str | None = None
+    type_enseignement: str = Field(min_length=2, max_length=30)
     telephone: str = Field(min_length=6, max_length=50)
+    telephone_fixe: str | None = None
     email: EmailStr | None = None
     localite: str = Field(min_length=2, max_length=255)
-    type_enseignement: str = Field(min_length=2, max_length=30)
-    effectif_estime: int | None = None
+    boite_postale: str | None = None
+    propriete_terrain: str | None = None
+    superficie_m2: int | None = None
+    nombre_classes: int | None = None
+    nombre_garcons: int | None = None
+    nombre_filles: int | None = None
     message: str | None = None
 
 
 class AdhesionRequestOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
+    code_demande: str | None
     nom_etablissement: str
     nom_directeur: str
+    cycle: str | None
+    type_enseignement: str
     telephone: str
+    telephone_fixe: str | None
     email: str | None
     localite: str
-    type_enseignement: str
-    effectif_estime: int | None
+    boite_postale: str | None
+    propriete_terrain: str | None
+    superficie_m2: int | None
+    nombre_classes: int | None
+    nombre_garcons: int | None
+    nombre_filles: int | None
     message: str | None
-    is_read: bool
+    etat_demande: str
+    etat_label: str
+    agree: bool | None
+    numero_agrement: str | None
+    date_adhesion: datetime.date | None
+    notes_examen: str | None
+    examinee_at: datetime.datetime | None
+    valide_at: datetime.datetime | None
     created_at: datetime.datetime
 
 

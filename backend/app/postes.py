@@ -179,20 +179,21 @@ MODULES: dict[str, str] = {
     "effectifs": "Effectifs des élèves des écoles membres (primaire/secondaire)",
     "cartes_scolaires": "Cartes scolaires des élèves (validation, impression)",
     "messagerie": "Messagerie avec les établissements membres",
+    "adhesion_examen": "Examen et validation des demandes d'adhésion",
 }
 
 # Suggestion de cases pré-cochées lorsqu'un poste est sélectionné à la création
 # d'un compte — un simple point de départ, modifiable librement par l'administrateur
 # avant l'enregistrement. Un poste non listé ici démarre sans aucun module coché.
 DEFAULT_MODULES_BY_POSTE: dict[str, list[str]] = {
-    "president": ["reunions", "membres", "documents", "photos", "executif", "historique", "gouvernance", "site_content", "sondages"],
+    "president": ["reunions", "membres", "documents", "photos", "executif", "historique", "gouvernance", "site_content", "sondages", "adhesion_examen"],
     "vp1_education": ["reunions", "membres"],
-    "vp2_interieur": ["reunions", "membres", "delegations"],
+    "vp2_interieur": ["reunions", "membres", "delegations", "adhesion_examen"],
     "sec_relations_exterieures": ["reunions", "partenaires"],
     "sec_administratif": ["reunions", "membres", "documents", "photos", "contact", "cartes_gestion", "sondages", "messagerie"],
     "sec_education_formation": ["reunions", "activities", "enseignants", "resultats_examens", "effectifs"],
     "sec_pedagogie_vie_scolaire": ["reunions", "activities", "enseignants", "resultats_examens", "effectifs", "cartes_scolaires"],
-    "sec_interieur": ["reunions", "membres", "delegations"],
+    "sec_interieur": ["reunions", "membres", "delegations", "adhesion_examen"],
     "sec_finances": ["finances"],
     "sec_communication_tic": ["reunions", "news", "photos", "publications", "historique", "gouvernance", "site_content"],
     "sec_affaires_sociales": ["reunions", "membres", "affaires_sociales"],

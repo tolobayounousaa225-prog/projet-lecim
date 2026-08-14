@@ -45,3 +45,13 @@ def verify_membre(user_id: int, request: Request, db: Session = Depends(get_db))
         "verify_membre.html",
         {"user": user if is_ben_member else None, "found": is_ben_member},
     )
+
+
+@router.get("/verify-adhesion/{code}")
+def verify_adhesion(code: str, request: Request, db: Session = Depends(get_db)):
+    demande = db.query(models.AdhesionRequest).filter(models.AdhesionRequest.code_demande == code).first()
+    return templates.TemplateResponse(
+        request,
+        "verify_adhesion.html",
+        {"demande": demande, "found": demande is not None},
+    )

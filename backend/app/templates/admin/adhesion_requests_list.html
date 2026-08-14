@@ -2,35 +2,38 @@
 {% block title %}Demandes d'adhésion{% endblock %}
 {% block content %}
 <h1>Demandes d'adhésion reçues depuis la vitrine</h1>
+<p class="form-note" style="margin-top:-8px;">
+  Chaque demande est identifiée par un code (récépissé remis au demandeur). Après
+  l'entretien au siège, ouvrez la demande pour l'examiner et la valider ou la rejeter.
+</p>
 
 {% if items %}
 <table>
   <thead>
-    <tr><th>Date</th><th>Établissement</th><th>Directeur</th><th>Contact</th><th>Localité</th><th>Type</th><th>Effectif</th><th>Statut</th><th>Actions</th></tr>
+    <tr><th>Code</th><th>Date</th><th>Établissement</th><th>Directeur</th><th>Contact</th><th>Localité</th><th>Statut</th><th>Actions</th></tr>
   </thead>
   <tbody>
     {% for item in items %}
     <tr>
+      <td>{{ item.code_demande or "-" }}</td>
       <td>{{ item.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
-      <td>{{ item.nom_etablissement }}{% if item.message %}<br><small style="color:var(--text-muted)">{{ item.message[:80] }}{% if item.message|length > 80 %}…{% endif %}</small>{% endif %}</td>
+      <td>{{ item.nom_etablissement }}</td>
       <td>{{ item.nom_directeur }}</td>
       <td>{{ item.telephone }}{% if item.email %}<br>{{ item.email }}{% endif %}</td>
       <td>{{ item.localite }}</td>
-      <td>{{ item.type_enseignement }}</td>
-      <td>{{ item.effectif_estime or "-" }}</td>
       <td>
-        {% if item.is_read %}
-          <span class="pill pill-muted">Traitée</span>
+        {% if item.etat_demande == "validee" %}
+          <span class="pill pill-green">{{ item.etat_label }}</span>
+        {% elif item.etat_demande == "rejetee" %}
+          <span class="pill pill-red">{{ item.etat_label }}</span>
+        {% elif item.etat_demande == "en_cours" %}
+          <span class="pill pill-muted">{{ item.etat_label }}</span>
         {% else %}
-          <span class="pill pill-gold">Nouvelle</span>
+          <span class="pill pill-gold">{{ item.etat_label }}</span>
         {% endif %}
       </td>
       <td class="actions-cell">
-        {% if not item.is_read %}
-        <form method="post" action="/admin/adhesion-requests/{{ item.id }}/read">
-          <button type="submit" class="btn btn-outline btn-sm">Marquer traitée</button>
-        </form>
-        {% endif %}
+        <a href="/admin/adhesion-requests/{{ item.id }}" class="btn btn-outline btn-sm">Examiner</a>
         <form method="post" action="/admin/adhesion-requests/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cette demande ?');">
           <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
         </form>
