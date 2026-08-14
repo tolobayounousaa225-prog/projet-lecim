@@ -1,0 +1,34 @@
+{% extends "admin/base.html" %}
+{% block title %}Bibliothèque pédagogique{% endblock %}
+{% block content %}
+<h1>Bibliothèque pédagogique</h1>
+<p style="color:var(--text-muted); margin-top:-12px;">Supports déposés par les établissements membres — validez pour les rendre visibles aux autres écoles.</p>
+
+{% if items %}
+<table>
+  <thead><tr><th>Titre</th><th>École</th><th>Catégorie</th><th>Déposé le</th><th>Statut</th><th></th></tr></thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.titre }}</td>
+      <td>{{ item.etablissement.nom }}</td>
+      <td>{{ item.categorie_label }}</td>
+      <td>{{ item.created_at.strftime("%d/%m/%Y") }}</td>
+      <td>{% if item.is_published %}<span class="pill pill-green">Publiée</span>{% else %}<span class="pill pill-muted">En attente</span>{% endif %}</td>
+      <td style="white-space:nowrap;">
+        <a href="/admin/ressources-pedagogiques/{{ item.id }}/file" class="btn btn-outline btn-sm" target="_blank" rel="noopener">Voir</a>
+        <form method="post" action="/admin/ressources-pedagogiques/{{ item.id }}/publish" style="display:inline;">
+          <button type="submit" class="btn btn-outline btn-sm">{{ "Dépublier" if item.is_published else "Valider & publier" }}</button>
+        </form>
+        <form method="post" action="/admin/ressources-pedagogiques/{{ item.id }}/delete" style="display:inline;" onsubmit="return confirm('Supprimer cette ressource ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune ressource déposée pour le moment.</div>
+{% endif %}
+{% endblock %}

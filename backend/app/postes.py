@@ -216,6 +216,7 @@ ETAB_MODULES: dict[str, str] = {
     "demandes": "Demandes administratives auprès du BEN",
     "annonces": "Annonces de la délégation régionale",
     "messagerie": "Messagerie avec le BEN",
+    "ressources": "Bibliothèque pédagogique",
 }
 
 

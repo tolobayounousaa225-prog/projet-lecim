@@ -152,6 +152,7 @@ require_etab_cartes_web = _etab_module_dependency_web("cartes_scolaires")
 require_etab_demandes_web = _etab_module_dependency_web("demandes")
 require_etab_annonces_web = _etab_module_dependency_web("annonces")
 require_etab_messagerie_web = _etab_module_dependency_web("messagerie")
+require_etab_ressources_web = _etab_module_dependency_web("ressources")
 
 
 def require_admin_web(

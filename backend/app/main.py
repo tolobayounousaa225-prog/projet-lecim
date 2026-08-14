@@ -43,6 +43,7 @@ from .routers import (
     admin_password_resets,
     admin_projets,
     admin_publications,
+    admin_ressources,
     admin_resultats_examens,
     admin_reunions,
     admin_site_content,
@@ -54,6 +55,7 @@ from .routers import (
     contact,
     delegation_portal,
     etablissement_portal,
+    etablissement_ressources,
     etablissements_public,
     faq_public,
     gouvernance,
@@ -142,6 +144,7 @@ upload_dir.mkdir(parents=True, exist_ok=True)
 (upload_dir / "etablissements_logos").mkdir(exist_ok=True)
 (upload_dir / "partenaires_logos").mkdir(exist_ok=True)
 (upload_dir / "cartes_scolaires").mkdir(exist_ok=True)
+(upload_dir / "ressources_pedagogiques").mkdir(exist_ok=True)
 
 
 @app.exception_handler(NotAuthenticatedException)
@@ -199,6 +202,7 @@ app.include_router(admin_projets.router)
 app.include_router(admin_faq.router)
 app.include_router(admin_social.router)
 app.include_router(admin_publications.router)
+app.include_router(admin_ressources.router)
 app.include_router(verify.router)
 app.include_router(verify_eleve.router)
 app.include_router(verify_attestations.router)
@@ -222,6 +226,7 @@ app.include_router(admin_messagerie.router)
 app.include_router(admin_connexions.router)
 app.include_router(admin_password_resets.router)
 app.include_router(etablissement_portal.router)
+app.include_router(etablissement_ressources.router)
 
 
 @app.get("/")
