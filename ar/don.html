@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>مدارسنا المنتسبة — LECIM</title>
-<meta name="description" content="قائمة المؤسسات الدينية والمدارس القرآنية المنتسبة لـ LECIM، مصنّفة حسب المنطقة، عبر كوت ديفوار.">
+<title>تقديم تبرع — LECIM</title>
+<meta name="description" content="ادعموا LECIM بتبرع: الإحداثيات البنكية واستمارة تصريح ليتمكن المكتب التنفيذي الوطني من مطابقته.">
 <link rel="icon" type="image/jpeg" href="../assets/img/logo.jpg">
 <link rel="stylesheet" href="../assets/css/style.css">
 <link rel="manifest" href="manifest.json">
@@ -25,14 +25,14 @@
         <li><a href="apropos.html">من نحن</a></li>
         <li><a href="services.html">خدماتنا</a></li>
         <li><a href="activites.html">أنشطتنا</a></li>
-        <li><a href="ecoles.html" class="active">مدارسنا</a></li>
+        <li><a href="ecoles.html">مدارسنا</a></li>
         <li><a href="documents.html">الوثائق</a></li>
         <li><a href="initiatives.html">مبادراتنا</a></li>
         <li><a href="adhesion.html">الانتساب</a></li>
         <li><a href="contact.html">اتصل بنا</a></li>
       </ul>
       <div class="nav-utility">
-        <a href="../ecoles.html" class="lang-switch">Français</a>
+        <a href="../don.html" class="lang-switch">Français</a>
         <a href="#" id="nav-login-link">تسجيل الدخول</a>
       </div>
       <a href="adhesion.html" class="btn btn-primary nav-cta">انضموا</a>
@@ -58,25 +58,57 @@
 </div>
 
 <section class="page-banner">
-  <div class="breadcrumb"><a href="index.html">الرئيسية</a> / مدارسنا</div>
-  <h1>مدارسنا المنتسبة</h1>
-  <p>المؤسسات الدينية والمدارس القرآنية المنتسبة لـ LECIM، مصنّفة حسب المنطقة، عبر كوت ديفوار.</p>
+  <div class="breadcrumb"><a href="index.html">الرئيسية</a> / تقديم تبرع</div>
+  <h1>تقديم تبرع</h1>
+  <p>ادعموا أنشطة LECIM بتبرع. قوموا بالتحويل ثم صرّحوا به أدناه لنتمكن من مطابقته.</p>
 </section>
 
 <section>
   <div class="container">
-    <div class="ecoles-toolbar">
-      <div class="ecoles-search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input type="text" id="ecoles-search-input" placeholder="ابحث عن مدرسة أو منطقة...">
-      </div>
-      <div class="ecoles-count"><strong id="ecoles-count-num">0</strong> مؤسسة منتسبة</div>
+    <div class="transparence-note" style="max-width:640px; margin-left:auto; margin-right:auto;">
+      <strong style="display:block; margin-bottom:8px; color:var(--green-dark);">الإحداثيات البنكية</strong>
+      <p data-content-key="don_coordonnees" style="white-space:pre-line; margin:0;">سيتم نشر الإحداثيات البنكية قريبًا. يُرجى التواصل معنا عبر lecimnational@gmail.com لتقديم تبرع.</p>
     </div>
 
-    <div class="ecoles-regions" id="ecoles-regions-nav"></div>
-
-    <div id="ecoles-list"></div>
-    <p id="ecoles-empty">لا توجد مؤسسة مطابقة لبحثك.</p>
+    <div class="contact-form" id="don-form-card" style="max-width:640px; margin:24px auto 0;">
+      <strong style="display:block; margin-bottom:14px;">التصريح بتبرعي</strong>
+      <form id="don-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="don-nom">الاسم الكامل *</label>
+            <input type="text" id="don-nom" required>
+          </div>
+          <div class="form-group">
+            <label for="don-montant">المبلغ (فرنك إفريقي) *</label>
+            <input type="number" id="don-montant" min="1" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="don-email">البريد الإلكتروني</label>
+            <input type="email" id="don-email">
+          </div>
+          <div class="form-group">
+            <label for="don-telephone">الهاتف</label>
+            <input type="tel" id="don-telephone">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="don-date">تاريخ التحويل *</label>
+          <input type="date" id="don-date" required>
+        </div>
+        <div class="form-group">
+          <label for="don-message">رسالة (اختياري)</label>
+          <textarea id="don-message" placeholder="مرجع التحويل، إهداء التبرع..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">التصريح بتبرعي</button>
+        <p class="form-note">سيُحتسب تبرعكم بعد التحقق من طرف المكتب التنفيذي الوطني.</p>
+      </form>
+    </div>
+    <div id="don-success" class="contact-form" style="max-width:640px; margin:24px auto 0; display:none; text-align:center;">
+      <h3>شكرًا لكرمكم!</h3>
+      <p style="color:var(--text-muted); margin-top:10px;">تم التصريح بتبرعكم بنجاح. سيقوم المكتب التنفيذي الوطني بمطابقته مع كشف حسابه البنكي قريبًا.</p>
+    </div>
   </div>
 </section>
 
@@ -104,7 +136,7 @@
           <li><a href="actualites.html">الأخبار</a></li>
           <li><a href="galerie.html">معرض الصور</a></li>
           <li><a href="faq.html">الأسئلة الشائعة</a></li>
-                    <li><a href="transparence.html">الشفافية المالية</a></li>
+          <li><a href="transparence.html">الشفافية المالية</a></li>
           <li><a href="baremetre.html">مقياس النتائج</a></li>
           <li><a href="contact.html">اتصل بنا</a></li>
         </ul>

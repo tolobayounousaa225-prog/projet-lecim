@@ -1,0 +1,38 @@
+{% extends "admin/base.html" %}
+{% block title %}Dons déclarés{% endblock %}
+{% block content %}
+<h1>Dons déclarés</h1>
+<p style="color:var(--text-muted); margin-top:-12px;">Dons versés hors ligne (virement/dépôt) et déclarés depuis le site — à rapprocher de votre relevé bancaire avant de confirmer.</p>
+
+{% if items %}
+<table>
+  <thead><tr><th>Donateur</th><th>Contact</th><th>Montant</th><th>Date du don</th><th>Message</th><th>Statut</th><th></th></tr></thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.nom_donateur }}</td>
+      <td>{{ item.email or "—" }}{% if item.telephone %}<br>{{ item.telephone }}{% endif %}</td>
+      <td>{{ "{:,}".format(item.montant).replace(",", " ") }} FCFA</td>
+      <td>{{ item.date_don.strftime("%d/%m/%Y") }}</td>
+      <td style="max-width:220px;">{{ item.message or "—" }}</td>
+      <td>{% if item.is_confirme %}<span class="pill pill-green">Confirmé</span>{% else %}<span class="pill pill-muted">En attente</span>{% endif %}</td>
+      <td style="white-space:nowrap;">
+        {% if not item.is_confirme %}
+        <form method="post" action="/admin/dons/{{ item.id }}/confirmer" style="display:inline;">
+          <button type="submit" class="btn btn-primary btn-sm">Confirmer</button>
+        </form>
+        <form method="post" action="/admin/dons/{{ item.id }}/delete" style="display:inline;" onsubmit="return confirm('Supprimer cette déclaration ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+        {% else %}
+        <span style="font-size:0.8rem; color:var(--text-muted);">Comptabilisé</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun don déclaré pour le moment.</div>
+{% endif %}
+{% endblock %}

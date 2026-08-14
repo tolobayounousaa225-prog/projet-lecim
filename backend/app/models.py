@@ -796,6 +796,29 @@ class Recette(Base):
     )
 
 
+class DonDeclare(Base):
+    """Don déclaré en libre-service depuis la vitrine (virement/dépôt effectué hors
+    ligne) — en attente de rapprochement par le BEN avant d'être comptabilisé."""
+
+    __tablename__ = "dons_declares"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    nom_donateur: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    telephone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    montant: Mapped[int] = mapped_column(Integer, nullable=False)
+    date_don: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_confirme: Mapped[bool] = mapped_column(Boolean, default=False)
+    confirme_par_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    recette_id: Mapped[int | None] = mapped_column(ForeignKey("recettes.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    confirme_par: Mapped["User | None"] = relationship(foreign_keys=[confirme_par_id])
+
+
 class Depense(Base):
     """Dépense de la LECIM, avec pièce justificative optionnelle."""
 

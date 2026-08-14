@@ -100,6 +100,12 @@ SITE_CONTENT_FIELDS: dict[str, dict] = {
             "et en arabe."
         ),
     },
+    "don_coordonnees": {
+        "group": "Faire un don — Coordonnées bancaires",
+        "label": "Coordonnées bancaires (RIB, banque, titulaire du compte...)",
+        "type": "textarea",
+        "default": "Les coordonnées bancaires seront communiquées prochainement. Contactez-nous à lecimnational@gmail.com pour effectuer un don.",
+    },
     "footer_description": {
         "group": "Pied de page (toutes les pages)",
         "label": "Texte de présentation",

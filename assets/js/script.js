@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initContactForm();
   initAdhesionForm();
   initPartenariatForm();
+  initDonForm();
   initGlobalSearch();
   loadNews();
   loadActivities();
@@ -445,6 +446,7 @@ var SEARCH_STATIC_PAGES = {
     { title: "Baromètre des résultats", url: "baremetre.html" },
     { title: "Adhésion", url: "adhesion.html" },
     { title: "Devenir partenaire", url: "partenariat.html" },
+    { title: "Faire un don", url: "don.html" },
     { title: "Contact", url: "contact.html" }
   ],
   ar: [
@@ -463,6 +465,7 @@ var SEARCH_STATIC_PAGES = {
     { title: "مقياس النتائج", url: "baremetre.html" },
     { title: "الانتساب", url: "adhesion.html" },
     { title: "كونوا شريكًا", url: "partenariat.html" },
+    { title: "تقديم تبرع", url: "don.html" },
     { title: "اتصل بنا", url: "contact.html" }
   ]
 };
@@ -707,6 +710,52 @@ function initPartenariatForm() {
     btn.textContent = "Envoi en cours…";
 
     fetch(API_BASE + "/api/partenariat-requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error("Échec de l'envoi");
+        if (formCard) formCard.style.display = "none";
+        if (successBox) successBox.style.display = "block";
+      })
+      .catch(function () {
+        btn.textContent = "Erreur — merci de réessayer";
+        setTimeout(function () {
+          btn.textContent = original;
+          btn.disabled = false;
+        }, 3500);
+      });
+  });
+}
+
+function initDonForm() {
+  var form = document.getElementById("don-form");
+  if (!form) return;
+
+  var formCard = document.getElementById("don-form-card");
+  var successBox = document.getElementById("don-success");
+  var dateInput = document.getElementById("don-date");
+  if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().slice(0, 10);
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var btn = form.querySelector("button[type=submit]");
+    var original = btn.textContent;
+
+    var payload = {
+      nom_donateur: valueOf(form, "#don-nom"),
+      email: valueOf(form, "#don-email") || null,
+      telephone: valueOf(form, "#don-telephone") || null,
+      montant: parseInt(valueOf(form, "#don-montant"), 10),
+      date_don: valueOf(form, "#don-date"),
+      message: valueOf(form, "#don-message") || null,
+    };
+
+    btn.disabled = true;
+    btn.textContent = "Envoi en cours…";
+
+    fetch(API_BASE + "/api/dons", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

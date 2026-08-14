@@ -265,6 +265,15 @@ class PartenariatRequestCreate(BaseModel):
     message: str = Field(min_length=10)
 
 
+class DonDeclareCreate(BaseModel):
+    nom_donateur: str = Field(min_length=2, max_length=255)
+    email: EmailStr | None = None
+    telephone: str | None = None
+    montant: int = Field(gt=0)
+    date_don: datetime.date
+    message: str | None = None
+
+
 class SearchResultOut(BaseModel):
     type: str
     title: str
