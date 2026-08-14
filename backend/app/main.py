@@ -19,6 +19,7 @@ from .deps import (
 )
 from .routers import (
     activities,
+    adhesion,
     admin,
     admin_audit,
     admin_backups,
@@ -55,7 +56,9 @@ from .routers import (
     gouvernance,
     historique,
     news,
+    partenaires_public,
     password_reset,
+    projets_public,
     publications,
     resultats_examens,
     site_content,
@@ -164,6 +167,9 @@ app.include_router(etablissements_public.router)
 app.include_router(news.router)
 app.include_router(activities.router)
 app.include_router(contact.router)
+app.include_router(adhesion.router)
+app.include_router(partenaires_public.router)
+app.include_router(projets_public.router)
 app.include_router(publications.router)
 app.include_router(admin.router)
 app.include_router(admin_audit.router)

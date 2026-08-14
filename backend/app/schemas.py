@@ -105,6 +105,32 @@ class ContactOut(BaseModel):
     created_at: datetime.datetime
 
 
+class AdhesionRequestCreate(BaseModel):
+    nom_etablissement: str = Field(min_length=2, max_length=255)
+    nom_directeur: str = Field(min_length=2, max_length=255)
+    telephone: str = Field(min_length=6, max_length=50)
+    email: EmailStr | None = None
+    localite: str = Field(min_length=2, max_length=255)
+    type_enseignement: str = Field(min_length=2, max_length=30)
+    effectif_estime: int | None = None
+    message: str | None = None
+
+
+class AdhesionRequestOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    nom_etablissement: str
+    nom_directeur: str
+    telephone: str
+    email: str | None
+    localite: str
+    type_enseignement: str
+    effectif_estime: int | None
+    message: str | None
+    is_read: bool
+    created_at: datetime.datetime
+
+
 # ---------- Publications publiques ----------
 
 class PublicationOut(BaseModel):
@@ -153,6 +179,30 @@ class EtablissementPublicOut(BaseModel):
     directeur_nom: str | None = None
     type_enseignement: str
     logo_url: str | None = None
+    numero_agrement: str | None = None
+
+
+class EtablissementsStatsOut(BaseModel):
+    ecoles: int
+    regions: int
+    enseignants: int
+    eleves: int
+
+
+class PartenairePublicOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    nom: str
+    type: str
+    pays: str | None = None
+
+
+class ProjetPublicOut(BaseModel):
+    id: int
+    titre: str
+    description: str | None = None
+    statut: str
+    statut_label: str
 
 
 class CarteMarkerOut(BaseModel):

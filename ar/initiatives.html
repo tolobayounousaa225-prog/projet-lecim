@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>مدارسنا المنتسبة — LECIM</title>
-<meta name="description" content="قائمة المؤسسات الدينية والمدارس القرآنية المنتسبة لـ LECIM، مصنّفة حسب المنطقة، عبر كوت ديفوار.">
+<title>مبادراتنا — LECIM</title>
+<meta name="description" content="المبادرات والمشاريع التي تقودها LECIM لخدمة المؤسسات الدينية والمدارس القرآنية في كوت ديفوار.">
 <link rel="icon" type="image/jpeg" href="../assets/img/logo.jpg">
 <link rel="stylesheet" href="../assets/css/style.css">
 </head>
@@ -21,11 +21,11 @@
       <li><a href="apropos.html">من نحن</a></li>
       <li><a href="services.html">خدماتنا</a></li>
       <li><a href="activites.html">أنشطتنا</a></li>
-      <li><a href="ecoles.html" class="active">مدارسنا</a></li>
+      <li><a href="ecoles.html">مدارسنا</a></li>
       <li><a href="carte.html">الخريطة</a></li>
       <li><a href="documents.html">الوثائق</a></li>
       <li><a href="contact.html">اتصل بنا</a></li>
-      <li><a href="../ecoles.html" class="lang-switch">Français</a></li>
+      <li><a href="../initiatives.html" class="lang-switch">Français</a></li>
       <li><a href="#" id="nav-login-link">تسجيل الدخول</a></li>
       <li><a href="contact.html" class="btn btn-primary">اتصل بنا</a></li>
     </ul>
@@ -34,25 +34,27 @@
 </header>
 
 <section class="page-banner">
-  <div class="breadcrumb"><a href="index.html">الرئيسية</a> / مدارسنا</div>
-  <h1>مدارسنا المنتسبة</h1>
-  <p>المؤسسات الدينية والمدارس القرآنية المنتسبة لـ LECIM، مصنّفة حسب المنطقة، عبر كوت ديفوار.</p>
+  <div class="breadcrumb"><a href="index.html">الرئيسية</a> / مبادراتنا</div>
+  <h1>مبادراتنا</h1>
+  <p>محفظة مشاريع تقودها LECIM في خدمة مؤسساتها الأعضاء، ومفتوحة أمام الشراكات.</p>
 </section>
 
 <section>
   <div class="container">
-    <div class="ecoles-toolbar">
-      <div class="ecoles-search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input type="text" id="ecoles-search-input" placeholder="ابحث عن مدرسة أو منطقة...">
+    <div id="initiatives-list" class="initiatives-grid"></div>
+    <p id="initiatives-empty" style="display:none; text-align:center; color:var(--text-muted);">لا توجد مبادرات منشورة حاليًا. عودوا قريبًا.</p>
+  </div>
+</section>
+
+<section class="section-alt">
+  <div class="container">
+    <div class="cta-band">
+      <div>
+        <h2>لديكم مشروع أو ترغبون في أن تصبحوا شريكًا؟</h2>
+        <p>تستقبل LECIM الشراكات المؤسسية والأكاديمية والتقنية والتنموية.</p>
       </div>
-      <div class="ecoles-count"><strong id="ecoles-count-num">0</strong> مؤسسة منتسبة</div>
+      <a href="contact.html" class="btn btn-primary">كونوا شريكًا</a>
     </div>
-
-    <div class="ecoles-regions" id="ecoles-regions-nav"></div>
-
-    <div id="ecoles-list"></div>
-    <p id="ecoles-empty">لا توجد مؤسسة مطابقة لبحثك.</p>
   </div>
 </section>
 
@@ -71,7 +73,7 @@
         <ul>
           <li><a href="index.html">الرئيسية</a></li>
           <li><a href="apropos.html">من نحن</a></li>
-          <li><a href="activites.html">أنشطتنا</a></li>
+          <li><a href="services.html">خدماتنا</a></li>
           <li><a href="ecoles.html">مدارسنا</a></li>
           <li><a href="documents.html">الوثائق</a></li>
           <li><a href="contact.html">اتصل بنا</a></li>

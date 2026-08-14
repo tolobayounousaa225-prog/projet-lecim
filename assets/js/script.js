@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initNavToggle();
   initLoginLink();
   initContactForm();
+  initAdhesionForm();
   loadNews();
   loadActivities();
   loadPublications();
@@ -13,7 +14,58 @@ document.addEventListener("DOMContentLoaded", function () {
   loadCarte();
   loadResultatsExamens();
   loadEcoles();
+  loadHeroStats();
+  loadPartenaires();
+  loadInitiatives();
 });
+
+function loadHeroStats() {
+  var ecolesEl = document.getElementById("hero-stat-ecoles");
+  var regionsEl = document.getElementById("hero-stat-regions");
+  var enseignantsEl = document.getElementById("hero-stat-enseignants");
+  var elevesEl = document.getElementById("hero-stat-eleves");
+  if (!ecolesEl && !regionsEl && !enseignantsEl && !elevesEl) return;
+
+  fetch(API_BASE + "/api/etablissements/stats")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (stats) {
+      if (!stats) return;
+      if (ecolesEl && stats.ecoles) ecolesEl.textContent = stats.ecoles + "+";
+      if (regionsEl && stats.regions) regionsEl.textContent = stats.regions + "+";
+      if (enseignantsEl && stats.enseignants) enseignantsEl.textContent = stats.enseignants + "+";
+      if (elevesEl && stats.eleves) elevesEl.textContent = stats.eleves.toLocaleString("fr-FR") + "+";
+    })
+    .catch(function () {
+      // API indisponible : les chiffres par défaut codés dans la page restent affichés.
+    });
+}
+
+function loadPartenaires() {
+  var section = document.getElementById("partenaires-section");
+  var container = document.getElementById("partenaires-list");
+  if (!section || !container) return;
+
+  fetch(API_BASE + "/api/partenaires")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) return;
+      container.innerHTML = items
+        .map(function (p) {
+          return '<div class="partenaire-chip">' + p.nom + "</div>";
+        })
+        .join("");
+      section.style.display = "";
+    })
+    .catch(function () {
+      // API indisponible ou aucun partenaire publié : la section reste masquée.
+    });
+}
 
 function loadSiteContent() {
   var elements = document.querySelectorAll("[data-content-key]");
@@ -133,6 +185,7 @@ function loadEcoles() {
           listHtml += '<img src="' + logo + '" alt="" loading="lazy" onerror="this.src=\'assets/img/logo.jpg\'">';
           listHtml += '<div class="ecole-card-body"><h3>' + escapeHtml(e.nom) + "</h3>";
           if (niveau) listHtml += '<span class="niveau">' + niveau + "</span>";
+          if (e.numero_agrement) listHtml += '<span class="agrement-badge">Agréée</span>';
           listHtml += "</div></div>";
         });
         listHtml += "</div></div>";
@@ -276,6 +329,87 @@ function initContactForm() {
         }, 3500);
       });
   });
+}
+
+function initAdhesionForm() {
+  var form = document.getElementById("adhesion-form");
+  if (!form) return;
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var btn = form.querySelector("button[type=submit]");
+    var original = btn.textContent;
+
+    var effectif = valueOf(form, "#ad-effectif");
+    var payload = {
+      nom_etablissement: valueOf(form, "#ad-nom-etablissement"),
+      nom_directeur: valueOf(form, "#ad-nom-directeur"),
+      telephone: valueOf(form, "#ad-tel"),
+      email: valueOf(form, "#ad-email") || null,
+      localite: valueOf(form, "#ad-localite"),
+      type_enseignement: valueOf(form, "#ad-type"),
+      effectif_estime: effectif ? parseInt(effectif, 10) : null,
+      message: valueOf(form, "#ad-message") || null,
+    };
+
+    btn.disabled = true;
+    btn.textContent = "Envoi en cours…";
+
+    fetch(API_BASE + "/api/adhesion-requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error("Échec de l'envoi");
+        btn.textContent = "Demande envoyée ✓";
+        form.reset();
+      })
+      .catch(function () {
+        btn.textContent = "Erreur — merci de réessayer";
+      })
+      .finally(function () {
+        setTimeout(function () {
+          btn.textContent = original;
+          btn.disabled = false;
+        }, 3500);
+      });
+  });
+}
+
+function loadInitiatives() {
+  var container = document.getElementById("initiatives-list");
+  var emptyEl = document.getElementById("initiatives-empty");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/projets")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) {
+        if (emptyEl) emptyEl.style.display = "block";
+        return;
+      }
+      if (emptyEl) emptyEl.style.display = "none";
+      container.innerHTML = items
+        .map(function (p) {
+          return (
+            '<div class="initiative-card"><span class="initiative-statut">' +
+            escapeHtml(p.statut_label) +
+            "</span><h3>" +
+            escapeHtml(p.titre) +
+            "</h3>" +
+            (p.description ? "<p>" + escapeHtml(p.description) + "</p>" : "") +
+            "</div>"
+          );
+        })
+        .join("");
+    })
+    .catch(function () {
+      if (emptyEl) emptyEl.style.display = "block";
+    });
 }
 
 function valueOf(form, selector) {

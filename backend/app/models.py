@@ -245,6 +245,27 @@ class ContactMessage(Base):
     )
 
 
+class AdhesionRequest(Base):
+    """Demande d'adhésion soumise depuis la vitrine par une école ou madrassa
+    qui n'est pas encore membre de la LECIM."""
+
+    __tablename__ = "adhesion_requests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    nom_etablissement: Mapped[str] = mapped_column(String(255), nullable=False)
+    nom_directeur: Mapped[str] = mapped_column(String(255), nullable=False)
+    telephone: Mapped[str] = mapped_column(String(50), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=True)
+    localite: Mapped[str] = mapped_column(String(255), nullable=False)
+    type_enseignement: Mapped[str] = mapped_column(String(30), nullable=False)
+    effectif_estime: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    message: Mapped[str] = mapped_column(Text, nullable=True)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+
 class Membre(Base):
     """Répertoire permanent des membres du BEN : personnes physiques occupant un poste,
     utilisé pour le suivi de présence aux réunions (avec ou sans compte de connexion)."""
