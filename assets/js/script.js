@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initLoginLink();
   initContactForm();
   initAdhesionForm();
+  initPartenariatForm();
   initGlobalSearch();
   loadNews();
   loadActivities();
@@ -315,6 +316,7 @@ var SEARCH_STATIC_PAGES = {
     { title: "FAQ", url: "faq.html" },
     { title: "Transparence financière", url: "transparence.html" },
     { title: "Adhésion", url: "adhesion.html" },
+    { title: "Devenir partenaire", url: "partenariat.html" },
     { title: "Contact", url: "contact.html" }
   ],
   ar: [
@@ -331,6 +333,7 @@ var SEARCH_STATIC_PAGES = {
     { title: "الأسئلة الشائعة", url: "faq.html" },
     { title: "الشفافية المالية", url: "transparence.html" },
     { title: "الانتساب", url: "adhesion.html" },
+    { title: "كونوا شريكًا", url: "partenariat.html" },
     { title: "اتصل بنا", url: "contact.html" }
   ]
 };
@@ -537,6 +540,51 @@ function initAdhesionForm() {
         form.style.display = "none";
         if (codeEl) codeEl.textContent = data.code_demande;
         if (recepisseLink) recepisseLink.href = API_BASE + "/api/adhesion-requests/" + data.code_demande + "/recepisse.pdf";
+        if (successBox) successBox.style.display = "block";
+      })
+      .catch(function () {
+        btn.textContent = "Erreur — merci de réessayer";
+        setTimeout(function () {
+          btn.textContent = original;
+          btn.disabled = false;
+        }, 3500);
+      });
+  });
+}
+
+function initPartenariatForm() {
+  var form = document.getElementById("partenariat-form");
+  if (!form) return;
+
+  var formCard = document.getElementById("partenariat-form-card");
+  var successBox = document.getElementById("partenariat-success");
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var btn = form.querySelector("button[type=submit]");
+    var original = btn.textContent;
+
+    var payload = {
+      nom: valueOf(form, "#pt-nom"),
+      type: valueOf(form, "#pt-type"),
+      pays: valueOf(form, "#pt-pays") || null,
+      contact_nom: valueOf(form, "#pt-contact-nom"),
+      contact_email: valueOf(form, "#pt-contact-email"),
+      contact_telephone: valueOf(form, "#pt-contact-tel") || null,
+      message: valueOf(form, "#pt-message"),
+    };
+
+    btn.disabled = true;
+    btn.textContent = "Envoi en cours…";
+
+    fetch(API_BASE + "/api/partenariat-requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error("Échec de l'envoi");
+        if (formCard) formCard.style.display = "none";
         if (successBox) successBox.style.display = "block";
       })
       .catch(function () {

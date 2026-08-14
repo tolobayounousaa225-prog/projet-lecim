@@ -233,6 +233,16 @@ class EtablissementPublicOut(BaseModel):
     statut_agrement_label: str
 
 
+class PartenariatRequestCreate(BaseModel):
+    nom: str = Field(min_length=2, max_length=255)
+    type: str = Field(min_length=2, max_length=30)
+    pays: str | None = None
+    contact_nom: str = Field(min_length=2, max_length=255)
+    contact_email: EmailStr
+    contact_telephone: str | None = None
+    message: str = Field(min_length=10)
+
+
 class SearchResultOut(BaseModel):
     type: str
     title: str

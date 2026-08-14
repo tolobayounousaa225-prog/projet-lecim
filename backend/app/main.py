@@ -60,6 +60,7 @@ from .routers import (
     historique,
     news,
     partenaires_public,
+    partenariat_requests,
     password_reset,
     photos_public,
     projets_public,
@@ -177,6 +178,7 @@ app.include_router(activities.router)
 app.include_router(contact.router)
 app.include_router(adhesion.router)
 app.include_router(partenaires_public.router)
+app.include_router(partenariat_requests.router)
 app.include_router(projets_public.router)
 app.include_router(photos_public.router)
 app.include_router(faq_public.router)
