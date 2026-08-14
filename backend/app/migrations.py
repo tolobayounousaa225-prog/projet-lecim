@@ -113,6 +113,15 @@ def run_startup_migrations() -> None:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE etablissements ADD COLUMN date_expiration_agrement DATE"))
 
+    if inspector.has_table("news_posts"):
+        columns = {c["name"] for c in inspector.get_columns("news_posts")}
+        if "is_urgent" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE news_posts ADD COLUMN is_urgent BOOLEAN DEFAULT FALSE"))
+        if "push_sent_at" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE news_posts ADD COLUMN push_sent_at TIMESTAMP"))
+
     Base.metadata.create_all(bind=engine)
 
     if inspector.has_table("etablissements"):
