@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
@@ -27,6 +28,36 @@ def list_etablissements(db: Session = Depends(get_db)):
         .all()
     )
     return items
+
+
+@router.get("/stats", response_model=schemas.EtablissementsStatsOut)
+def etablissements_stats(db: Session = Depends(get_db)):
+    """Chiffres clés publics pour la page d'accueil de la vitrine."""
+    ecoles = db.query(models.Etablissement).count()
+    regions = (
+        db.query(models.Etablissement.bureau_local)
+        .filter(models.Etablissement.bureau_local.isnot(None))
+        .distinct()
+        .count()
+    )
+    enseignants = db.query(models.Enseignant).count()
+
+    derniere_annee = db.query(func.max(models.Effectif.annee_scolaire)).scalar()
+    eleves = 0
+    if derniere_annee:
+        total_garcons, total_filles = (
+            db.query(
+                func.coalesce(func.sum(models.Effectif.nombre_garcons), 0),
+                func.coalesce(func.sum(models.Effectif.nombre_filles), 0),
+            )
+            .filter(models.Effectif.annee_scolaire == derniere_annee)
+            .one()
+        )
+        eleves = total_garcons + total_filles
+
+    return schemas.EtablissementsStatsOut(
+        ecoles=ecoles, regions=regions, enseignants=enseignants, eleves=eleves
+    )
 
 
 @router.get("/{etablissement_id}/logo")

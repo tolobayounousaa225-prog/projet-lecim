@@ -201,6 +201,9 @@ def dashboard(
         counts["unread_messages"] = (
             db.query(models.ContactMessage).filter(models.ContactMessage.is_read.is_(False)).count()
         )
+        counts["unread_adhesion_requests"] = (
+            db.query(models.AdhesionRequest).filter(models.AdhesionRequest.is_read.is_(False)).count()
+        )
     if user.is_admin:
         counts["users"] = db.query(models.User).count()
 
@@ -564,3 +567,45 @@ def message_delete(
         db.delete(message)
         db.commit()
     return RedirectResponse(url="/admin/messages", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# ---------- Demandes d'adhésion ----------
+
+@router.get("/adhesion-requests")
+def adhesion_requests_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_contact_access_web),
+):
+    items = db.query(models.AdhesionRequest).order_by(desc(models.AdhesionRequest.created_at)).all()
+    return templates.TemplateResponse(
+        request,
+        "admin/adhesion_requests_list.html",
+        {"admin": user, "items": items, "active": "adhesion_requests"},
+    )
+
+
+@router.post("/adhesion-requests/{request_id}/read")
+def adhesion_request_mark_read(
+    request_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_contact_access_web),
+):
+    item = db.get(models.AdhesionRequest, request_id)
+    if item:
+        item.is_read = True
+        db.commit()
+    return RedirectResponse(url="/admin/adhesion-requests", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/adhesion-requests/{request_id}/delete")
+def adhesion_request_delete(
+    request_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_contact_access_web),
+):
+    item = db.get(models.AdhesionRequest, request_id)
+    if item:
+        db.delete(item)
+        db.commit()
+    return RedirectResponse(url="/admin/adhesion-requests", status_code=status.HTTP_303_SEE_OTHER)
