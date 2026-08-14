@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadGalerie();
   loadFaq();
   loadTransparence();
+  loadUpcomingEvents();
 });
 
 function loadHeroStats() {
@@ -855,6 +856,10 @@ function loadActivities() {
           '<div class="tdate">' + formatDateFr(item.event_date) + "</div>" +
           "<h3>" + escapeHtml(item.title) + "</h3>" +
           "<p>" + escapeHtml(item.description) + "</p>" +
+          (isPast ? "" :
+            '<a class="ics-link" href="' + API_BASE + "/api/activities/" + item.id + '/ics" download>' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' +
+            "Ajouter à mon calendrier</a>") +
           "</div>";
         container.appendChild(el);
       });
@@ -862,6 +867,40 @@ function loadActivities() {
     .catch(function () {
       // API indisponible : le contenu statique reste affiché.
     });
+}
+
+function loadUpcomingEvents() {
+  var section = document.getElementById("evenements-section");
+  var list = document.getElementById("evenements-list");
+  if (!section || !list) return;
+
+  fetch(API_BASE + "/api/activities")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      var upcoming = (items || []).filter(function (i) { return i.status === "upcoming"; }).slice(0, 3);
+      if (!upcoming.length) return;
+      list.innerHTML = upcoming
+        .map(function (item) {
+          var d = new Date(item.event_date + "T00:00:00");
+          var day = d.toLocaleDateString("fr-FR", { day: "2-digit" });
+          var month = d.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "");
+          return (
+            '<div class="evenement-card">' +
+            '<div class="evenement-date-badge"><strong>' + day + "</strong><span>" + escapeHtml(month) + "</span></div>" +
+            "<div><h4>" + escapeHtml(item.title) + "</h4>" +
+            '<a class="ics-link" href="' + API_BASE + "/api/activities/" + item.id + '/ics" download>' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' +
+            "Ajouter à mon calendrier</a>" +
+            "</div></div>"
+          );
+        })
+        .join("");
+      section.style.display = "";
+    })
+    .catch(function () {});
 }
 
 var PUBLICATION_CATEGORY_LABELS = {
