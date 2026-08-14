@@ -37,9 +37,25 @@
       </div>
       <a href="adhesion.html" class="btn btn-primary nav-cta">انضموا</a>
     </div>
-    <button class="nav-toggle" aria-label="القائمة"><span></span><span></span><span></span></button>
+      <button type="button" class="nav-search-trigger" id="nav-search-trigger" aria-label="بحث">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      </button>
+      <button class="nav-toggle" aria-label="القائمة"><span></span><span></span><span></span></button>
   </nav>
 </header>
+
+<div class="search-overlay" id="search-overlay">
+  <div class="search-panel">
+    <div class="search-input-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="search-input" autocomplete="off">
+      <button type="button" id="search-close" aria-label="إغلاق">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div id="search-results" class="search-results"></div>
+  </div>
+</div>
 
 <section class="page-banner">
   <div class="breadcrumb"><a href="index.html">الرئيسية</a> / أنشطتنا</div>

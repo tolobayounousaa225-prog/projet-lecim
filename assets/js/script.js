@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initLoginLink();
   initContactForm();
   initAdhesionForm();
+  initGlobalSearch();
   loadNews();
   loadActivities();
   loadPublications();
@@ -195,7 +196,7 @@ function loadEcoles() {
         items.forEach(function (e) {
           var logo = e.logo_url ? API_BASE + e.logo_url : "assets/img/logo.jpg";
           var niveau = niveauLabels[e.type_enseignement] || "";
-          listHtml += '<div class="ecole-card" data-nom="' + escapeHtml(e.nom.toLowerCase()) + '">';
+          listHtml += '<div class="ecole-card" id="ecole-' + e.id + '" data-nom="' + escapeHtml(e.nom.toLowerCase()) + '">';
           listHtml += '<img src="' + logo + '" alt="" loading="lazy" onerror="this.src=\'assets/img/logo.jpg\'">';
           listHtml += '<div class="ecole-card-body"><h3>' + escapeHtml(e.nom) + "</h3>";
           if (niveau) listHtml += '<span class="niveau">' + niveau + "</span>";
@@ -208,6 +209,10 @@ function loadEcoles() {
       });
       list.innerHTML = listHtml;
       countEl.textContent = ecoles.length;
+      if (location.hash) {
+        var target = document.querySelector(location.hash);
+        if (target && target.classList.contains("ecole-card")) scrollToHighlight(target);
+      }
 
       if (searchInput) {
         searchInput.addEventListener("input", function () {
@@ -292,6 +297,138 @@ function initLoginLink() {
   if (link) {
     link.href = API_BASE + "/admin/login";
   }
+}
+
+var SEARCH_STATIC_PAGES = {
+  fr: [
+    { title: "Accueil", url: "index.html" },
+    { title: "À propos", url: "apropos.html" },
+    { title: "Services", url: "services.html" },
+    { title: "Activités", url: "activites.html" },
+    { title: "Établissements affiliés", url: "ecoles.html" },
+    { title: "Carte interactive", url: "carte.html" },
+    { title: "Documents", url: "documents.html" },
+    { title: "Initiatives", url: "initiatives.html" },
+    { title: "Actualités", url: "actualites.html" },
+    { title: "Galerie photo", url: "galerie.html" },
+    { title: "FAQ", url: "faq.html" },
+    { title: "Transparence financière", url: "transparence.html" },
+    { title: "Adhésion", url: "adhesion.html" },
+    { title: "Contact", url: "contact.html" }
+  ],
+  ar: [
+    { title: "الرئيسية", url: "index.html" },
+    { title: "من نحن", url: "apropos.html" },
+    { title: "خدماتنا", url: "services.html" },
+    { title: "أنشطتنا", url: "activites.html" },
+    { title: "مدارسنا", url: "ecoles.html" },
+    { title: "الخريطة", url: "carte.html" },
+    { title: "الوثائق", url: "documents.html" },
+    { title: "مبادراتنا", url: "initiatives.html" },
+    { title: "الأخبار", url: "actualites.html" },
+    { title: "معرض الصور", url: "galerie.html" },
+    { title: "الأسئلة الشائعة", url: "faq.html" },
+    { title: "الشفافية المالية", url: "transparence.html" },
+    { title: "الانتساب", url: "adhesion.html" },
+    { title: "اتصل بنا", url: "contact.html" }
+  ]
+};
+
+var SEARCH_GROUP_LABELS = {
+  fr: { ecole: "Établissements", actualite: "Actualités", document: "Documents", faq: "FAQ", page: "Pages" },
+  ar: { ecole: "المدارس", actualite: "الأخبار", document: "الوثائق", faq: "الأسئلة الشائعة", page: "الصفحات" }
+};
+
+function initGlobalSearch() {
+  var trigger = document.getElementById("nav-search-trigger");
+  var overlay = document.getElementById("search-overlay");
+  var input = document.getElementById("search-input");
+  var closeBtn = document.getElementById("search-close");
+  var resultsEl = document.getElementById("search-results");
+  if (!trigger || !overlay || !input || !resultsEl) return;
+
+  var lang = document.documentElement.getAttribute("lang") === "ar" ? "ar" : "fr";
+  var staticPages = SEARCH_STATIC_PAGES[lang];
+  var groupLabels = SEARCH_GROUP_LABELS[lang];
+  var placeholder = lang === "ar"
+    ? "ابحث عن مدرسة، خبر أو وثيقة..."
+    : "Rechercher une école, une actualité, un document...";
+  var noResultsText = lang === "ar" ? "لا توجد نتائج." : "Aucun résultat.";
+  input.setAttribute("placeholder", placeholder);
+
+  function open() {
+    overlay.classList.add("open");
+    document.body.style.overflow = "hidden";
+    setTimeout(function () { input.focus(); }, 50);
+  }
+  function close() {
+    overlay.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  trigger.addEventListener("click", open);
+  closeBtn.addEventListener("click", close);
+  overlay.addEventListener("click", function (e) {
+    if (e.target === overlay) close();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && overlay.classList.contains("open")) close();
+  });
+
+  function renderGroups(groups) {
+    var order = ["ecole", "actualite", "document", "faq", "page"];
+    var html = "";
+    order.forEach(function (type) {
+      var items = groups[type];
+      if (!items || !items.length) return;
+      html += '<div class="search-result-group"><h4>' + escapeHtml(groupLabels[type]) + "</h4>";
+      items.forEach(function (item) {
+        var target = type === "document" ? ' target="_blank" rel="noopener"' : "";
+        html +=
+          '<a class="search-result-item" href="' + escapeHtml(item.url) + '"' + target + ">" +
+          '<span class="search-result-title">' + escapeHtml(item.title) + "</span>" +
+          (item.subtitle ? '<span class="search-result-subtitle">' + escapeHtml(item.subtitle) + "</span>" : "") +
+          "</a>";
+      });
+      html += "</div>";
+    });
+    resultsEl.innerHTML = html || '<p class="search-empty-hint">' + noResultsText + "</p>";
+  }
+
+  var debounceTimer = null;
+  input.addEventListener("input", function () {
+    var term = input.value.trim();
+    clearTimeout(debounceTimer);
+    if (term.length < 2) {
+      resultsEl.innerHTML = "";
+      return;
+    }
+    debounceTimer = setTimeout(function () {
+      var termLower = term.toLowerCase();
+      var groups = { ecole: [], actualite: [], document: [], faq: [], page: [] };
+      staticPages
+        .filter(function (p) { return p.title.toLowerCase().indexOf(termLower) !== -1; })
+        .forEach(function (p) { groups.page.push(p); });
+
+      fetch(API_BASE + "/api/search?q=" + encodeURIComponent(term))
+        .then(function (res) {
+          if (!res.ok) throw new Error("API indisponible");
+          return res.json();
+        })
+        .then(function (items) {
+          (items || []).forEach(function (item) {
+            var url = item.type === "document" ? API_BASE + item.url : item.url;
+            if (groups[item.type]) {
+              groups[item.type].push({ title: item.title, subtitle: item.subtitle, url: url });
+            }
+          });
+          renderGroups(groups);
+        })
+        .catch(function () {
+          renderGroups(groups);
+        });
+    }, 300);
+  });
 }
 
 function initNavToggle() {
@@ -495,7 +632,7 @@ function loadFaq() {
       container.innerHTML = items
         .map(function (item, index) {
           return (
-            '<div class="faq-item">' +
+            '<div class="faq-item" id="faq-' + item.id + '">' +
             '<button class="faq-question" type="button" aria-expanded="false">' +
             "<span>" + escapeHtml(item.question) + "</span>" +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>' +
@@ -519,6 +656,14 @@ function loadFaq() {
           }
         });
       });
+      if (location.hash) {
+        var target = document.querySelector(location.hash);
+        if (target && target.classList.contains("faq-item")) {
+          target.classList.add("open");
+          target.querySelector(".faq-question").setAttribute("aria-expanded", "true");
+          scrollToHighlight(target);
+        }
+      }
     })
     .catch(function () {
       if (emptyEl) emptyEl.style.display = "block";
@@ -876,4 +1021,12 @@ function escapeHtml(value) {
   var div = document.createElement("div");
   div.textContent = value == null ? "" : value;
   return div.innerHTML;
+}
+
+function scrollToHighlight(el) {
+  setTimeout(function () {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("search-highlight");
+    setTimeout(function () { el.classList.remove("search-highlight"); }, 2200);
+  }, 50);
 }
