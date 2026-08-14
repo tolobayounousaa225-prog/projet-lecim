@@ -19,4 +19,10 @@ def run_startup_migrations() -> None:
             with engine.begin() as conn:
                 conn.execute(text("DROP TABLE adhesion_requests CASCADE"))
 
+    if inspector.has_table("partenaires"):
+        columns = {c["name"] for c in inspector.get_columns("partenaires")}
+        if "logo_path" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE partenaires ADD COLUMN logo_path VARCHAR(500)"))
+
     Base.metadata.create_all(bind=engine)

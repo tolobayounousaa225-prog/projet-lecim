@@ -9,11 +9,12 @@
 {% if items %}
 <table>
   <thead>
-    <tr><th>Nom</th><th>Type</th><th>Pays</th><th>Contact</th><th>Statut</th><th>Actions</th></tr>
+    <tr><th>Logo</th><th>Nom</th><th>Type</th><th>Pays</th><th>Contact</th><th>Statut</th><th>Actions</th></tr>
   </thead>
   <tbody>
     {% for item in items %}
     <tr>
+      <td>{% if item.logo_url %}<img src="{{ item.logo_url }}" alt="" style="width:40px; height:40px; object-fit:contain; border-radius:6px; border:1px solid var(--border); background:#fff; padding:3px;">{% else %}—{% endif %}</td>
       <td>{{ item.nom }}</td>
       <td>{{ types.get(item.type, item.type) }}</td>
       <td>{{ item.pays or "—" }}</td>

@@ -134,6 +134,7 @@ upload_dir.mkdir(parents=True, exist_ok=True)
 (upload_dir / "news").mkdir(exist_ok=True)
 (upload_dir / "gouvernance").mkdir(exist_ok=True)
 (upload_dir / "etablissements_logos").mkdir(exist_ok=True)
+(upload_dir / "partenaires_logos").mkdir(exist_ok=True)
 (upload_dir / "cartes_scolaires").mkdir(exist_ok=True)
 
 

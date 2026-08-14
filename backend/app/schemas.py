@@ -217,6 +217,7 @@ class PartenairePublicOut(BaseModel):
     nom: str
     type: str
     pays: str | None = None
+    logo_url: str | None = None
 
 
 class ProjetPublicOut(BaseModel):
