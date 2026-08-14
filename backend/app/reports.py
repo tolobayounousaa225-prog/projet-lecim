@@ -5,11 +5,13 @@ import datetime
 import io
 from pathlib import Path
 
+import qrcode
 from fpdf import FPDF
 from fpdf.fonts import FontFace
 from sqlalchemy.orm import Session, joinedload
 
 from . import models
+from .config import settings
 from .finances_constants import RECETTE_CATEGORIES
 
 LOGO_PATH = Path(__file__).resolve().parent / "static" / "img" / "logo.jpg"
@@ -18,6 +20,62 @@ LOGO_PATH = Path(__file__).resolve().parent / "static" / "img" / "logo.jpg"
 def _add_logo(pdf: FPDF) -> None:
     if LOGO_PATH.exists():
         pdf.image(str(LOGO_PATH), x=pdf.w - pdf.r_margin - 22, y=8, w=22, h=22)
+
+
+def _register_rapport(
+    db: Session,
+    type_rapport: str,
+    titre: str,
+    periode_label: str,
+    total_entrees: int | None,
+    total_depenses: int | None,
+    solde: int | None,
+    user: "models.User",
+) -> "models.RapportGenere":
+    """Enregistre une trace de ce rapport pour permettre sa vérification publique,
+    et lui attribue un code de référence."""
+    rapport = models.RapportGenere(
+        type_rapport=type_rapport,
+        titre=titre,
+        periode_label=periode_label,
+        total_entrees=total_entrees,
+        total_depenses=total_depenses,
+        solde=solde,
+        genere_par_id=user.id,
+    )
+    db.add(rapport)
+    db.flush()
+    rapport.code = f"RAP-{datetime.date.today().year}-{rapport.id:05d}"
+    db.commit()
+    return rapport
+
+
+def _report_verification_footer(pdf: FPDF, code: str) -> None:
+    """Ajoute un QR code de vérification en pied du rapport, à la suite du contenu
+    (le rapport étant multi-page, on ne peut pas ancrer un pied de page fixe)."""
+    verify_url = f"{settings.public_base_url}/verify-rapport/{code}"
+    if pdf.get_y() + 40 > pdf.page_break_trigger:
+        pdf.add_page()
+    pdf.ln(8)
+    pdf.set_draw_color(200, 200, 200)
+    pdf.line(pdf.l_margin, pdf.get_y(), pdf.w - pdf.r_margin, pdf.get_y())
+    pdf.ln(4)
+
+    qr_img = qrcode.make(verify_url, border=1)
+    qr_size = 22.0
+    qr_x = pdf.l_margin
+    qr_y = pdf.get_y()
+    pdf.image(qr_img.get_image() if hasattr(qr_img, "get_image") else qr_img, x=qr_x, y=qr_y, w=qr_size, h=qr_size)
+
+    pdf.set_xy(qr_x + qr_size + 6, qr_y + 3)
+    pdf.set_font("Helvetica", "B", 9.5)
+    pdf.set_text_color(80, 80, 80)
+    pdf.cell(0, 5, f"Reference du rapport : {code}", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_x(qr_x + qr_size + 6)
+    pdf.set_font("Helvetica", "", 8.5)
+    pdf.set_text_color(120, 120, 120)
+    pdf.cell(0, 5, "Scannez ce code pour verifier l'authenticite de ce rapport.", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_y(qr_y + qr_size + 4)
 
 
 def current_annee_scolaire(today: datetime.date | None = None) -> str:
@@ -338,11 +396,18 @@ def _draw_grouped_bar_chart(
 
 
 def generate_financial_report_pdf(
-    db: Session, date_debut: datetime.date, date_fin: datetime.date, generated_by: str
+    db: Session, date_debut: datetime.date, date_fin: datetime.date, user: "models.User"
 ) -> bytes:
     data = _period_data(db, date_debut, date_fin)
     solde_cumule = _solde_cumule_au(db, date_fin)
     retards = etablissements_en_retard(db)
+    generated_by = user.full_name
+
+    periode_label = f"{date_debut.strftime('%d/%m/%Y')} au {date_fin.strftime('%d/%m/%Y')}"
+    rapport = _register_rapport(
+        db, "periode", "Rapport financier", periode_label,
+        data["total_entrees"], data["total_depenses"], data["solde_periode"], user,
+    )
 
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=18)
@@ -493,17 +558,24 @@ def generate_financial_report_pdf(
                 row.cell(money(r["montant_paye"]))
                 row.cell(money(r["reste"]))
 
+    _report_verification_footer(pdf, rapport.code)
     return bytes(pdf.output())
 
 
 def generate_annual_report_pdf(
-    db: Session, annee_scolaire: str, date_debut: datetime.date, date_fin: datetime.date, generated_by: str
+    db: Session, annee_scolaire: str, date_debut: datetime.date, date_fin: datetime.date, user: "models.User"
 ) -> bytes:
     """Rapport d'activites annuel consolide (reunions, activites, finances, cartes,
     delegations) destine a l'Assemblee Generale."""
     finances = _period_data(db, date_debut, date_fin)
     solde_cumule = _solde_cumule_au(db, date_fin)
     retards = etablissements_en_retard(db, annee_scolaire)
+    generated_by = user.full_name
+
+    rapport = _register_rapport(
+        db, "annuel", "Rapport d'activités annuel", f"Année scolaire {annee_scolaire}",
+        finances["total_entrees"], finances["total_depenses"], finances["solde_periode"], user,
+    )
 
     reunions = (
         db.query(models.Reunion)
@@ -652,6 +724,7 @@ def generate_annual_report_pdf(
                 row.cell(money(r["montant_paye"]))
                 row.cell(money(r["reste"]))
 
+    _report_verification_footer(pdf, rapport.code)
     return bytes(pdf.output())
 
 
@@ -671,12 +744,22 @@ def generate_comparative_report_pdf(
     date_fin_a: datetime.date,
     date_debut_b: datetime.date,
     date_fin_b: datetime.date,
-    generated_by: str,
+    user: "models.User",
     label_a: str = "Periode A",
     label_b: str = "Periode B",
 ) -> bytes:
     data_a = _period_data(db, date_debut_a, date_fin_a)
     data_b = _period_data(db, date_debut_b, date_fin_b)
+    generated_by = user.full_name
+
+    periode_label = (
+        f"{label_a} ({date_debut_a.strftime('%d/%m/%Y')} au {date_fin_a.strftime('%d/%m/%Y')}) "
+        f"vs {label_b} ({date_debut_b.strftime('%d/%m/%Y')} au {date_fin_b.strftime('%d/%m/%Y')})"
+    )
+    rapport = _register_rapport(
+        db, "comparatif", "Rapport financier comparatif", periode_label,
+        data_b["total_entrees"], data_b["total_depenses"], data_b["solde_periode"], user,
+    )
 
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=18)
@@ -769,6 +852,7 @@ def generate_comparative_report_pdf(
         )
         pdf.ln(6)
 
+    _report_verification_footer(pdf, rapport.code)
     return bytes(pdf.output())
 
 
