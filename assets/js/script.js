@@ -28,7 +28,9 @@ function loadHeroStats() {
   var regionsEl = document.getElementById("hero-stat-regions");
   var enseignantsEl = document.getElementById("hero-stat-enseignants");
   var elevesEl = document.getElementById("hero-stat-eleves");
-  if (!ecolesEl && !regionsEl && !enseignantsEl && !elevesEl) return;
+  var badgeEcolesEl = document.getElementById("hero-badge-ecoles");
+  var badgeRegionsEl = document.getElementById("hero-badge-regions");
+  if (!ecolesEl && !regionsEl && !enseignantsEl && !elevesEl && !badgeEcolesEl && !badgeRegionsEl) return;
 
   fetch(API_BASE + "/api/etablissements/stats")
     .then(function (res) {
@@ -41,6 +43,8 @@ function loadHeroStats() {
       if (regionsEl && stats.regions) regionsEl.textContent = stats.regions + "+";
       if (enseignantsEl && stats.enseignants) enseignantsEl.textContent = stats.enseignants + "+";
       if (elevesEl && stats.eleves) elevesEl.textContent = stats.eleves.toLocaleString("fr-FR") + "+";
+      if (badgeEcolesEl && stats.ecoles) badgeEcolesEl.textContent = stats.ecoles + "+";
+      if (badgeRegionsEl && stats.regions) badgeRegionsEl.textContent = stats.regions + "+";
     })
     .catch(function () {
       // API indisponible : les chiffres par défaut codés dans la page restent affichés.
