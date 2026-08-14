@@ -45,8 +45,8 @@ function loadHeroStats() {
 
 function loadPartenaires() {
   var section = document.getElementById("partenaires-section");
-  var container = document.getElementById("partenaires-list");
-  if (!section || !container) return;
+  var track = document.getElementById("partenaires-track");
+  if (!section || !track) return;
 
   fetch(API_BASE + "/api/partenaires")
     .then(function (res) {
@@ -55,11 +55,16 @@ function loadPartenaires() {
     })
     .then(function (items) {
       if (!items || !items.length) return;
-      container.innerHTML = items
+      var itemsHtml = items
         .map(function (p) {
-          return '<div class="partenaire-chip">' + p.nom + "</div>";
+          if (p.logo_url) {
+            return '<img class="partenaires-logo" src="' + API_BASE + p.logo_url + '" alt="' + escapeHtml(p.nom) + '" loading="lazy">';
+          }
+          return '<div class="partenaire-chip">' + escapeHtml(p.nom) + "</div>";
         })
         .join("");
+      // Le contenu est dupliqué pour permettre un défilement continu sans coupure.
+      track.innerHTML = itemsHtml + itemsHtml;
       section.style.display = "";
     })
     .catch(function () {

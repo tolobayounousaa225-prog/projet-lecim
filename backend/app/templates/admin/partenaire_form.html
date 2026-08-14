@@ -3,10 +3,18 @@
 {% block content %}
 <h1>{{ "Modifier le partenaire" if item else "Ajouter un partenaire" }}</h1>
 <div class="form-card">
-  <form method="post" action="{{ '/admin/partenaires/' ~ item.id ~ '/edit' if item else '/admin/partenaires/new' }}">
+  <form method="post" action="{{ '/admin/partenaires/' ~ item.id ~ '/edit' if item else '/admin/partenaires/new' }}" enctype="multipart/form-data">
     <div class="form-group">
       <label for="nom">Nom</label>
       <input type="text" id="nom" name="nom" required value="{{ item.nom if item else '' }}">
+    </div>
+    <div class="form-group">
+      {% if item and item.logo_url %}
+      <img src="{{ item.logo_url }}" alt="" style="width:64px; height:64px; object-fit:contain; border-radius:8px; border:1px solid var(--border); background:#fff; padding:6px; margin-bottom:8px;">
+      {% endif %}
+      <label for="logo">Logo du partenaire (affiché en défilement sur la vitrine)</label>
+      <input type="file" id="logo" name="logo" accept=".jpg,.jpeg,.png,.webp,.gif">
+      {% if item and item.logo_url %}<p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Laissez vide pour conserver le logo actuel.</p>{% endif %}
     </div>
     <div class="form-row">
       <div class="form-group">

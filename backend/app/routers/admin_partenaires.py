@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, Request, status
+from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -9,11 +9,14 @@ from .. import models
 from ..database import get_db
 from ..deps import require_partenaires_access_web
 from ..models import PARTENAIRE_STATUTS, PARTENAIRE_TYPES
+from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
 
 router = APIRouter(prefix="/admin/partenaires", tags=["admin-partenaires"])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
+
+PARTENAIRE_LOGOS_DIR = UPLOAD_ROOT / "partenaires_logos"
 
 
 @router.get("")
@@ -49,7 +52,7 @@ def partenaires_new_form(
 
 
 @router.post("/new")
-def partenaires_create(
+async def partenaires_create(
     nom: str = Form(...),
     type: str = Form("autre"),
     pays: str = Form(""),
@@ -58,13 +61,23 @@ def partenaires_create(
     contact_telephone: str = Form(""),
     statut: str = Form("en_discussion"),
     notes: str = Form(""),
+    logo: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_partenaires_access_web),
 ):
+    logo_path = None
+    if logo is not None and logo.filename:
+        try:
+            stored_name, _ = await _save_upload(logo, PARTENAIRE_LOGOS_DIR, ALLOWED_PHOTO_EXT)
+            logo_path = f"partenaires_logos/{stored_name}"
+        except ValueError:
+            pass
+
     partenaire = models.Partenaire(
         nom=nom,
         type=type if type in PARTENAIRE_TYPES else "autre",
         pays=pays or None,
+        logo_path=logo_path,
         contact_nom=contact_nom or None,
         contact_email=contact_email or None,
         contact_telephone=contact_telephone or None,
@@ -93,7 +106,7 @@ def partenaires_edit_form(
 
 
 @router.post("/{partenaire_id}/edit")
-def partenaires_update(
+async def partenaires_update(
     partenaire_id: int,
     nom: str = Form(...),
     type: str = Form("autre"),
@@ -103,11 +116,22 @@ def partenaires_update(
     contact_telephone: str = Form(""),
     statut: str = Form("en_discussion"),
     notes: str = Form(""),
+    logo: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_partenaires_access_web),
 ):
     partenaire = db.get(models.Partenaire, partenaire_id)
     if partenaire:
+        if logo is not None and logo.filename:
+            try:
+                stored_name, _ = await _save_upload(logo, PARTENAIRE_LOGOS_DIR, ALLOWED_PHOTO_EXT)
+                old_path = UPLOAD_ROOT / partenaire.logo_path if partenaire.logo_path else None
+                partenaire.logo_path = f"partenaires_logos/{stored_name}"
+                if old_path and old_path.exists():
+                    old_path.unlink()
+            except ValueError:
+                pass
+
         partenaire.nom = nom
         partenaire.type = type if type in PARTENAIRE_TYPES else "autre"
         partenaire.pays = pays or None

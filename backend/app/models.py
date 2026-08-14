@@ -880,6 +880,7 @@ class Partenaire(Base):
     nom: Mapped[str] = mapped_column(String(255), nullable=False)
     type: Mapped[str] = mapped_column(String(30), default="autre")  # ong | institution | pays_ami | reseau | autre
     pays: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    logo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     contact_nom: Mapped[str | None] = mapped_column(String(255), nullable=True)
     contact_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     contact_telephone: Mapped[str | None] = mapped_column(String(50), nullable=True)
@@ -889,6 +890,10 @@ class Partenaire(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
+
+    @property
+    def logo_url(self) -> str | None:
+        return f"/api/partenaires/{self.id}/logo" if self.logo_path else None
 
 
 PARTENAIRE_TYPES = {
