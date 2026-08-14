@@ -65,6 +65,7 @@ from .routers import (
     projets_public,
     publications,
     resultats_examens,
+    search_public,
     site_content,
     transparence_public,
     verify,
@@ -180,6 +181,7 @@ app.include_router(projets_public.router)
 app.include_router(photos_public.router)
 app.include_router(faq_public.router)
 app.include_router(transparence_public.router)
+app.include_router(search_public.router)
 app.include_router(publications.router)
 app.include_router(admin.router)
 app.include_router(admin_audit.router)

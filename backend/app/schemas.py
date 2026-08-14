@@ -233,6 +233,13 @@ class EtablissementPublicOut(BaseModel):
     statut_agrement_label: str
 
 
+class SearchResultOut(BaseModel):
+    type: str
+    title: str
+    subtitle: str | None = None
+    url: str
+
+
 class TransparenceAnneeOut(BaseModel):
     annee: str
     total_entrees: int
