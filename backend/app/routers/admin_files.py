@@ -186,6 +186,7 @@ async def photos_create(
     request: Request,
     caption: str = Form(""),
     reunion_id: str = Form(""),
+    is_public: bool = Form(False),
     file: UploadFile = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_photos_access_web),
@@ -210,6 +211,7 @@ async def photos_create(
         reunion_id=int(reunion_id) if reunion_id else None,
         file_path=f"photos/{stored_name}",
         original_filename=original_name,
+        is_public=is_public,
         uploaded_by_id=user.id,
     )
     db.add(photo)
@@ -229,6 +231,19 @@ def photos_file(
     path = UPLOAD_ROOT / photo.file_path
     media_type = mimetypes.guess_type(photo.original_filename)[0] or "application/octet-stream"
     return FileResponse(path, media_type=media_type)
+
+
+@router.post("/photos/{photo_id}/toggle-public")
+def photos_toggle_public(
+    photo_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_photos_access_web),
+):
+    photo = db.get(models.Photo, photo_id)
+    if photo:
+        photo.is_public = not photo.is_public
+        db.commit()
+    return RedirectResponse(url="/admin/photos", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/photos/{photo_id}/delete")

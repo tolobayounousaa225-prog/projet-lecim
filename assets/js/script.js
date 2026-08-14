@@ -17,6 +17,10 @@ document.addEventListener("DOMContentLoaded", function () {
   loadHeroStats();
   loadPartenaires();
   loadInitiatives();
+  loadActualitesFull();
+  loadActualiteDetail();
+  loadGalerie();
+  loadFaq();
 });
 
 function loadHeroStats() {
@@ -435,6 +439,85 @@ function loadInitiatives() {
     });
 }
 
+function loadGalerie() {
+  var container = document.getElementById("galerie-grid");
+  var emptyEl = document.getElementById("galerie-empty");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/photos")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) {
+        if (emptyEl) emptyEl.style.display = "block";
+        return;
+      }
+      container.innerHTML = items
+        .map(function (p) {
+          return (
+            '<figure class="galerie-item">' +
+            '<img src="' + API_BASE + p.image_url + '" alt="' + escapeHtml(p.caption || "") + '" loading="lazy">' +
+            (p.caption ? "<figcaption>" + escapeHtml(p.caption) + "</figcaption>" : "") +
+            "</figure>"
+          );
+        })
+        .join("");
+    })
+    .catch(function () {
+      if (emptyEl) emptyEl.style.display = "block";
+    });
+}
+
+function loadFaq() {
+  var container = document.getElementById("faq-list");
+  var emptyEl = document.getElementById("faq-empty");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/faq")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) {
+        if (emptyEl) emptyEl.style.display = "block";
+        return;
+      }
+      container.innerHTML = items
+        .map(function (item, index) {
+          return (
+            '<div class="faq-item">' +
+            '<button class="faq-question" type="button" aria-expanded="false">' +
+            "<span>" + escapeHtml(item.question) + "</span>" +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>' +
+            "</button>" +
+            '<div class="faq-answer"><p>' + escapeHtml(item.reponse).replace(/\n/g, "<br>") + "</p></div>" +
+            "</div>"
+          );
+        })
+        .join("");
+      container.querySelectorAll(".faq-question").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var item = btn.closest(".faq-item");
+          var isOpen = item.classList.contains("open");
+          container.querySelectorAll(".faq-item.open").forEach(function (openItem) {
+            openItem.classList.remove("open");
+            openItem.querySelector(".faq-question").setAttribute("aria-expanded", "false");
+          });
+          if (!isOpen) {
+            item.classList.add("open");
+            btn.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+    })
+    .catch(function () {
+      if (emptyEl) emptyEl.style.display = "block";
+    });
+}
+
 function valueOf(form, selector) {
   var el = form.querySelector(selector);
   return el ? el.value.trim() : "";
@@ -465,12 +548,83 @@ function loadNews() {
           '<span class="news-date">' + formatDateFr(item.published_at) + "</span>" +
           "<h3>" + escapeHtml(item.title) + "</h3>" +
           "<p>" + escapeHtml(item.excerpt) + "</p>" +
+          '<a class="news-read-more" href="actualite.html?id=' + item.id + '">Lire la suite &rarr;</a>' +
           "</div>";
         container.appendChild(el);
       });
     })
     .catch(function () {
       // API indisponible (ex. ouverture locale du fichier) : le contenu statique reste affiché.
+    });
+}
+
+function loadActualitesFull() {
+  var container = document.getElementById("actualites-list");
+  var emptyEl = document.getElementById("actualites-empty");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/news?limit=100")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) {
+        if (emptyEl) emptyEl.style.display = "block";
+        return;
+      }
+      container.innerHTML = items
+        .map(function (item) {
+          var media = item.image_url
+            ? '<img src="' + API_BASE + item.image_url + '" alt="' + escapeHtml(item.title) + '">'
+            : '<div class="actualite-card-noimg"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg></div>';
+          return (
+            '<a class="actualite-card" href="actualite.html?id=' + item.id + '">' +
+            '<div class="actualite-card-media">' + media + "</div>" +
+            '<div class="actualite-card-body">' +
+            '<span class="news-date">' + formatDateFr(item.published_at) + "</span>" +
+            "<h3>" + escapeHtml(item.title) + "</h3>" +
+            "<p>" + escapeHtml(item.excerpt) + "</p>" +
+            "</div></a>"
+          );
+        })
+        .join("");
+    })
+    .catch(function () {
+      if (emptyEl) emptyEl.style.display = "block";
+    });
+}
+
+function loadActualiteDetail() {
+  var container = document.getElementById("actualite-detail");
+  if (!container) return;
+
+  var params = new URLSearchParams(window.location.search);
+  var id = params.get("id");
+  if (!id) {
+    container.innerHTML = '<p style="text-align:center; color:var(--text-muted);">Actualité introuvable.</p>';
+    return;
+  }
+
+  fetch(API_BASE + "/api/news/" + encodeURIComponent(id))
+    .then(function (res) {
+      if (!res.ok) throw new Error("Actualité introuvable");
+      return res.json();
+    })
+    .then(function (item) {
+      document.title = item.title + " — LECIM";
+      var media = item.image_url
+        ? '<img src="' + API_BASE + item.image_url + '" alt="' + escapeHtml(item.title) + '" class="actualite-detail-image">'
+        : "";
+      var body = item.content && item.content.trim() ? item.content : item.excerpt;
+      container.innerHTML =
+        media +
+        '<span class="news-date">' + formatDateFr(item.published_at) + "</span>" +
+        "<h1>" + escapeHtml(item.title) + "</h1>" +
+        '<div class="actualite-detail-body">' + escapeHtml(body).replace(/\n/g, "<br>") + "</div>";
+    })
+    .catch(function () {
+      container.innerHTML = '<p style="text-align:center; color:var(--text-muted);">Cette actualité est introuvable ou a été retirée.</p>';
     });
 }
 

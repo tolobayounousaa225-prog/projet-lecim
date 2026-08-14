@@ -22,6 +22,12 @@
       <label for="file">Image (JPG, PNG, WEBP, GIF — 15 Mo max)</label>
       <input type="file" id="file" name="file" required accept=".jpg,.jpeg,.png,.webp,.gif">
     </div>
+    <div class="form-group">
+      <label style="display:flex; align-items:center; gap:8px; font-weight:400;">
+        <input type="checkbox" id="is_public" name="is_public" value="true" style="width:auto;">
+        Afficher dans la galerie publique de la vitrine
+      </label>
+    </div>
     <button type="submit" class="btn btn-primary">Publier</button>
     <a href="/admin/photos" class="btn btn-outline">Annuler</a>
   </form>

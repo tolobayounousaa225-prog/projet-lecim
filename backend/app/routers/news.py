@@ -37,7 +37,7 @@ def news_image(news_id: int, db: Session = Depends(get_db)):
 @router.get("/{news_id}", response_model=schemas.NewsOut)
 def get_news(news_id: int, db: Session = Depends(get_db)):
     news = db.get(models.NewsPost, news_id)
-    if not news:
+    if not news or not news.is_published:
         raise HTTPException(status_code=404, detail="Actualité introuvable")
     return news
 

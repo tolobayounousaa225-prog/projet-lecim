@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nos activités — LECIM</title>
-<meta name="description" content="Calendrier des activités de la LECIM : assemblées générales, séminaires de formation, examens scolaires islamiques et rencontres régionales.">
+<title>Galerie photo — LECIM</title>
+<meta name="description" content="Photos des réunions, événements et activités de la Ligue des Établissements Confessionnels et Madrassas en Côte d'Ivoire.">
 <link rel="icon" type="image/jpeg" href="assets/img/logo.jpg">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -21,7 +21,7 @@
         <li><a href="index.html">Accueil</a></li>
         <li><a href="apropos.html">À propos</a></li>
         <li><a href="services.html">Services</a></li>
-        <li><a href="activites.html" class="active">Activités</a></li>
+        <li><a href="activites.html">Activités</a></li>
         <li><a href="ecoles.html">Établissements</a></li>
         <li><a href="documents.html">Documents</a></li>
         <li><a href="initiatives.html">Initiatives</a></li>
@@ -29,7 +29,7 @@
         <li><a href="contact.html">Contact</a></li>
       </ul>
       <div class="nav-utility">
-        <a href="ar/activites.html" class="lang-switch">العربية</a>
+        <a href="ar/galerie.html" class="lang-switch">العربية</a>
         <a href="#" id="nav-login-link">Connecter</a>
       </div>
       <a href="adhesion.html" class="btn btn-primary nav-cta">Adhérer</a>
@@ -39,76 +39,15 @@
 </header>
 
 <section class="page-banner">
-  <div class="breadcrumb"><a href="index.html">Accueil</a> / Nos activités</div>
-  <h1>Nos activités</h1>
-  <p>Assemblées générales, séminaires de formation et examens scolaires islamiques organisés par la LECIM.</p>
+  <div class="breadcrumb"><a href="index.html">Accueil</a> / Galerie photo</div>
+  <h1>Galerie photo</h1>
+  <p>Réunions, événements et activités de la LECIM en images.</p>
 </section>
 
 <section>
   <div class="container">
-    <div class="timeline">
-
-      <div class="timeline-item past">
-        <div class="timeline-dot"></div>
-        <div class="timeline-card">
-          <span class="timeline-tag">Terminé</span>
-          <div class="tdate">15 Septembre 2025</div>
-          <h3>Rentrée scolaire des établissements membres</h3>
-          <p>Coordination de la rentrée scolaire 2025-2026 dans les écoles confessionnelles et madrassas affiliées à la LECIM.</p>
-        </div>
-      </div>
-
-      <div class="timeline-item past">
-        <div class="timeline-dot"></div>
-        <div class="timeline-card">
-          <span class="timeline-tag">Terminé</span>
-          <div class="tdate">20 Novembre 2025</div>
-          <h3>Séminaire de formation des directeurs</h3>
-          <p>Formation régionale des directeurs d'établissements sur la gestion administrative, pédagogique et l'utilisation de la plateforme numérique de la LECIM.</p>
-        </div>
-      </div>
-
-      <div class="timeline-item past">
-        <div class="timeline-dot"></div>
-        <div class="timeline-card">
-          <span class="timeline-tag">Terminé</span>
-          <div class="tdate">28 Décembre 2025</div>
-          <h3>Réunion du Bureau Exécutif National</h3>
-          <p>Validation des matrices d'action annuelles en présence des membres du Bureau Exécutif National et des responsables régionaux.</p>
-        </div>
-      </div>
-
-      <div class="timeline-item">
-        <div class="timeline-dot"></div>
-        <div class="timeline-card">
-          <span class="timeline-tag">À venir</span>
-          <div class="tdate">18 Janvier 2026</div>
-          <h3>Assemblée générale régionale — Gôh</h3>
-          <p>La délégation régionale du Gôh organise son assemblée générale à Gagnoa, réunissant les établissements membres de la région.</p>
-        </div>
-      </div>
-
-      <div class="timeline-item">
-        <div class="timeline-dot"></div>
-        <div class="timeline-card">
-          <span class="timeline-tag">À venir</span>
-          <div class="tdate">15 Mars 2026</div>
-          <h3>Session des examens scolaires islamiques</h3>
-          <p>Organisation, en collaboration avec le ministère de l'Éducation nationale, des examens scolaires islamiques pour les élèves des établissements membres.</p>
-        </div>
-      </div>
-
-      <div class="timeline-item">
-        <div class="timeline-dot"></div>
-        <div class="timeline-card">
-          <span class="timeline-tag">À venir</span>
-          <div class="tdate">04 Avril 2026</div>
-          <h3>Assemblée Générale Nationale de la LECIM</h3>
-          <p>Grand rassemblement national des établissements confessionnels et madrassas membres à Abidjan pour le bilan annuel et les perspectives.</p>
-        </div>
-      </div>
-
-    </div>
+    <div id="galerie-grid" class="galerie-grid"></div>
+    <p id="galerie-empty" style="display:none; text-align:center; color:var(--text-muted);">Aucune photo publiée pour le moment.</p>
   </div>
 </section>
 

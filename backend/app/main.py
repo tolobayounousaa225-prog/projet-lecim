@@ -33,6 +33,7 @@ from .routers import (
     admin_enseignants,
     admin_etablissement_portail,
     admin_executif,
+    admin_faq,
     admin_files,
     admin_finances,
     admin_gouvernance,
@@ -54,11 +55,13 @@ from .routers import (
     delegation_portal,
     etablissement_portal,
     etablissements_public,
+    faq_public,
     gouvernance,
     historique,
     news,
     partenaires_public,
     password_reset,
+    photos_public,
     projets_public,
     publications,
     resultats_examens,
@@ -173,6 +176,8 @@ app.include_router(contact.router)
 app.include_router(adhesion.router)
 app.include_router(partenaires_public.router)
 app.include_router(projets_public.router)
+app.include_router(photos_public.router)
+app.include_router(faq_public.router)
 app.include_router(publications.router)
 app.include_router(admin.router)
 app.include_router(admin_audit.router)
@@ -185,6 +190,7 @@ app.include_router(admin_cartes.router)
 app.include_router(admin_cartes_scolaires.router)
 app.include_router(admin_partenaires.router)
 app.include_router(admin_projets.router)
+app.include_router(admin_faq.router)
 app.include_router(admin_social.router)
 app.include_router(admin_publications.router)
 app.include_router(verify.router)

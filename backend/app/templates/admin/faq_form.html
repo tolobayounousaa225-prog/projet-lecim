@@ -1,0 +1,31 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouvelle" }} question FAQ{% endblock %}
+{% block content %}
+<h1>{{ "Modifier la question" if item else "Ajouter une question" }}</h1>
+<div class="form-card">
+  <form method="post" action="{{ '/admin/faq/' ~ item.id ~ '/edit' if item else '/admin/faq/new' }}">
+    <div class="form-group">
+      <label for="question">Question</label>
+      <input type="text" id="question" name="question" required value="{{ item.question if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="reponse">Réponse</label>
+      <textarea id="reponse" name="reponse" rows="5" required>{{ item.reponse if item else '' }}</textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="ordre">Ordre d'affichage</label>
+        <input type="number" id="ordre" name="ordre" value="{{ item.ordre if item else 0 }}">
+      </div>
+      <div class="form-group">
+        <label style="display:flex; align-items:center; gap:8px; font-weight:400;">
+          <input type="checkbox" id="is_published" name="is_published" value="true" style="width:auto;" {% if not item or item.is_published %}checked{% endif %}>
+          Publiée sur la vitrine
+        </label>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/faq" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

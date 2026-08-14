@@ -418,7 +418,8 @@ class Document(Base):
 
 
 class Photo(Base):
-    """Galerie photo interne, réservée aux comptes connectés."""
+    """Galerie photo — privée par défaut (réservée aux comptes connectés), publiable
+    individuellement sur la vitrine par l'administrateur via is_public."""
 
     __tablename__ = "photos"
 
@@ -427,12 +428,32 @@ class Photo(Base):
     reunion_id: Mapped[int | None] = mapped_column(ForeignKey("reunions.id"), nullable=True)
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_public: Mapped[bool] = mapped_column(Boolean, default=False)
     uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
 
     uploaded_by: Mapped["User | None"] = relationship()
+
+    @property
+    def image_url(self) -> str:
+        return f"/api/photos/{self.id}/image"
+
+
+class Faq(Base):
+    """Question fréquente publiée sur la vitrine."""
+
+    __tablename__ = "faq"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    question: Mapped[str] = mapped_column(String(500), nullable=False)
+    reponse: Mapped[str] = mapped_column(Text, nullable=False)
+    ordre: Mapped[int] = mapped_column(Integer, default=0)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
 
 
 # ---------- Finances ----------
