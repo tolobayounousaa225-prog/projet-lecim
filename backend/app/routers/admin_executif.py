@@ -122,7 +122,7 @@ def executif_rapport_annuel(
     annee_scolaire = current_annee_scolaire()
     debut_annee = datetime.date(today.year if today.month >= 9 else today.year - 1, 9, 1)
 
-    pdf_bytes = generate_annual_report_pdf(db, annee_scolaire, debut_annee, today, user.full_name)
+    pdf_bytes = generate_annual_report_pdf(db, annee_scolaire, debut_annee, today, user=user)
     filename = f"lecim-rapport-annuel-{annee_scolaire}.pdf"
     return Response(
         content=pdf_bytes,

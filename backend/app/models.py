@@ -721,6 +721,38 @@ class Depense(Base):
     )
 
 
+class RapportGenere(Base):
+    """Trace de chaque rapport financier/annuel/comparatif généré, avec les totaux
+    figés au moment de la génération — permet de vérifier publiquement (via QR code
+    imprimé sur le PDF) qu'un rapport présenté est authentique et n'a pas été altéré,
+    sans republier le détail des transactions."""
+
+    __tablename__ = "rapports_generes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str | None] = mapped_column(String(30), unique=True, nullable=True)
+    type_rapport: Mapped[str] = mapped_column(String(30), nullable=False)  # periode | annuel | comparatif
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    periode_label: Mapped[str] = mapped_column(String(255), nullable=False)
+    total_entrees: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    total_depenses: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    solde: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    genere_par_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    genere_par: Mapped["User | None"] = relationship()
+
+    @property
+    def type_label(self) -> str:
+        return {
+            "periode": "Rapport financier périodique",
+            "annuel": "Rapport d'activités annuel",
+            "comparatif": "Rapport financier comparatif",
+        }.get(self.type_rapport, self.type_rapport)
+
+
 class PasswordResetRequest(Base):
     """Demande de réinitialisation de mot de passe — un mot de passe temporaire est
     généré, envoyé par e-mail, et conservé ici en clair jusqu'à utilisation pour que

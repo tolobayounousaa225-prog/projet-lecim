@@ -55,3 +55,13 @@ def verify_adhesion(code: str, request: Request, db: Session = Depends(get_db)):
         "verify_adhesion.html",
         {"demande": demande, "found": demande is not None},
     )
+
+
+@router.get("/verify-rapport/{code}")
+def verify_rapport(code: str, request: Request, db: Session = Depends(get_db)):
+    rapport = db.query(models.RapportGenere).filter(models.RapportGenere.code == code).first()
+    return templates.TemplateResponse(
+        request,
+        "verify_rapport.html",
+        {"rapport": rapport, "found": rapport is not None},
+    )

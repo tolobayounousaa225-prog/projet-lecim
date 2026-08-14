@@ -115,7 +115,7 @@ def finances_rapport_generate(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
-    pdf_bytes = generate_financial_report_pdf(db, date_debut, date_fin, generated_by=user.full_name)
+    pdf_bytes = generate_financial_report_pdf(db, date_debut, date_fin, user=user)
     filename = f"Rapport financier {date_debut.strftime('%d-%m-%Y')} au {date_fin.strftime('%d-%m-%Y')}.pdf"
 
     if archiver:
@@ -331,7 +331,7 @@ def finances_rapport_comparatif_generate(
         date_fin_a,
         date_debut_b,
         date_fin_b,
-        generated_by=user.full_name,
+        user=user,
         label_a=label_a or "Période A",
         label_b=label_b or "Période B",
     )

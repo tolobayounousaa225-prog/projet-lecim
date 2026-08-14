@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vérification de rapport — LECIM</title>
+<link rel="icon" type="image/jpeg" href="/static/img/logo.jpg">
+<style>
+  :root {
+    --green-dark: #0b3d2e; --green: #0f7a4c; --gold: #e0a52c;
+    --cream: #f8f6ee; --red: #c0392b; --border: #e4e0d0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: linear-gradient(160deg, var(--green-dark), var(--green));
+    font-family: "Segoe UI", Arial, sans-serif; display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .card {
+    background: #fff; border-radius: 16px; max-width: 400px; width: 100%;
+    box-shadow: 0 20px 50px rgba(0,0,0,.25); overflow: hidden; text-align: center;
+  }
+  .card-header { padding: 24px 20px 16px; }
+  .card-header img.logo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; }
+  .card-header h1 { font-size: 1rem; color: var(--green-dark); margin: 0; }
+  .badge {
+    padding: 14px; font-weight: 700; font-size: 1.05rem; color: #fff; display: flex;
+    align-items: center; justify-content: center; gap: 8px;
+  }
+  .badge.authentique { background: var(--green); }
+  .badge.introuvable { background: var(--red); }
+  .info { padding: 22px 24px 26px; }
+  .info h2 { font-size: 1.1rem; color: var(--green-dark); margin: 6px 0 2px; }
+  .info dl { text-align: left; margin: 14px 0 0; font-size: 0.85rem; }
+  .info dl div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); gap: 12px; }
+  .info dl div:last-child { border-bottom: none; }
+  .info dt { color: #5b6a62; flex-shrink: 0; }
+  .info dd { margin: 0; font-weight: 600; color: var(--green-dark); text-align: right; }
+  .not-found { padding: 30px 24px 34px; color: #5b6a62; font-size: 0.92rem; }
+  .footer-note { padding: 14px; font-size: 0.72rem; color: #9aa39c; background: var(--cream); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-header">
+    <img class="logo" src="/static/img/logo.jpg" alt="Logo LECIM">
+    <h1>Vérification de rapport — LECIM</h1>
+  </div>
+
+  {% if found %}
+  <div class="badge authentique">✓ Rapport authentique</div>
+  <div class="info">
+    <h2>{{ rapport.type_label }}</h2>
+    <dl>
+      <div><dt>Référence</dt><dd>{{ rapport.code }}</dd></div>
+      <div><dt>Période</dt><dd>{{ rapport.periode_label }}</dd></div>
+      {% if rapport.total_entrees is not none %}<div><dt>Total des entrées</dt><dd>{{ "{:,}".format(rapport.total_entrees).replace(",", " ") }} FCFA</dd></div>{% endif %}
+      {% if rapport.total_depenses is not none %}<div><dt>Total des dépenses</dt><dd>{{ "{:,}".format(rapport.total_depenses).replace(",", " ") }} FCFA</dd></div>{% endif %}
+      {% if rapport.solde is not none %}<div><dt>Solde</dt><dd>{{ "{:,}".format(rapport.solde).replace(",", " ") }} FCFA</dd></div>{% endif %}
+      <div><dt>Généré le</dt><dd>{{ rapport.created_at.strftime("%d/%m/%Y") }}</dd></div>
+      {% if rapport.genere_par %}<div><dt>Généré par</dt><dd>{{ rapport.genere_par.full_name }}</dd></div>{% endif %}
+    </dl>
+  </div>
+  {% else %}
+  <div class="badge introuvable">✗ Rapport non reconnu</div>
+  <div class="not-found">
+    Aucun rapport ne correspond à cette référence. Si vous pensez qu'il s'agit
+    d'une erreur, contactez le secrétariat administratif de la LECIM.
+  </div>
+  {% endif %}
+
+  <div class="footer-note">Ligue des Établissements Confessionnels et Madrassas en Côte d'Ivoire</div>
+</div>
+</body>
+</html>
