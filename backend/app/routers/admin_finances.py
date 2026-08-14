@@ -443,6 +443,8 @@ async def etablissements_create(
     directeur_nom: str = Form(""),
     type_enseignement: str = Form("les_deux"),
     numero_agrement: str = Form(""),
+    statut_agrement: str = Form("en_cours"),
+    date_expiration_agrement: str = Form(""),
     logo: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
@@ -468,6 +470,8 @@ async def etablissements_create(
         directeur_nom=directeur_nom or None,
         type_enseignement=type_enseignement if type_enseignement in {"primaire", "secondaire", "les_deux"} else "les_deux",
         numero_agrement=numero_agrement or None,
+        statut_agrement=statut_agrement if statut_agrement in {"agree", "en_cours", "expire"} else "en_cours",
+        date_expiration_agrement=datetime.date.fromisoformat(date_expiration_agrement) if date_expiration_agrement else None,
         logo_path=logo_path,
     )
     db.add(etablissement)
@@ -507,6 +511,8 @@ async def etablissements_update(
     directeur_nom: str = Form(""),
     type_enseignement: str = Form("les_deux"),
     numero_agrement: str = Form(""),
+    statut_agrement: str = Form("en_cours"),
+    date_expiration_agrement: str = Form(""),
     logo: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
@@ -537,6 +543,10 @@ async def etablissements_update(
         etablissement.directeur_nom = directeur_nom or None
         etablissement.type_enseignement = type_enseignement if type_enseignement in {"primaire", "secondaire", "les_deux"} else "les_deux"
         etablissement.numero_agrement = numero_agrement or None
+        etablissement.statut_agrement = statut_agrement if statut_agrement in {"agree", "en_cours", "expire"} else "en_cours"
+        etablissement.date_expiration_agrement = (
+            datetime.date.fromisoformat(date_expiration_agrement) if date_expiration_agrement else None
+        )
         audit.log(db, user, "update", "Établissement", etablissement.id, f"A modifié l'établissement {etablissement.nom}")
         db.commit()
     return RedirectResponse(url="/admin/etablissements", status_code=status.HTTP_303_SEE_OTHER)

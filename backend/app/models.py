@@ -479,6 +479,10 @@ class Etablissement(Base):
     # primaire | secondaire | les_deux — détermine les niveaux d'effectifs pertinents
     type_enseignement: Mapped[str] = mapped_column(String(20), default="les_deux")
     numero_agrement: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # agree | en_cours | expire — statut du dossier d'agrément ministériel, distinct
+    # du simple numéro d'agrément (une école peut avoir un n° et un agrément expiré)
+    statut_agrement: Mapped[str] = mapped_column(String(20), default="en_cours")
+    date_expiration_agrement: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -492,6 +496,14 @@ class Etablissement(Base):
     @property
     def logo_url(self) -> str | None:
         return f"/api/etablissements/{self.id}/logo" if self.logo_path else None
+
+    @property
+    def statut_agrement_label(self) -> str:
+        return {
+            "agree": "Agréée",
+            "en_cours": "Agrément en cours",
+            "expire": "Agrément expiré",
+        }.get(self.statut_agrement, "Agrément en cours")
 
 
 class Enseignant(Base):

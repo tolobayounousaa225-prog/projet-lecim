@@ -229,6 +229,20 @@ class EtablissementPublicOut(BaseModel):
     type_enseignement: str
     logo_url: str | None = None
     numero_agrement: str | None = None
+    statut_agrement: str
+    statut_agrement_label: str
+
+
+class TransparenceAnneeOut(BaseModel):
+    annee: str
+    total_entrees: int
+    adhesions: int
+    cotisations: int
+    recettes: int
+    ventes_livres: int
+    droits_examens: int
+    depenses: int
+    solde: int
 
 
 class EtablissementsStatsOut(BaseModel):

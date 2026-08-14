@@ -29,6 +29,18 @@
       <input type="text" id="numero_agrement" name="numero_agrement" value="{{ item.numero_agrement if item else '' }}">
     </div>
     <div class="form-group">
+      <label for="statut_agrement">Statut de l'agrément (affiché publiquement)</label>
+      <select id="statut_agrement" name="statut_agrement">
+        <option value="agree" {% if item and item.statut_agrement == 'agree' %}selected{% endif %}>Agréée</option>
+        <option value="en_cours" {% if not item or item.statut_agrement == 'en_cours' %}selected{% endif %}>Agrément en cours</option>
+        <option value="expire" {% if item and item.statut_agrement == 'expire' %}selected{% endif %}>Agrément expiré</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="date_expiration_agrement">Date d'expiration de l'agrément (si connue)</label>
+      <input type="date" id="date_expiration_agrement" name="date_expiration_agrement" value="{{ item.date_expiration_agrement.isoformat() if item and item.date_expiration_agrement else '' }}">
+    </div>
+    <div class="form-group">
       {% if item and item.logo_url %}
       <img src="{{ item.logo_url }}" alt="" style="max-width:120px; border-radius:8px; display:block; margin-bottom:10px;">
       {% endif %}

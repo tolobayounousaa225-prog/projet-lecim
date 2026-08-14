@@ -7,6 +7,9 @@
 <meta name="description" content="Les services de la LECIM aux établissements membres : gestion administrative, examens, formation, délégations régionales, partenariats et affaires sociales.">
 <link rel="icon" type="image/jpeg" href="assets/img/logo.jpg">
 <link rel="stylesheet" href="assets/css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a3d63">
+<link rel="apple-touch-icon" href="assets/img/icons/apple-touch-icon.png">
 </head>
 <body>
 
@@ -159,6 +162,7 @@
           <li><a href="actualites.html">Actualités</a></li>
           <li><a href="galerie.html">Galerie photo</a></li>
           <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="transparence.html">Transparence financière</a></li>
           <li><a href="contact.html">Contact</a></li>
         </ul>
       </div>
@@ -195,5 +199,12 @@
 
 <script>window.LECIM_API_BASE = "https://projet-lecim-production.up.railway.app";</script>
 <script src="assets/js/script.js"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("/sw.js").catch(function () {});
+  });
+}
+</script>
 </body>
 </html>

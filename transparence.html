@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Galerie photo — LECIM</title>
-<meta name="description" content="Photos des réunions, événements et activités de la Ligue des Établissements Confessionnels et Madrassas en Côte d'Ivoire.">
+<title>Transparence financière — LECIM</title>
+<meta name="description" content="Les totaux financiers agrégés de la LECIM, année par année : recettes, dépenses et solde, publiés pour la confiance des établissements membres et du public.">
 <link rel="icon" type="image/jpeg" href="assets/img/logo.jpg">
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="manifest" href="manifest.json">
@@ -32,7 +32,7 @@
         <li><a href="contact.html">Contact</a></li>
       </ul>
       <div class="nav-utility">
-        <a href="ar/galerie.html" class="lang-switch">العربية</a>
+        <a href="ar/transparence.html" class="lang-switch">العربية</a>
         <a href="#" id="nav-login-link">Connecter</a>
       </div>
       <a href="adhesion.html" class="btn btn-primary nav-cta">Adhérer</a>
@@ -42,15 +42,18 @@
 </header>
 
 <section class="page-banner">
-  <div class="breadcrumb"><a href="index.html">Accueil</a> / Galerie photo</div>
-  <h1>Galerie photo</h1>
-  <p>Réunions, événements et activités de la LECIM en images.</p>
+  <div class="breadcrumb"><a href="index.html">Accueil</a> / Transparence financière</div>
+  <h1>Transparence financière</h1>
+  <p>Les totaux financiers de la LECIM, publiés année par année, pour la confiance des établissements membres et du public.</p>
 </section>
 
 <section>
   <div class="container">
-    <div id="galerie-grid" class="galerie-grid"></div>
-    <p id="galerie-empty" style="display:none; text-align:center; color:var(--text-muted);">Aucune photo publiée pour le moment.</p>
+    <div class="transparence-note">
+      Ces chiffres sont des <strong>totaux globaux</strong> (toutes écoles et toutes opérations confondues), mis à jour automatiquement à partir de la comptabilité de la LECIM. Aucune transaction individuelle ni aucune donnée propre à un établissement n'est publiée ici. Pour les rapports financiers détaillés et vérifiables par QR code, consultez la page <a href="documents.html">Documents</a>.
+    </div>
+    <div id="transparence-list" class="transparence-list"></div>
+    <p id="transparence-empty" style="display:none; text-align:center; color:var(--text-muted);">Aucune donnée financière publiée pour le moment.</p>
   </div>
 </section>
 
@@ -78,7 +81,7 @@
           <li><a href="actualites.html">Actualités</a></li>
           <li><a href="galerie.html">Galerie photo</a></li>
           <li><a href="faq.html">FAQ</a></li>
-                    <li><a href="transparence.html">Transparence financière</a></li>
+          <li><a href="transparence.html">Transparence financière</a></li>
           <li><a href="contact.html">Contact</a></li>
         </ul>
       </div>
