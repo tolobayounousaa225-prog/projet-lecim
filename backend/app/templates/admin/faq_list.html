@@ -1,0 +1,36 @@
+{% extends "admin/base.html" %}
+{% block title %}FAQ{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Foire aux questions</h1>
+  <a href="/admin/faq/new" class="btn btn-primary">+ Ajouter une question</a>
+</div>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Ordre</th><th>Question</th><th>Statut</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.ordre }}</td>
+      <td>{{ item.question }}</td>
+      <td>
+        {% if item.is_published %}<span class="pill pill-green">Publiée</span>
+        {% else %}<span class="pill pill-muted">Masquée</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/faq/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/faq/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cette question ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune question ajoutée pour le moment.</div>
+{% endif %}
+{% endblock %}

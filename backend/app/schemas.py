@@ -166,6 +166,33 @@ class PublicationOut(BaseModel):
     file_url: str
 
 
+class PhotoPublicOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    caption: str | None
+    image_url: str
+    created_at: datetime.datetime
+
+
+class FaqOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    question: str
+    reponse: str
+    ordre: int
+
+
+class FaqCreate(BaseModel):
+    question: str = Field(min_length=3, max_length=500)
+    reponse: str = Field(min_length=3)
+    ordre: int = 0
+    is_published: bool = True
+
+
+class FaqUpdate(FaqCreate):
+    pass
+
+
 # ---------- Historique des anciens présidents ----------
 
 class HistoriqueOut(BaseModel):

@@ -98,6 +98,12 @@ def run_startup_migrations() -> None:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE partenaires ADD COLUMN logo_path VARCHAR(500)"))
 
+    if inspector.has_table("photos"):
+        columns = {c["name"] for c in inspector.get_columns("photos")}
+        if "is_public" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE photos ADD COLUMN is_public BOOLEAN DEFAULT FALSE"))
+
     Base.metadata.create_all(bind=engine)
 
     if inspector.has_table("etablissements"):
