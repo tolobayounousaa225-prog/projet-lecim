@@ -22,7 +22,7 @@
         {% endif %}
       </td>
       <td>{{ item.published_at.strftime("%d/%m/%Y") }}</td>
-      <td>{{ item.title }}</td>
+      <td>{{ item.title }}{% if item.is_urgent %} <span class="pill" style="background:rgba(220,53,69,.14); color:#dc3545;">Urgente</span>{% endif %}</td>
       <td>
         {% if item.is_published %}
           <span class="pill pill-green">Publiée</span>

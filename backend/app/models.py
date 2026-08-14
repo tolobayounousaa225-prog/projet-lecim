@@ -202,6 +202,10 @@ class NewsPost(Base):
     image_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     published_at: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     is_published: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Déclenche une notification push aux visiteurs abonnés dès la publication —
+    # push_sent_at évite un second envoi si l'actualité est modifiée ensuite.
+    is_urgent: Mapped[bool] = mapped_column(Boolean, default=False)
+    push_sent_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -439,6 +443,22 @@ class Photo(Base):
     @property
     def image_url(self) -> str:
         return f"/api/photos/{self.id}/image"
+
+
+class PushSubscription(Base):
+    """Abonnement Web Push d'un visiteur (navigateur), enregistré depuis la vitrine —
+    anonyme, pas lié à un compte : sert uniquement à alerter des actualités urgentes."""
+
+    __tablename__ = "push_subscriptions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    endpoint: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    p256dh: Mapped[str] = mapped_column(String(255), nullable=False)
+    auth: Mapped[str] = mapped_column(String(255), nullable=False)
+    lang: Mapped[str] = mapped_column(String(5), default="fr")
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
 
 
 class Faq(Base):

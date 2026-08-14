@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     upload_dir: str = "uploads"
     max_upload_size_mb: int = 15
 
+    # Clés VAPID pour les notifications push web (actualités urgentes). Vides = la
+    # fonctionnalité est simplement désactivée (aucun envoi), sans erreur.
+    vapid_public_key: str = ""
+    vapid_private_key: str = ""
+    vapid_claim_email: str = "lecimnational@gmail.com"
+
     # URL publique de ce backend, utilisée pour générer le lien encodé dans le QR code
     # des cartes, attestations et certificats. Doit toujours pointer vers le domaine
     # réellement joignable par le public qui scanne le code — jamais localhost.

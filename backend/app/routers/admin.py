@@ -19,6 +19,7 @@ from ..deps import (
     require_login_web,
     require_news_access_web,
 )
+from ..push import send_urgent_news_push
 from ..security import create_access_token, hash_password, password_policy_error, verify_password
 from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
 
@@ -280,6 +281,7 @@ async def news_create(
     content: str = Form(""),
     published_at: datetime.date = Form(...),
     is_published: bool = Form(False),
+    is_urgent: bool = Form(False),
     image: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_news_access_web),
@@ -323,10 +325,15 @@ async def news_create(
         content=content,
         published_at=published_at,
         is_published=is_published,
+        is_urgent=is_urgent,
         image_path=image_path,
     )
     db.add(news)
     db.commit()
+    if news.is_published and news.is_urgent and not news.push_sent_at:
+        send_urgent_news_push(db, news)
+        news.push_sent_at = datetime.datetime.utcnow()
+        db.commit()
     return RedirectResponse(url="/admin/news", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -354,6 +361,7 @@ async def news_update(
     content: str = Form(""),
     published_at: datetime.date = Form(...),
     is_published: bool = Form(False),
+    is_urgent: bool = Form(False),
     image: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_news_access_web),
@@ -392,7 +400,12 @@ async def news_update(
         news.content = content
         news.published_at = published_at
         news.is_published = is_published
+        news.is_urgent = is_urgent
         db.commit()
+        if news.is_published and news.is_urgent and not news.push_sent_at:
+            send_urgent_news_push(db, news)
+            news.push_sent_at = datetime.datetime.utcnow()
+            db.commit()
     return RedirectResponse(url="/admin/news", status_code=status.HTTP_303_SEE_OTHER)
 
 

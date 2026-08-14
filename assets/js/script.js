@@ -25,7 +25,70 @@ document.addEventListener("DOMContentLoaded", function () {
   loadFaq();
   loadTransparence();
   loadUpcomingEvents();
+  initPushNotifications();
 });
+
+function urlBase64ToUint8Array(base64String) {
+  var padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  var base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  var rawData = atob(base64);
+  var outputArray = new Uint8Array(rawData.length);
+  for (var i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+function initPushNotifications() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  if (!("Notification" in window) || Notification.permission === "denied") return;
+  if (localStorage.getItem("lecim_push_dismissed") === "1") return;
+  if (Notification.permission === "granted") return;
+
+  var banner = document.getElementById("push-banner");
+  if (!banner) return;
+
+  fetch(API_BASE + "/api/push/public-key")
+    .then(function (res) { return res.ok ? res.json() : null; })
+    .then(function (data) {
+      if (!data || !data.publicKey) return;
+
+      var acceptBtn = document.getElementById("push-banner-accept");
+      var dismissBtn = document.getElementById("push-banner-dismiss");
+      banner.style.display = "flex";
+
+      dismissBtn.addEventListener("click", function () {
+        localStorage.setItem("lecim_push_dismissed", "1");
+        banner.style.display = "none";
+      });
+
+      acceptBtn.addEventListener("click", function () {
+        Notification.requestPermission().then(function (permission) {
+          banner.style.display = "none";
+          if (permission !== "granted") return;
+          navigator.serviceWorker.ready.then(function (registration) {
+            registration.pushManager
+              .subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(data.publicKey),
+              })
+              .then(function (subscription) {
+                var json = subscription.toJSON();
+                fetch(API_BASE + "/api/push/subscribe", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    endpoint: json.endpoint,
+                    keys: json.keys,
+                    lang: document.documentElement.getAttribute("lang") === "ar" ? "ar" : "fr",
+                  }),
+                }).catch(function () {});
+              })
+              .catch(function () {});
+          });
+        });
+      });
+    })
+    .catch(function () {});
+}
 
 function loadHeroStats() {
   var ecolesEl = document.getElementById("hero-stat-ecoles");

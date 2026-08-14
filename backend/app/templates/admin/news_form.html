@@ -35,6 +35,12 @@
              {% if (item and item.is_published) or not item %}checked{% endif %}>
       <label for="is_published" style="margin:0">Visible sur le site</label>
     </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_urgent" name="is_urgent" value="true"
+             {% if item and item.is_urgent %}checked{% endif %}>
+      <label for="is_urgent" style="margin:0">Actualité urgente (notification push aux visiteurs abonnés)</label>
+    </div>
+    {% if item and item.push_sent_at %}<p style="font-size:0.8rem; color:var(--text-muted); margin-top:-10px;">Notification déjà envoyée le {{ item.push_sent_at.strftime("%d/%m/%Y à %H:%M") }}.</p>{% endif %}
     <button type="submit" class="btn btn-primary">Enregistrer</button>
     <a href="/admin/news" class="btn btn-outline">Annuler</a>
   </form>
