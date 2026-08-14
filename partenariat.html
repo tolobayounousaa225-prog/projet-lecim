@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Actualités — LECIM</title>
-<meta name="description" content="Les dernières actualités, annonces et communiqués de la Ligue des Établissements Confessionnels et Madrassas en Côte d'Ivoire.">
+<title>Devenir partenaire — LECIM</title>
+<meta name="description" content="Déposez une demande de partenariat institutionnel, académique, technique ou de développement avec la LECIM.">
 <link rel="icon" type="image/jpeg" href="assets/img/logo.jpg">
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="manifest" href="manifest.json">
@@ -32,7 +32,7 @@
         <li><a href="contact.html">Contact</a></li>
       </ul>
       <div class="nav-utility">
-        <a href="ar/actualites.html" class="lang-switch">العربية</a>
+        <a href="ar/partenariat.html" class="lang-switch">العربية</a>
         <a href="#" id="nav-login-link">Connecter</a>
       </div>
       <a href="adhesion.html" class="btn btn-primary nav-cta">Adhérer</a>
@@ -58,15 +58,61 @@
 </div>
 
 <section class="page-banner">
-  <div class="breadcrumb"><a href="index.html">Accueil</a> / Actualités</div>
-  <h1>Actualités</h1>
-  <p>Les temps forts, annonces et décisions du Bureau Exécutif National de la LECIM.</p>
+  <div class="breadcrumb"><a href="index.html">Accueil</a> / Devenir partenaire</div>
+  <h1>Devenir partenaire</h1>
+  <p>La LECIM accueille les partenariats institutionnels, académiques, techniques et de développement. Déposez votre demande, le Bureau Exécutif National vous recontactera.</p>
 </section>
 
 <section>
   <div class="container">
-    <div id="actualites-list" class="actualites-grid"></div>
-    <p id="actualites-empty" style="display:none; text-align:center; color:var(--text-muted);">Aucune actualité publiée pour le moment.</p>
+    <div class="contact-form" id="partenariat-form-card" style="max-width:640px; margin:0 auto;">
+      <form id="partenariat-form">
+        <div class="form-group">
+          <label for="pt-nom">Nom de l'organisation *</label>
+          <input type="text" id="pt-nom" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pt-type">Type de partenaire *</label>
+            <select id="pt-type" required>
+              <option value="ong">ONG</option>
+              <option value="institution">Institution</option>
+              <option value="pays_ami">Pays frère</option>
+              <option value="reseau">Réseau international</option>
+              <option value="autre">Autre</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="pt-pays">Pays</label>
+            <input type="text" id="pt-pays">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pt-contact-nom">Nom du contact *</label>
+            <input type="text" id="pt-contact-nom" required>
+          </div>
+          <div class="form-group">
+            <label for="pt-contact-tel">Téléphone</label>
+            <input type="tel" id="pt-contact-tel">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="pt-contact-email">E-mail du contact *</label>
+          <input type="email" id="pt-contact-email" required>
+        </div>
+        <div class="form-group">
+          <label for="pt-message">Votre organisation et le partenariat envisagé *</label>
+          <textarea id="pt-message" required placeholder="Présentez votre organisation et la nature du partenariat souhaité avec la LECIM."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Envoyer la demande</button>
+        <p class="form-note">Nous répondons habituellement sous quelques jours ouvrés.</p>
+      </form>
+    </div>
+    <div id="partenariat-success" class="contact-form" style="max-width:640px; margin:0 auto; display:none; text-align:center;">
+      <h3>Merci pour votre intérêt !</h3>
+      <p style="color:var(--text-muted); margin-top:10px;">Votre demande de partenariat a bien été transmise au Bureau Exécutif National de la LECIM. Nous vous recontacterons prochainement.</p>
+    </div>
   </div>
 </section>
 
@@ -94,7 +140,7 @@
           <li><a href="actualites.html">Actualités</a></li>
           <li><a href="galerie.html">Galerie photo</a></li>
           <li><a href="faq.html">FAQ</a></li>
-                    <li><a href="transparence.html">Transparence financière</a></li>
+          <li><a href="transparence.html">Transparence financière</a></li>
           <li><a href="contact.html">Contact</a></li>
         </ul>
       </div>
