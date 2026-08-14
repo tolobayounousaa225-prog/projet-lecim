@@ -27,8 +27,9 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = 15
 
     # URL publique de ce backend, utilisée pour générer le lien encodé dans le QR code
-    # des cartes de membres. À remplacer par le vrai domaine une fois en production.
-    public_base_url: str = "http://localhost:8000"
+    # des cartes, attestations et certificats. Doit toujours pointer vers le domaine
+    # réellement joignable par le public qui scanne le code — jamais localhost.
+    public_base_url: str = "https://projet-lecim-production.up.railway.app"
 
     @property
     def cors_origins_list(self) -> list[str]:
