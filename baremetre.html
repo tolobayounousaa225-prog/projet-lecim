@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Galerie photo — LECIM</title>
-<meta name="description" content="Photos des réunions, événements et activités de la Ligue des Établissements Confessionnels et Madrassas en Côte d'Ivoire.">
+<title>Baromètre des résultats — LECIM</title>
+<meta name="description" content="Vue d'ensemble des résultats aux examens scolaires islamiques (CEPE, BEPC, BAC) des écoles membres de la LECIM, par année et par région.">
 <link rel="icon" type="image/jpeg" href="assets/img/logo.jpg">
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="manifest" href="manifest.json">
@@ -32,7 +32,7 @@
         <li><a href="contact.html">Contact</a></li>
       </ul>
       <div class="nav-utility">
-        <a href="ar/galerie.html" class="lang-switch">العربية</a>
+        <a href="ar/baremetre.html" class="lang-switch">العربية</a>
         <a href="#" id="nav-login-link">Connecter</a>
       </div>
       <a href="adhesion.html" class="btn btn-primary nav-cta">Adhérer</a>
@@ -58,15 +58,55 @@
 </div>
 
 <section class="page-banner">
-  <div class="breadcrumb"><a href="index.html">Accueil</a> / Galerie photo</div>
-  <h1>Galerie photo</h1>
-  <p>Réunions, événements et activités de la LECIM en images.</p>
+  <div class="breadcrumb"><a href="index.html">Accueil</a> / Baromètre des résultats</div>
+  <h1>Baromètre des résultats</h1>
+  <p>Une vue d'ensemble des résultats aux examens scolaires islamiques (CEPE, BEPC, BAC) des écoles membres, par année et par région.</p>
 </section>
 
 <section>
   <div class="container">
-    <div id="galerie-grid" class="galerie-grid"></div>
-    <p id="galerie-empty" style="display:none; text-align:center; color:var(--text-muted);">Aucune photo publiée pour le moment.</p>
+    <div class="transparence-note">
+      Ces chiffres agrègent les résultats déclarés et publiés par les établissements membres. Pour les résultats détaillés école par école, consultez la page <a href="documents.html">Documents</a>.
+    </div>
+
+    <div class="section-head">
+      <span class="eyebrow">Vue nationale</span>
+      <h2>Résultats par année et par examen</h2>
+    </div>
+    <div style="overflow-x:auto; margin-bottom:40px;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">Année</th>
+            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">Examen</th>
+            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">Inscrits</th>
+            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">Admis</th>
+            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">Taux</th>
+          </tr>
+        </thead>
+        <tbody id="baremetre-national-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="section-head">
+      <span class="eyebrow">Vue régionale</span>
+      <h2>Résultats par année et par région</h2>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">Année</th>
+            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">Région</th>
+            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">Inscrits</th>
+            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">Admis</th>
+            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">Taux</th>
+          </tr>
+        </thead>
+        <tbody id="baremetre-regional-tbody"></tbody>
+      </table>
+    </div>
+    <p id="baremetre-empty" style="display:none; text-align:center; color:var(--text-muted); margin-top:20px;">Aucun résultat publié pour le moment.</p>
   </div>
 </section>
 
@@ -94,7 +134,7 @@
           <li><a href="actualites.html">Actualités</a></li>
           <li><a href="galerie.html">Galerie photo</a></li>
           <li><a href="faq.html">FAQ</a></li>
-                    <li><a href="transparence.html">Transparence financière</a></li>
+          <li><a href="transparence.html">Transparence financière</a></li>
           <li><a href="baremetre.html">Baromètre des résultats</a></li>
           <li><a href="contact.html">Contact</a></li>
         </ul>

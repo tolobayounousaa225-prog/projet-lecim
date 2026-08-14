@@ -540,6 +540,8 @@ class Etablissement(Base):
     # du simple numéro d'agrément (une école peut avoir un n° et un agrément expiré)
     statut_agrement: Mapped[str] = mapped_column(String(20), default="en_cours")
     date_expiration_agrement: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    # Distinction publique accordée manuellement par le BEN, affichée sur la vitrine.
+    is_ecole_modele: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )

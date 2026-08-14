@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from .. import audit, models
 from ..attestations_pdf import generate_etablissement_attestation_pdf
 from ..card_pdf import generate_student_card_pdf
+from ..config import settings
 from ..database import get_db
 from ..deps import (
     require_etab_annonces_web,
@@ -81,6 +82,7 @@ def etablissement_dashboard(
             "annee": annee,
             "cotisation": cotisation,
             "counts": counts,
+            "public_base_url": settings.public_base_url,
             "active": "dashboard",
         },
     )

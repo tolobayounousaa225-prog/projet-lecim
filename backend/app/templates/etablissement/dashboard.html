@@ -32,4 +32,26 @@
 </div>
 
 <a href="/etablissement/attestation/pdf" class="btn btn-gold" style="margin-top:16px; display:inline-block;">Télécharger l'attestation d'affiliation</a>
+
+<div class="form-card" style="max-width:560px; margin-top:24px;">
+  <strong style="display:block; margin-bottom:14px;">Badge d'affiliation LECIM</strong>
+  <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:14px;">Affichez ce badge sur le site internet de votre établissement pour attester de votre affiliation, avec un lien vers votre fiche de vérification publique.</p>
+  <img src="{{ public_base_url }}/api/etablissements/{{ etablissement.id }}/badge.svg" alt="Badge Membre LECIM" style="display:block; margin-bottom:14px;">
+  <label for="badge-snippet" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:6px;">Code à copier-coller sur votre site</label>
+  <textarea id="badge-snippet" readonly style="width:100%; min-height:70px; font-family:monospace; font-size:0.8rem; padding:10px; border:1px solid var(--border); border-radius:8px;">&lt;a href="{{ public_base_url }}/verify-etablissement/{{ etablissement.id }}" target="_blank" rel="noopener"&gt;&lt;img src="{{ public_base_url }}/api/etablissements/{{ etablissement.id }}/badge.svg" alt="Membre LECIM"&gt;&lt;/a&gt;</textarea>
+  <button type="button" id="badge-copy-btn" class="btn btn-outline btn-sm" style="margin-top:10px;">Copier le code</button>
+</div>
+
+<script>
+document.getElementById("badge-copy-btn").addEventListener("click", function () {
+  var textarea = document.getElementById("badge-snippet");
+  textarea.select();
+  navigator.clipboard.writeText(textarea.value).then(function () {
+    var btn = document.getElementById("badge-copy-btn");
+    var original = btn.textContent;
+    btn.textContent = "Copié !";
+    setTimeout(function () { btn.textContent = original; }, 2000);
+  });
+});
+</script>
 {% endblock %}

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>الشفافية المالية — LECIM</title>
-<meta name="description" content="الأرقام المالية الإجمالية لـ LECIM، سنة بسنة: الإيرادات، النفقات والرصيد، منشورة لتعزيز ثقة المؤسسات الأعضاء والجمهور.">
+<title>مقياس النتائج — LECIM</title>
+<meta name="description" content="نظرة شاملة على نتائج الامتحانات المدرسية الإسلامية (CEPE، BEPC، BAC) للمدارس الأعضاء في LECIM، حسب السنة والمنطقة.">
 <link rel="icon" type="image/jpeg" href="../assets/img/logo.jpg">
 <link rel="stylesheet" href="../assets/css/style.css">
 <link rel="manifest" href="manifest.json">
@@ -32,7 +32,7 @@
         <li><a href="contact.html">اتصل بنا</a></li>
       </ul>
       <div class="nav-utility">
-        <a href="../transparence.html" class="lang-switch">Français</a>
+        <a href="../baremetre.html" class="lang-switch">Français</a>
         <a href="#" id="nav-login-link">تسجيل الدخول</a>
       </div>
       <a href="adhesion.html" class="btn btn-primary nav-cta">انضموا</a>
@@ -58,18 +58,55 @@
 </div>
 
 <section class="page-banner">
-  <div class="breadcrumb"><a href="index.html">الرئيسية</a> / الشفافية المالية</div>
-  <h1>الشفافية المالية</h1>
-  <p>الأرقام المالية الإجمالية لـ LECIM، منشورة سنة بسنة، لتعزيز ثقة المؤسسات الأعضاء والجمهور.</p>
+  <div class="breadcrumb"><a href="index.html">الرئيسية</a> / مقياس النتائج</div>
+  <h1>مقياس النتائج</h1>
+  <p>نظرة شاملة على نتائج الامتحانات المدرسية الإسلامية (CEPE، BEPC، BAC) للمدارس الأعضاء، حسب السنة والمنطقة.</p>
 </section>
 
 <section>
   <div class="container">
     <div class="transparence-note">
-      هذه الأرقام هي <strong>مجاميع إجمالية</strong> (جميع المدارس وجميع العمليات مجتمعة)، تُحدَّث تلقائيًا انطلاقًا من محاسبة LECIM. لا يتم نشر أي معاملة فردية ولا أي بيانات خاصة بمؤسسة معينة هنا. للاطلاع على التقارير المالية المفصلة والقابلة للتحقق عبر رمز QR، يُرجى زيارة صفحة <a href="documents.html">الوثائق</a>.
+      تجمع هذه الأرقام النتائج المصرح بها والمنشورة من طرف المؤسسات الأعضاء. للاطلاع على النتائج التفصيلية مدرسة بمدرسة، يُرجى زيارة صفحة <a href="documents.html">الوثائق</a>.
     </div>
-    <div id="transparence-list" class="transparence-list"></div>
-    <p id="transparence-empty" style="display:none; text-align:center; color:var(--text-muted);">لا توجد بيانات مالية منشورة حاليًا.</p>
+
+    <div class="section-head">
+      <span class="eyebrow">نظرة وطنية</span>
+      <h2>النتائج حسب السنة والامتحان</h2>
+    </div>
+    <div style="overflow-x:auto; margin-bottom:40px;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">السنة</th>
+            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">الامتحان</th>
+            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">المسجلون</th>
+            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">الناجحون</th>
+            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">النسبة</th>
+          </tr>
+        </thead>
+        <tbody id="baremetre-national-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="section-head">
+      <span class="eyebrow">نظرة جهوية</span>
+      <h2>النتائج حسب السنة والمنطقة</h2>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">السنة</th>
+            <th style="text-align:right; padding:10px; border-bottom:2px solid var(--border);">المنطقة</th>
+            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">المسجلون</th>
+            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">الناجحون</th>
+            <th style="text-align:left; padding:10px; border-bottom:2px solid var(--border);">النسبة</th>
+          </tr>
+        </thead>
+        <tbody id="baremetre-regional-tbody"></tbody>
+      </table>
+    </div>
+    <p id="baremetre-empty" style="display:none; text-align:center; color:var(--text-muted); margin-top:20px;">لا توجد نتائج منشورة حاليًا.</p>
   </div>
 </section>
 

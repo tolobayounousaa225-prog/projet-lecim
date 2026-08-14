@@ -5,11 +5,12 @@ import mimetypes
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
+from ..badge import generate_membership_badge_svg
 from ..database import get_db
 from .admin_files import UPLOAD_ROOT
 
@@ -70,3 +71,13 @@ def etablissement_logo(etablissement_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Logo introuvable")
     media_type = mimetypes.guess_type(etablissement.logo_path)[0] or "application/octet-stream"
     return FileResponse(path, media_type=media_type)
+
+
+@router.get("/{etablissement_id}/badge.svg")
+def etablissement_badge(etablissement_id: int, db: Session = Depends(get_db)):
+    """Badge d'affiliation LECIM à intégrer sur le site propre de l'établissement."""
+    etablissement = db.get(models.Etablissement, etablissement_id)
+    if not etablissement:
+        raise HTTPException(status_code=404, detail="Établissement introuvable")
+    svg = generate_membership_badge_svg(etablissement)
+    return Response(content=svg, media_type="image/svg+xml")

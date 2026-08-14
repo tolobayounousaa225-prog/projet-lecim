@@ -218,6 +218,27 @@ class ResultatExamenOut(BaseModel):
     taux_reussite: float
 
 
+class BaremetreAnneeOut(BaseModel):
+    annee_scolaire: str
+    type_examen: str
+    inscrits: int
+    admis: int
+    taux_reussite: float
+
+
+class BaremetreRegionOut(BaseModel):
+    annee_scolaire: str
+    bureau_local: str
+    inscrits: int
+    admis: int
+    taux_reussite: float
+
+
+class BaremetreOut(BaseModel):
+    national: list[BaremetreAnneeOut]
+    regional: list[BaremetreRegionOut]
+
+
 # ---------- Carte interactive (établissements & délégations) ----------
 
 class EtablissementPublicOut(BaseModel):
@@ -231,6 +252,7 @@ class EtablissementPublicOut(BaseModel):
     numero_agrement: str | None = None
     statut_agrement: str
     statut_agrement_label: str
+    is_ecole_modele: bool
 
 
 class PartenariatRequestCreate(BaseModel):
