@@ -40,6 +40,10 @@
       <label for="date_expiration_agrement">Date d'expiration de l'agrément (si connue)</label>
       <input type="date" id="date_expiration_agrement" name="date_expiration_agrement" value="{{ item.date_expiration_agrement.isoformat() if item and item.date_expiration_agrement else '' }}">
     </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_ecole_modele" name="is_ecole_modele" value="true" {% if item and item.is_ecole_modele %}checked{% endif %}>
+      <label for="is_ecole_modele" style="margin:0">École modèle LECIM (label affiché publiquement)</label>
+    </div>
     <div class="form-group">
       {% if item and item.logo_url %}
       <img src="{{ item.logo_url }}" alt="" style="max-width:120px; border-radius:8px; display:block; margin-bottom:10px;">

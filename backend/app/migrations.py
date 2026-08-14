@@ -112,6 +112,9 @@ def run_startup_migrations() -> None:
         if "date_expiration_agrement" not in columns:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE etablissements ADD COLUMN date_expiration_agrement DATE"))
+        if "is_ecole_modele" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE etablissements ADD COLUMN is_ecole_modele BOOLEAN DEFAULT FALSE"))
 
     if inspector.has_table("news_posts"):
         columns = {c["name"] for c in inspector.get_columns("news_posts")}

@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadTransparence();
   loadUpcomingEvents();
   initPushNotifications();
+  loadBaremetre();
 });
 
 function urlBase64ToUint8Array(base64String) {
@@ -268,6 +269,9 @@ function loadEcoles() {
           if (e.statut_agrement_label) {
             listHtml += '<span class="agrement-badge ' + escapeHtml(e.statut_agrement || "") + '">' + escapeHtml(e.statut_agrement_label) + "</span>";
           }
+          if (e.is_ecole_modele) {
+            listHtml += '<span class="ecole-modele-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 2.9 6.3 6.9.8-5.1 4.6 1.5 6.8L12 17l-6.2 3.5 1.5-6.8-5.1-4.6 6.9-.8Z"/></svg>École modèle</span>';
+          }
           listHtml += "</div></div>";
         });
         listHtml += "</div></div>";
@@ -357,6 +361,66 @@ function loadResultatsExamens() {
     });
 }
 
+function tauxPillClass(taux) {
+  if (taux >= 70) return "good";
+  if (taux >= 50) return "mid";
+  return "low";
+}
+
+function loadBaremetre() {
+  var nationalBody = document.getElementById("baremetre-national-tbody");
+  var regionalBody = document.getElementById("baremetre-regional-tbody");
+  var emptyEl = document.getElementById("baremetre-empty");
+  if (!nationalBody && !regionalBody) return;
+
+  fetch(API_BASE + "/api/resultats-examens/baremetre")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (data) {
+      if (!data || (!data.national.length && !data.regional.length)) {
+        if (emptyEl) emptyEl.style.display = "block";
+        return;
+      }
+
+      if (nationalBody) {
+        nationalBody.innerHTML = data.national
+          .map(function (r) {
+            return (
+              "<tr>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border);">' + escapeHtml(r.annee_scolaire) + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border);">' + escapeHtml(r.type_examen) + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;">' + r.inscrits + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;">' + r.admis + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;"><span class="taux-pill ' + tauxPillClass(r.taux_reussite) + '">' + r.taux_reussite + "%</span></td>" +
+              "</tr>"
+            );
+          })
+          .join("");
+      }
+
+      if (regionalBody) {
+        regionalBody.innerHTML = data.regional
+          .map(function (r) {
+            return (
+              "<tr>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border);">' + escapeHtml(r.annee_scolaire) + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border);">' + escapeHtml(r.bureau_local) + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;">' + r.inscrits + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;">' + r.admis + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;"><span class="taux-pill ' + tauxPillClass(r.taux_reussite) + '">' + r.taux_reussite + "%</span></td>" +
+              "</tr>"
+            );
+          })
+          .join("");
+      }
+    })
+    .catch(function () {
+      if (emptyEl) emptyEl.style.display = "block";
+    });
+}
+
 function initLoginLink() {
   var link = document.getElementById("nav-login-link");
   if (link) {
@@ -378,6 +442,7 @@ var SEARCH_STATIC_PAGES = {
     { title: "Galerie photo", url: "galerie.html" },
     { title: "FAQ", url: "faq.html" },
     { title: "Transparence financière", url: "transparence.html" },
+    { title: "Baromètre des résultats", url: "baremetre.html" },
     { title: "Adhésion", url: "adhesion.html" },
     { title: "Devenir partenaire", url: "partenariat.html" },
     { title: "Contact", url: "contact.html" }
@@ -395,6 +460,7 @@ var SEARCH_STATIC_PAGES = {
     { title: "معرض الصور", url: "galerie.html" },
     { title: "الأسئلة الشائعة", url: "faq.html" },
     { title: "الشفافية المالية", url: "transparence.html" },
+    { title: "مقياس النتائج", url: "baremetre.html" },
     { title: "الانتساب", url: "adhesion.html" },
     { title: "كونوا شريكًا", url: "partenariat.html" },
     { title: "اتصل بنا", url: "contact.html" }
