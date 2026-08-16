@@ -2,6 +2,7 @@ var API_BASE = window.LECIM_API_BASE || "http://localhost:8000";
 
 document.addEventListener("DOMContentLoaded", function () {
   initNavToggle();
+  initNavDropdowns();
   initLoginLink();
   initContactForm();
   initAdhesionForm();
@@ -576,6 +577,25 @@ function initNavToggle() {
       links.classList.toggle("open");
     });
   }
+}
+
+function initNavDropdowns() {
+  document.querySelectorAll(".dropdown-toggle").forEach(function (btn) {
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      var li = btn.closest("li");
+      var willOpen = !li.classList.contains("dropdown-open");
+      document.querySelectorAll(".nav-pill li.dropdown-open").forEach(function (openLi) {
+        openLi.classList.remove("dropdown-open");
+        var openBtn = openLi.querySelector(".dropdown-toggle");
+        if (openBtn) openBtn.setAttribute("aria-expanded", "false");
+      });
+      if (willOpen) {
+        li.classList.add("dropdown-open");
+        btn.setAttribute("aria-expanded", "true");
+      }
+    });
+  });
 }
 
 function initContactForm() {
