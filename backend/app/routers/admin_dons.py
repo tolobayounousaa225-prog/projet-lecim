@@ -42,7 +42,9 @@ def don_confirmer(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
-    don = db.get(models.DonDeclare, don_id)
+    # Verrou de ligne : deux clics rapprochés (double-clic, connexion lente) sur le
+    # même don ne doivent jamais créer deux Recette pour un seul don confirmé.
+    don = db.query(models.DonDeclare).filter(models.DonDeclare.id == don_id).with_for_update().first()
     if don and not don.is_confirme:
         recette = models.Recette(
             categorie="don_legs",

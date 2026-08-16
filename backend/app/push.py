@@ -55,6 +55,11 @@ def send_urgent_news_push(db: Session, news: models.NewsPost) -> None:
                 stale_ids.append(sub.id)
             else:
                 logger.warning("Échec d'envoi push (endpoint %s) : %s", sub.endpoint[:60], exc)
+        except Exception as exc:
+            # Erreur réseau/TLS/timeout vers CE seul abonné (pywebpush ne lève pas
+            # toujours WebPushException) — ne doit jamais interrompre l'envoi aux
+            # autres abonnés ni faire échouer la publication de l'actualité.
+            logger.warning("Échec d'envoi push (endpoint %s) : %s", sub.endpoint[:60], exc)
 
     if stale_ids:
         db.query(models.PushSubscription).filter(models.PushSubscription.id.in_(stale_ids)).delete(
