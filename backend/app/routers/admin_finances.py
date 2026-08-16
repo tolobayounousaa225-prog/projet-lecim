@@ -364,12 +364,15 @@ def finances_rapport_comparatif_generate(
 def etablissements_list(
     request: Request,
     bureau_local: str | None = None,
+    categorie: str | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
     query = db.query(models.Etablissement)
     if bureau_local:
         query = query.filter(models.Etablissement.bureau_local == bureau_local)
+    if categorie in ("membre", "partenaire"):
+        query = query.filter(models.Etablissement.categorie == categorie)
     items = query.order_by(models.Etablissement.nom).all()
     bureaux_locaux = [
         row[0] for row in db.query(models.Etablissement.bureau_local)
@@ -386,7 +389,8 @@ def etablissements_list(
             "items": items,
             "bureaux_locaux": bureaux_locaux,
             "selected_bureau_local": bureau_local,
-            "active": "finances",
+            "selected_categorie": categorie,
+            "active": "etablissements",
         },
     )
 
@@ -402,10 +406,12 @@ def etablissements_export_csv(
     items = db.query(models.Etablissement).order_by(models.Etablissement.nom).all()
     buffer = _io.StringIO()
     writer = csv.writer(buffer, delimiter=";")
-    writer.writerow(["Code adhesion", "Nom", "Bureau local", "Statut", "Date adhesion", "Telephone", "Email", "Agrement"])
+    writer.writerow(["Code adhesion", "Nom", "Categorie", "Bureau local", "Statut", "Date adhesion", "Telephone", "Email", "Agrement"])
     for e in items:
         writer.writerow([
-            e.code_adhesion or "", e.nom, e.bureau_local or "",
+            e.code_adhesion or "", e.nom,
+            "Partenaire" if e.categorie == "partenaire" else "Membre affilie",
+            e.bureau_local or "",
             "Subventionne" if e.statut == "subventionne" else "Non subventionne",
             e.date_adhesion.isoformat() if e.date_adhesion else "",
             e.contact_telephone or "", e.contact_email or "", e.numero_agrement or "",
@@ -446,6 +452,7 @@ async def etablissements_create(
     statut_agrement: str = Form("en_cours"),
     date_expiration_agrement: str = Form(""),
     is_ecole_modele: bool = Form(False),
+    categorie: str = Form("membre"),
     logo: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
@@ -474,6 +481,7 @@ async def etablissements_create(
         statut_agrement=statut_agrement if statut_agrement in {"agree", "en_cours", "expire"} else "en_cours",
         date_expiration_agrement=datetime.date.fromisoformat(date_expiration_agrement) if date_expiration_agrement else None,
         is_ecole_modele=is_ecole_modele,
+        categorie=categorie if categorie in {"membre", "partenaire"} else "membre",
         logo_path=logo_path,
     )
     db.add(etablissement)
@@ -516,6 +524,7 @@ async def etablissements_update(
     statut_agrement: str = Form("en_cours"),
     date_expiration_agrement: str = Form(""),
     is_ecole_modele: bool = Form(False),
+    categorie: str = Form("membre"),
     logo: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
@@ -551,6 +560,7 @@ async def etablissements_update(
             datetime.date.fromisoformat(date_expiration_agrement) if date_expiration_agrement else None
         )
         etablissement.is_ecole_modele = is_ecole_modele
+        etablissement.categorie = categorie if categorie in {"membre", "partenaire"} else "membre"
         audit.log(db, user, "update", "Établissement", etablissement.id, f"A modifié l'établissement {etablissement.nom}")
         db.commit()
     return RedirectResponse(url="/admin/etablissements", status_code=status.HTTP_303_SEE_OTHER)

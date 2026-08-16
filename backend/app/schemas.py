@@ -263,6 +263,8 @@ class EtablissementPublicOut(BaseModel):
     statut_agrement: str
     statut_agrement_label: str
     is_ecole_modele: bool
+    categorie: str
+    categorie_label: str
 
 
 class PartenariatRequestCreate(BaseModel):

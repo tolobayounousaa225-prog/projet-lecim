@@ -115,6 +115,9 @@ def run_startup_migrations() -> None:
         if "is_ecole_modele" not in columns:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE etablissements ADD COLUMN is_ecole_modele BOOLEAN DEFAULT FALSE"))
+        if "categorie" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE etablissements ADD COLUMN categorie VARCHAR(20) DEFAULT 'membre'"))
 
     if inspector.has_table("news_posts"):
         columns = {c["name"] for c in inspector.get_columns("news_posts")}

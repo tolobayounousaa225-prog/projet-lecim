@@ -117,12 +117,17 @@
 
 <section>
   <div class="container">
+    <div class="ecoles-tabs" role="tablist">
+      <button type="button" class="ecoles-tab active" data-categorie="membre" role="tab" aria-selected="true">المدارس المنتسبة</button>
+      <button type="button" class="ecoles-tab" data-categorie="partenaire" role="tab" aria-selected="false">الشركاء</button>
+    </div>
+
     <div class="ecoles-toolbar" id="recherche">
       <div class="ecoles-search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input type="text" id="ecoles-search-input" placeholder="ابحث عن مدرسة أو منطقة...">
       </div>
-      <div class="ecoles-count"><strong id="ecoles-count-num">0</strong> مؤسسة منتسبة</div>
+      <div class="ecoles-count"><strong id="ecoles-count-num">0</strong> <span id="ecoles-count-label">مؤسسة منتسبة</span></div>
     </div>
 
     <div class="ecoles-regions" id="ecoles-regions-nav"></div>
