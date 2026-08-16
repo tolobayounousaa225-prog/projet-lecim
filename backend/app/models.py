@@ -152,6 +152,10 @@ class User(Base):
         return self.has_module("historique")
 
     @property
+    def can_manage_fondateurs(self) -> bool:
+        return self.has_module("fondateurs")
+
+    @property
     def can_manage_gouvernance(self) -> bool:
         return self.has_module("gouvernance")
 
@@ -1205,6 +1209,33 @@ class HistoriquePresident(Base):
     @property
     def photo_url(self) -> str:
         return f"/api/historique/{self.id}/photo"
+
+
+# ---------- Membres fondateurs (site vitrine) ----------
+
+class MembreFondateur(Base):
+    """Membre fondateur ayant bâti la LECIM, affiché dans une section dédiée du site
+    public : photo, rôle lors de la fondation et un mot associé à son portrait."""
+
+    __tablename__ = "membres_fondateurs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    mot: Mapped[str | None] = mapped_column(Text, nullable=True)
+    photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    ordre: Mapped[int] = mapped_column(Integer, default=0)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=True)
+    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    uploaded_by: Mapped["User | None"] = relationship()
+
+    @property
+    def photo_url(self) -> str:
+        return f"/api/fondateurs/{self.id}/photo"
 
 
 # ---------- Gouvernance (organigramme public du BEN) ----------

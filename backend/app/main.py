@@ -37,6 +37,7 @@ from .routers import (
     admin_faq,
     admin_files,
     admin_finances,
+    admin_fondateurs,
     admin_gouvernance,
     admin_historique,
     admin_messagerie,
@@ -60,6 +61,7 @@ from .routers import (
     etablissement_ressources,
     etablissements_public,
     faq_public,
+    fondateurs,
     gouvernance,
     historique,
     news,
@@ -148,6 +150,7 @@ upload_dir.mkdir(parents=True, exist_ok=True)
 (upload_dir / "partenaires_logos").mkdir(exist_ok=True)
 (upload_dir / "cartes_scolaires").mkdir(exist_ok=True)
 (upload_dir / "ressources_pedagogiques").mkdir(exist_ok=True)
+(upload_dir / "fondateurs").mkdir(exist_ok=True)
 
 
 @app.exception_handler(NotAuthenticatedException)
@@ -221,6 +224,8 @@ app.include_router(admin_resultats_examens.router)
 app.include_router(resultats_examens.router)
 app.include_router(admin_historique.router)
 app.include_router(historique.router)
+app.include_router(admin_fondateurs.router)
+app.include_router(fondateurs.router)
 app.include_router(admin_gouvernance.router)
 app.include_router(gouvernance.router)
 app.include_router(admin_site_content.router)

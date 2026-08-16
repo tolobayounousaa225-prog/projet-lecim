@@ -877,36 +877,37 @@ section { padding: 80px 0; }
 }
 .about-media-logo img { width: 100%; height: 100%; object-fit: contain; }
 
-.historique-grid {
+.historique-grid, .fondateurs-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
-.historique-card {
+.historique-card, .fondateur-card {
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 26px;
   text-align: center;
 }
-.historique-photo {
+.historique-photo, .fondateur-photo {
   width: 96px; height: 96px;
   border-radius: 50%;
   object-fit: cover;
   margin: 0 auto 14px;
   border: 3px solid var(--gold-light);
 }
-.historique-card h4 { color: var(--green-dark); margin-bottom: 2px; }
-.historique-period { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; }
-.historique-mot { font-size: 0.88rem; color: var(--text-dark); font-style: italic; }
-.historique-mot::before { content: "\201C"; }
-.historique-mot::after { content: "\201D"; }
+.fondateur-photo { border-color: var(--gold); }
+.historique-card h4, .fondateur-card h4 { color: var(--green-dark); margin-bottom: 2px; }
+.historique-period, .fondateur-role { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; }
+.historique-mot, .fondateur-mot { font-size: 0.88rem; color: var(--text-dark); font-style: italic; }
+.historique-mot::before, .fondateur-mot::before { content: "\201C"; }
+.historique-mot::after, .fondateur-mot::after { content: "\201D"; }
 
 @media (max-width: 900px) {
-  .historique-grid { grid-template-columns: 1fr 1fr; }
+  .historique-grid, .fondateurs-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 680px) {
-  .historique-grid { grid-template-columns: 1fr; }
+  .historique-grid, .fondateurs-grid { grid-template-columns: 1fr; }
 }
 
 /* ===== Contact page ===== */

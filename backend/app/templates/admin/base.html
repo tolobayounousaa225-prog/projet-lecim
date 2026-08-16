@@ -24,7 +24,7 @@
       <a href="/admin/calendrier" class="{{ 'active' if active == 'calendrier' else '' }}">Calendrier</a>
       <a href="/admin/sondages" class="{{ 'active' if active == 'sondages' else '' }}">Sondages</a>
 
-      {% if admin.can_manage_reunions or admin.can_manage_membres or admin.can_manage_cartes or admin.can_manage_sondages or admin.can_manage_executif or admin.can_manage_delegations or admin.can_manage_historique or admin.can_manage_gouvernance or admin.can_examine_adhesions %}
+      {% if admin.can_manage_reunions or admin.can_manage_membres or admin.can_manage_cartes or admin.can_manage_sondages or admin.can_manage_executif or admin.can_manage_delegations or admin.can_manage_historique or admin.can_manage_fondateurs or admin.can_manage_gouvernance or admin.can_examine_adhesions %}
       <div class="nav-section">
         <span class="nav-section-title">Vie associative</span>
         {% if admin.can_manage_reunions %}<a href="/admin/reunions" class="{{ 'active' if active == 'reunions' else '' }}">Réunions</a>{% endif %}
@@ -35,6 +35,7 @@
         {% if admin.can_manage_executif %}<a href="/admin/executif" class="{{ 'active' if active == 'executif' else '' }}">Tableau de bord exécutif</a>{% endif %}
         {% if admin.can_manage_delegations %}<a href="/admin/delegations" class="{{ 'active' if active == 'delegations' else '' }}">Délégations régionales</a>{% endif %}
         {% if admin.can_manage_historique %}<a href="/admin/historique" class="{{ 'active' if active == 'historique' else '' }}">Historique des présidents</a>{% endif %}
+        {% if admin.can_manage_fondateurs %}<a href="/admin/fondateurs" class="{{ 'active' if active == 'fondateurs' else '' }}">Membres fondateurs</a>{% endif %}
         {% if admin.can_manage_gouvernance %}<a href="/admin/gouvernance" class="{{ 'active' if active == 'gouvernance' else '' }}">Gouvernance (photos du BEN)</a>{% endif %}
       </div>
       {% endif %}
