@@ -482,7 +482,7 @@ function initGlobalSearch() {
   var input = document.getElementById("search-input");
   var closeBtn = document.getElementById("search-close");
   var resultsEl = document.getElementById("search-results");
-  if (!trigger || !overlay || !input || !resultsEl) return;
+  if (!trigger || !overlay || !input || !resultsEl || !closeBtn) return;
 
   var lang = document.documentElement.getAttribute("lang") === "ar" ? "ar" : "fr";
   var staticPages = SEARCH_STATIC_PAGES[lang];
