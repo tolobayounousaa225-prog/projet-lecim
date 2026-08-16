@@ -1,14 +1,21 @@
-"""Sauvegarde de la base de données LECIM (SQLite en développement, PostgreSQL en
-production via pg_dump). Déclenchée automatiquement chaque nuit et manuellement
-depuis l'espace admin."""
+"""Sauvegarde de la base de données LECIM (SQLite en développement, export JSON de
+toutes les tables en production). Déclenchée automatiquement chaque nuit et
+manuellement depuis l'espace admin.
+
+Le format JSON (plutôt qu'un dump via le binaire `pg_dump`) est utilisé en
+production car `pg_dump` n'est pas installé dans l'environnement d'exécution
+Railway — son absence faisait échouer silencieusement toutes les sauvegardes.
+Cette approche ne dépend d'aucun outil externe : uniquement de SQLAlchemy, déjà
+utilisé pour se connecter à la base."""
 
 import datetime
+import decimal
+import json
 import shutil
-import subprocess
 from pathlib import Path
-from urllib.parse import urlparse
 
 from .config import settings
+from .database import Base, engine
 
 BACKUP_DIR = Path(__file__).resolve().parent.parent / "backups"
 RETENTION_COUNT = 30
@@ -27,6 +34,32 @@ def _sqlite_path() -> Path:
     return path
 
 
+def _json_default(value):
+    if isinstance(value, (datetime.datetime, datetime.date)):
+        return value.isoformat()
+    if isinstance(value, decimal.Decimal):
+        return float(value)
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
+
+
+def _dump_postgres_to_json(destination: Path) -> None:
+    # S'assure que tous les modèles sont enregistrés sur Base.metadata avant de
+    # lister les tables (déjà garanti en pratique par l'import des routeurs admin
+    # au démarrage de l'application, mais explicite ici pour rester autonome).
+    from . import models  # noqa: F401
+
+    data: dict[str, list[dict]] = {}
+    with engine.connect() as conn:
+        for table in Base.metadata.sorted_tables:
+            rows = conn.execute(table.select()).mappings().all()
+            data[table.name] = [dict(row) for row in rows]
+
+    with destination.open("w", encoding="utf-8") as f:
+        json.dump(data, f, default=_json_default, ensure_ascii=False)
+
+
 def create_backup() -> Path:
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -36,24 +69,8 @@ def create_backup() -> Path:
         destination = BACKUP_DIR / f"lecim-{timestamp}.db"
         shutil.copy2(source, destination)
     else:
-        destination = BACKUP_DIR / f"lecim-{timestamp}.sql"
-        parsed = urlparse(settings.database_url.replace("postgresql+psycopg2", "postgresql"))
-        env_args = [
-            "pg_dump",
-            "--no-owner",
-            "--no-privileges",
-            "-h", parsed.hostname or "localhost",
-            "-p", str(parsed.port or 5432),
-            "-U", parsed.username or "postgres",
-            "-d", (parsed.path or "/lecim").lstrip("/"),
-            "-f", str(destination),
-        ]
-        import os
-
-        env = os.environ.copy()
-        if parsed.password:
-            env["PGPASSWORD"] = parsed.password
-        subprocess.run(env_args, check=True, env=env)
+        destination = BACKUP_DIR / f"lecim-{timestamp}.json"
+        _dump_postgres_to_json(destination)
 
     _cleanup_old_backups()
     return destination
