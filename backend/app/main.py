@@ -75,7 +75,6 @@ from .routers import (
     resultats_examens,
     search_public,
     site_content,
-    transparence_public,
     verify,
     verify_attestations,
     verify_eleve,
@@ -192,7 +191,6 @@ app.include_router(dons_public.router)
 app.include_router(projets_public.router)
 app.include_router(photos_public.router)
 app.include_router(faq_public.router)
-app.include_router(transparence_public.router)
 app.include_router(search_public.router)
 app.include_router(push_public.router)
 app.include_router(publications.router)
