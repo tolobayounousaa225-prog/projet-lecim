@@ -26,7 +26,6 @@ document.addEventListener("DOMContentLoaded", function () {
   loadActualiteDetail();
   loadGalerie();
   loadFaq();
-  loadTransparence();
   loadUpcomingEvents();
   initPushNotifications();
   loadBaremetre();
@@ -483,7 +482,6 @@ var SEARCH_STATIC_PAGES = {
     { title: "Actualités", url: "actualites.html" },
     { title: "Galerie photo", url: "galerie.html" },
     { title: "FAQ", url: "faq.html" },
-    { title: "Transparence financière", url: "transparence.html" },
     { title: "Baromètre des résultats", url: "baremetre.html" },
     { title: "Adhésion", url: "adhesion.html" },
     { title: "Devenir partenaire", url: "partenariat.html" },
@@ -502,7 +500,6 @@ var SEARCH_STATIC_PAGES = {
     { title: "الأخبار", url: "actualites.html" },
     { title: "معرض الصور", url: "galerie.html" },
     { title: "الأسئلة الشائعة", url: "faq.html" },
-    { title: "الشفافية المالية", url: "transparence.html" },
     { title: "مقياس النتائج", url: "baremetre.html" },
     { title: "الانتساب", url: "adhesion.html" },
     { title: "كونوا شريكًا", url: "partenariat.html" },
@@ -951,58 +948,6 @@ function loadFaq() {
           scrollToHighlight(target);
         }
       }
-    })
-    .catch(function () {
-      if (emptyEl) emptyEl.style.display = "block";
-    });
-}
-
-function loadTransparence() {
-  var container = document.getElementById("transparence-list");
-  var emptyEl = document.getElementById("transparence-empty");
-  if (!container) return;
-
-  function fcfa(n) {
-    return (n || 0).toLocaleString("fr-FR").replace(/ |,/g, " ") + " FCFA";
-  }
-
-  fetch(API_BASE + "/api/transparence")
-    .then(function (res) {
-      if (!res.ok) throw new Error("API indisponible");
-      return res.json();
-    })
-    .then(function (items) {
-      if (!items || !items.length) {
-        if (emptyEl) emptyEl.style.display = "block";
-        return;
-      }
-      var ordered = items.slice().reverse();
-      container.innerHTML = ordered
-        .map(function (a) {
-          var solde = a.solde || 0;
-          var soldeClass = solde >= 0 ? "positive" : "negative";
-          var soldeSign = solde >= 0 ? "+" : "";
-          return (
-            '<div class="transparence-card">' +
-            '<div class="transparence-head">' +
-            "<h3>" + escapeHtml(a.annee) + "</h3>" +
-            '<span class="transparence-solde ' + soldeClass + '">Solde : ' + soldeSign + fcfa(solde) + "</span>" +
-            "</div>" +
-            '<div class="transparence-totals">' +
-            "<div><strong>" + fcfa(a.total_entrees) + "</strong><span>Total recettes</span></div>" +
-            "<div><strong>" + fcfa(a.depenses) + "</strong><span>Total dépenses</span></div>" +
-            "</div>" +
-            '<div class="transparence-breakdown">' +
-            "<div><span>Cotisations</span><strong>" + fcfa(a.cotisations) + "</strong></div>" +
-            "<div><span>Adhésions</span><strong>" + fcfa(a.adhesions) + "</strong></div>" +
-            "<div><span>Ventes de livres</span><strong>" + fcfa(a.ventes_livres) + "</strong></div>" +
-            "<div><span>Droits d'examens</span><strong>" + fcfa(a.droits_examens) + "</strong></div>" +
-            "<div><span>Autres recettes</span><strong>" + fcfa(a.recettes) + "</strong></div>" +
-            "</div>" +
-            "</div>"
-          );
-        })
-        .join("");
     })
     .catch(function () {
       if (emptyEl) emptyEl.style.display = "block";

@@ -293,18 +293,6 @@ class SearchResultOut(BaseModel):
     url: str
 
 
-class TransparenceAnneeOut(BaseModel):
-    annee: str
-    total_entrees: int
-    adhesions: int
-    cotisations: int
-    recettes: int
-    ventes_livres: int
-    droits_examens: int
-    depenses: int
-    solde: int
-
-
 class EtablissementsStatsOut(BaseModel):
     ecoles: int
     regions: int
