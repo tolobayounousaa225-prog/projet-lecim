@@ -1354,8 +1354,9 @@ section { padding: 80px 0; }
   .nav-pill a { padding: 7px 8px; font-size: 0.74rem; }
   .dropdown-toggle { width: 20px; height: 20px; margin-inline-start: -4px; }
   .dropdown-caret { width: 8px; height: 8px; }
-  .nav-utility { display: none; }
-  .nav-cta { padding: 8px 14px; font-size: 0.78rem; }
+  .nav-utility .lang-switch { display: none; }
+  .nav-utility a { font-size: 0.74rem; }
+  .nav-cta { display: none; }
   .nav-search-trigger { width: 32px; height: 32px; }
 }
 
