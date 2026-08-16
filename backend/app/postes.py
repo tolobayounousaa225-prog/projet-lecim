@@ -171,6 +171,7 @@ MODULES: dict[str, str] = {
     "executif": "Tableau de bord exécutif (vue d'ensemble de tous les domaines)",
     "delegations": "Délégations régionales (supervision des comités locaux)",
     "historique": "Historique des anciens présidents (photo, mandat, mot)",
+    "fondateurs": "Membres fondateurs de la LECIM (photo, rôle, mot)",
     "gouvernance": "Gouvernance publique (photos des membres du BEN et de leurs adjoints)",
     "site_content": "Contenu du site (textes modifiables de la vitrine)",
     "enseignants": "Répertoire des enseignants des écoles membres",
@@ -186,7 +187,7 @@ MODULES: dict[str, str] = {
 # d'un compte — un simple point de départ, modifiable librement par l'administrateur
 # avant l'enregistrement. Un poste non listé ici démarre sans aucun module coché.
 DEFAULT_MODULES_BY_POSTE: dict[str, list[str]] = {
-    "president": ["reunions", "membres", "documents", "photos", "executif", "historique", "gouvernance", "site_content", "sondages", "adhesion_examen"],
+    "president": ["reunions", "membres", "documents", "photos", "executif", "historique", "fondateurs", "gouvernance", "site_content", "sondages", "adhesion_examen"],
     "vp1_education": ["reunions", "membres"],
     "vp2_interieur": ["reunions", "membres", "delegations", "adhesion_examen"],
     "sec_relations_exterieures": ["reunions", "partenaires"],
@@ -195,7 +196,7 @@ DEFAULT_MODULES_BY_POSTE: dict[str, list[str]] = {
     "sec_pedagogie_vie_scolaire": ["reunions", "activities", "enseignants", "resultats_examens", "effectifs", "cartes_scolaires"],
     "sec_interieur": ["reunions", "membres", "delegations", "adhesion_examen"],
     "sec_finances": ["finances"],
-    "sec_communication_tic": ["reunions", "news", "photos", "publications", "historique", "gouvernance", "site_content"],
+    "sec_communication_tic": ["reunions", "news", "photos", "publications", "historique", "fondateurs", "gouvernance", "site_content"],
     "sec_affaires_sociales": ["reunions", "membres", "affaires_sociales"],
     "sec_projets_patrimoine": ["reunions", "documents", "projets_patrimoine"],
     "directeur_enseignement": ["reunions", "documents", "resultats_examens", "effectifs"],

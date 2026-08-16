@@ -1,0 +1,43 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouveau" }} membre fondateur{% endblock %}
+{% block content %}
+<h1>{{ "Modifier le membre fondateur" if item else "Ajouter un membre fondateur" }}</h1>
+<div class="form-card">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <form method="post" action="{{ '/admin/fondateurs/' ~ item.id ~ '/edit' if item else '/admin/fondateurs/new' }}" enctype="multipart/form-data">
+    {% if item and item.photo_path %}
+    <div class="form-group">
+      <img src="{{ item.photo_url }}" alt="" style="width:90px; height:90px; border-radius:50%; object-fit:cover;">
+    </div>
+    {% endif %}
+    <div class="form-group">
+      <label for="full_name">Nom complet</label>
+      <input type="text" id="full_name" name="full_name" required value="{{ item.full_name if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="role">Rôle lors de la fondation</label>
+      <input type="text" id="role" name="role" placeholder="Ex : Membre fondateur, Co-fondateur et premier trésorier..." value="{{ item.role if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="mot">Mot associé (citation, hommage...)</label>
+      <textarea id="mot" name="mot">{{ item.mot if item else '' }}</textarea>
+    </div>
+    <div class="form-group">
+      <label for="ordre">Ordre d'affichage (les plus petits nombres s'affichent en premier)</label>
+      <input type="number" id="ordre" name="ordre" value="{{ item.ordre if item else 0 }}">
+    </div>
+    <div class="form-group">
+      <label for="photo">Photo{% if not item %} (JPG, PNG, WEBP — 15 Mo max){% endif %}</label>
+      <input type="file" id="photo" name="photo" accept=".jpg,.jpeg,.png,.webp,.gif" {% if not item %}required{% endif %}>
+      {% if item %}<p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Laissez vide pour conserver la photo actuelle.</p>{% endif %}
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_published" name="is_published" value="true"
+             {% if (item and item.is_published) or not item %}checked{% endif %}>
+      <label for="is_published" style="margin:0">Visible sur le site</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/fondateurs" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

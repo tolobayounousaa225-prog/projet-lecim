@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadActivities();
   loadPublications();
   loadHistorique();
+  loadFondateurs();
   loadGouvernance();
   loadSiteContent();
   loadCarte();
@@ -1220,6 +1221,34 @@ function loadHistorique() {
     })
     .catch(function () {
       // API indisponible : le message par défaut ("aucun ancien président") reste affiché.
+    });
+}
+
+function loadFondateurs() {
+  var container = document.getElementById("fondateurs-grid");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/fondateurs")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) return;
+      container.innerHTML = "";
+      items.forEach(function (item) {
+        var card = document.createElement("div");
+        card.className = "fondateur-card";
+        card.innerHTML =
+          '<img class="fondateur-photo" src="' + API_BASE + item.photo_url + '" alt="' + escapeHtml(item.full_name) + '">' +
+          "<h4>" + escapeHtml(item.full_name) + "</h4>" +
+          (item.role ? '<span class="fondateur-role">' + escapeHtml(item.role) + "</span>" : "") +
+          (item.mot ? '<p class="fondateur-mot">' + escapeHtml(item.mot) + "</p>" : "");
+        container.appendChild(card);
+      });
+    })
+    .catch(function () {
+      // API indisponible : le message par défaut ("aucun fondateur publié") reste affiché.
     });
 }
 
