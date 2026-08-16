@@ -176,6 +176,14 @@ ul { list-style: none; }
 
 .nav-dropdown a:hover { background: var(--cream); color: var(--green); }
 
+#identite, #missions, #gouvernance, #fondateurs, #historique,
+#nos-services, #comment-ca-marche,
+#terminees, #a-venir,
+#recherche, #doc-categories, #resultats, #initiatives-list, #devenir-partenaire,
+#comment-ca-se-passe, #formulaire, #coordonnees, #localisation, #ecoles-list {
+  scroll-margin-top: 90px;
+}
+
 .nav-utility {
   display: flex;
   align-items: center;
