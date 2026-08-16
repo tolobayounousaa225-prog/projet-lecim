@@ -25,6 +25,14 @@
       </select>
     </div>
     <div class="form-group">
+      <label for="categorie">Catégorie</label>
+      <select id="categorie" name="categorie">
+        <option value="membre" {% if not item or item.categorie == 'membre' %}selected{% endif %}>Membre affilié</option>
+        <option value="partenaire" {% if item and item.categorie == 'partenaire' %}selected{% endif %}>Partenaire</option>
+      </select>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Membre = adhésion validée, cotisation due. Partenaire = collabore avec la LECIM sans être membre à part entière.</p>
+    </div>
+    <div class="form-group">
       <label for="numero_agrement">Numéro d'agrément (ministère)</label>
       <input type="text" id="numero_agrement" name="numero_agrement" value="{{ item.numero_agrement if item else '' }}">
     </div>

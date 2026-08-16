@@ -44,6 +44,7 @@
       {% if admin.can_manage_enseignants or admin.can_manage_resultats_examens or admin.can_manage_effectifs or admin.can_manage_cartes_scolaires or admin.can_manage_finances or admin.can_manage_messagerie %}
       <div class="nav-section">
         <span class="nav-section-title">Écoles membres</span>
+        {% if admin.can_manage_finances %}<a href="/admin/etablissements" class="{{ 'active' if active == 'etablissements' else '' }}">Établissements &amp; partenaires</a>{% endif %}
         {% if admin.can_manage_enseignants %}<a href="/admin/enseignants" class="{{ 'active' if active == 'enseignants' else '' }}">Répertoire des enseignants</a>{% endif %}
         {% if admin.can_manage_resultats_examens %}<a href="/admin/resultats-examens" class="{{ 'active' if active == 'resultats_examens' else '' }}">Résultats aux examens</a>{% endif %}
         {% if admin.can_manage_effectifs %}<a href="/admin/effectifs" class="{{ 'active' if active == 'effectifs' else '' }}">Effectifs des élèves</a>{% endif %}

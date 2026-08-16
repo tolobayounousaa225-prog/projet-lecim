@@ -1,8 +1,8 @@
 {% extends "admin/base.html" %}
-{% block title %}Établissements affiliés{% endblock %}
+{% block title %}Établissements &amp; partenaires{% endblock %}
 {% block content %}
 <div class="topbar">
-  <h1 style="margin:0">Établissements affiliés ({{ items|length }})</h1>
+  <h1 style="margin:0">Établissements &amp; partenaires ({{ items|length }})</h1>
   <div style="display:flex; gap:8px;">
     <a href="/admin/etablissements/export.csv" class="btn btn-outline">Exporter en CSV</a>
     <a href="/admin/etablissements/new" class="btn btn-primary">+ Ajouter un établissement</a>
@@ -20,7 +20,15 @@
       {% endfor %}
     </select>
   </div>
-  {% if selected_bureau_local %}
+  <div class="form-group" style="margin:0;">
+    <label for="categorie">Catégorie</label>
+    <select id="categorie" name="categorie" onchange="this.form.submit()">
+      <option value="">Toutes</option>
+      <option value="membre" {% if selected_categorie == "membre" %}selected{% endif %}>Membres affiliés</option>
+      <option value="partenaire" {% if selected_categorie == "partenaire" %}selected{% endif %}>Partenaires</option>
+    </select>
+  </div>
+  {% if selected_bureau_local or selected_categorie %}
   <a href="/admin/etablissements" class="btn btn-outline btn-sm">Réinitialiser</a>
   {% endif %}
 </form>
@@ -28,13 +36,17 @@
 {% if items %}
 <table>
   <thead>
-    <tr><th>Code</th><th>Nom</th><th>Bureau local</th><th>Statut</th><th>Adhésion</th><th>Actions</th></tr>
+    <tr><th>Code</th><th>Nom</th><th>Catégorie</th><th>Bureau local</th><th>Statut</th><th>Adhésion</th><th>Actions</th></tr>
   </thead>
   <tbody>
     {% for item in items %}
     <tr>
       <td>{{ item.code_adhesion or "—" }}</td>
       <td>{{ item.nom }}</td>
+      <td>
+        {% if item.categorie == "partenaire" %}<span class="pill pill-gold">Partenaire</span>
+        {% else %}<span class="pill pill-muted">Membre affilié</span>{% endif %}
+      </td>
       <td>{{ item.bureau_local or "—" }}</td>
       <td>
         {% if item.statut == "subventionne" %}<span class="pill pill-gold">Subventionné</span>

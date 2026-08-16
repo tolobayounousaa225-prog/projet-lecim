@@ -605,6 +605,11 @@ class Etablissement(Base):
     date_expiration_agrement: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
     # Distinction publique accordée manuellement par le BEN, affichée sur la vitrine.
     is_ecole_modele: Mapped[bool] = mapped_column(Boolean, default=False)
+    # membre | partenaire — membre = école affiliée à part entière (adhésion validée,
+    # cotisation due) ; partenaire = collabore avec la LECIM sans être membre à part
+    # entière. Distinct du statut d'agrément ministériel (statut_agrement) et de la
+    # cotisation (statut) : purement une catégorie d'affichage/organisation.
+    categorie: Mapped[str] = mapped_column(String(20), default="membre")
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -626,6 +631,10 @@ class Etablissement(Base):
             "en_cours": "Agrément en cours",
             "expire": "Agrément expiré",
         }.get(self.statut_agrement, "Agrément en cours")
+
+    @property
+    def categorie_label(self) -> str:
+        return "Partenaire" if self.categorie == "partenaire" else "Membre affilié"
 
 
 class Enseignant(Base):

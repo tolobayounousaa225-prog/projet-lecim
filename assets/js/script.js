@@ -218,8 +218,118 @@ function loadEcoles() {
 
   var regionsNav = document.getElementById("ecoles-regions-nav");
   var countEl = document.getElementById("ecoles-count-num");
+  var countLabelEl = document.getElementById("ecoles-count-label");
   var emptyEl = document.getElementById("ecoles-empty");
   var searchInput = document.getElementById("ecoles-search-input");
+  var tabs = document.querySelectorAll(".ecoles-tab");
+
+  var niveauLabels = { primaire: "Primaire", secondaire: "Secondaire", les_deux: "Primaire & secondaire" };
+  var countLabelDefault = countLabelEl ? countLabelEl.textContent : "";
+  var countLabels = { membre: countLabelDefault, partenaire: "partenaire(s)" };
+  var allEcoles = [];
+  var currentCategorie = "membre";
+
+  var slug = function (s) {
+    return "region-" + s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-");
+  };
+
+  function applySearch() {
+    var term = searchInput.value.trim().toLowerCase();
+    var visibleTotal = 0;
+    document.querySelectorAll(".ecole-region").forEach(function (regionEl) {
+      var regionMatches = regionEl.getAttribute("data-region").indexOf(term) !== -1;
+      var visibleInRegion = 0;
+      regionEl.querySelectorAll(".ecole-card").forEach(function (card) {
+        var match = regionMatches || card.getAttribute("data-nom").indexOf(term) !== -1;
+        card.style.display = match ? "" : "none";
+        if (match) visibleInRegion++;
+      });
+      regionEl.style.display = visibleInRegion ? "" : "none";
+      visibleTotal += visibleInRegion;
+    });
+    countEl.textContent = visibleTotal;
+    emptyEl.style.display = visibleTotal ? "none" : "block";
+  }
+
+  function render() {
+    var ecoles = allEcoles.filter(function (e) { return (e.categorie || "membre") === currentCategorie; });
+    if (countLabelEl) countLabelEl.textContent = countLabels[currentCategorie] || countLabelDefault;
+
+    if (!ecoles.length) {
+      regionsNav.innerHTML = "";
+      list.innerHTML = "";
+      countEl.textContent = "0";
+      emptyEl.style.display = "block";
+      return;
+    }
+    emptyEl.style.display = "none";
+
+    var groups = {};
+    ecoles.forEach(function (e) {
+      var region = (e.bureau_local || "").trim() || "Non précisé";
+      if (!groups[region]) groups[region] = [];
+      groups[region].push(e);
+    });
+    var regionNames = Object.keys(groups).sort(function (a, b) {
+      if (a === "Non précisé") return 1;
+      if (b === "Non précisé") return -1;
+      return a.localeCompare(b, "fr");
+    });
+
+    var navHtml = "";
+    regionNames.forEach(function (region) {
+      navHtml += '<a href="#' + slug(region) + '">' + escapeHtml(region) + " (" + groups[region].length + ")</a>";
+    });
+    regionsNav.innerHTML = navHtml;
+
+    var listHtml = "";
+    regionNames.forEach(function (region) {
+      var items = groups[region];
+      listHtml += '<div class="ecole-region" id="' + slug(region) + '" data-region="' + escapeHtml(region.toLowerCase()) + '">';
+      listHtml += "<h2>" + escapeHtml(region) + ' <span class="count">' + items.length + "</span></h2>";
+      listHtml += '<div class="ecole-grid">';
+      items.forEach(function (e) {
+        var logo = e.logo_url ? API_BASE + e.logo_url : "assets/img/logo.jpg";
+        var niveau = niveauLabels[e.type_enseignement] || "";
+        listHtml += '<div class="ecole-card" id="ecole-' + e.id + '" data-nom="' + escapeHtml(e.nom.toLowerCase()) + '">';
+        listHtml += '<img src="' + logo + '" alt="" loading="lazy" onerror="this.src=\'assets/img/logo.jpg\'">';
+        listHtml += '<div class="ecole-card-body"><h3>' + escapeHtml(e.nom) + "</h3>";
+        if (niveau) listHtml += '<span class="niveau">' + niveau + "</span>";
+        if (e.statut_agrement_label) {
+          listHtml += '<span class="agrement-badge ' + escapeHtml(e.statut_agrement || "") + '">' + escapeHtml(e.statut_agrement_label) + "</span>";
+        }
+        if (e.is_ecole_modele) {
+          listHtml += '<span class="ecole-modele-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 2.9 6.3 6.9.8-5.1 4.6 1.5 6.8L12 17l-6.2 3.5 1.5-6.8-5.1-4.6 6.9-.8Z"/></svg>École modèle</span>';
+        }
+        listHtml += "</div></div>";
+      });
+      listHtml += "</div></div>";
+    });
+    list.innerHTML = listHtml;
+    countEl.textContent = ecoles.length;
+
+    if (location.hash) {
+      var target = document.querySelector(location.hash);
+      if (target && target.classList.contains("ecole-card")) scrollToHighlight(target);
+    }
+
+    if (searchInput && searchInput.value.trim()) applySearch();
+  }
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      if (tab.classList.contains("active")) return;
+      tabs.forEach(function (t) {
+        t.classList.remove("active");
+        t.setAttribute("aria-selected", "false");
+      });
+      tab.classList.add("active");
+      tab.setAttribute("aria-selected", "true");
+      currentCategorie = tab.getAttribute("data-categorie");
+      if (searchInput) searchInput.value = "";
+      render();
+    });
+  });
 
   fetch(API_BASE + "/api/etablissements")
     .then(function (res) {
@@ -227,84 +337,13 @@ function loadEcoles() {
       return res.json();
     })
     .then(function (ecoles) {
-      if (!ecoles || !ecoles.length) {
+      allEcoles = ecoles || [];
+      if (!allEcoles.length) {
         emptyEl.style.display = "block";
         return;
       }
-
-      var groups = {};
-      ecoles.forEach(function (e) {
-        var region = (e.bureau_local || "").trim() || "Non précisé";
-        if (!groups[region]) groups[region] = [];
-        groups[region].push(e);
-      });
-      var regionNames = Object.keys(groups).sort(function (a, b) {
-        if (a === "Non précisé") return 1;
-        if (b === "Non précisé") return -1;
-        return a.localeCompare(b, "fr");
-      });
-
-      var slug = function (s) {
-        return "region-" + s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-");
-      };
-
-      var navHtml = "";
-      regionNames.forEach(function (region) {
-        navHtml += '<a href="#' + slug(region) + '">' + escapeHtml(region) + " (" + groups[region].length + ")</a>";
-      });
-      regionsNav.innerHTML = navHtml;
-
-      var niveauLabels = { primaire: "Primaire", secondaire: "Secondaire", les_deux: "Primaire & secondaire" };
-
-      var listHtml = "";
-      regionNames.forEach(function (region) {
-        var items = groups[region];
-        listHtml += '<div class="ecole-region" id="' + slug(region) + '" data-region="' + escapeHtml(region.toLowerCase()) + '">';
-        listHtml += "<h2>" + escapeHtml(region) + ' <span class="count">' + items.length + "</span></h2>";
-        listHtml += '<div class="ecole-grid">';
-        items.forEach(function (e) {
-          var logo = e.logo_url ? API_BASE + e.logo_url : "assets/img/logo.jpg";
-          var niveau = niveauLabels[e.type_enseignement] || "";
-          listHtml += '<div class="ecole-card" id="ecole-' + e.id + '" data-nom="' + escapeHtml(e.nom.toLowerCase()) + '">';
-          listHtml += '<img src="' + logo + '" alt="" loading="lazy" onerror="this.src=\'assets/img/logo.jpg\'">';
-          listHtml += '<div class="ecole-card-body"><h3>' + escapeHtml(e.nom) + "</h3>";
-          if (niveau) listHtml += '<span class="niveau">' + niveau + "</span>";
-          if (e.statut_agrement_label) {
-            listHtml += '<span class="agrement-badge ' + escapeHtml(e.statut_agrement || "") + '">' + escapeHtml(e.statut_agrement_label) + "</span>";
-          }
-          if (e.is_ecole_modele) {
-            listHtml += '<span class="ecole-modele-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 2.9 6.3 6.9.8-5.1 4.6 1.5 6.8L12 17l-6.2 3.5 1.5-6.8-5.1-4.6 6.9-.8Z"/></svg>École modèle</span>';
-          }
-          listHtml += "</div></div>";
-        });
-        listHtml += "</div></div>";
-      });
-      list.innerHTML = listHtml;
-      countEl.textContent = ecoles.length;
-      if (location.hash) {
-        var target = document.querySelector(location.hash);
-        if (target && target.classList.contains("ecole-card")) scrollToHighlight(target);
-      }
-
-      if (searchInput) {
-        searchInput.addEventListener("input", function () {
-          var term = searchInput.value.trim().toLowerCase();
-          var visibleTotal = 0;
-          document.querySelectorAll(".ecole-region").forEach(function (regionEl) {
-            var regionMatches = regionEl.getAttribute("data-region").indexOf(term) !== -1;
-            var visibleInRegion = 0;
-            regionEl.querySelectorAll(".ecole-card").forEach(function (card) {
-              var match = regionMatches || card.getAttribute("data-nom").indexOf(term) !== -1;
-              card.style.display = match ? "" : "none";
-              if (match) visibleInRegion++;
-            });
-            regionEl.style.display = visibleInRegion ? "" : "none";
-            visibleTotal += visibleInRegion;
-          });
-          countEl.textContent = visibleTotal;
-          emptyEl.style.display = visibleTotal ? "none" : "block";
-        });
-      }
+      render();
+      if (searchInput) searchInput.addEventListener("input", applySearch);
     })
     .catch(function () {
       emptyEl.style.display = "block";
