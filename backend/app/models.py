@@ -187,6 +187,65 @@ class User(Base):
     def can_manage_messagerie(self) -> bool:
         return self.has_module("messagerie")
 
+    def pending_action_counts(self) -> dict[str, int]:
+        """Nombre d'éléments en attente d'action par rubrique de la barre latérale
+        admin (ex : ressources non publiées, dons non confirmés...) — calculé via
+        la session déjà ouverte qui a chargé ce compte, sans dépendance
+        supplémentaire à passer depuis chaque route. Ne renvoie que les clés dont
+        le compte a le module correspondant, avec un compte strictement positif."""
+        from sqlalchemy.orm import object_session
+
+        db = object_session(self)
+        if db is None:
+            return {}
+
+        counts: dict[str, int] = {}
+        if self.can_manage_publications:
+            counts["ressources"] = (
+                db.query(RessourcePedagogique).filter(RessourcePedagogique.is_published.is_(False)).count()
+            )
+        if self.can_manage_finances:
+            counts["dons"] = db.query(DonDeclare).filter(DonDeclare.is_confirme.is_(False)).count()
+            counts["demandes_etablissements"] = (
+                db.query(DemandeEtablissement).filter(DemandeEtablissement.statut == "nouvelle").count()
+            )
+        if self.can_examine_adhesions:
+            counts["adhesion_requests"] = (
+                db.query(AdhesionRequest).filter(AdhesionRequest.etat_demande == "nouvelle").count()
+            )
+        if self.can_manage_cartes_scolaires:
+            counts["cartes_scolaires"] = db.query(CarteScolaire).filter(CarteScolaire.status == "soumise").count()
+        if self.can_manage_cartes:
+            counts["cartes"] = db.query(CarteMembre).filter(CarteMembre.status == "soumise").count()
+        if self.can_manage_messagerie:
+            counts["messagerie"] = (
+                db.query(MessageEtablissement)
+                .filter(MessageEtablissement.is_from_ben.is_(False), MessageEtablissement.is_read_by_ben.is_(False))
+                .count()
+            )
+        return {k: v for k, v in counts.items() if v}
+
+    @property
+    def unread_messages_count(self) -> int:
+        """Pour un compte établissement : nombre de messages du BEN pas encore lus
+        — pour un badge dans la barre latérale de son espace personnel."""
+        from sqlalchemy.orm import object_session
+
+        if not self.is_etablissement_account:
+            return 0
+        db = object_session(self)
+        if db is None:
+            return 0
+        return (
+            db.query(MessageEtablissement)
+            .filter(
+                MessageEtablissement.etablissement_id == self.etablissement_id,
+                MessageEtablissement.is_from_ben.is_(True),
+                MessageEtablissement.is_read_by_etablissement.is_(False),
+            )
+            .count()
+        )
+
     @property
     def is_delegation_account(self) -> bool:
         return self.delegation_id is not None

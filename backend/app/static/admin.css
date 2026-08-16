@@ -63,10 +63,17 @@ a { color: var(--green); text-decoration: none; }
 .sidebar h2 { font-size: 1.1rem; margin: 0; }
 .sidebar .tag { font-size: 0.72rem; color: rgba(255,255,255,.6); margin-bottom: 28px; display: block; }
 .sidebar nav a {
-  display: block; color: rgba(255,255,255,.85); padding: 10px 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  color: rgba(255,255,255,.85); padding: 10px 12px;
   border-radius: 8px; font-size: 0.92rem; margin-bottom: 4px;
 }
 .sidebar nav a:hover, .sidebar nav a.active { background: rgba(255,255,255,.12); color: var(--gold-light); }
+.nav-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 19px; height: 19px; padding: 0 5px; flex-shrink: 0;
+  border-radius: 999px; background: #dc3545; color: #fff;
+  font-size: 0.7rem; font-weight: 700; line-height: 1;
+}
 .sidebar nav .nav-section { margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.1); }
 .sidebar nav .nav-section:first-of-type { margin-top: 10px; }
 .sidebar nav .nav-section-title {
