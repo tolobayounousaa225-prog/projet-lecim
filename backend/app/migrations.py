@@ -167,6 +167,9 @@ def run_startup_migrations() -> None:
         if "logo_path" not in columns:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE partenaires ADD COLUMN logo_path VARCHAR(500)"))
+        if "projet_id" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE partenaires ADD COLUMN projet_id INTEGER"))
 
     if inspector.has_table("photos"):
         columns = {c["name"] for c in inspector.get_columns("photos")}

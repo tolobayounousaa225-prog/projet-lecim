@@ -840,11 +840,24 @@ function initPartenariatForm() {
   var formCard = document.getElementById("partenariat-form-card");
   var successBox = document.getElementById("partenariat-success");
 
+  var params = new URLSearchParams(location.search);
+  var projetId = params.get("projet_id");
+  var projetTitre = params.get("titre");
+  if (projetId && projetTitre) {
+    var noteEl = document.getElementById("partenariat-projet-note");
+    var titreEl = document.getElementById("partenariat-projet-titre");
+    var hiddenInput = document.getElementById("pt-projet-id");
+    if (titreEl) titreEl.textContent = projetTitre;
+    if (hiddenInput) hiddenInput.value = projetId;
+    if (noteEl) noteEl.style.display = "block";
+  }
+
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     var btn = form.querySelector("button[type=submit]");
     var original = btn.textContent;
 
+    var projetIdValue = valueOf(form, "#pt-projet-id");
     var payload = {
       nom: valueOf(form, "#pt-nom"),
       type: valueOf(form, "#pt-type"),
@@ -853,6 +866,7 @@ function initPartenariatForm() {
       contact_email: valueOf(form, "#pt-contact-email"),
       contact_telephone: valueOf(form, "#pt-contact-tel") || null,
       message: valueOf(form, "#pt-message"),
+      projet_id: projetIdValue ? parseInt(projetIdValue, 10) : null,
     };
 
     btn.disabled = true;
@@ -940,8 +954,11 @@ function loadInitiatives() {
         return;
       }
       if (emptyEl) emptyEl.style.display = "none";
+      var lang = document.documentElement.getAttribute("lang") === "ar" ? "ar" : "fr";
+      var linkLabel = lang === "ar" ? "كونوا شركاء في هذا المشروع ←" : "Devenir partenaire de ce projet →";
       container.innerHTML = items
         .map(function (p) {
+          var partenaireUrl = "partenariat.html?projet_id=" + encodeURIComponent(p.id) + "&titre=" + encodeURIComponent(p.titre);
           return (
             '<div class="initiative-card"><span class="initiative-statut">' +
             escapeHtml(p.statut_label) +
@@ -949,6 +966,7 @@ function loadInitiatives() {
             escapeHtml(p.titre) +
             "</h3>" +
             (p.description ? "<p>" + escapeHtml(p.description) + "</p>" : "") +
+            '<a href="' + partenaireUrl + '" class="initiative-partenaire-link">' + linkLabel + "</a>" +
             "</div>"
           );
         })

@@ -279,6 +279,7 @@ class PartenariatRequestCreate(BaseModel):
     contact_email: EmailStr
     contact_telephone: str | None = None
     message: str = Field(min_length=10)
+    projet_id: int | None = None
 
 
 class DonDeclareCreate(BaseModel):

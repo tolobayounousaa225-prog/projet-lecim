@@ -118,7 +118,11 @@
 <section>
   <div class="container">
     <div class="contact-form" id="partenariat-form-card" style="max-width:640px; margin:0 auto;">
+      <div id="partenariat-projet-note" class="form-note" style="display:none; background:var(--cream); border:1px solid var(--border); border-radius:10px; padding:12px 16px; margin-bottom:20px;">
+        Cette demande concerne le projet : <strong id="partenariat-projet-titre"></strong>
+      </div>
       <form id="partenariat-form">
+        <input type="hidden" id="pt-projet-id">
         <div class="form-group">
           <label for="pt-nom">Nom de l'organisation *</label>
           <input type="text" id="pt-nom" required>

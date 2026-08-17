@@ -2,6 +2,9 @@
 {% block title %}{{ "Modifier" if item else "Nouveau" }} partenaire{% endblock %}
 {% block content %}
 <h1>{{ "Modifier le partenaire" if item else "Ajouter un partenaire" }}</h1>
+{% if item and item.projet %}
+<p class="form-note" style="margin-top:-8px;">Demande déposée pour le projet : <strong>{{ item.projet.titre }}</strong></p>
+{% endif %}
 <div class="form-card">
   <form method="post" action="{{ '/admin/partenaires/' ~ item.id ~ '/edit' if item else '/admin/partenaires/new' }}" enctype="multipart/form-data">
     <div class="form-group">
