@@ -1,0 +1,53 @@
+{% extends "admin/base.html" %}
+{% block title %}Ajouter une ressource officielle{% endblock %}
+{% block content %}
+<h1>Ajouter un manuel, un programme ou un support d'enseignement islamique</h1>
+<div class="form-card">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <form method="post" action="/admin/ressources-officielles/new" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="titre">Titre / nom du livre ou du programme</label>
+      <input type="text" id="titre" name="titre" required placeholder="Ex : Manuel de lecture arabe CP1">
+    </div>
+    <div class="form-group">
+      <label for="section">Section</label>
+      <select id="section" name="section">
+        {% for key, label in sections.items() %}
+        <option value="{{ key }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="langue">Langue (optionnel)</label>
+      <select id="langue" name="langue">
+        <option value="">—</option>
+        {% for key, label in langues.items() %}
+        <option value="{{ key }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="description">Description (optionnel)</label>
+      <textarea id="description" name="description"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="photo">Photo de couverture (obligatoire)</label>
+      <input type="file" id="photo" name="photo" required accept=".jpg,.jpeg,.png,.webp,.gif">
+    </div>
+    <div class="form-group">
+      <label for="file">Document téléchargeable (PDF, optionnel — 15 Mo max)</label>
+      <input type="file" id="file" name="file" accept=".pdf,.doc,.docx,.odt">
+    </div>
+    <div class="form-group">
+      <label for="ordre">Ordre d'affichage (les plus petits nombres apparaissent en premier)</label>
+      <input type="number" id="ordre" name="ordre" value="0">
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_published" name="is_published" value="true" checked>
+      <label for="is_published" style="margin:0">Visible immédiatement sur le site</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Ajouter</button>
+    <a href="/admin/ressources-officielles" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "admin/base.html" %}
+{% block title %}Manuels, programmes &amp; enseignement islamique{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Manuels, programmes officiels &amp; enseignement islamique</h1>
+  <a href="/admin/ressources-officielles/new" class="btn btn-primary">+ Ajouter une ressource</a>
+</div>
+<p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">
+  Contenu affiché dans les sections "Manuel scolaire officiel", "Programme officiel" et
+  "Enseignement islamique et arabe" sur la page d'accueil du site.
+</p>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Photo</th><th>Titre</th><th>Section</th><th>Langue</th><th>Fichier</th><th>Visibilité</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td><img src="{{ item.photo_url }}" alt="" style="width:48px; height:64px; object-fit:cover; border-radius:4px;"></td>
+      <td>{{ item.titre }}</td>
+      <td>{{ sections.get(item.section, item.section) }}</td>
+      <td>{{ item.langue_label or "—" }}</td>
+      <td>
+        {% if item.file_url %}<a href="{{ item.file_url }}" target="_blank">{{ item.original_filename }}</a>
+        {% else %}<span style="color:var(--text-muted)">—</span>{% endif %}
+      </td>
+      <td>
+        {% if item.is_published %}<span class="pill pill-green">Publié</span>
+        {% else %}<span class="pill pill-muted">Brouillon</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <form method="post" action="/admin/ressources-officielles/{{ item.id }}/toggle">
+          <button type="submit" class="btn btn-outline btn-sm">{{ "Dépublier" if item.is_published else "Publier" }}</button>
+        </form>
+        <form method="post" action="/admin/ressources-officielles/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cette ressource ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune ressource ajoutée pour le moment.</div>
+{% endif %}
+{% endblock %}

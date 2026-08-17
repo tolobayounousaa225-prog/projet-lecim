@@ -29,6 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadUpcomingEvents();
   initPushNotifications();
   loadBaremetre();
+  loadRessourcesOfficielles();
 });
 
 function urlBase64ToUint8Array(base64String) {
@@ -1240,6 +1241,69 @@ function loadUpcomingEvents() {
         })
         .join("");
       section.style.display = "";
+    })
+    .catch(function () {});
+}
+
+var RESSOURCE_OFFICIELLE_SECTIONS_JS = ["manuel_scolaire", "programme_officiel", "enseignement_islamique"];
+var RESSOURCE_LANGUE_LABELS = {
+  fr: { arabe: "Arabe", francais: "Français" },
+  ar: { arabe: "العربية", francais: "الفرنسية" },
+};
+
+function loadRessourcesOfficielles() {
+  var hasContainer = RESSOURCE_OFFICIELLE_SECTIONS_JS.some(function (sec) {
+    return document.getElementById("ressources-" + sec + "-grid");
+  });
+  if (!hasContainer) return;
+
+  var lang = document.documentElement.getAttribute("lang") === "ar" ? "ar" : "fr";
+  var downloadLabel = lang === "ar" ? "تحميل" : "Télécharger";
+  var langueLabels = RESSOURCE_LANGUE_LABELS[lang];
+
+  fetch(API_BASE + "/api/ressources-officielles")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      var bySection = {};
+      (items || []).forEach(function (item) {
+        var sec = item.section || "autre";
+        if (!bySection[sec]) bySection[sec] = [];
+        bySection[sec].push(item);
+      });
+
+      RESSOURCE_OFFICIELLE_SECTIONS_JS.forEach(function (sec) {
+        var grid = document.getElementById("ressources-" + sec + "-grid");
+        var emptyEl = document.getElementById("ressources-" + sec + "-empty");
+        if (!grid) return;
+        var docs = bySection[sec] || [];
+        if (!docs.length) {
+          grid.innerHTML = "";
+          if (emptyEl) emptyEl.style.display = "block";
+          return;
+        }
+        if (emptyEl) emptyEl.style.display = "none";
+        grid.innerHTML = docs
+          .map(function (item) {
+            var langueLabel = langueLabels[item.langue] || "";
+            return (
+              '<div class="ressource-officielle-card">' +
+              '<div class="ressource-officielle-photo">' +
+              '<img src="' + API_BASE + item.photo_url + '" alt="' + escapeHtml(item.titre) + '" loading="lazy">' +
+              (langueLabel ? '<span class="ressource-officielle-langue">' + escapeHtml(langueLabel) + "</span>" : "") +
+              "</div>" +
+              '<div class="ressource-officielle-body">' +
+              "<h4>" + escapeHtml(item.titre) + "</h4>" +
+              (item.description ? "<p>" + escapeHtml(item.description) + "</p>" : "") +
+              (item.file_url ? '<a href="' + API_BASE + item.file_url + '" class="ressource-officielle-download" target="_blank" rel="noopener">' + downloadLabel + "</a>" : "") +
+              "</div>" +
+              "</div>"
+            );
+          })
+          .join("");
+      });
     })
     .catch(function () {});
 }
