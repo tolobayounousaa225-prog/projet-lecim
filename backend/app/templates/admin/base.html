@@ -38,6 +38,7 @@
         {% if admin.can_manage_historique %}<a href="/admin/historique" class="{{ 'active' if active == 'historique' else '' }}">Historique des présidents</a>{% endif %}
         {% if admin.can_manage_fondateurs %}<a href="/admin/fondateurs" class="{{ 'active' if active == 'fondateurs' else '' }}">Membres fondateurs</a>{% endif %}
         {% if admin.can_manage_gouvernance %}<a href="/admin/gouvernance" class="{{ 'active' if active == 'gouvernance' else '' }}">Gouvernance (photos du BEN)</a>{% endif %}
+        {% if admin.can_manage_gouvernance %}<a href="/admin/conseil-administration" class="{{ 'active' if active == 'conseil_administration' else '' }}">Conseil d'administration</a>{% endif %}
       </div>
       {% endif %}
 
