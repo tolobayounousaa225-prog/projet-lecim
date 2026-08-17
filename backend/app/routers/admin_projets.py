@@ -49,7 +49,7 @@ def projets_new_form(
     return templates.TemplateResponse(
         request,
         "admin/projet_form.html",
-        {"admin": user, "item": None, "statuts": PROJET_STATUTS, "active": "projets"},
+        {"admin": user, "item": None, "statuts": PROJET_STATUTS, "demandes_partenariat": [], "active": "projets"},
     )
 
 
@@ -88,10 +88,24 @@ def projets_edit_form(
     user: models.User = Depends(require_projets_patrimoine_access_web),
 ):
     item = db.get(models.Projet, projet_id)
+    demandes_partenariat = (
+        db.query(models.Partenaire)
+        .filter(models.Partenaire.projet_id == projet_id)
+        .order_by(models.Partenaire.created_at.desc())
+        .all()
+        if item
+        else []
+    )
     return templates.TemplateResponse(
         request,
         "admin/projet_form.html",
-        {"admin": user, "item": item, "statuts": PROJET_STATUTS, "active": "projets"},
+        {
+            "admin": user,
+            "item": item,
+            "statuts": PROJET_STATUTS,
+            "demandes_partenariat": demandes_partenariat,
+            "active": "projets",
+        },
     )
 
 
