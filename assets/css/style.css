@@ -1130,6 +1130,13 @@ section { padding: 80px 0; }
   position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
   width: 16px; height: 16px; stroke: var(--text-muted); pointer-events: none;
 }
+.ecoles-region-select {
+  padding: 10px 34px 10px 16px; border: 1px solid var(--border); border-radius: 999px;
+  font-size: 0.85rem; font-weight: 600; font-family: inherit; background: var(--cream);
+  color: var(--text-dark); cursor: pointer; max-width: 240px;
+}
+.ecoles-region-select:focus { outline: none; border-color: var(--green); background: var(--white); }
+
 .ecoles-count { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; }
 .ecoles-count strong { color: var(--green-dark); }
 .ecoles-regions {
