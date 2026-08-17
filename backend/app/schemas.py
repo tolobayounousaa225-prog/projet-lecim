@@ -198,6 +198,14 @@ class FaqOut(BaseModel):
     ordre: int
 
 
+class ObjectifPrincipeMoyenOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    categorie: str
+    contenu: str
+    ordre: int
+
+
 class FaqCreate(BaseModel):
     question: str = Field(min_length=3, max_length=500)
     reponse: str = Field(min_length=3)

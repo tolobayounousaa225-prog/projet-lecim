@@ -1,0 +1,35 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouvel" }} élément{% endblock %}
+{% block content %}
+<h1>{{ "Modifier l'élément" if item else "Ajouter un objectif, principe ou moyen" }}</h1>
+<div class="form-card">
+  <form method="post" action="{{ '/admin/objectifs-principes-moyens/' ~ item.id ~ '/edit' if item else '/admin/objectifs-principes-moyens/new' }}">
+    <div class="form-group">
+      <label for="categorie">Catégorie</label>
+      <select id="categorie" name="categorie">
+        {% for key, label in categories.items() %}
+        <option value="{{ key }}" {% if (item and item.categorie == key) or (not item and key == 'objectif') %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="contenu">Contenu</label>
+      <textarea id="contenu" name="contenu" rows="3" required placeholder="Ex : Promouvoir une éducation islamique de qualité">{{ item.contenu if item else '' }}</textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="ordre">Ordre d'affichage</label>
+        <input type="number" id="ordre" name="ordre" value="{{ item.ordre if item else 0 }}">
+      </div>
+      <div class="form-group">
+        <label style="display:flex; align-items:center; gap:8px; font-weight:400;">
+          <input type="checkbox" id="is_published" name="is_published" value="true" style="width:auto;" {% if not item or item.is_published %}checked{% endif %}>
+          Publié sur la vitrine
+        </label>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/objectifs-principes-moyens" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "admin/base.html" %}
+{% block title %}Objectifs, principes et moyens{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Objectifs, principes et moyens</h1>
+  <a href="/admin/objectifs-principes-moyens/new" class="btn btn-primary">+ Ajouter un élément</a>
+</div>
+<p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">
+  Visible par tous les visiteurs dans la section "Objectifs, principes et moyens" de la page À propos du site.
+</p>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Catégorie</th><th>Contenu</th><th>Ordre</th><th>Statut</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ categories.get(item.categorie, item.categorie) }}</td>
+      <td>{{ item.contenu }}</td>
+      <td>{{ item.ordre }}</td>
+      <td>
+        {% if item.is_published %}<span class="pill pill-green">Publié</span>
+        {% else %}<span class="pill pill-muted">Masqué</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/objectifs-principes-moyens/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/objectifs-principes-moyens/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cet élément ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun élément ajouté pour le moment.</div>
+{% endif %}
+{% endblock %}
