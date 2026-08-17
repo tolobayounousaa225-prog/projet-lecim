@@ -220,6 +220,7 @@ function loadEcoles() {
   var countLabelEl = document.getElementById("ecoles-count-label");
   var emptyEl = document.getElementById("ecoles-empty");
   var searchInput = document.getElementById("ecoles-search-input");
+  var regionSelect = document.getElementById("ecoles-region-select");
   var tabs = document.querySelectorAll(".ecoles-tab");
 
   var niveauLabels = { primaire: "Primaire", secondaire: "Secondaire", les_deux: "Primaire & secondaire" };
@@ -237,9 +238,10 @@ function loadEcoles() {
     var term = searchInput.value.trim().toLowerCase();
     var visibleTotal = 0;
     document.querySelectorAll(".ecole-zone").forEach(function (zoneEl) {
+      var zoneMatches = zoneEl.getAttribute("data-zone").indexOf(term) !== -1;
       var visibleInZone = 0;
       zoneEl.querySelectorAll(".ecole-commune").forEach(function (communeEl) {
-        var communeMatches = communeEl.getAttribute("data-commune").indexOf(term) !== -1;
+        var communeMatches = zoneMatches || communeEl.getAttribute("data-commune").indexOf(term) !== -1;
         var visibleInCommune = 0;
         communeEl.querySelectorAll(".ecole-card").forEach(function (card) {
           var match = communeMatches || card.getAttribute("data-nom").indexOf(term) !== -1;
@@ -292,6 +294,16 @@ function loadEcoles() {
     });
     regionsNav.innerHTML = navHtml;
 
+    if (regionSelect) {
+      var previousValue = regionSelect.value;
+      var optionsHtml = '<option value="">' + regionSelect.options[0].textContent + "</option>";
+      zoneNames.forEach(function (zoneName) {
+        optionsHtml += '<option value="' + escapeHtml(zoneName) + '">' + escapeHtml(zoneName) + "</option>";
+      });
+      regionSelect.innerHTML = optionsHtml;
+      regionSelect.value = zoneNames.indexOf(previousValue) !== -1 ? previousValue : "";
+    }
+
     var listHtml = "";
     zoneNames.forEach(function (zoneName) {
       var communes = zones[zoneName];
@@ -302,7 +314,7 @@ function loadEcoles() {
       });
       var zoneTotal = communeNames.reduce(function (sum, c) { return sum + communes[c].length; }, 0);
 
-      listHtml += '<div class="ecole-zone" id="' + slug("zone", zoneName) + '">';
+      listHtml += '<div class="ecole-zone" id="' + slug("zone", zoneName) + '" data-zone="' + escapeHtml(zoneName.toLowerCase()) + '">';
       listHtml += '<button type="button" class="ecole-zone-header" aria-expanded="false">';
       listHtml += '<span class="ecole-zone-name">' + escapeHtml(zoneName) + "</span>";
       listHtml += '<span class="ecole-zone-count">' + zoneTotal + "</span>" + CARET + "</button>";
@@ -392,6 +404,7 @@ function loadEcoles() {
       tab.setAttribute("aria-selected", "true");
       currentCategorie = tab.getAttribute("data-categorie");
       if (searchInput) searchInput.value = "";
+      if (regionSelect) regionSelect.value = "";
       render();
     });
   });
@@ -408,7 +421,18 @@ function loadEcoles() {
         return;
       }
       render();
-      if (searchInput) searchInput.addEventListener("input", applySearch);
+      if (searchInput) {
+        searchInput.addEventListener("input", function () {
+          if (regionSelect) regionSelect.value = "";
+          applySearch();
+        });
+      }
+      if (regionSelect) {
+        regionSelect.addEventListener("change", function () {
+          if (searchInput) searchInput.value = regionSelect.value;
+          applySearch();
+        });
+      }
     })
     .catch(function () {
       emptyEl.style.display = "block";
