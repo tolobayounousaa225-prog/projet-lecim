@@ -1042,6 +1042,12 @@ section { padding: 80px 0; }
 }
 .form-note { font-size: 0.82rem; color: var(--text-muted); margin-top: 10px; }
 
+.form-group.checkbox-row { display: flex; align-items: flex-start; gap: 10px; }
+.checkbox-row input[type="checkbox"] {
+  width: auto; flex-shrink: 0; margin-top: 3px; padding: 0; accent-color: var(--green); cursor: pointer;
+}
+.checkbox-row label { font-size: 0.85rem; font-weight: 500; line-height: 1.5; cursor: pointer; }
+
 .map-embed {
   border-radius: var(--radius);
   overflow: hidden;
