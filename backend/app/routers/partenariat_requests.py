@@ -16,10 +16,15 @@ router = APIRouter(prefix="/api/partenariat-requests", tags=["partenariat"])
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_partenariat_request(payload: schemas.PartenariatRequestCreate, db: Session = Depends(get_db)):
+    projet = db.get(models.Projet, payload.projet_id) if payload.projet_id else None
+
     notes = (
         f"Demande de partenariat reçue via le site le {datetime.date.today().isoformat()}.\n\n"
-        f"Message :\n{payload.message}"
     )
+    if projet:
+        notes += f"Concerne le projet : {projet.titre}\n\n"
+    notes += f"Message :\n{payload.message}"
+
     partenaire = models.Partenaire(
         nom=payload.nom,
         type=payload.type if payload.type in PARTENAIRE_TYPES else "autre",
@@ -29,6 +34,7 @@ def create_partenariat_request(payload: schemas.PartenariatRequestCreate, db: Se
         contact_telephone=payload.contact_telephone or None,
         statut="en_discussion",
         notes=notes,
+        projet_id=projet.id if projet else None,
     )
     db.add(partenaire)
     db.commit()

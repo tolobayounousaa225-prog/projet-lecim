@@ -1114,10 +1114,16 @@ class Partenaire(Base):
     contact_telephone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     statut: Mapped[str] = mapped_column(String(20), default="en_discussion")  # actif | en_discussion | inactif
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Renseigné uniquement si la demande a été déposée depuis un projet précis
+    # (bouton "Devenir partenaire de ce projet" sur initiatives.html) — reste vide
+    # pour une proposition de partenariat générale ou pour un projet non listé.
+    projet_id: Mapped[int | None] = mapped_column(ForeignKey("projets.id", ondelete="SET NULL"), nullable=True)
     created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
+
+    projet: Mapped["Projet | None"] = relationship()
 
     @property
     def logo_url(self) -> str | None:

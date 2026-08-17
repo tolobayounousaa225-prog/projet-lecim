@@ -661,6 +661,11 @@ ul { list-style: none; }
 
 .initiative-card h3 { margin: 8px 0; color: var(--green-dark); font-size: 1.05rem; }
 .initiative-card p { color: var(--text-muted); font-size: 0.9rem; }
+.initiative-partenaire-link {
+  display: inline-block; margin-top: 14px; font-size: 0.82rem; font-weight: 700;
+  color: var(--green);
+}
+.initiative-partenaire-link:hover { text-decoration: underline; }
 
 .initiative-statut {
   display: inline-block;
