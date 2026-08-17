@@ -31,6 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadBaremetre();
   loadRessourcesOfficielles();
   loadObjectifsPrincipesMoyens();
+  loadConseilAdministration();
 });
 
 function urlBase64ToUint8Array(base64String) {
@@ -1468,6 +1469,34 @@ function loadFondateurs() {
     })
     .catch(function () {
       // API indisponible : le message par défaut ("aucun fondateur publié") reste affiché.
+    });
+}
+
+function loadConseilAdministration() {
+  var container = document.getElementById("conseil-administration-grid");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/conseil-administration")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) return;
+      container.innerHTML = "";
+      items.forEach(function (item) {
+        var card = document.createElement("div");
+        card.className = "fondateur-card";
+        card.innerHTML =
+          '<img class="fondateur-photo" src="' + API_BASE + item.photo_url + '" alt="' + escapeHtml(item.full_name) + '">' +
+          "<h4>" + escapeHtml(item.full_name) + "</h4>" +
+          (item.role ? '<span class="fondateur-role">' + escapeHtml(item.role) + "</span>" : "") +
+          (item.mot ? '<p class="fondateur-mot">' + escapeHtml(item.mot) + "</p>" : "");
+        container.appendChild(card);
+      });
+    })
+    .catch(function () {
+      // API indisponible : le message par défaut ("aucun membre publié") reste affiché.
     });
 }
 

@@ -239,6 +239,16 @@ class FondateurOut(BaseModel):
     photo_url: str
 
 
+class ConseilAdministrationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    full_name: str
+    role: str | None
+    mot: str | None
+    ordre: int
+    photo_url: str
+
+
 # ---------- Résultats aux examens scolaires islamiques ----------
 
 class ResultatExamenOut(BaseModel):

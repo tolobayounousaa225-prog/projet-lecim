@@ -28,6 +28,7 @@ from .routers import (
     admin_cartes,
     admin_cartes_scolaires,
     admin_connexions,
+    admin_conseil_administration,
     admin_delegations,
     admin_dons,
     admin_effectifs,
@@ -56,6 +57,7 @@ from .routers import (
     admin_users,
     auth,
     carte,
+    conseil_administration,
     contact,
     delegation_portal,
     dons_public,
@@ -154,6 +156,7 @@ upload_dir.mkdir(parents=True, exist_ok=True)
 (upload_dir / "cartes_scolaires").mkdir(exist_ok=True)
 (upload_dir / "ressources_pedagogiques").mkdir(exist_ok=True)
 (upload_dir / "fondateurs").mkdir(exist_ok=True)
+(upload_dir / "conseil_administration").mkdir(exist_ok=True)
 (upload_dir / "ressources_officielles").mkdir(exist_ok=True)
 
 
@@ -233,6 +236,8 @@ app.include_router(admin_historique.router)
 app.include_router(historique.router)
 app.include_router(admin_fondateurs.router)
 app.include_router(fondateurs.router)
+app.include_router(admin_conseil_administration.router)
+app.include_router(conseil_administration.router)
 app.include_router(admin_gouvernance.router)
 app.include_router(gouvernance.router)
 app.include_router(admin_site_content.router)
