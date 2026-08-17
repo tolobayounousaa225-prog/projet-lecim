@@ -227,24 +227,32 @@ function loadEcoles() {
   var countLabels = { membre: countLabelDefault, partenaire: "partenaire(s)" };
   var allEcoles = [];
   var currentCategorie = "membre";
+  var CARET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>';
 
-  var slug = function (s) {
-    return "region-" + s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-");
+  var slug = function (prefix, s) {
+    return prefix + "-" + s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-");
   };
 
   function applySearch() {
     var term = searchInput.value.trim().toLowerCase();
     var visibleTotal = 0;
-    document.querySelectorAll(".ecole-region").forEach(function (regionEl) {
-      var regionMatches = regionEl.getAttribute("data-region").indexOf(term) !== -1;
-      var visibleInRegion = 0;
-      regionEl.querySelectorAll(".ecole-card").forEach(function (card) {
-        var match = regionMatches || card.getAttribute("data-nom").indexOf(term) !== -1;
-        card.style.display = match ? "" : "none";
-        if (match) visibleInRegion++;
+    document.querySelectorAll(".ecole-zone").forEach(function (zoneEl) {
+      var visibleInZone = 0;
+      zoneEl.querySelectorAll(".ecole-commune").forEach(function (communeEl) {
+        var communeMatches = communeEl.getAttribute("data-commune").indexOf(term) !== -1;
+        var visibleInCommune = 0;
+        communeEl.querySelectorAll(".ecole-card").forEach(function (card) {
+          var match = communeMatches || card.getAttribute("data-nom").indexOf(term) !== -1;
+          card.style.display = match ? "" : "none";
+          if (match) visibleInCommune++;
+        });
+        communeEl.style.display = visibleInCommune ? "" : "none";
+        communeEl.classList.toggle("open", term ? visibleInCommune > 0 : false);
+        visibleInZone += visibleInCommune;
       });
-      regionEl.style.display = visibleInRegion ? "" : "none";
-      visibleTotal += visibleInRegion;
+      zoneEl.style.display = visibleInZone ? "" : "none";
+      zoneEl.classList.toggle("open", term ? visibleInZone > 0 : false);
+      visibleTotal += visibleInZone;
     });
     countEl.textContent = visibleTotal;
     emptyEl.style.display = visibleTotal ? "none" : "block";
@@ -263,57 +271,115 @@ function loadEcoles() {
     }
     emptyEl.style.display = "none";
 
-    var groups = {};
+    var zones = {};
     ecoles.forEach(function (e) {
-      var region = (e.bureau_local || "").trim() || "Non précisé";
-      if (!groups[region]) groups[region] = [];
-      groups[region].push(e);
+      var zoneName = (e.district || e.region || "").trim() || "Autre";
+      var commune = (e.bureau_local || "").trim() || "Non précisée";
+      if (!zones[zoneName]) zones[zoneName] = {};
+      if (!zones[zoneName][commune]) zones[zoneName][commune] = [];
+      zones[zoneName][commune].push(e);
     });
-    var regionNames = Object.keys(groups).sort(function (a, b) {
-      if (a === "Non précisé") return 1;
-      if (b === "Non précisé") return -1;
+    var zoneNames = Object.keys(zones).sort(function (a, b) {
+      if (a === "Autre") return 1;
+      if (b === "Autre") return -1;
       return a.localeCompare(b, "fr");
     });
 
     var navHtml = "";
-    regionNames.forEach(function (region) {
-      navHtml += '<a href="#' + slug(region) + '">' + escapeHtml(region) + " (" + groups[region].length + ")</a>";
+    zoneNames.forEach(function (zoneName) {
+      var total = Object.keys(zones[zoneName]).reduce(function (sum, c) { return sum + zones[zoneName][c].length; }, 0);
+      navHtml += '<a href="#' + slug("zone", zoneName) + '">' + escapeHtml(zoneName) + " (" + total + ")</a>";
     });
     regionsNav.innerHTML = navHtml;
 
     var listHtml = "";
-    regionNames.forEach(function (region) {
-      var items = groups[region];
-      listHtml += '<div class="ecole-region" id="' + slug(region) + '" data-region="' + escapeHtml(region.toLowerCase()) + '">';
-      listHtml += "<h2>" + escapeHtml(region) + ' <span class="count">' + items.length + "</span></h2>";
-      listHtml += '<div class="ecole-grid">';
-      items.forEach(function (e) {
-        var logo = e.logo_url ? API_BASE + e.logo_url : "assets/img/logo.jpg";
-        var niveau = niveauLabels[e.type_enseignement] || "";
-        listHtml += '<div class="ecole-card" id="ecole-' + e.id + '" data-nom="' + escapeHtml(e.nom.toLowerCase()) + '">';
-        listHtml += '<img src="' + logo + '" alt="" loading="lazy" onerror="this.src=\'assets/img/logo.jpg\'">';
-        listHtml += '<div class="ecole-card-body"><h3>' + escapeHtml(e.nom) + "</h3>";
-        if (niveau) listHtml += '<span class="niveau">' + niveau + "</span>";
-        if (e.statut_agrement_label) {
-          listHtml += '<span class="agrement-badge ' + escapeHtml(e.statut_agrement || "") + '">' + escapeHtml(e.statut_agrement_label) + "</span>";
-        }
-        if (e.is_ecole_modele) {
-          listHtml += '<span class="ecole-modele-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 2.9 6.3 6.9.8-5.1 4.6 1.5 6.8L12 17l-6.2 3.5 1.5-6.8-5.1-4.6 6.9-.8Z"/></svg>École modèle</span>';
-        }
-        listHtml += "</div></div>";
+    zoneNames.forEach(function (zoneName) {
+      var communes = zones[zoneName];
+      var communeNames = Object.keys(communes).sort(function (a, b) {
+        if (a === "Non précisée") return 1;
+        if (b === "Non précisée") return -1;
+        return a.localeCompare(b, "fr");
       });
-      listHtml += "</div></div>";
+      var zoneTotal = communeNames.reduce(function (sum, c) { return sum + communes[c].length; }, 0);
+
+      listHtml += '<div class="ecole-zone" id="' + slug("zone", zoneName) + '">';
+      listHtml += '<button type="button" class="ecole-zone-header" aria-expanded="false">';
+      listHtml += '<span class="ecole-zone-name">' + escapeHtml(zoneName) + "</span>";
+      listHtml += '<span class="ecole-zone-count">' + zoneTotal + "</span>" + CARET + "</button>";
+      listHtml += '<div class="ecole-zone-body"><div class="ecole-zone-body-inner">';
+
+      communeNames.forEach(function (communeName) {
+        var items = communes[communeName];
+        listHtml += '<div class="ecole-commune" id="' + slug("commune", zoneName + "-" + communeName) + '" data-commune="' + escapeHtml(communeName.toLowerCase()) + '">';
+        listHtml += '<button type="button" class="ecole-commune-header" aria-expanded="false">';
+        listHtml += '<span class="ecole-commune-name">' + escapeHtml(communeName) + "</span>";
+        listHtml += '<span class="ecole-commune-count">' + items.length + "</span>" + CARET + "</button>";
+        listHtml += '<div class="ecole-commune-body"><div class="ecole-commune-body-inner"><div class="ecole-grid">';
+
+        items.forEach(function (e) {
+          var logo = e.logo_url ? API_BASE + e.logo_url : "assets/img/logo.jpg";
+          var niveau = niveauLabels[e.type_enseignement] || "";
+          listHtml += '<div class="ecole-card" id="ecole-' + e.id + '" data-nom="' + escapeHtml(e.nom.toLowerCase()) + '">';
+          listHtml += '<img src="' + logo + '" alt="" loading="lazy" onerror="this.src=\'assets/img/logo.jpg\'">';
+          listHtml += '<div class="ecole-card-body"><h3>' + escapeHtml(e.nom) + "</h3>";
+          if (niveau) listHtml += '<span class="niveau">' + niveau + "</span>";
+          if (e.statut_agrement_label) {
+            listHtml += '<span class="agrement-badge ' + escapeHtml(e.statut_agrement || "") + '">' + escapeHtml(e.statut_agrement_label) + "</span>";
+          }
+          if (e.is_ecole_modele) {
+            listHtml += '<span class="ecole-modele-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 2.9 6.3 6.9.8-5.1 4.6 1.5 6.8L12 17l-6.2 3.5 1.5-6.8-5.1-4.6 6.9-.8Z"/></svg>École modèle</span>';
+          }
+          listHtml += "</div></div>";
+        });
+
+        listHtml += "</div></div></div></div>";
+      });
+
+      listHtml += "</div></div></div>";
     });
     list.innerHTML = listHtml;
     countEl.textContent = ecoles.length;
 
     if (location.hash) {
       var target = document.querySelector(location.hash);
-      if (target && target.classList.contains("ecole-card")) scrollToHighlight(target);
+      if (target && target.classList.contains("ecole-card")) {
+        var communeAncestor = target.closest(".ecole-commune");
+        var zoneAncestor = target.closest(".ecole-zone");
+        if (communeAncestor) communeAncestor.classList.add("open");
+        if (zoneAncestor) zoneAncestor.classList.add("open");
+        scrollToHighlight(target);
+      } else if (target && (target.classList.contains("ecole-zone") || target.id.indexOf("zone-") === 0)) {
+        target.classList.add("open");
+      }
     }
 
     if (searchInput && searchInput.value.trim()) applySearch();
   }
+
+  list.addEventListener("click", function (e) {
+    var zoneHeader = e.target.closest(".ecole-zone-header");
+    if (zoneHeader) {
+      var zone = zoneHeader.closest(".ecole-zone");
+      var willOpen = !zone.classList.contains("open");
+      zone.classList.toggle("open", willOpen);
+      zoneHeader.setAttribute("aria-expanded", String(willOpen));
+      return;
+    }
+    var communeHeader = e.target.closest(".ecole-commune-header");
+    if (communeHeader) {
+      var commune = communeHeader.closest(".ecole-commune");
+      var willOpenC = !commune.classList.contains("open");
+      commune.classList.toggle("open", willOpenC);
+      communeHeader.setAttribute("aria-expanded", String(willOpenC));
+    }
+  });
+
+  regionsNav.addEventListener("click", function (e) {
+    var link = e.target.closest("a");
+    if (!link) return;
+    var target = document.querySelector(link.getAttribute("href"));
+    if (target) target.classList.add("open");
+  });
 
   tabs.forEach(function (tab) {
     tab.addEventListener("click", function () {

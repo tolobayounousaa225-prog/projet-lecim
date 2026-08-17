@@ -365,6 +365,8 @@ def etablissements_list(
     request: Request,
     bureau_local: str | None = None,
     categorie: str | None = None,
+    district: str | None = None,
+    region: str | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
@@ -373,12 +375,30 @@ def etablissements_list(
         query = query.filter(models.Etablissement.bureau_local == bureau_local)
     if categorie in ("membre", "partenaire"):
         query = query.filter(models.Etablissement.categorie == categorie)
+    if district:
+        query = query.filter(models.Etablissement.district == district)
+    if region:
+        query = query.filter(models.Etablissement.region == region)
     items = query.order_by(models.Etablissement.nom).all()
     bureaux_locaux = [
         row[0] for row in db.query(models.Etablissement.bureau_local)
         .filter(models.Etablissement.bureau_local.isnot(None))
         .distinct()
         .order_by(models.Etablissement.bureau_local)
+        .all()
+    ]
+    districts = [
+        row[0] for row in db.query(models.Etablissement.district)
+        .filter(models.Etablissement.district.isnot(None))
+        .distinct()
+        .order_by(models.Etablissement.district)
+        .all()
+    ]
+    regions = [
+        row[0] for row in db.query(models.Etablissement.region)
+        .filter(models.Etablissement.region.isnot(None))
+        .distinct()
+        .order_by(models.Etablissement.region)
         .all()
     ]
     return templates.TemplateResponse(
@@ -388,8 +408,12 @@ def etablissements_list(
             "admin": user,
             "items": items,
             "bureaux_locaux": bureaux_locaux,
+            "districts": districts,
+            "regions": regions,
             "selected_bureau_local": bureau_local,
             "selected_categorie": categorie,
+            "selected_district": district,
+            "selected_region": region,
             "active": "etablissements",
         },
     )
@@ -406,12 +430,12 @@ def etablissements_export_csv(
     items = db.query(models.Etablissement).order_by(models.Etablissement.nom).all()
     buffer = _io.StringIO()
     writer = csv.writer(buffer, delimiter=";")
-    writer.writerow(["Code adhesion", "Nom", "Categorie", "Bureau local", "Statut", "Date adhesion", "Telephone", "Email", "Agrement"])
+    writer.writerow(["Code adhesion", "Nom", "Categorie", "District", "Region", "Commune (bureau local)", "Statut", "Date adhesion", "Telephone", "Email", "Agrement"])
     for e in items:
         writer.writerow([
             e.code_adhesion or "", e.nom,
             "Partenaire" if e.categorie == "partenaire" else "Membre affilie",
-            e.bureau_local or "",
+            e.district or "", e.region or "", e.bureau_local or "",
             "Subventionne" if e.statut == "subventionne" else "Non subventionne",
             e.date_adhesion.isoformat() if e.date_adhesion else "",
             e.contact_telephone or "", e.contact_email or "", e.numero_agrement or "",
@@ -440,6 +464,8 @@ async def etablissements_create(
     nom: str = Form(...),
     code_adhesion: str = Form(""),
     bureau_local: str = Form(""),
+    district: str = Form(""),
+    region: str = Form(""),
     statut: str = Form("non_subventionne"),
     date_adhesion: str = Form(""),
     contact_email: str = Form(""),
@@ -469,6 +495,8 @@ async def etablissements_create(
         nom=nom,
         code_adhesion=code_adhesion or None,
         bureau_local=bureau_local or None,
+        district=district or None,
+        region=region or None,
         statut=statut if statut in COTISATION_RULES else "non_subventionne",
         date_adhesion=datetime.date.fromisoformat(date_adhesion) if date_adhesion else None,
         contact_email=contact_email or None,
@@ -512,6 +540,8 @@ async def etablissements_update(
     nom: str = Form(...),
     code_adhesion: str = Form(""),
     bureau_local: str = Form(""),
+    district: str = Form(""),
+    region: str = Form(""),
     statut: str = Form("non_subventionne"),
     date_adhesion: str = Form(""),
     contact_email: str = Form(""),
@@ -544,6 +574,8 @@ async def etablissements_update(
         etablissement.nom = nom
         etablissement.code_adhesion = code_adhesion or None
         etablissement.bureau_local = bureau_local or None
+        etablissement.district = district or None
+        etablissement.region = region or None
         etablissement.statut = statut if statut in COTISATION_RULES else "non_subventionne"
         etablissement.date_adhesion = (
             datetime.date.fromisoformat(date_adhesion) if date_adhesion else None

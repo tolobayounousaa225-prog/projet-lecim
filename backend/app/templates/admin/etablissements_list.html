@@ -12,9 +12,27 @@
 
 <form method="get" action="/admin/etablissements" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; align-items:flex-end;">
   <div class="form-group" style="margin:0;">
-    <label for="bureau_local">Bureau local / région</label>
-    <select id="bureau_local" name="bureau_local" onchange="this.form.submit()">
+    <label for="district">District</label>
+    <select id="district" name="district" onchange="this.form.submit()">
       <option value="">Tous</option>
+      {% for d in districts %}
+      <option value="{{ d }}" {% if selected_district == d %}selected{% endif %}>{{ d }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="form-group" style="margin:0;">
+    <label for="region">Région</label>
+    <select id="region" name="region" onchange="this.form.submit()">
+      <option value="">Toutes</option>
+      {% for r in regions %}
+      <option value="{{ r }}" {% if selected_region == r %}selected{% endif %}>{{ r }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="form-group" style="margin:0;">
+    <label for="bureau_local">Commune / ville</label>
+    <select id="bureau_local" name="bureau_local" onchange="this.form.submit()">
+      <option value="">Toutes</option>
       {% for b in bureaux_locaux %}
       <option value="{{ b }}" {% if selected_bureau_local == b %}selected{% endif %}>{{ b }}</option>
       {% endfor %}
@@ -28,7 +46,7 @@
       <option value="partenaire" {% if selected_categorie == "partenaire" %}selected{% endif %}>Partenaires</option>
     </select>
   </div>
-  {% if selected_bureau_local or selected_categorie %}
+  {% if selected_bureau_local or selected_categorie or selected_district or selected_region %}
   <a href="/admin/etablissements" class="btn btn-outline btn-sm">Réinitialiser</a>
   {% endif %}
 </form>
@@ -36,7 +54,7 @@
 {% if items %}
 <table>
   <thead>
-    <tr><th>Code</th><th>Nom</th><th>Catégorie</th><th>Bureau local</th><th>Statut</th><th>Adhésion</th><th>Actions</th></tr>
+    <tr><th>Code</th><th>Nom</th><th>Catégorie</th><th>District</th><th>Région</th><th>Commune</th><th>Statut</th><th>Adhésion</th><th>Actions</th></tr>
   </thead>
   <tbody>
     {% for item in items %}
@@ -47,6 +65,8 @@
         {% if item.categorie == "partenaire" %}<span class="pill pill-gold">Partenaire</span>
         {% else %}<span class="pill pill-muted">Membre affilié</span>{% endif %}
       </td>
+      <td>{{ item.district or "—" }}</td>
+      <td>{{ item.region or "—" }}</td>
       <td>{{ item.bureau_local or "—" }}</td>
       <td>
         {% if item.statut == "subventionne" %}<span class="pill pill-gold">Subventionné</span>

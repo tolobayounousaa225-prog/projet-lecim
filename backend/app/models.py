@@ -586,7 +586,12 @@ class Etablissement(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     code_adhesion: Mapped[str | None] = mapped_column(String(30), nullable=True)
     nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    # bureau_local sert de commune/ville. district (Abidjan/Yamoussoukro) et region
+    # (les 31 autres régions) sont mutuellement exclusifs — texte libre saisi par
+    # l'admin, pré-rempli au démarrage quand la commune est reconnue (voir migrations.py).
     bureau_local: Mapped[str] = mapped_column(String(255), nullable=True)
+    district: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    region: Mapped[str | None] = mapped_column(String(255), nullable=True)
     delegation_id: Mapped[int | None] = mapped_column(ForeignKey("delegations.id"), nullable=True)
     statut: Mapped[str] = mapped_column(String(30), default="non_subventionne")  # subventionne | non_subventionne
     date_adhesion: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)

@@ -61,8 +61,17 @@
       {% if item and item.logo_url %}<p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Laissez vide pour conserver le logo actuel.</p>{% endif %}
     </div>
     <div class="form-group">
-      <label for="bureau_local">Bureau local / région</label>
+      <label for="bureau_local">Commune / ville (bureau local)</label>
       <input type="text" id="bureau_local" name="bureau_local" value="{{ item.bureau_local if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="district">District autonome (Abidjan ou Yamoussoukro uniquement)</label>
+      <input type="text" id="district" name="district" placeholder="Ex : District Autonome d'Abidjan" value="{{ item.district if item and item.district else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="region">Région (si l'établissement n'est pas dans un district autonome)</label>
+      <input type="text" id="region" name="region" placeholder="Ex : Gbêkê" value="{{ item.region if item and item.region else '' }}">
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Renseignez soit le district, soit la région — pas les deux.</p>
     </div>
     <div class="form-group">
       <label for="statut">Statut</label>
