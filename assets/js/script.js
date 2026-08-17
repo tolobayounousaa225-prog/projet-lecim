@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initPushNotifications();
   loadBaremetre();
   loadRessourcesOfficielles();
+  loadObjectifsPrincipesMoyens();
 });
 
 function urlBase64ToUint8Array(base64String) {
@@ -1302,6 +1303,46 @@ function loadRessourcesOfficielles() {
               "</div>"
             );
           })
+          .join("");
+      });
+    })
+    .catch(function () {});
+}
+
+var OPM_CATEGORIES_JS = ["objectif", "principe", "moyen"];
+
+function loadObjectifsPrincipesMoyens() {
+  var hasContainer = OPM_CATEGORIES_JS.some(function (cat) {
+    return document.getElementById("opm-" + cat + "-list");
+  });
+  if (!hasContainer) return;
+
+  fetch(API_BASE + "/api/objectifs-principes-moyens")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      var byCategorie = {};
+      (items || []).forEach(function (item) {
+        var cat = item.categorie || "autre";
+        if (!byCategorie[cat]) byCategorie[cat] = [];
+        byCategorie[cat].push(item);
+      });
+
+      OPM_CATEGORIES_JS.forEach(function (cat) {
+        var list = document.getElementById("opm-" + cat + "-list");
+        var emptyEl = document.getElementById("opm-" + cat + "-empty");
+        if (!list) return;
+        var entries = byCategorie[cat] || [];
+        if (!entries.length) {
+          list.innerHTML = "";
+          if (emptyEl) emptyEl.style.display = "block";
+          return;
+        }
+        if (emptyEl) emptyEl.style.display = "none";
+        list.innerHTML = entries
+          .map(function (item) { return "<li>" + escapeHtml(item.contenu) + "</li>"; })
           .join("");
       });
     })

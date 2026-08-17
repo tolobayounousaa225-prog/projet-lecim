@@ -539,6 +539,33 @@ class Faq(Base):
     )
 
 
+OPM_CATEGORIES = {
+    "objectif": "Objectif",
+    "principe": "Principe",
+    "moyen": "Moyen",
+}
+
+
+class ObjectifPrincipeMoyen(Base):
+    """Élément (objectif, principe ou moyen d'action) de l'identité de la LECIM,
+    publié dans la section « Objectifs, principes et moyens » de la page À propos."""
+
+    __tablename__ = "objectifs_principes_moyens"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    categorie: Mapped[str] = mapped_column(String(20), nullable=False)
+    contenu: Mapped[str] = mapped_column(Text, nullable=False)
+    ordre: Mapped[int] = mapped_column(Integer, default=0)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    @property
+    def categorie_label(self) -> str:
+        return OPM_CATEGORIES.get(self.categorie, self.categorie)
+
+
 class RessourcePedagogique(Base):
     """Support pédagogique partagé entre écoles membres (manuel, fiche de cours...),
     déposé par un établissement puis modéré par le BEN avant publication."""

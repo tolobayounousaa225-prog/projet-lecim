@@ -41,6 +41,7 @@ from .routers import (
     admin_gouvernance,
     admin_historique,
     admin_messagerie,
+    admin_objectifs_principes_moyens,
     admin_partenaires,
     admin_password_resets,
     admin_projets,
@@ -66,6 +67,7 @@ from .routers import (
     gouvernance,
     historique,
     news,
+    objectifs_principes_moyens,
     partenaires_public,
     partenariat_requests,
     password_reset,
@@ -194,6 +196,7 @@ app.include_router(dons_public.router)
 app.include_router(projets_public.router)
 app.include_router(photos_public.router)
 app.include_router(faq_public.router)
+app.include_router(objectifs_principes_moyens.router)
 app.include_router(search_public.router)
 app.include_router(push_public.router)
 app.include_router(publications.router)
@@ -210,6 +213,7 @@ app.include_router(admin_cartes_scolaires.router)
 app.include_router(admin_partenaires.router)
 app.include_router(admin_projets.router)
 app.include_router(admin_faq.router)
+app.include_router(admin_objectifs_principes_moyens.router)
 app.include_router(admin_social.router)
 app.include_router(admin_publications.router)
 app.include_router(admin_ressources.router)
