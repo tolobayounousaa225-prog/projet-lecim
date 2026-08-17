@@ -44,4 +44,36 @@
     <a href="/admin/projets" class="btn btn-outline">Annuler</a>
   </form>
 </div>
+
+{% if item %}
+<div class="form-card" style="margin-top:24px;">
+  <h3 style="margin-top:0;">Demandes de partenariat pour ce projet ({{ demandes_partenariat|length }})</h3>
+  {% if demandes_partenariat %}
+  <table>
+    <thead>
+      <tr><th>Nom</th><th>Contact</th><th>Statut</th><th>Reçue le</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for d in demandes_partenariat %}
+      <tr>
+        <td>{{ d.nom }}</td>
+        <td>{{ d.contact_nom or "" }}{% if d.contact_email %}<br>{{ d.contact_email }}{% endif %}</td>
+        <td>
+          {% if d.statut == "actif" %}<span class="pill pill-green">Actif</span>
+          {% elif d.statut == "inactif" %}<span class="pill pill-muted">Inactif</span>
+          {% else %}<span class="pill pill-gold">En discussion</span>{% endif %}
+        </td>
+        <td>{{ d.created_at.strftime("%d/%m/%Y") }}</td>
+        <td class="actions-cell">
+          <a href="/admin/partenaires/{{ d.id }}/edit" class="btn btn-outline btn-sm">Voir / traiter</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">Aucune demande de partenariat pour ce projet pour le moment.</div>
+  {% endif %}
+</div>
+{% endif %}
 {% endblock %}

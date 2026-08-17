@@ -25,7 +25,15 @@ def partenaires_list(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_partenaires_access_web),
 ):
-    items = db.query(models.Partenaire).order_by(models.Partenaire.nom).all()
+    # Les demandes liées à un projet précis se gèrent depuis la fiche de ce
+    # projet (/admin/projets/{id}/edit), pas ici — cette liste ne montre que
+    # les partenariats généraux, non rattachés à un projet publié.
+    items = (
+        db.query(models.Partenaire)
+        .filter(models.Partenaire.projet_id.is_(None))
+        .order_by(models.Partenaire.nom)
+        .all()
+    )
     return templates.TemplateResponse(
         request,
         "admin/partenaires_list.html",
