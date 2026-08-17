@@ -1267,6 +1267,58 @@ PUBLICATION_CATEGORIES = {
 }
 
 
+# ---------- Ressources officielles (manuels scolaires, programmes, enseignement islamique) ----------
+
+RESSOURCE_OFFICIELLE_SECTIONS = {
+    "manuel_scolaire": "Manuel scolaire officiel",
+    "programme_officiel": "Programme officiel",
+    "enseignement_islamique": "Enseignement islamique et arabe",
+}
+
+RESSOURCE_OFFICIELLE_LANGUES = {
+    "arabe": "Arabe",
+    "francais": "Français",
+}
+
+
+class RessourceOfficielle(Base):
+    """Manuel scolaire, programme officiel ou support d'enseignement islamique/arabe
+    mis en avant sur la page d'accueil du site public, avec photo de couverture."""
+
+    __tablename__ = "ressources_officielles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    section: Mapped[str] = mapped_column(String(30), nullable=False)
+    langue: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    photo_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    original_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    ordre: Mapped[int] = mapped_column(Integer, default=0)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=True)
+    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    uploaded_by: Mapped["User | None"] = relationship()
+
+    @property
+    def section_label(self) -> str:
+        return RESSOURCE_OFFICIELLE_SECTIONS.get(self.section, self.section)
+
+    @property
+    def langue_label(self) -> str:
+        return RESSOURCE_OFFICIELLE_LANGUES.get(self.langue, "") if self.langue else ""
+
+    @property
+    def photo_url(self) -> str:
+        return f"/api/ressources-officielles/{self.id}/photo"
+
+    @property
+    def file_url(self) -> str | None:
+        return f"/api/ressources-officielles/{self.id}/file" if self.file_path else None
+
+
 # ---------- Historique des anciens présidents (site vitrine) ----------
 
 class HistoriquePresident(Base):

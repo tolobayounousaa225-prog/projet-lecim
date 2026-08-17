@@ -166,6 +166,22 @@ class PublicationOut(BaseModel):
     file_url: str
 
 
+# ---------- Ressources officielles (manuels, programmes, enseignement islamique) ----------
+
+class RessourceOfficielleOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    titre: str
+    section: str
+    section_label: str
+    langue: str | None
+    langue_label: str
+    description: str | None
+    photo_url: str
+    file_url: str | None
+    original_filename: str | None
+
+
 class PhotoPublicOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int

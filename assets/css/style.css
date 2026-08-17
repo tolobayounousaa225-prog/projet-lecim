@@ -1113,6 +1113,41 @@ section { padding: 80px 0; }
 .doc-card .doc-meta { font-size: 0.76rem; color: var(--text-muted); margin-bottom: 10px; }
 .doc-card a.btn { font-size: 0.82rem; padding: 8px 16px; }
 
+/* ===== Ressources officielles (manuels, programmes, enseignement islamique) ===== */
+.ressource-officielle-group { margin-bottom: 44px; }
+.ressource-officielle-group:last-child { margin-bottom: 0; }
+.ressource-officielle-group-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--gold);
+}
+.ressource-officielle-group-head h3 {
+  font-size: 1.15rem; font-weight: 800; color: var(--green-dark); margin: 0;
+}
+.ressource-officielle-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 22px;
+}
+.ressource-officielle-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow); transition: transform .2s ease, box-shadow .2s ease;
+  display: flex; flex-direction: column;
+}
+.ressource-officielle-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+.ressource-officielle-photo { position: relative; width: 100%; aspect-ratio: 3 / 4; background: var(--cream); overflow: hidden; }
+.ressource-officielle-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ressource-officielle-langue {
+  position: absolute; top: 10px; inset-inline-end: 10px; background: var(--gold); color: var(--green-dark);
+  font-size: 0.72rem; font-weight: 800; padding: 4px 11px; border-radius: 999px; letter-spacing: .02em;
+}
+.ressource-officielle-body { padding: 16px 16px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.ressource-officielle-body h4 { font-size: 0.95rem; color: var(--green-dark); margin: 0; line-height: 1.35; }
+.ressource-officielle-body p { font-size: 0.82rem; color: var(--text-muted); margin: 0; }
+.ressource-officielle-download {
+  margin-top: auto; align-self: flex-start; font-size: 0.8rem; font-weight: 700; color: var(--green);
+  border: 1px solid var(--green); border-radius: 999px; padding: 6px 16px; text-decoration: none;
+  transition: background .15s ease, color .15s ease;
+}
+.ressource-officielle-download:hover { background: var(--green); color: var(--white); }
+
 /* ===== Écoles affiliées ===== */
 .ecoles-tabs {
   display: flex; gap: 8px; margin-bottom: 20px; background: var(--cream);
