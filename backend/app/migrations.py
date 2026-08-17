@@ -48,6 +48,76 @@ LOCALITE_COORDS: dict[str, tuple[float, float]] = {
 }
 
 
+# Correspondance commune/ville (valeur de bureau_local) -> (district, region) selon
+# le découpage administratif officiel de Côte d'Ivoire (2 districts autonomes,
+# Abidjan et Yamoussoukro, en dehors du découpage en 31 régions). Un district
+# autonome n'a pas de région propre — les deux champs sont mutuellement exclusifs.
+# Sert uniquement de pré-remplissage au démarrage pour les communes reconnues ;
+# toute commune absente de cette table laisse district/région vides, à compléter
+# manuellement par l'admin.
+COMMUNE_DISTRICT_REGION: dict[str, tuple[str | None, str | None]] = {
+    "ABIDJAN/ABOBO": ("District Autonome d'Abidjan", None),
+    "ABOBO": ("District Autonome d'Abidjan", None),
+    "ADJAME": ("District Autonome d'Abidjan", None),
+    "ANYAMA": ("District Autonome d'Abidjan", None),
+    "KOUMASSI": ("District Autonome d'Abidjan", None),
+    "YOPOUGON": ("District Autonome d'Abidjan", None),
+    "YAMOUSSOUKRO": ("District Autonome de Yamoussoukro", None),
+    "ABENGOUROU": (None, "Indénié-Djuablin"),
+    "ABOISSO": (None, "Sud-Comoé"),
+    "ADZOPE": (None, "La Mé"),
+    "BONDOUKOU": (None, "Gontougo"),
+    "BOUAKE": (None, "Gbêkê"),
+    "BOUNA": (None, "Bounkani"),
+    "DABOU": (None, "Grands-Ponts"),
+    "DIANRA": (None, "Worodougou"),
+    "DIVO": (None, "Lôh-Djiboua"),
+    "FERKE": (None, "Tchologo"),
+    "GBELEBAN": (None, "Folon"),
+    "GRAND LAHOU": (None, "Grands-Ponts"),
+    "ISSIA": (None, "Haut-Sassandra"),
+    "KORHOGO": (None, "Poro"),
+    "LAKOTA": (None, "Lôh-Djiboua"),
+    "MAN": (None, "Tonkpi"),
+    "MANKONO": (None, "Béré"),
+    "ODIENNE": (None, "Kabadougou"),
+    "SAN PEDRO": (None, "San-Pédro"),
+    "SEGUELA": (None, "Worodougou"),
+    "SINFRA": (None, "Marahoué"),
+    "SOUBRE": (None, "Nawa"),
+    "VAVOUA": (None, "Haut-Sassandra"),
+    "ZOUKOUGBEU": (None, "Haut-Sassandra"),
+}
+
+
+def _deduire_district_region_depuis_commune() -> None:
+    """Pré-remplit district/région à partir de la commune (bureau_local) pour les
+    établissements qui n'ont ni l'un ni l'autre — ne touche jamais un
+    établissement où l'un des deux est déjà renseigné (saisie manuelle admin
+    prioritaire), et laisse vide si la commune n'est pas dans la table de
+    correspondance ci-dessus."""
+    from . import models
+
+    db = SessionLocal()
+    try:
+        etablissements = (
+            db.query(models.Etablissement)
+            .filter(models.Etablissement.district.is_(None), models.Etablissement.region.is_(None))
+            .all()
+        )
+        changed = False
+        for e in etablissements:
+            match = COMMUNE_DISTRICT_REGION.get((e.bureau_local or "").strip().upper())
+            if not match:
+                continue
+            e.district, e.region = match
+            changed = True
+        if changed:
+            db.commit()
+    finally:
+        db.close()
+
+
 def _geocode_etablissements_sans_coordonnees() -> None:
     """Positionne sur la carte les établissements dont la localité est reconnue
     mais qui n'ont pas encore de coordonnées précises — ne touche jamais un
@@ -118,6 +188,12 @@ def run_startup_migrations() -> None:
         if "categorie" not in columns:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE etablissements ADD COLUMN categorie VARCHAR(20) DEFAULT 'membre'"))
+        if "district" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE etablissements ADD COLUMN district VARCHAR(255)"))
+        if "region" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE etablissements ADD COLUMN region VARCHAR(255)"))
 
     if inspector.has_table("news_posts"):
         columns = {c["name"] for c in inspector.get_columns("news_posts")}
@@ -132,3 +208,4 @@ def run_startup_migrations() -> None:
 
     if inspector.has_table("etablissements"):
         _geocode_etablissements_sans_coordonnees()
+        _deduire_district_region_depuis_commune()

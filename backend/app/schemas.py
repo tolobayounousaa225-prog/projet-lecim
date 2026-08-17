@@ -256,6 +256,8 @@ class EtablissementPublicOut(BaseModel):
     id: int
     nom: str
     bureau_local: str | None = None
+    district: str | None = None
+    region: str | None = None
     directeur_nom: str | None = None
     type_enseignement: str
     logo_url: str | None = None
