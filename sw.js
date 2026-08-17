@@ -3,7 +3,7 @@
 // Les appels à l'API (données dynamiques, autre origine) ne sont jamais mis en cache
 // ici : ils passent toujours par le réseau, pour ne jamais servir de contenu périmé.
 
-var CACHE_NAME = "lecim-shell-v12";
+var CACHE_NAME = "lecim-shell-v13";
 
 var APP_SHELL = [
   "/assets/css/style.css",
