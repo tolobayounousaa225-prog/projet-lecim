@@ -75,16 +75,21 @@ def resultats_create(
     type_examen: str = Form(...),
     nombre_inscrits: int = Form(0),
     nombre_admis: int = Form(0),
+    nombre_admis_garcons: int = Form(0),
+    nombre_admis_filles: int = Form(0),
     is_published: bool = Form(False),
     db: Session = Depends(get_db),
     user: models.User = Depends(require_resultats_examens_access_web),
 ):
+    admis = min(nombre_admis, nombre_inscrits) if nombre_inscrits else nombre_admis
     resultat = models.ResultatExamen(
         etablissement_id=etablissement_id,
         annee_scolaire=annee_scolaire,
         type_examen=type_examen,
         nombre_inscrits=nombre_inscrits,
-        nombre_admis=min(nombre_admis, nombre_inscrits) if nombre_inscrits else nombre_admis,
+        nombre_admis=admis,
+        nombre_admis_garcons=min(nombre_admis_garcons, admis) if admis else 0,
+        nombre_admis_filles=min(nombre_admis_filles, admis) if admis else 0,
         is_published=is_published,
         recorded_by_id=user.id,
     )
@@ -122,17 +127,22 @@ def resultats_update(
     type_examen: str = Form(...),
     nombre_inscrits: int = Form(0),
     nombre_admis: int = Form(0),
+    nombre_admis_garcons: int = Form(0),
+    nombre_admis_filles: int = Form(0),
     is_published: bool = Form(False),
     db: Session = Depends(get_db),
     user: models.User = Depends(require_resultats_examens_access_web),
 ):
     resultat = db.get(models.ResultatExamen, resultat_id)
     if resultat:
+        admis = min(nombre_admis, nombre_inscrits) if nombre_inscrits else nombre_admis
         resultat.etablissement_id = etablissement_id
         resultat.annee_scolaire = annee_scolaire
         resultat.type_examen = type_examen
         resultat.nombre_inscrits = nombre_inscrits
-        resultat.nombre_admis = min(nombre_admis, nombre_inscrits) if nombre_inscrits else nombre_admis
+        resultat.nombre_admis = admis
+        resultat.nombre_admis_garcons = min(nombre_admis_garcons, admis) if admis else 0
+        resultat.nombre_admis_filles = min(nombre_admis_filles, admis) if admis else 0
         resultat.is_published = is_published
         audit.log(
             db, user, "update", "Résultat d'examen", resultat.id,

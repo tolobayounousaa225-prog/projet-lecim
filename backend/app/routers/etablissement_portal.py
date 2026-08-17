@@ -281,16 +281,21 @@ def etablissement_resultats_create(
     type_examen: str = Form(...),
     nombre_inscrits: int = Form(0),
     nombre_admis: int = Form(0),
+    nombre_admis_garcons: int = Form(0),
+    nombre_admis_filles: int = Form(0),
     db: Session = Depends(get_db),
     user: models.User = Depends(require_etab_resultats_web),
 ):
     etablissement = user.etablissement
+    admis = min(nombre_admis, nombre_inscrits) if nombre_inscrits else nombre_admis
     resultat = models.ResultatExamen(
         etablissement_id=etablissement.id,
         annee_scolaire=annee_scolaire,
         type_examen=type_examen,
         nombre_inscrits=nombre_inscrits,
-        nombre_admis=min(nombre_admis, nombre_inscrits) if nombre_inscrits else nombre_admis,
+        nombre_admis=admis,
+        nombre_admis_garcons=min(nombre_admis_garcons, admis) if admis else 0,
+        nombre_admis_filles=min(nombre_admis_filles, admis) if admis else 0,
         is_published=False,
         recorded_by_id=user.id,
     )

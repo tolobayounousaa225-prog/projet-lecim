@@ -479,6 +479,8 @@ function loadResultatsExamens() {
               '<td style="padding:10px; border-bottom:1px solid var(--border);">' + escapeHtml(r.type_examen) + "</td>" +
               '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;">' + r.nombre_inscrits + "</td>" +
               '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;">' + r.nombre_admis + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;">' + (r.nombre_admis_garcons || 0) + "</td>" +
+              '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;">' + (r.nombre_admis_filles || 0) + "</td>" +
               '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right; font-weight:700; color:var(--green-dark);">' + r.taux_reussite + "%</td>";
             tbody.appendChild(tr);
           });

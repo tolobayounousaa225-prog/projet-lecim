@@ -204,6 +204,15 @@ def run_startup_migrations() -> None:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE news_posts ADD COLUMN push_sent_at TIMESTAMP"))
 
+    if inspector.has_table("resultats_examens"):
+        columns = {c["name"] for c in inspector.get_columns("resultats_examens")}
+        if "nombre_admis_garcons" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE resultats_examens ADD COLUMN nombre_admis_garcons INTEGER DEFAULT 0"))
+        if "nombre_admis_filles" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE resultats_examens ADD COLUMN nombre_admis_filles INTEGER DEFAULT 0"))
+
     Base.metadata.create_all(bind=engine)
 
     if inspector.has_table("etablissements"):

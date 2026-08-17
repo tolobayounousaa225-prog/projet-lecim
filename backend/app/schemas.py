@@ -225,6 +225,8 @@ class ResultatExamenOut(BaseModel):
     type_examen: str
     nombre_inscrits: int
     nombre_admis: int
+    nombre_admis_garcons: int
+    nombre_admis_filles: int
     taux_reussite: float
 
 

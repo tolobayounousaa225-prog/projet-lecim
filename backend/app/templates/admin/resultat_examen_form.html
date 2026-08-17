@@ -29,6 +29,14 @@
       <label for="nombre_admis">Nombre d'admis</label>
       <input type="number" id="nombre_admis" name="nombre_admis" min="0" value="{{ item.nombre_admis if item else 0 }}">
     </div>
+    <div class="form-group">
+      <label for="nombre_admis_garcons">Dont garçons admis</label>
+      <input type="number" id="nombre_admis_garcons" name="nombre_admis_garcons" min="0" value="{{ item.nombre_admis_garcons if item else 0 }}">
+    </div>
+    <div class="form-group">
+      <label for="nombre_admis_filles">Dont filles admises</label>
+      <input type="number" id="nombre_admis_filles" name="nombre_admis_filles" min="0" value="{{ item.nombre_admis_filles if item else 0 }}">
+    </div>
     <div class="form-group checkbox-row">
       <input type="checkbox" id="is_published" name="is_published" value="true" {% if (item and item.is_published) or not item %}checked{% endif %}>
       <label for="is_published" style="margin:0">Visible sur le site</label>

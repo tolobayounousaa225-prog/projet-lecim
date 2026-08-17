@@ -675,6 +675,10 @@ class ResultatExamen(Base):
     type_examen: Mapped[str] = mapped_column(String(120), nullable=False)
     nombre_inscrits: Mapped[int] = mapped_column(Integer, default=0)
     nombre_admis: Mapped[int] = mapped_column(Integer, default=0)
+    # Détail du nombre d'admis par sexe — informatif, ne doit pas nécessairement
+    # sommer à nombre_admis (les écoles ne renseignent pas toujours ce détail).
+    nombre_admis_garcons: Mapped[int] = mapped_column(Integer, default=0)
+    nombre_admis_filles: Mapped[int] = mapped_column(Integer, default=0)
     is_published: Mapped[bool] = mapped_column(Boolean, default=True)
     recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(

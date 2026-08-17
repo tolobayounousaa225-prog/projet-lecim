@@ -894,11 +894,12 @@ def export_resultats_csv(db: Session) -> str:
     )
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";")
-    writer.writerow(["Annee scolaire", "Etablissement", "Examen", "Inscrits", "Admis", "Taux de reussite (%)", "Publie"])
+    writer.writerow(["Annee scolaire", "Etablissement", "Examen", "Inscrits", "Admis", "Dont garcons", "Dont filles", "Taux de reussite (%)", "Publie"])
     for r in items:
         writer.writerow([
             r.annee_scolaire, r.etablissement.nom, r.type_examen,
-            r.nombre_inscrits, r.nombre_admis, r.taux_reussite, "Oui" if r.is_published else "Non",
+            r.nombre_inscrits, r.nombre_admis, r.nombre_admis_garcons, r.nombre_admis_filles,
+            r.taux_reussite, "Oui" if r.is_published else "Non",
         ])
     return buffer.getvalue()
 
