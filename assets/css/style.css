@@ -950,6 +950,44 @@ section { padding: 80px 0; }
 .org-card h4 { color: var(--green-dark); margin-bottom: 4px; }
 .org-card span { font-size: 0.82rem; color: var(--text-muted); }
 
+/* ===== Organigramme pyramidal (Président > Vice-présidents > Secrétariats) ===== */
+.gouvernance-wrap { display: flex; flex-direction: column; gap: 40px; }
+.orgchart-scroll { overflow-x: auto; padding-bottom: 8px; }
+.orgchart, .orgchart ul {
+  list-style: none; margin: 0; padding: 24px 0 0; position: relative;
+  display: flex; justify-content: center;
+}
+.orgchart { padding-top: 0; }
+.orgchart li {
+  position: relative; padding: 24px 14px 0; display: flex; flex-direction: column; align-items: center;
+}
+.orgchart li::before, .orgchart li::after {
+  content: ""; position: absolute; top: 0; right: 50%; width: 50%; height: 24px;
+  border-top: 2px solid var(--border);
+}
+.orgchart li::after { right: auto; left: 50%; border-left: 2px solid var(--border); }
+.orgchart li:only-child { padding-top: 0; }
+.orgchart li:only-child::before, .orgchart li:only-child::after { display: none; }
+.orgchart li:first-child::before, .orgchart li:last-child::after { border: none; }
+.orgchart li:last-child::before { border-right: 2px solid var(--border); border-radius: 0 6px 0 0; }
+.orgchart li:first-child::after { border-radius: 6px 0 0 0; }
+.orgchart > li { padding-top: 0; }
+.orgchart > li::before, .orgchart > li::after { display: none; }
+.orgchart ul::before {
+  content: ""; position: absolute; top: 0; left: 50%; width: 0; height: 24px;
+  border-left: 2px solid var(--border);
+}
+.orgchart .org-card { width: 190px; margin: 0; }
+.org-card-president { background: linear-gradient(160deg, var(--green), var(--green-dark)); border-color: var(--green-dark); }
+.org-card-president h4, .org-card-president span { color: var(--white); }
+.org-card-president .org-avatar { background: linear-gradient(135deg, var(--gold), var(--gold-light)); }
+.org-card-vice_president { border-color: var(--gold); width: 170px; }
+.org-card-secretariat { padding: 16px; width: 150px; }
+.org-card-secretariat .org-avatar { width: 54px; height: 54px; font-size: 1rem; }
+.org-card-secretariat h4 { font-size: 0.9rem; }
+.org-card-secretariat span { font-size: 0.75rem; }
+.gouvernance-autres-title { font-size: 1rem; font-weight: 800; color: var(--green-dark); margin-bottom: 16px; text-align: center; }
+
 .about-media-logo {
   background: var(--white);
   border-radius: 50%;

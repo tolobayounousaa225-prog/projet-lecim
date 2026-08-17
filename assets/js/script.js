@@ -1437,6 +1437,29 @@ function initialsFrom(text) {
   return letters.join("") || text.charAt(0).toUpperCase();
 }
 
+function orgCardInner(item) {
+  var titulaireInner = item.titulaire_photo_url
+    ? '<img src="' + API_BASE + item.titulaire_photo_url + '" alt="' + escapeHtml(item.titulaire_nom || item.poste_title) + '">'
+    : initialsFrom(item.titulaire_nom || item.poste_title);
+
+  var adjointBadge = "";
+  if (item.adjoint_nom || item.adjoint_photo_url) {
+    var adjointInner = item.adjoint_photo_url
+      ? '<img src="' + API_BASE + item.adjoint_photo_url + '" alt="' + escapeHtml(item.adjoint_nom || "") + '">'
+      : initialsFrom(item.adjoint_nom);
+    adjointBadge = '<div class="org-adjoint-badge" title="Adjoint' + (item.adjoint_nom ? " : " + escapeHtml(item.adjoint_nom) : "") + '">' + adjointInner + "</div>";
+  }
+
+  return (
+    '<div class="org-avatar-wrap">' +
+    '<div class="org-avatar">' + titulaireInner + "</div>" +
+    adjointBadge +
+    "</div>" +
+    "<h4>" + escapeHtml(item.titulaire_nom || item.poste_title) + "</h4>" +
+    "<span>" + escapeHtml(item.poste_subtitle || item.poste_title) + "</span>"
+  );
+}
+
 function loadGouvernance() {
   var container = document.getElementById("gouvernance-grid");
   if (!container) return;
@@ -1448,32 +1471,61 @@ function loadGouvernance() {
     })
     .then(function (items) {
       if (!items || !items.length) return;
-      container.innerHTML = "";
-      items.forEach(function (item) {
-        var card = document.createElement("div");
-        card.className = "org-card";
 
-        var titulaireInner = item.titulaire_photo_url
-          ? '<img src="' + API_BASE + item.titulaire_photo_url + '" alt="' + escapeHtml(item.titulaire_nom || item.poste_title) + '">'
-          : initialsFrom(item.titulaire_nom || item.poste_title);
+      var lang = document.documentElement.getAttribute("lang") === "ar" ? "ar" : "fr";
+      var autresTitle = lang === "ar" ? "أعضاء آخرون في المكتب" : "Autres membres du Bureau Exécutif";
 
-        var adjointBadge = "";
-        if (item.adjoint_nom || item.adjoint_photo_url) {
-          var adjointInner = item.adjoint_photo_url
-            ? '<img src="' + API_BASE + item.adjoint_photo_url + '" alt="' + escapeHtml(item.adjoint_nom || "") + '">'
-            : initialsFrom(item.adjoint_nom);
-          adjointBadge = '<div class="org-adjoint-badge" title="Adjoint' + (item.adjoint_nom ? " : " + escapeHtml(item.adjoint_nom) : "") + '">' + adjointInner + "</div>";
-        }
+      var pyramidItems = items.filter(function (i) { return i.niveau && i.niveau !== "autre"; });
+      var autresItems = items.filter(function (i) { return !i.niveau || i.niveau === "autre"; });
 
-        card.innerHTML =
-          '<div class="org-avatar-wrap">' +
-          '<div class="org-avatar">' + titulaireInner + "</div>" +
-          adjointBadge +
-          "</div>" +
-          "<h4>" + escapeHtml(item.titulaire_nom || item.poste_title) + "</h4>" +
-          '<span>' + escapeHtml(item.poste_subtitle || item.poste_title) + "</span>";
-        container.appendChild(card);
+      var byId = {};
+      pyramidItems.forEach(function (i) { byId[i.id] = i; });
+      var childrenOf = {};
+      pyramidItems.forEach(function (i) {
+        var pid = i.parent_id && byId[i.parent_id] ? i.parent_id : "__root__";
+        if (!childrenOf[pid]) childrenOf[pid] = [];
+        childrenOf[pid].push(i);
       });
+
+      var NIVEAU_ORDER = { president: 0, vice_president: 1, secretariat: 2 };
+      function sortNodes(arr) {
+        return arr.slice().sort(function (a, b) {
+          var na = NIVEAU_ORDER[a.niveau] != null ? NIVEAU_ORDER[a.niveau] : 9;
+          var nb = NIVEAU_ORDER[b.niveau] != null ? NIVEAU_ORDER[b.niveau] : 9;
+          if (na !== nb) return na - nb;
+          return (a.ordre || 0) - (b.ordre || 0);
+        });
+      }
+
+      function renderNode(item, visited) {
+        if (visited.indexOf(item.id) !== -1) return "";
+        var nextVisited = visited.concat([item.id]);
+        var kids = sortNodes(childrenOf[item.id] || []);
+        var html = '<li><div class="org-card org-card-' + item.niveau + '">' + orgCardInner(item) + "</div>";
+        if (kids.length) {
+          html += "<ul>" + kids.map(function (k) { return renderNode(k, nextVisited); }).join("") + "</ul>";
+        }
+        html += "</li>";
+        return html;
+      }
+
+      var roots = sortNodes(childrenOf["__root__"] || []);
+      var pyramidHtml = roots.length
+        ? '<div class="orgchart-scroll"><ul class="orgchart">' +
+          roots.map(function (r) { return renderNode(r, []); }).join("") +
+          "</ul></div>"
+        : "";
+
+      var autresHtml = autresItems.length
+        ? "<div>" +
+          '<div class="gouvernance-autres-title">' + escapeHtml(autresTitle) + "</div>" +
+          '<div class="org-grid">' +
+          autresItems.map(function (i) { return '<div class="org-card">' + orgCardInner(i) + "</div>"; }).join("") +
+          "</div></div>"
+        : "";
+
+      if (!pyramidHtml && !autresHtml) return;
+      container.innerHTML = pyramidHtml + autresHtml;
     })
     .catch(function () {
       // API indisponible : l'organigramme statique par défaut reste affiché.

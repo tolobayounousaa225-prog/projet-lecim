@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from .. import models
 from ..database import get_db
 from ..deps import require_gouvernance_access_web
+from ..models import GOUVERNANCE_NIVEAUX
 from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
 
 router = APIRouter(prefix="/admin/gouvernance", tags=["admin-gouvernance"])
@@ -29,22 +30,32 @@ def gouvernance_list(
         .order_by(models.GouvernanceMembre.ordre, models.GouvernanceMembre.id)
         .all()
     )
+    by_id = {m.id: m for m in items}
     return templates.TemplateResponse(
         request,
         "admin/gouvernance_list.html",
-        {"admin": user, "items": items, "active": "gouvernance"},
+        {"admin": user, "items": items, "by_id": by_id, "niveaux": GOUVERNANCE_NIVEAUX, "active": "gouvernance"},
     )
 
 
 @router.get("/new")
 def gouvernance_new_form(
     request: Request,
+    db: Session = Depends(get_db),
     user: models.User = Depends(require_gouvernance_access_web),
 ):
+    parents = (
+        db.query(models.GouvernanceMembre)
+        .order_by(models.GouvernanceMembre.ordre, models.GouvernanceMembre.id)
+        .all()
+    )
     return templates.TemplateResponse(
         request,
         "admin/gouvernance_form.html",
-        {"admin": user, "item": None, "active": "gouvernance", "error": None},
+        {
+            "admin": user, "item": None, "parents": parents,
+            "niveaux": GOUVERNANCE_NIVEAUX, "active": "gouvernance", "error": None,
+        },
     )
 
 
@@ -53,6 +64,7 @@ async def _handle_photo(
     photo: UploadFile | None,
     user: models.User,
     item: models.GouvernanceMembre | None,
+    parents: list[models.GouvernanceMembre],
 ):
     """Sauvegarde une photo uploadée. Retourne (chemin_relatif, réponse_erreur_ou_None)."""
     if photo is None or not photo.filename:
@@ -64,10 +76,25 @@ async def _handle_photo(
         error_response = templates.TemplateResponse(
             request,
             "admin/gouvernance_form.html",
-            {"admin": user, "item": item, "active": "gouvernance", "error": str(exc)},
+            {
+                "admin": user, "item": item, "parents": parents,
+                "niveaux": GOUVERNANCE_NIVEAUX, "active": "gouvernance", "error": str(exc),
+            },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
         return None, error_response
+
+
+def _parse_parent_id(raw: str, self_id: int | None, valid_ids: set[int]) -> int | None:
+    if not raw:
+        return None
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return None
+    if parsed == self_id or parsed not in valid_ids:
+        return None
+    return parsed
 
 
 @router.post("/new")
@@ -77,6 +104,8 @@ async def gouvernance_create(
     poste_subtitle: str = Form(""),
     titulaire_nom: str = Form(""),
     adjoint_nom: str = Form(""),
+    niveau: str = Form("autre"),
+    parent_id: str = Form(""),
     ordre: int = Form(0),
     is_published: bool = Form(False),
     titulaire_photo: UploadFile | None = None,
@@ -84,10 +113,15 @@ async def gouvernance_create(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_gouvernance_access_web),
 ):
-    titulaire_photo_path, error = await _handle_photo(request, titulaire_photo, user, None)
+    parents = (
+        db.query(models.GouvernanceMembre)
+        .order_by(models.GouvernanceMembre.ordre, models.GouvernanceMembre.id)
+        .all()
+    )
+    titulaire_photo_path, error = await _handle_photo(request, titulaire_photo, user, None, parents)
     if error:
         return error
-    adjoint_photo_path, error = await _handle_photo(request, adjoint_photo, user, None)
+    adjoint_photo_path, error = await _handle_photo(request, adjoint_photo, user, None, parents)
     if error:
         return error
 
@@ -98,6 +132,8 @@ async def gouvernance_create(
         titulaire_photo_path=titulaire_photo_path,
         adjoint_nom=adjoint_nom or None,
         adjoint_photo_path=adjoint_photo_path,
+        niveau=niveau if niveau in GOUVERNANCE_NIVEAUX else "autre",
+        parent_id=_parse_parent_id(parent_id, None, {p.id for p in parents}),
         ordre=ordre,
         is_published=is_published,
         uploaded_by_id=user.id,
@@ -115,10 +151,19 @@ def gouvernance_edit_form(
     user: models.User = Depends(require_gouvernance_access_web),
 ):
     item = db.get(models.GouvernanceMembre, membre_id)
+    parents = (
+        db.query(models.GouvernanceMembre)
+        .filter(models.GouvernanceMembre.id != membre_id)
+        .order_by(models.GouvernanceMembre.ordre, models.GouvernanceMembre.id)
+        .all()
+    )
     return templates.TemplateResponse(
         request,
         "admin/gouvernance_form.html",
-        {"admin": user, "item": item, "active": "gouvernance", "error": None},
+        {
+            "admin": user, "item": item, "parents": parents,
+            "niveaux": GOUVERNANCE_NIVEAUX, "active": "gouvernance", "error": None,
+        },
     )
 
 
@@ -130,6 +175,8 @@ async def gouvernance_update(
     poste_subtitle: str = Form(""),
     titulaire_nom: str = Form(""),
     adjoint_nom: str = Form(""),
+    niveau: str = Form("autre"),
+    parent_id: str = Form(""),
     ordre: int = Form(0),
     is_published: bool = Form(False),
     titulaire_photo: UploadFile | None = None,
@@ -141,10 +188,17 @@ async def gouvernance_update(
     if not membre:
         return RedirectResponse(url="/admin/gouvernance", status_code=status.HTTP_303_SEE_OTHER)
 
-    titulaire_photo_path, error = await _handle_photo(request, titulaire_photo, user, membre)
+    parents = (
+        db.query(models.GouvernanceMembre)
+        .filter(models.GouvernanceMembre.id != membre_id)
+        .order_by(models.GouvernanceMembre.ordre, models.GouvernanceMembre.id)
+        .all()
+    )
+
+    titulaire_photo_path, error = await _handle_photo(request, titulaire_photo, user, membre, parents)
     if error:
         return error
-    adjoint_photo_path, error = await _handle_photo(request, adjoint_photo, user, membre)
+    adjoint_photo_path, error = await _handle_photo(request, adjoint_photo, user, membre, parents)
     if error:
         return error
 
@@ -163,6 +217,8 @@ async def gouvernance_update(
     membre.poste_subtitle = poste_subtitle or None
     membre.titulaire_nom = titulaire_nom or None
     membre.adjoint_nom = adjoint_nom or None
+    membre.niveau = niveau if niveau in GOUVERNANCE_NIVEAUX else "autre"
+    membre.parent_id = _parse_parent_id(parent_id, membre_id, {p.id for p in parents})
     membre.ordre = ordre
     membre.is_published = is_published
     db.commit()
