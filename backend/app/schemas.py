@@ -357,4 +357,6 @@ class GouvernanceOut(BaseModel):
     titulaire_photo_url: str | None
     adjoint_nom: str | None
     adjoint_photo_url: str | None
+    niveau: str
+    parent_id: int | None
     ordre: int

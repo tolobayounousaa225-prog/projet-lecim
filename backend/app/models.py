@@ -1375,9 +1375,19 @@ class MembreFondateur(Base):
 
 # ---------- Gouvernance (organigramme public du BEN) ----------
 
+GOUVERNANCE_NIVEAUX = {
+    "president": "Président (sommet de l'organigramme)",
+    "vice_president": "Vice-président",
+    "secretariat": "Secrétariat (rattaché à un vice-président)",
+    "autre": "Autre poste du bureau",
+}
+
+
 class GouvernanceMembre(Base):
     """Poste du Bureau Exécutif National affiché dans la section « Gouvernance » du site
-    public, avec la photo du titulaire et, le cas échéant, de son adjoint."""
+    public, avec la photo du titulaire et, le cas échéant, de son adjoint. Le président,
+    les vice-présidents et les secrétariats qui leur sont rattachés forment un organigramme
+    pyramidal (via niveau + parent_id) ; les autres postes restent affichés à part."""
 
     __tablename__ = "gouvernance_membres"
 
@@ -1388,6 +1398,10 @@ class GouvernanceMembre(Base):
     titulaire_photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     adjoint_nom: Mapped[str | None] = mapped_column(String(255), nullable=True)
     adjoint_photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    niveau: Mapped[str] = mapped_column(String(20), default="autre")
+    parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("gouvernance_membres.id", ondelete="SET NULL"), nullable=True
+    )
     ordre: Mapped[int] = mapped_column(Integer, default=0)
     is_published: Mapped[bool] = mapped_column(Boolean, default=True)
     uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
@@ -1395,7 +1409,14 @@ class GouvernanceMembre(Base):
         DateTime, default=datetime.datetime.utcnow
     )
 
-    uploaded_by: Mapped["User | None"] = relationship()
+    uploaded_by: Mapped["User | None"] = relationship(foreign_keys=[uploaded_by_id])
+    parent: Mapped["GouvernanceMembre | None"] = relationship(
+        remote_side="GouvernanceMembre.id", foreign_keys=[parent_id]
+    )
+
+    @property
+    def niveau_label(self) -> str:
+        return GOUVERNANCE_NIVEAUX.get(self.niveau, self.niveau)
 
     @property
     def titulaire_photo_url(self) -> str | None:

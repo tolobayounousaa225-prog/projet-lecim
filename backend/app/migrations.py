@@ -216,6 +216,18 @@ def run_startup_migrations() -> None:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE resultats_examens ADD COLUMN nombre_admis_filles INTEGER DEFAULT 0"))
 
+    if inspector.has_table("gouvernance_membres"):
+        columns = {c["name"] for c in inspector.get_columns("gouvernance_membres")}
+        if "niveau" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE gouvernance_membres ADD COLUMN niveau VARCHAR(20) DEFAULT 'autre'"))
+        if "parent_id" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text(
+                    "ALTER TABLE gouvernance_membres ADD COLUMN parent_id INTEGER "
+                    "REFERENCES gouvernance_membres(id) ON DELETE SET NULL"
+                ))
+
     Base.metadata.create_all(bind=engine)
 
     if inspector.has_table("etablissements"):
