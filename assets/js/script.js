@@ -727,7 +727,7 @@ function initNavDropdowns() {
 }
 
 function initContactForm() {
-  var form = document.querySelector(".contact-form form");
+  var form = document.getElementById("contact-form");
   if (!form) return;
 
   form.addEventListener("submit", function (e) {
