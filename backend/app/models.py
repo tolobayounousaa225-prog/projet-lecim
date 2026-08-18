@@ -613,9 +613,14 @@ class Etablissement(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     code_adhesion: Mapped[str | None] = mapped_column(String(30), nullable=True)
     nom: Mapped[str] = mapped_column(String(255), nullable=False)
-    # bureau_local sert de commune/ville. district (Abidjan/Yamoussoukro) et region
-    # (les 31 autres régions) sont mutuellement exclusifs — texte libre saisi par
-    # l'admin, pré-rempli au démarrage quand la commune est reconnue (voir migrations.py).
+    # bureau_local sert de commune/ville. La Côte d'Ivoire compte 14 districts au
+    # total (2 districts autonomes — Abidjan, Yamoussoukro — plus 12 districts
+    # « ordinaires ») et 31 régions, chacune rattachée à l'un des 12 districts
+    # ordinaires (les districts autonomes n'ont pas de région propre). Un
+    # établissement d'un district ordinaire a donc normalement les deux champs
+    # renseignés (district ET région) ; un établissement d'Abidjan ou Yamoussoukro
+    # n'a que le district. Texte libre saisi par l'admin, pré-rempli au démarrage
+    # quand la commune est reconnue (voir migrations.py).
     bureau_local: Mapped[str] = mapped_column(String(255), nullable=True)
     district: Mapped[str | None] = mapped_column(String(255), nullable=True)
     region: Mapped[str | None] = mapped_column(String(255), nullable=True)
