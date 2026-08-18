@@ -9,23 +9,28 @@ from .. import audit, models
 from ..database import get_db
 from ..deps import require_site_content_access_web
 from ..site_content_fields import SITE_CONTENT_FIELDS
+from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
 
 router = APIRouter(prefix="/admin/site-content", tags=["admin-site-content"])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
+SITE_CONTENT_IMAGES_DIR = UPLOAD_ROOT / "site_content"
+
 
 def _grouped_fields(values: dict[str, str]) -> list[tuple[str, list[dict]]]:
     groups: dict[str, list[dict]] = {}
     for key, meta in SITE_CONTENT_FIELDS.items():
+        value = values.get(key, "")
         groups.setdefault(meta["group"], []).append(
             {
                 "key": key,
                 "label": meta["label"],
                 "type": meta["type"],
                 "default": meta["default"],
-                "value": values.get(key, ""),
+                "value": value,
+                "image_url": f"/api/site-content/{key}/image" if meta["type"] == "image" and value else None,
             }
         )
     return list(groups.items())
@@ -54,13 +59,34 @@ async def site_content_save(
     user: models.User = Depends(require_site_content_access_web),
 ):
     form = await request.form()
-    for key in SITE_CONTENT_FIELDS:
-        value = str(form.get(key, "")).strip()
+    for key, meta in SITE_CONTENT_FIELDS.items():
         row = db.get(models.SiteContent, key)
         if not row:
             row = models.SiteContent(key=key)
             db.add(row)
-        row.value = value or None
+
+        if meta["type"] == "image":
+            if form.get("remove_" + key):
+                old_path = UPLOAD_ROOT / row.value if row.value else None
+                row.value = None
+                if old_path and old_path.exists():
+                    old_path.unlink()
+            else:
+                upload = form.get(key)
+                if upload is not None and getattr(upload, "filename", None):
+                    try:
+                        stored_name, _ = await _save_upload(upload, SITE_CONTENT_IMAGES_DIR, ALLOWED_PHOTO_EXT)
+                    except ValueError:
+                        stored_name = None
+                    if stored_name:
+                        old_path = UPLOAD_ROOT / row.value if row.value else None
+                        row.value = f"site_content/{stored_name}"
+                        if old_path and old_path.exists():
+                            old_path.unlink()
+        else:
+            value = str(form.get(key, "")).strip()
+            row.value = value or None
+
         row.updated_by_id = user.id
     audit.log(db, user, "update", "Contenu du site", None, "A modifié le contenu du site vitrine")
     db.commit()

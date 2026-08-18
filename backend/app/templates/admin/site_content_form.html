@@ -12,7 +12,7 @@
 </div>
 {% endif %}
 
-<form method="post" action="/admin/site-content">
+<form method="post" action="/admin/site-content" enctype="multipart/form-data">
   {% for group_name, fields in groups %}
   <div class="form-card" style="max-width:none; margin-bottom:22px;">
     <strong style="color:var(--green-dark); display:block; margin-bottom:16px;">{{ group_name }}</strong>
@@ -21,6 +21,19 @@
       <label for="{{ field.key }}">{{ field.label }}</label>
       {% if field.type == "textarea" %}
       <textarea id="{{ field.key }}" name="{{ field.key }}" placeholder="{{ field.default }}">{{ field.value }}</textarea>
+      {% elif field.type == "image" %}
+      {% if field.image_url %}
+      <div style="margin-bottom:10px;">
+        <img src="{{ field.image_url }}" alt="" style="max-width:260px; max-height:150px; object-fit:cover; border-radius:var(--radius-sm); display:block;">
+      </div>
+      {% endif %}
+      <input type="file" id="{{ field.key }}" name="{{ field.key }}" accept=".jpg,.jpeg,.png,.webp,.gif">
+      {% if field.image_url %}
+      <label style="display:flex; align-items:center; gap:8px; font-weight:400; font-size:0.85rem; margin-top:8px;">
+        <input type="checkbox" name="remove_{{ field.key }}" value="true" style="width:auto;">
+        Retirer cette image (revenir à l'apparence par défaut)
+      </label>
+      {% endif %}
       {% else %}
       <input type="text" id="{{ field.key }}" name="{{ field.key }}" placeholder="{{ field.default }}" value="{{ field.value }}">
       {% endif %}

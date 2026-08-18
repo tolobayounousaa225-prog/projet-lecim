@@ -158,6 +158,7 @@ upload_dir.mkdir(parents=True, exist_ok=True)
 (upload_dir / "fondateurs").mkdir(exist_ok=True)
 (upload_dir / "conseil_administration").mkdir(exist_ok=True)
 (upload_dir / "ressources_officielles").mkdir(exist_ok=True)
+(upload_dir / "site_content").mkdir(exist_ok=True)
 
 
 @app.exception_handler(NotAuthenticatedException)

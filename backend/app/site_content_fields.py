@@ -28,6 +28,12 @@ SITE_CONTENT_FIELDS: dict[str, dict] = {
             "pour la réussite de ses élèves."
         ),
     },
+    "hero_background_image": {
+        "group": "Accueil — Bannière principale",
+        "label": "Photo de fond (optionnelle — remplace le dégradé par une photo, avec un voile sombre pour garder le texte lisible)",
+        "type": "image",
+        "default": "",
+    },
     "exam_title": {
         "group": "Accueil — Bandeau Examens",
         "label": "Titre du bandeau",
