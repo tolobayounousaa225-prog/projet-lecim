@@ -1,0 +1,44 @@
+{% extends "admin/base.html" %}
+{% block title %}Newsletter{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Newsletter mensuelle</h1>
+  <form method="post" action="/admin/newsletter/envoyer-maintenant" onsubmit="return confirm('Envoyer maintenant le résumé des actualités du mois précédent à tous les abonnés actifs ?');">
+    <button type="submit" class="btn btn-gold">Envoyer maintenant</button>
+  </form>
+</div>
+<p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">
+  Inscription libre-service depuis la vitrine. Un résumé des actualités du mois est envoyé automatiquement le 1er de chaque mois à {{ nb_actifs }} abonné(s) actif(s).
+</p>
+
+{% if envoyes is not none %}
+<div class="empty-state" style="background:var(--green-light); color:var(--green-dark);">Envoi effectué : {{ envoyes }} e-mail(s) envoyé(s).</div>
+{% endif %}
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>E-mail</th><th>Inscrit le</th><th>Statut</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.email }}</td>
+      <td>{{ item.created_at.strftime("%d/%m/%Y") }}</td>
+      <td>
+        {% if item.is_active %}<span class="pill pill-green">Actif</span>
+        {% else %}<span class="pill pill-muted">Désabonné</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <form method="post" action="/admin/newsletter/{{ item.id }}/delete" onsubmit="return confirm('Retirer cet abonné ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Retirer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun abonné pour le moment.</div>
+{% endif %}
+{% endblock %}

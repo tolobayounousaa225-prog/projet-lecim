@@ -524,6 +524,21 @@ class PushSubscription(Base):
     )
 
 
+class NewsletterSubscriber(Base):
+    """Abonné à la newsletter mensuelle de la LECIM (résumé des actualités du mois) —
+    désinscription libre-service via un jeton unique inclus dans chaque envoi."""
+
+    __tablename__ = "newsletter_subscribers"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    unsubscribe_token: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+
 class Faq(Base):
     """Question fréquente publiée sur la vitrine."""
 
@@ -943,6 +958,26 @@ class Depense(Base):
     date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     justificatif_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     justificatif_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+
+class BudgetPrevisionnel(Base):
+    """Montant prévisionnel saisi par le trésorier pour une catégorie et une année
+    scolaire données — comparé au montant réalisé (calculé via
+    reports.multi_year_financial_summary) pour un suivi budgétaire prévu/réalisé."""
+
+    __tablename__ = "budgets_previsionnels"
+    __table_args__ = (
+        UniqueConstraint("annee_scolaire", "categorie", name="uq_budget_annee_categorie"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    annee_scolaire: Mapped[str] = mapped_column(String(20), nullable=False)  # ex: "2025-2026"
+    categorie: Mapped[str] = mapped_column(String(30), nullable=False)
+    montant_prevu: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
@@ -1659,6 +1694,20 @@ class SondageExpressOption(Base):
     ordre: Mapped[int] = mapped_column(Integer, default=0)
 
     sondage: Mapped["SondageExpress"] = relationship(back_populates="options")
+
+
+class PageView(Base):
+    """Compteur de vues par page et par jour — statistiques de fréquentation
+    respectueuses de la vie privée : aucune IP, aucun cookie, aucun identifiant
+    de visiteur n'est jamais enregistré, uniquement un total de vues agrégé."""
+
+    __tablename__ = "page_views"
+    __table_args__ = (UniqueConstraint("path", "date", name="uq_page_view_path_date"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    path: Mapped[str] = mapped_column(String(300), nullable=False)
+    date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    views: Mapped[int] = mapped_column(Integer, default=0)
 
 
 # ---------- Délégations régionales ----------

@@ -4,13 +4,15 @@ financier confirme (en comptabilisant une recette) ou supprime (doublon, spam)."
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from .. import audit, models
+from ..attestations_pdf import generate_don_recu_pdf, numero_recu_don
 from ..database import get_db
 from ..deps import require_finance_access_web
+from ..email_utils import send_email_with_attachment
 
 router = APIRouter(prefix="/admin/dons", tags=["admin-dons"])
 
@@ -63,7 +65,40 @@ def don_confirmer(
             f"A confirmé et comptabilisé le don de {don.nom_donateur} ({don.montant} FCFA)",
         )
         db.commit()
+
+        if don.email:
+            try:
+                pdf_bytes = generate_don_recu_pdf(don)
+                send_email_with_attachment(
+                    don.email,
+                    "Reçu de votre don à la LECIM",
+                    f"Bonjour {don.nom_donateur},\n\n"
+                    "Nous vous remercions chaleureusement pour votre don à la LECIM. "
+                    "Vous trouverez en pièce jointe votre reçu officiel.\n\n"
+                    "LECIM — Ligue des Établissements Confessionnels et Madrassas de Côte d'Ivoire",
+                    pdf_bytes,
+                    f"{numero_recu_don(don.id)}.pdf",
+                )
+            except Exception:
+                pass
     return RedirectResponse(url="/admin/dons", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.get("/{don_id}/recu.pdf")
+def don_recu_pdf(
+    don_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    don = db.get(models.DonDeclare, don_id)
+    if not don or not don.is_confirme:
+        return RedirectResponse(url="/admin/dons", status_code=status.HTTP_303_SEE_OTHER)
+    pdf_bytes = generate_don_recu_pdf(don)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{numero_recu_don(don.id)}.pdf"'},
+    )
 
 
 @router.post("/{don_id}/delete")

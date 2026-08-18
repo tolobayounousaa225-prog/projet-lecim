@@ -42,6 +42,7 @@ from .routers import (
     admin_gouvernance,
     admin_historique,
     admin_messagerie,
+    admin_newsletter,
     admin_objectifs_principes_moyens,
     admin_partenaires,
     admin_password_resets,
@@ -55,6 +56,7 @@ from .routers import (
     admin_social,
     admin_sondages,
     admin_sondages_express,
+    admin_statistiques,
     admin_temoignages,
     admin_users,
     auth,
@@ -71,6 +73,7 @@ from .routers import (
     gouvernance,
     historique,
     news,
+    newsletter_public,
     objectifs_principes_moyens,
     partenaires_public,
     partenariat_requests,
@@ -85,6 +88,7 @@ from .routers import (
     search_public,
     site_content,
     sondages_express,
+    stats,
     temoignages,
     verify,
     verify_attestations,
@@ -210,6 +214,8 @@ app.include_router(objectifs_principes_moyens.router)
 app.include_router(rss.router)
 app.include_router(sondages_express.router)
 app.include_router(temoignages.router)
+app.include_router(stats.router)
+app.include_router(newsletter_public.router)
 app.include_router(search_public.router)
 app.include_router(push_public.router)
 app.include_router(publications.router)
@@ -255,6 +261,8 @@ app.include_router(site_content.router)
 app.include_router(admin_sondages.router)
 app.include_router(admin_sondages_express.router)
 app.include_router(admin_temoignages.router)
+app.include_router(admin_statistiques.router)
+app.include_router(admin_newsletter.router)
 app.include_router(delegation_portal.router)
 app.include_router(admin_etablissement_portail.router)
 app.include_router(admin_messagerie.router)

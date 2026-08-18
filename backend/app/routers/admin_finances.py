@@ -11,7 +11,7 @@ from .. import audit, models
 from ..database import get_db
 from ..deps import require_finance_access_web
 from ..email_utils import send_email
-from ..finances_constants import ADHESION_MONTANT, COTISATION_RULES, RECETTE_CATEGORIES, cotisation_rule
+from ..finances_constants import ADHESION_MONTANT, BUDGET_CATEGORIES, COTISATION_RULES, RECETTE_CATEGORIES, cotisation_rule
 from ..reports import (
     current_annee_scolaire,
     etablissements_en_retard,
@@ -1063,3 +1063,102 @@ def depenses_delete(
         db.delete(depense)
         db.commit()
     return RedirectResponse(url="/admin/depenses", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# ---------- Budget prévisionnel vs réalisé ----------
+
+@router.get("/finances/budget")
+def budget_list(
+    request: Request,
+    annee_scolaire: str | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    annee = annee_scolaire or current_annee_scolaire()
+    realise_par_annee = {d["annee"]: d for d in multi_year_financial_summary(db)}
+    realise_annee = realise_par_annee.get(annee, {})
+    previsions = {
+        b.categorie: b
+        for b in db.query(models.BudgetPrevisionnel)
+        .filter(models.BudgetPrevisionnel.annee_scolaire == annee)
+        .all()
+    }
+
+    lignes = []
+    total_prevu = 0
+    total_realise = 0
+    for cle, label in BUDGET_CATEGORIES.items():
+        prevu = previsions[cle].montant_prevu if cle in previsions else 0
+        realise = realise_annee.get(cle, 0)
+        taux = round(realise / prevu * 100) if prevu else None
+        lignes.append(
+            {
+                "categorie": cle,
+                "label": label,
+                "prevu": prevu,
+                "realise": realise,
+                "ecart": realise - prevu,
+                "taux": taux,
+            }
+        )
+        total_prevu += prevu
+        total_realise += realise
+
+    annees_disponibles = sorted(
+        set(realise_par_annee.keys())
+        | {b.annee_scolaire for b in db.query(models.BudgetPrevisionnel.annee_scolaire).distinct().all()}
+        | {current_annee_scolaire()},
+        reverse=True,
+    )
+
+    return templates.TemplateResponse(
+        request,
+        "admin/finances_budget.html",
+        {
+            "admin": user,
+            "active": "finances",
+            "annee": annee,
+            "annees_disponibles": annees_disponibles,
+            "lignes": lignes,
+            "total_prevu": total_prevu,
+            "total_realise": total_realise,
+            "total_taux": round(total_realise / total_prevu * 100) if total_prevu else None,
+        },
+    )
+
+
+@router.post("/finances/budget")
+async def budget_save(
+    request: Request,
+    annee_scolaire: str = Form(...),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    form = await request.form()
+    for cle in BUDGET_CATEGORIES:
+        raw = str(form.get(f"montant_{cle}", "")).strip()
+        montant = int(raw) if raw.isdigit() else 0
+        existing = (
+            db.query(models.BudgetPrevisionnel)
+            .filter(
+                models.BudgetPrevisionnel.annee_scolaire == annee_scolaire,
+                models.BudgetPrevisionnel.categorie == cle,
+            )
+            .first()
+        )
+        if existing:
+            existing.montant_prevu = montant
+        else:
+            db.add(
+                models.BudgetPrevisionnel(
+                    annee_scolaire=annee_scolaire,
+                    categorie=cle,
+                    montant_prevu=montant,
+                    recorded_by_id=user.id,
+                )
+            )
+    audit.log(db, user, "update", "Budget prévisionnel", annee_scolaire, f"A mis à jour le budget prévisionnel {annee_scolaire}")
+    db.commit()
+    return RedirectResponse(
+        url=f"/admin/finances/budget?annee_scolaire={annee_scolaire}", status_code=status.HTTP_303_SEE_OTHER
+    )
