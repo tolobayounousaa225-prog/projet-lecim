@@ -1295,6 +1295,7 @@ PUBLICATION_CATEGORIES = {
     "reglement_interieur": "Règlement Intérieur",
     "statuts": "Statuts de la LECIM",
     "resultats_examens": "Résultats aux examens nationaux",
+    "kit_presse": "Kit presse & médias",
     "autre": "Autre document",
 }
 
@@ -1430,6 +1431,33 @@ class MembreConseilAdministration(Base):
     @property
     def photo_url(self) -> str:
         return f"/api/conseil-administration/{self.id}/photo"
+
+
+# ---------- Témoignages d'écoles membres (site vitrine) ----------
+
+class Temoignage(Base):
+    """Témoignage d'une école membre ou d'un partenaire, affiché en preuve sociale
+    sur la page d'accueil du site public."""
+
+    __tablename__ = "temoignages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    auteur_nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    auteur_role: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    texte: Mapped[str] = mapped_column(Text, nullable=False)
+    photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    ordre: Mapped[int] = mapped_column(Integer, default=0)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=True)
+    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    uploaded_by: Mapped["User | None"] = relationship()
+
+    @property
+    def photo_url(self) -> str | None:
+        return f"/api/temoignages/{self.id}/photo" if self.photo_path else None
 
 
 # ---------- Gouvernance (organigramme public du BEN) ----------
@@ -1592,6 +1620,45 @@ class SondageVote(Base):
 
     user: Mapped["User"] = relationship()
     option: Mapped["SondageOption"] = relationship(back_populates="votes")
+
+
+# ---------- Sondages express (public, anonyme — avis du grand public) ----------
+
+class SondageExpress(Base):
+    """Micro-sondage anonyme affiché sur la vitrine pour recueillir l'avis du grand
+    public — distinct des sondages du BEN (Sondage), réservés aux membres connectés.
+    Un seul sondage actif à la fois ; pas de compte requis pour voter, un seul vote
+    par navigateur (empêché côté client, aucune donnée personnelle collectée)."""
+
+    __tablename__ = "sondages_express"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    question: Mapped[str] = mapped_column(String(500), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    options: Mapped[list["SondageExpressOption"]] = relationship(
+        back_populates="sondage", cascade="all, delete-orphan", order_by="SondageExpressOption.ordre"
+    )
+
+    @property
+    def total_votes(self) -> int:
+        return sum(o.votes for o in self.options)
+
+
+class SondageExpressOption(Base):
+    __tablename__ = "sondage_express_options"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    sondage_id: Mapped[int] = mapped_column(ForeignKey("sondages_express.id", ondelete="CASCADE"), nullable=False)
+    texte: Mapped[str] = mapped_column(String(255), nullable=False)
+    votes: Mapped[int] = mapped_column(Integer, default=0)
+    ordre: Mapped[int] = mapped_column(Integer, default=0)
+
+    sondage: Mapped["SondageExpress"] = relationship(back_populates="options")
 
 
 # ---------- Délégations régionales ----------

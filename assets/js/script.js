@@ -42,6 +42,8 @@ document.addEventListener("DOMContentLoaded", function () {
   loadRessourcesOfficielles();
   loadObjectifsPrincipesMoyens();
   loadConseilAdministration();
+  loadTemoignages();
+  loadSondageExpress();
 });
 
 function urlBase64ToUint8Array(base64String) {
@@ -1723,9 +1725,10 @@ var PUBLICATION_CATEGORY_LABELS = {
   reglement_interieur: "Règlement Intérieur",
   statuts: "Statuts de la LECIM",
   resultats_examens: "Résultats aux examens nationaux",
+  kit_presse: "Kit presse & médias",
   autre: "Autres documents",
 };
-var PUBLICATION_CATEGORY_ORDER = ["reglement_interieur", "statuts", "resultats_examens", "autre"];
+var PUBLICATION_CATEGORY_ORDER = ["reglement_interieur", "statuts", "resultats_examens", "kit_presse", "autre"];
 
 function loadPublications() {
   var container = document.getElementById("doc-categories");
@@ -1838,6 +1841,122 @@ function loadFondateurs() {
     })
     .catch(function () {
       // API indisponible : le message par défaut ("aucun fondateur publié") reste affiché.
+    });
+}
+
+function renderSondageExpressResults(container, sondage) {
+  var total = sondage.total_votes || 0;
+  var rows = sondage.options
+    .map(function (o) {
+      var pct = total > 0 ? Math.round((o.votes / total) * 100) : 0;
+      return (
+        '<div class="sondage-express-result-row">' +
+        '<div class="sondage-express-result-label"><span>' + escapeHtml(o.texte) + "</span><span>" + pct + "%</span></div>" +
+        '<div class="sondage-express-result-track"><div class="sondage-express-result-fill" style="width:' + pct + '%"></div></div>' +
+        "</div>"
+      );
+    })
+    .join("");
+  var lang = document.documentElement.getAttribute("lang") === "ar" ? "ar" : "fr";
+  var totalLabel = lang === "ar"
+    ? total + " صوت — شكرا لمشاركتكم"
+    : total + " vote" + (total > 1 ? "s" : "") + " — merci pour votre participation";
+  container.innerHTML =
+    '<div class="sondage-express-card">' +
+    '<div class="sondage-express-question">' + escapeHtml(sondage.question) + "</div>" +
+    '<div class="sondage-express-results">' + rows + "</div>" +
+    '<div class="sondage-express-total">' + totalLabel + "</div>" +
+    "</div>";
+}
+
+function loadSondageExpress() {
+  var container = document.getElementById("sondage-express-widget");
+  var section = document.getElementById("sondage-express-section");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/sondages-express/actif")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (sondage) {
+      if (!sondage) return;
+      if (section) section.style.display = "";
+
+      var votedKey = "lecim_sondage_express_voted_" + sondage.id;
+      if (localStorage.getItem(votedKey)) {
+        renderSondageExpressResults(container, sondage);
+        return;
+      }
+
+      var lang = document.documentElement.getAttribute("lang") === "ar" ? "ar" : "fr";
+      var optionsHtml = sondage.options
+        .map(function (o) {
+          return '<button type="button" class="sondage-express-option" data-option-id="' + o.id + '">' + escapeHtml(o.texte) + "</button>";
+        })
+        .join("");
+      container.innerHTML =
+        '<div class="sondage-express-card">' +
+        '<div class="sondage-express-question">' + escapeHtml(sondage.question) + "</div>" +
+        '<div class="sondage-express-options">' + optionsHtml + "</div>" +
+        "</div>";
+
+      container.querySelectorAll(".sondage-express-option").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var optionId = parseInt(btn.getAttribute("data-option-id"), 10);
+          fetch(API_BASE + "/api/sondages-express/" + sondage.id + "/vote", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ option_id: optionId }),
+          })
+            .then(function (res) {
+              if (!res.ok) throw new Error(lang === "ar" ? "خطأ" : "Erreur");
+              return res.json();
+            })
+            .then(function (updated) {
+              localStorage.setItem(votedKey, "1");
+              renderSondageExpressResults(container, updated);
+            })
+            .catch(function () {});
+        });
+      });
+    })
+    .catch(function () {});
+}
+
+function loadTemoignages() {
+  var container = document.getElementById("temoignages-grid");
+  var section = document.getElementById("temoignages-section");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/temoignages")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) return;
+      if (section) section.style.display = "";
+      container.innerHTML = items
+        .map(function (item) {
+          var avatarInner = item.photo_url
+            ? '<img src="' + API_BASE + item.photo_url + '" alt="">'
+            : initialsFrom(item.auteur_nom);
+          return (
+            '<div class="temoignage-card">' +
+            '<svg class="temoignage-quote-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M9 7c-2.8 0-5 2.2-5 5v5h5v-5H6.5C6.5 9.8 7.6 8.5 9 8.2V7Zm10 0c-2.8 0-5 2.2-5 5v5h5v-5h-2.5c0-2.2 1.1-3.5 2.5-3.8V7Z"/></svg>' +
+            '<p class="temoignage-text">' + escapeHtml(item.texte) + "</p>" +
+            '<div class="temoignage-author">' +
+            '<div class="temoignage-avatar">' + avatarInner + "</div>" +
+            "<div><div class=\"temoignage-author-name\">" + escapeHtml(item.auteur_nom) + "</div>" +
+            (item.auteur_role ? '<div class="temoignage-author-role">' + escapeHtml(item.auteur_role) + "</div>" : "") +
+            "</div></div></div>"
+          );
+        })
+        .join("");
+    })
+    .catch(function () {
+      // API indisponible : rien ne s'affiche (pas de contenu de repli statique).
     });
 }
 

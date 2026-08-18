@@ -1,0 +1,52 @@
+{% extends "admin/base.html" %}
+{% block title %}Sondages express{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Sondages express (avis du grand public)</h1>
+  <a href="/admin/sondages-express/new" class="btn btn-primary">+ Créer un sondage</a>
+</div>
+<p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">
+  Micro-sondage anonyme affiché sur la page d'accueil. Un seul sondage actif à la fois — l'activer désactive automatiquement les autres.
+</p>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Question</th><th>Options &amp; résultats</th><th>Total votes</th><th>Statut</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.question }}</td>
+      <td>
+        {% for o in item.options %}
+        <div style="font-size:0.82rem; margin-bottom:2px;">{{ o.texte }} — <strong>{{ o.votes }}</strong></div>
+        {% endfor %}
+      </td>
+      <td>{{ item.total_votes }}</td>
+      <td>
+        {% if item.is_active %}<span class="pill pill-green">Actif</span>
+        {% else %}<span class="pill pill-muted">Inactif</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        {% if item.is_active %}
+        <form method="post" action="/admin/sondages-express/{{ item.id }}/desactiver">
+          <button type="submit" class="btn btn-outline btn-sm">Désactiver</button>
+        </form>
+        {% else %}
+        <form method="post" action="/admin/sondages-express/{{ item.id }}/activer">
+          <button type="submit" class="btn btn-outline btn-sm">Activer</button>
+        </form>
+        {% endif %}
+        <form method="post" action="/admin/sondages-express/{{ item.id }}/delete" onsubmit="return confirm('Supprimer ce sondage ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun sondage créé pour le moment.</div>
+{% endif %}
+{% endblock %}
