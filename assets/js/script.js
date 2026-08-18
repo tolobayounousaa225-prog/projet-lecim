@@ -6,6 +6,14 @@ document.addEventListener("DOMContentLoaded", function () {
   initLoginLink();
   initHeaderScrollShadow();
   initScrollReveal();
+  initHeroParallax();
+  initCardTilt();
+  initBlurUpImages();
+  initReadingProgress();
+  initBackToTop();
+  initPageTransitions();
+  initGalleryLightbox();
+  initAdhesionFormProgress();
   initContactForm();
   initAdhesionForm();
   initPartenariatForm();
@@ -172,6 +180,235 @@ function animateCountUp(el, targetValue, formatFn) {
     if (progress < 1) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
+}
+
+function addSuccessIcon(box) {
+  if (!box || box.querySelector(".form-submit-success-icon")) return;
+  var icon = document.createElement("div");
+  icon.className = "form-submit-success-icon";
+  icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>';
+  box.insertBefore(icon, box.firstChild);
+}
+
+function initHeroParallax() {
+  var visual = document.querySelector(".hero-visual");
+  if (!visual || prefersReducedMotion()) return;
+  function update() {
+    var offset = Math.min(window.scrollY * 0.12, 40);
+    visual.style.transform = "translateY(" + offset + "px)";
+  }
+  update();
+  window.addEventListener("scroll", update, { passive: true });
+}
+
+function initCardTilt() {
+  if (prefersReducedMotion()) return;
+  if (!(window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches)) return;
+
+  var SELECTOR = [
+    ".mission-card", ".value-card", ".doc-card", ".opm-block",
+    ".evenement-card", ".initiative-card", ".ecole-card",
+    ".ressource-officielle-card", ".actualite-card"
+  ].join(", ");
+
+  function onMove(e) {
+    var card = e.currentTarget;
+    var rect = card.getBoundingClientRect();
+    var x = (e.clientX - rect.left) / rect.width - 0.5;
+    var y = (e.clientY - rect.top) / rect.height - 0.5;
+    card.style.transform = "perspective(900px) rotateX(" + (y * -6) + "deg) rotateY(" + (x * 6) + "deg) translateY(-4px)";
+  }
+  function onLeave(e) {
+    e.currentTarget.style.transform = "";
+  }
+  function prepare(el) {
+    if (el.classList.contains("tilt-card")) return;
+    el.classList.add("tilt-card");
+    el.addEventListener("mousemove", onMove);
+    el.addEventListener("mouseleave", onLeave);
+  }
+
+  document.querySelectorAll(SELECTOR).forEach(prepare);
+
+  var mutationObserver = new MutationObserver(function (mutations) {
+    mutations.forEach(function (mutation) {
+      mutation.addedNodes.forEach(function (node) {
+        if (node.nodeType !== 1) return;
+        if (node.matches && node.matches(SELECTOR)) prepare(node);
+        if (node.querySelectorAll) node.querySelectorAll(SELECTOR).forEach(prepare);
+      });
+    });
+  });
+  mutationObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+function initBlurUpImages() {
+  if (prefersReducedMotion()) return;
+
+  function prepare(img) {
+    if (img.classList.contains("img-blur-up") || img.dataset.noBlur) return;
+    img.classList.add("img-blur-up");
+    if (img.complete && img.naturalWidth > 0) {
+      img.classList.add("is-loaded");
+      return;
+    }
+    img.addEventListener("load", function () { img.classList.add("is-loaded"); }, { once: true });
+    img.addEventListener("error", function () { img.classList.add("is-loaded"); }, { once: true });
+  }
+
+  document.querySelectorAll('img[loading="lazy"]').forEach(prepare);
+
+  var mutationObserver = new MutationObserver(function (mutations) {
+    mutations.forEach(function (mutation) {
+      mutation.addedNodes.forEach(function (node) {
+        if (node.nodeType !== 1) return;
+        if (node.matches && node.matches('img[loading="lazy"]')) prepare(node);
+        if (node.querySelectorAll) node.querySelectorAll('img[loading="lazy"]').forEach(prepare);
+      });
+    });
+  });
+  mutationObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+function initReadingProgress() {
+  var bar = document.createElement("div");
+  bar.className = "reading-progress-bar";
+  document.body.appendChild(bar);
+  function update() {
+    var scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    var pct = scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0;
+    bar.style.width = Math.min(Math.max(pct, 0), 100) + "%";
+  }
+  update();
+  window.addEventListener("scroll", update, { passive: true });
+  window.addEventListener("resize", update);
+}
+
+function initBackToTop() {
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "back-to-top";
+  btn.setAttribute("aria-label", "Retour en haut de page");
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+  document.body.appendChild(btn);
+
+  function update() {
+    if (window.scrollY > 500) btn.classList.add("is-visible");
+    else btn.classList.remove("is-visible");
+  }
+  update();
+  window.addEventListener("scroll", update, { passive: true });
+  btn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+  });
+}
+
+function initPageTransitions() {
+  if (prefersReducedMotion()) return;
+  document.addEventListener("click", function (e) {
+    var link = e.target.closest ? e.target.closest("a[href]") : null;
+    if (!link) return;
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (link.target && link.target !== "_self") return;
+    if (link.hasAttribute("download")) return;
+
+    var href = link.getAttribute("href");
+    if (!href || href.charAt(0) === "#" || href.indexOf("mailto:") === 0 || href.indexOf("tel:") === 0) return;
+
+    var url;
+    try { url = new URL(href, window.location.href); } catch (err) { return; }
+    if (url.origin !== window.location.origin) return;
+    if (url.pathname === window.location.pathname && url.hash) return;
+
+    e.preventDefault();
+    document.body.classList.add("page-fade-out");
+    setTimeout(function () { window.location.href = url.href; }, 200);
+  });
+}
+
+function showSkeleton(container, count) {
+  if (!container) return;
+  var html = "";
+  for (var i = 0; i < count; i++) html += '<div class="skeleton-card"></div>';
+  container.innerHTML = html;
+}
+
+function initGalleryLightbox() {
+  var grid = document.getElementById("galerie-grid");
+  if (!grid) return;
+
+  var overlay = document.createElement("div");
+  overlay.className = "lightbox-overlay";
+  overlay.innerHTML =
+    '<button type="button" class="lightbox-close" aria-label="Fermer">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
+    '<img alt="">' +
+    '<div class="lightbox-caption"></div>';
+  document.body.appendChild(overlay);
+  var img = overlay.querySelector("img");
+  var caption = overlay.querySelector(".lightbox-caption");
+
+  function open(src, alt) {
+    img.src = src;
+    img.alt = alt || "";
+    caption.textContent = alt || "";
+    overlay.classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+  function close() {
+    overlay.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  grid.addEventListener("click", function (e) {
+    var figure = e.target.closest ? e.target.closest(".galerie-item") : null;
+    if (!figure) return;
+    var image = figure.querySelector("img");
+    if (!image) return;
+    open(image.src, image.alt);
+  });
+  overlay.querySelector(".lightbox-close").addEventListener("click", close);
+  overlay.addEventListener("click", function (e) {
+    if (e.target === overlay) close();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && overlay.classList.contains("open")) close();
+  });
+}
+
+function initAdhesionFormProgress() {
+  var form = document.getElementById("adhesion-form");
+  if (!form) return;
+
+  var wrap = document.createElement("div");
+  wrap.className = "form-progress-wrap";
+  wrap.innerHTML =
+    '<div class="form-progress-label"><span>Progression du formulaire</span><span class="form-progress-percent">0%</span></div>' +
+    '<div class="form-progress-track"><div class="form-progress-fill"></div></div>';
+  form.parentElement.insertBefore(wrap, form);
+  var fill = wrap.querySelector(".form-progress-fill");
+  var percentEl = wrap.querySelector(".form-progress-percent");
+
+  var fields = Array.prototype.slice.call(
+    form.querySelectorAll("input, select, textarea")
+  ).filter(function (f) { return f.type !== "hidden"; });
+
+  function update() {
+    if (!fields.length) return;
+    var filled = fields.filter(function (f) {
+      if (f.type === "checkbox" || f.type === "radio") return f.checked;
+      return f.value && String(f.value).trim().length > 0;
+    }).length;
+    var pct = Math.round((filled / fields.length) * 100);
+    fill.style.width = pct + "%";
+    percentEl.textContent = pct + "%";
+  }
+
+  fields.forEach(function (f) {
+    f.addEventListener("input", update);
+    f.addEventListener("change", update);
+  });
+  update();
 }
 
 function loadHeroStats() {
@@ -583,6 +820,35 @@ function tauxPillClass(taux) {
   return "low";
 }
 
+function tauxCellHtml(taux) {
+  var cls = tauxPillClass(taux);
+  return (
+    '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right; min-width:150px;">' +
+    '<span class="taux-pill ' + cls + '">' + taux + "%</span>" +
+    '<div class="taux-bar-track"><div class="taux-bar-fill ' + cls + '" data-target="' + taux + '"></div></div>' +
+    "</td>"
+  );
+}
+
+function animateTauxBars(root) {
+  if (!root) return;
+  var bars = root.querySelectorAll(".taux-bar-fill[data-target]");
+  if (!bars.length) return;
+  if (prefersReducedMotion() || !("IntersectionObserver" in window)) {
+    bars.forEach(function (b) { b.style.width = b.dataset.target + "%"; });
+    return;
+  }
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.style.width = entry.target.dataset.target + "%";
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  bars.forEach(function (b) { observer.observe(b); });
+}
+
 function loadBaremetre() {
   var nationalBody = document.getElementById("baremetre-national-tbody");
   var regionalBody = document.getElementById("baremetre-regional-tbody");
@@ -609,11 +875,12 @@ function loadBaremetre() {
               '<td style="padding:10px; border-bottom:1px solid var(--border);">' + escapeHtml(r.type_examen) + "</td>" +
               '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;">' + r.inscrits + "</td>" +
               '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;">' + r.admis + "</td>" +
-              '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;"><span class="taux-pill ' + tauxPillClass(r.taux_reussite) + '">' + r.taux_reussite + "%</span></td>" +
+              tauxCellHtml(r.taux_reussite) +
               "</tr>"
             );
           })
           .join("");
+        animateTauxBars(nationalBody);
       }
 
       if (regionalBody) {
@@ -625,11 +892,12 @@ function loadBaremetre() {
               '<td style="padding:10px; border-bottom:1px solid var(--border);">' + escapeHtml(r.bureau_local) + "</td>" +
               '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;">' + r.inscrits + "</td>" +
               '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;">' + r.admis + "</td>" +
-              '<td style="padding:10px; border-bottom:1px solid var(--border); text-align:right;"><span class="taux-pill ' + tauxPillClass(r.taux_reussite) + '">' + r.taux_reussite + "%</span></td>" +
+              tauxCellHtml(r.taux_reussite) +
               "</tr>"
             );
           })
           .join("");
+        animateTauxBars(regionalBody);
       }
     })
     .catch(function () {
@@ -963,7 +1231,7 @@ function initPartenariatForm() {
       .then(function (res) {
         if (!res.ok) throw new Error("Échec de l'envoi");
         if (formCard) formCard.style.display = "none";
-        if (successBox) successBox.style.display = "block";
+        if (successBox) { addSuccessIcon(successBox); successBox.style.display = "block"; }
       })
       .catch(function () {
         btn.textContent = "Erreur — merci de réessayer";
@@ -1009,7 +1277,7 @@ function initDonForm() {
       .then(function (res) {
         if (!res.ok) throw new Error("Échec de l'envoi");
         if (formCard) formCard.style.display = "none";
-        if (successBox) successBox.style.display = "block";
+        if (successBox) { addSuccessIcon(successBox); successBox.style.display = "block"; }
       })
       .catch(function () {
         btn.textContent = "Erreur — merci de réessayer";
@@ -1025,6 +1293,7 @@ function loadInitiatives() {
   var container = document.getElementById("initiatives-list");
   var emptyEl = document.getElementById("initiatives-empty");
   if (!container) return;
+  showSkeleton(container, 3);
 
   fetch(API_BASE + "/api/projets")
     .then(function (res) {
@@ -1033,6 +1302,7 @@ function loadInitiatives() {
     })
     .then(function (items) {
       if (!items || !items.length) {
+        container.innerHTML = "";
         if (emptyEl) emptyEl.style.display = "block";
         return;
       }
@@ -1056,6 +1326,7 @@ function loadInitiatives() {
         .join("");
     })
     .catch(function () {
+      container.innerHTML = "";
       if (emptyEl) emptyEl.style.display = "block";
     });
 }
@@ -1064,6 +1335,7 @@ function loadGalerie() {
   var container = document.getElementById("galerie-grid");
   var emptyEl = document.getElementById("galerie-empty");
   if (!container) return;
+  showSkeleton(container, 6);
 
   fetch(API_BASE + "/api/photos")
     .then(function (res) {
@@ -1072,6 +1344,7 @@ function loadGalerie() {
     })
     .then(function (items) {
       if (!items || !items.length) {
+        container.innerHTML = "";
         if (emptyEl) emptyEl.style.display = "block";
         return;
       }
@@ -1087,6 +1360,7 @@ function loadGalerie() {
         .join("");
     })
     .catch(function () {
+      container.innerHTML = "";
       if (emptyEl) emptyEl.style.display = "block";
     });
 }
@@ -1191,6 +1465,7 @@ function loadActualitesFull() {
   var container = document.getElementById("actualites-list");
   var emptyEl = document.getElementById("actualites-empty");
   if (!container) return;
+  showSkeleton(container, 6);
 
   fetch(API_BASE + "/api/news?limit=100")
     .then(function (res) {
@@ -1199,6 +1474,7 @@ function loadActualitesFull() {
     })
     .then(function (items) {
       if (!items || !items.length) {
+        container.innerHTML = "";
         if (emptyEl) emptyEl.style.display = "block";
         return;
       }
@@ -1220,6 +1496,7 @@ function loadActualitesFull() {
         .join("");
     })
     .catch(function () {
+      container.innerHTML = "";
       if (emptyEl) emptyEl.style.display = "block";
     });
 }
@@ -1297,6 +1574,7 @@ function loadUpcomingEvents() {
   var section = document.getElementById("evenements-section");
   var list = document.getElementById("evenements-list");
   if (!section || !list) return;
+  showSkeleton(list, 3);
 
   fetch(API_BASE + "/api/activities")
     .then(function (res) {
@@ -1305,7 +1583,7 @@ function loadUpcomingEvents() {
     })
     .then(function (items) {
       var upcoming = (items || []).filter(function (i) { return i.status === "upcoming"; }).slice(0, 3);
-      if (!upcoming.length) return;
+      if (!upcoming.length) { list.innerHTML = ""; return; }
       list.innerHTML = upcoming
         .map(function (item) {
           var d = new Date(item.event_date + "T00:00:00");
@@ -1324,7 +1602,7 @@ function loadUpcomingEvents() {
         .join("");
       section.style.display = "";
     })
-    .catch(function () {});
+    .catch(function () { list.innerHTML = ""; });
 }
 
 var RESSOURCE_OFFICIELLE_SECTIONS_JS = ["manuel_scolaire", "programme_officiel", "enseignement_islamique"];
