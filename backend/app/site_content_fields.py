@@ -100,6 +100,38 @@ SITE_CONTENT_FIELDS: dict[str, dict] = {
             "et en arabe."
         ),
     },
+    "vision_title": {
+        "group": "À propos — Vision et Mission",
+        "label": "Titre du bloc Vision",
+        "type": "text",
+        "default": "Notre Vision",
+    },
+    "vision_text": {
+        "group": "À propos — Vision et Mission",
+        "label": "Texte de la Vision",
+        "type": "textarea",
+        "default": (
+            "Une Côte d'Ivoire où l'éducation islamique confessionnelle est reconnue, structurée "
+            "et de qualité, portée par des établissements unis et formés aux meilleures pratiques "
+            "pédagogiques et administratives."
+        ),
+    },
+    "mission_title": {
+        "group": "À propos — Vision et Mission",
+        "label": "Titre du bloc Mission",
+        "type": "text",
+        "default": "Notre Mission",
+    },
+    "mission_text": {
+        "group": "À propos — Vision et Mission",
+        "label": "Texte de la Mission",
+        "type": "textarea",
+        "default": (
+            "Fédérer, accompagner et outiller les écoles confessionnelles et madrassas de Côte "
+            "d'Ivoire pour garantir une éducation islamique de qualité, apolitique, au service "
+            "de leurs élèves et de leurs communautés."
+        ),
+    },
     "don_coordonnees": {
         "group": "Faire un don — Coordonnées bancaires",
         "label": "Coordonnées bancaires (RIB, banque, titulaire du compte...)",
