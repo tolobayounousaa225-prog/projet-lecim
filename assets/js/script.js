@@ -472,7 +472,8 @@ function loadPartenaires() {
 
 function loadSiteContent() {
   var elements = document.querySelectorAll("[data-content-key]");
-  if (!elements.length) return;
+  var bgElements = document.querySelectorAll("[data-content-bg-key]");
+  if (!elements.length && !bgElements.length) return;
 
   fetch(API_BASE + "/api/site-content")
     .then(function (res) {
@@ -484,9 +485,19 @@ function loadSiteContent() {
         var value = values[el.getAttribute("data-content-key")];
         if (value) el.textContent = value;
       });
+      bgElements.forEach(function (el) {
+        var url = values[el.getAttribute("data-content-bg-key")];
+        if (!url) return;
+        el.style.backgroundImage =
+          "linear-gradient(135deg, rgba(10,61,99,.88) 0%, rgba(4,56,114,.82) 55%, rgba(8,58,92,.90) 100%), url('" +
+          API_BASE + url + "')";
+        el.style.backgroundSize = "cover";
+        el.style.backgroundPosition = "center";
+        el.classList.add("has-bg-image");
+      });
     })
     .catch(function () {
-      // API indisponible : les textes par défaut codés dans la page restent affichés.
+      // API indisponible : les textes/visuels par défaut codés dans la page restent affichés.
     });
 }
 

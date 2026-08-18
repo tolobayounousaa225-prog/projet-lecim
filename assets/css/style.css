@@ -435,6 +435,11 @@ ul { list-style: none; }
                      radial-gradient(circle at 85% 75%, rgba(224,165,44,.15) 0, transparent 40%);
 }
 
+/* Photo de fond du hero, ajoutée par l'admin via Contenu du site (remplace le
+   dégradé animé ; le voile sombre appliqué en JS garde le texte lisible). */
+.hero.has-bg-image { animation: none; }
+.hero.has-bg-image::before { opacity: .6; }
+
 .hero-inner {
   position: relative;
   max-width: 1200px;
