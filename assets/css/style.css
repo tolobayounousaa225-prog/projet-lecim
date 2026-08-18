@@ -199,6 +199,16 @@ ul { list-style: none; }
 
 .nav-utility a:hover { color: var(--green); }
 
+.nav-utility .nav-don-link {
+  background: var(--gold);
+  color: var(--green-dark);
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 999px;
+  transition: background .15s ease, transform .15s ease;
+}
+.nav-utility .nav-don-link:hover { background: var(--gold-light); color: var(--green-dark); transform: translateY(-1px); }
+
 .nav-cta { padding: 11px 26px; }
 
 .nav-search-trigger {
