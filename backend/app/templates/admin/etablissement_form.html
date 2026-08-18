@@ -65,13 +65,13 @@
       <input type="text" id="bureau_local" name="bureau_local" value="{{ item.bureau_local if item else '' }}">
     </div>
     <div class="form-group">
-      <label for="district">District autonome (Abidjan ou Yamoussoukro uniquement)</label>
-      <input type="text" id="district" name="district" placeholder="Ex : District Autonome d'Abidjan" value="{{ item.district if item and item.district else '' }}">
+      <label for="district">District (1 des 2 districts autonomes, ou 1 des 12 districts ordinaires)</label>
+      <input type="text" id="district" name="district" placeholder="Ex : District Autonome d'Abidjan, ou District de la Vallée du Bandama" value="{{ item.district if item and item.district else '' }}">
     </div>
     <div class="form-group">
-      <label for="region">Région (si l'établissement n'est pas dans un district autonome)</label>
+      <label for="region">Région (1 des 31 régions — uniquement si l'établissement n'est pas à Abidjan ou Yamoussoukro)</label>
       <input type="text" id="region" name="region" placeholder="Ex : Gbêkê" value="{{ item.region if item and item.region else '' }}">
-      <p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Renseignez soit le district, soit la région — pas les deux.</p>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Pour Abidjan ou Yamoussoukro, ne renseignez que le district. Pour les 12 autres districts, renseignez les deux : le district ET sa région.</p>
     </div>
     <div class="form-group">
       <label for="statut">Statut</label>

@@ -606,7 +606,7 @@ function loadEcoles() {
 
     var zones = {};
     ecoles.forEach(function (e) {
-      var zoneName = (e.district || e.region || "").trim() || "Autre";
+      var zoneName = (e.region || e.district || "").trim() || "Autre";
       var commune = (e.bureau_local || "").trim() || "Non précisée";
       if (!zones[zoneName]) zones[zoneName] = {};
       if (!zones[zoneName][commune]) zones[zoneName][commune] = [];

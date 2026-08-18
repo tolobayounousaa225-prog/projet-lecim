@@ -48,13 +48,50 @@ LOCALITE_COORDS: dict[str, tuple[float, float]] = {
 }
 
 
-# Correspondance commune/ville (valeur de bureau_local) -> (district, region) selon
-# le découpage administratif officiel de Côte d'Ivoire (2 districts autonomes,
-# Abidjan et Yamoussoukro, en dehors du découpage en 31 régions). Un district
-# autonome n'a pas de région propre — les deux champs sont mutuellement exclusifs.
-# Sert uniquement de pré-remplissage au démarrage pour les communes reconnues ;
-# toute commune absente de cette table laisse district/région vides, à compléter
-# manuellement par l'admin.
+# Découpage administratif officiel de Côte d'Ivoire : 14 districts au total — 2
+# districts autonomes (Abidjan, Yamoussoukro), sans région propre — et 12 districts
+# « ordinaires », eux-mêmes subdivisés en 31 régions au total. Chaque région
+# appartient à exactement un des 12 districts ordinaires.
+REGION_TO_DISTRICT: dict[str, str] = {
+    "Agnéby-Tiassa": "District des Lagunes",
+    "Grands-Ponts": "District des Lagunes",
+    "La Mé": "District des Lagunes",
+    "Gbôklé": "District du Bas-Sassandra",
+    "Nawa": "District du Bas-Sassandra",
+    "San-Pédro": "District du Bas-Sassandra",
+    "Indénié-Djuablin": "District de la Comoé",
+    "Sud-Comoé": "District de la Comoé",
+    "Folon": "District du Denguélé",
+    "Kabadougou": "District du Denguélé",
+    "Gôh": "District du Gôh-Djiboua",
+    "Lôh-Djiboua": "District du Gôh-Djiboua",
+    "Bélier": "District des Lacs",
+    "Iffou": "District des Lacs",
+    "Moronou": "District des Lacs",
+    "N'Zi": "District des Lacs",
+    "Cavally": "District des Montagnes",
+    "Guémon": "District des Montagnes",
+    "Tonkpi": "District des Montagnes",
+    "Haut-Sassandra": "District du Sassandra-Marahoué",
+    "Marahoué": "District du Sassandra-Marahoué",
+    "Gbêkê": "District de la Vallée du Bandama",
+    "Hambol": "District de la Vallée du Bandama",
+    "Bafing": "District du Woroba",
+    "Béré": "District du Woroba",
+    "Worodougou": "District du Woroba",
+    "Bounkani": "District du Zanzan",
+    "Gontougo": "District du Zanzan",
+    "Bagoué": "District des Savanes",
+    "Poro": "District des Savanes",
+    "Tchologo": "District des Savanes",
+}
+
+# Correspondance commune/ville (valeur de bureau_local) -> (district, region). Les
+# communes des 2 districts autonomes n'ont pas de région ; toutes les autres ont
+# à la fois leur région et le district ordinaire dont elle dépend (via
+# REGION_TO_DISTRICT ci-dessus). Sert uniquement de pré-remplissage au démarrage
+# pour les communes reconnues ; toute commune absente de cette table laisse
+# district/région vides, à compléter manuellement par l'admin.
 COMMUNE_DISTRICT_REGION: dict[str, tuple[str | None, str | None]] = {
     "ABIDJAN/ABOBO": ("District Autonome d'Abidjan", None),
     "ABOBO": ("District Autonome d'Abidjan", None),
@@ -63,30 +100,30 @@ COMMUNE_DISTRICT_REGION: dict[str, tuple[str | None, str | None]] = {
     "KOUMASSI": ("District Autonome d'Abidjan", None),
     "YOPOUGON": ("District Autonome d'Abidjan", None),
     "YAMOUSSOUKRO": ("District Autonome de Yamoussoukro", None),
-    "ABENGOUROU": (None, "Indénié-Djuablin"),
-    "ABOISSO": (None, "Sud-Comoé"),
-    "ADZOPE": (None, "La Mé"),
-    "BONDOUKOU": (None, "Gontougo"),
-    "BOUAKE": (None, "Gbêkê"),
-    "BOUNA": (None, "Bounkani"),
-    "DABOU": (None, "Grands-Ponts"),
-    "DIANRA": (None, "Worodougou"),
-    "DIVO": (None, "Lôh-Djiboua"),
-    "FERKE": (None, "Tchologo"),
-    "GBELEBAN": (None, "Folon"),
-    "GRAND LAHOU": (None, "Grands-Ponts"),
-    "ISSIA": (None, "Haut-Sassandra"),
-    "KORHOGO": (None, "Poro"),
-    "LAKOTA": (None, "Lôh-Djiboua"),
-    "MAN": (None, "Tonkpi"),
-    "MANKONO": (None, "Béré"),
-    "ODIENNE": (None, "Kabadougou"),
-    "SAN PEDRO": (None, "San-Pédro"),
-    "SEGUELA": (None, "Worodougou"),
-    "SINFRA": (None, "Marahoué"),
-    "SOUBRE": (None, "Nawa"),
-    "VAVOUA": (None, "Haut-Sassandra"),
-    "ZOUKOUGBEU": (None, "Haut-Sassandra"),
+    "ABENGOUROU": (REGION_TO_DISTRICT["Indénié-Djuablin"], "Indénié-Djuablin"),
+    "ABOISSO": (REGION_TO_DISTRICT["Sud-Comoé"], "Sud-Comoé"),
+    "ADZOPE": (REGION_TO_DISTRICT["La Mé"], "La Mé"),
+    "BONDOUKOU": (REGION_TO_DISTRICT["Gontougo"], "Gontougo"),
+    "BOUAKE": (REGION_TO_DISTRICT["Gbêkê"], "Gbêkê"),
+    "BOUNA": (REGION_TO_DISTRICT["Bounkani"], "Bounkani"),
+    "DABOU": (REGION_TO_DISTRICT["Grands-Ponts"], "Grands-Ponts"),
+    "DIANRA": (REGION_TO_DISTRICT["Worodougou"], "Worodougou"),
+    "DIVO": (REGION_TO_DISTRICT["Lôh-Djiboua"], "Lôh-Djiboua"),
+    "FERKE": (REGION_TO_DISTRICT["Tchologo"], "Tchologo"),
+    "GBELEBAN": (REGION_TO_DISTRICT["Folon"], "Folon"),
+    "GRAND LAHOU": (REGION_TO_DISTRICT["Grands-Ponts"], "Grands-Ponts"),
+    "ISSIA": (REGION_TO_DISTRICT["Haut-Sassandra"], "Haut-Sassandra"),
+    "KORHOGO": (REGION_TO_DISTRICT["Poro"], "Poro"),
+    "LAKOTA": (REGION_TO_DISTRICT["Lôh-Djiboua"], "Lôh-Djiboua"),
+    "MAN": (REGION_TO_DISTRICT["Tonkpi"], "Tonkpi"),
+    "MANKONO": (REGION_TO_DISTRICT["Béré"], "Béré"),
+    "ODIENNE": (REGION_TO_DISTRICT["Kabadougou"], "Kabadougou"),
+    "SAN PEDRO": (REGION_TO_DISTRICT["San-Pédro"], "San-Pédro"),
+    "SEGUELA": (REGION_TO_DISTRICT["Worodougou"], "Worodougou"),
+    "SINFRA": (REGION_TO_DISTRICT["Marahoué"], "Marahoué"),
+    "SOUBRE": (REGION_TO_DISTRICT["Nawa"], "Nawa"),
+    "VAVOUA": (REGION_TO_DISTRICT["Haut-Sassandra"], "Haut-Sassandra"),
+    "ZOUKOUGBEU": (REGION_TO_DISTRICT["Haut-Sassandra"], "Haut-Sassandra"),
 }
 
 
@@ -111,6 +148,34 @@ def _deduire_district_region_depuis_commune() -> None:
             if not match:
                 continue
             e.district, e.region = match
+            changed = True
+        if changed:
+            db.commit()
+    finally:
+        db.close()
+
+
+def _deduire_district_depuis_region() -> None:
+    """Complète le district (l'un des 12 districts ordinaires) pour les
+    établissements qui ont déjà une région renseignée mais pas de district —
+    nécessaire car le découpage comporte en réalité 12 districts ordinaires (en
+    plus des 2 districts autonomes), chaque région dépendant de l'un d'eux. Ne
+    touche jamais un district déjà renseigné (saisie manuelle admin prioritaire)."""
+    from . import models
+
+    db = SessionLocal()
+    try:
+        etablissements = (
+            db.query(models.Etablissement)
+            .filter(models.Etablissement.district.is_(None), models.Etablissement.region.isnot(None))
+            .all()
+        )
+        changed = False
+        for e in etablissements:
+            district = REGION_TO_DISTRICT.get((e.region or "").strip())
+            if not district:
+                continue
+            e.district = district
             changed = True
         if changed:
             db.commit()
@@ -233,3 +298,4 @@ def run_startup_migrations() -> None:
     if inspector.has_table("etablissements"):
         _geocode_etablissements_sans_coordonnees()
         _deduire_district_region_depuis_commune()
+        _deduire_district_depuis_region()
