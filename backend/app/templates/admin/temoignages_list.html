@@ -1,0 +1,47 @@
+{% extends "admin/base.html" %}
+{% block title %}Témoignages{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Témoignages d'écoles membres</h1>
+  <a href="/admin/temoignages/new" class="btn btn-primary">+ Ajouter un témoignage</a>
+</div>
+<p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">
+  Visible par tous les visiteurs sur la page d'accueil du site.
+</p>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Ordre</th><th>Photo</th><th>Auteur</th><th>Extrait</th><th>Visibilité</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.ordre }}</td>
+      <td>
+        {% if item.photo_url %}<img src="{{ item.photo_url }}" alt="" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+        {% else %}<span style="color:var(--text-muted)">—</span>{% endif %}
+      </td>
+      <td>{{ item.auteur_nom }}{% if item.auteur_role %}<br><span style="color:var(--text-muted); font-size:0.8rem;">{{ item.auteur_role }}</span>{% endif %}</td>
+      <td style="max-width:320px;">{{ item.texte[:100] }}{% if item.texte|length > 100 %}…{% endif %}</td>
+      <td>
+        {% if item.is_published %}<span class="pill pill-green">Publié</span>
+        {% else %}<span class="pill pill-muted">Brouillon</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/temoignages/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/temoignages/{{ item.id }}/toggle">
+          <button type="submit" class="btn btn-outline btn-sm">{{ "Dépublier" if item.is_published else "Publier" }}</button>
+        </form>
+        <form method="post" action="/admin/temoignages/{{ item.id }}/delete" onsubmit="return confirm('Supprimer ce témoignage ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun témoignage ajouté pour le moment.</div>
+{% endif %}
+{% endblock %}

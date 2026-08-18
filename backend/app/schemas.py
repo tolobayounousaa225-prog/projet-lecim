@@ -239,6 +239,35 @@ class FondateurOut(BaseModel):
     photo_url: str
 
 
+class SondageExpressOptionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    texte: str
+    votes: int
+
+
+class SondageExpressOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    question: str
+    total_votes: int
+    options: list[SondageExpressOptionOut]
+
+
+class SondageExpressVoteIn(BaseModel):
+    option_id: int
+
+
+class TemoignageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    auteur_nom: str
+    auteur_role: str | None
+    texte: str
+    photo_url: str | None
+    ordre: int
+
+
 class ConseilAdministrationOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int

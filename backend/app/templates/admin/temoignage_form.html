@@ -1,0 +1,43 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouveau" }} témoignage{% endblock %}
+{% block content %}
+<h1>{{ "Modifier le témoignage" if item else "Ajouter un témoignage" }}</h1>
+<div class="form-card">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <form method="post" action="{{ '/admin/temoignages/' ~ item.id ~ '/edit' if item else '/admin/temoignages/new' }}" enctype="multipart/form-data">
+    {% if item and item.photo_path %}
+    <div class="form-group">
+      <img src="{{ item.photo_url }}" alt="" style="width:80px; height:80px; border-radius:50%; object-fit:cover;">
+    </div>
+    {% endif %}
+    <div class="form-group">
+      <label for="auteur_nom">Nom de l'auteur (ex : une école, un directeur, un parent)</label>
+      <input type="text" id="auteur_nom" name="auteur_nom" required value="{{ item.auteur_nom if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="auteur_role">Rôle / établissement</label>
+      <input type="text" id="auteur_role" name="auteur_role" placeholder="Ex : Directeur, École Al Iman" value="{{ item.auteur_role if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="texte">Témoignage</label>
+      <textarea id="texte" name="texte" rows="4" required>{{ item.texte if item else '' }}</textarea>
+    </div>
+    <div class="form-group">
+      <label for="ordre">Ordre d'affichage</label>
+      <input type="number" id="ordre" name="ordre" value="{{ item.ordre if item else 0 }}">
+    </div>
+    <div class="form-group">
+      <label for="photo">Photo (optionnelle)</label>
+      <input type="file" id="photo" name="photo" accept=".jpg,.jpeg,.png,.webp,.gif">
+      {% if item and item.photo_path %}<p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Laissez vide pour conserver la photo actuelle.</p>{% endif %}
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_published" name="is_published" value="true"
+             {% if (item and item.is_published) or not item %}checked{% endif %}>
+      <label for="is_published" style="margin:0">Visible sur le site</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/temoignages" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

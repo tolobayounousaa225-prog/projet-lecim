@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     # réellement joignable par le public qui scanne le code — jamais localhost.
     public_base_url: str = "https://projet-lecim-production.up.railway.app"
 
+    # URL publique du site vitrine (GitHub Pages), distinct du backend ci-dessus —
+    # utilisée pour les liens dans le flux RSS et le sitemap.
+    vitrine_base_url: str = "https://tolobayounousaa225-prog.github.io/projet-lecim"
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
