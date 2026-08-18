@@ -911,6 +911,10 @@ section { padding: 80px 0; }
 .value-card strong { display: block; color: var(--green-dark); margin-bottom: 8px; }
 .value-card p { font-size: 0.88rem; color: var(--text-muted); }
 
+.vision-mission-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+.vision-mission-grid .value-card { text-align: start; padding: 30px 28px; }
+.vision-mission-grid .value-card strong { font-size: 1.1rem; }
+
 .org-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1491,7 +1495,7 @@ section { padding: 80px 0; }
 @media (max-width: 680px) {
   .missions-grid { grid-template-columns: 1fr; }
   .hero-stats { grid-template-columns: 1fr 1fr; }
-  .org-grid, .values-grid, .opm-grid { grid-template-columns: 1fr; }
+  .org-grid, .values-grid, .opm-grid, .vision-mission-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
   .cta-band { flex-direction: column; text-align: center; }
