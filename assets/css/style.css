@@ -1510,3 +1510,103 @@ section { padding: 80px 0; }
 [dir="rtl"] .timeline-item.past .timeline-card { border-left-color: transparent; border-right-color: var(--text-muted); }
 [dir="rtl"] .breadcrumb a { margin-left: 4px; }
 [dir="rtl"] .lang-switch { direction: ltr; }
+
+/* ===== Animations & micro-interactions ===== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes softPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .55; }
+}
+
+body { animation: fadeIn .5s ease both; }
+
+/* Entrée animée de la bannière d'accueil */
+.hero-badge { animation: fadeInUp .7s ease both; }
+.hero-text h1 { animation: fadeInUp .7s ease .1s both; }
+.hero-text p { animation: fadeInUp .7s ease .2s both; }
+.hero-actions { animation: fadeInUp .7s ease .3s both; }
+.hero-visual { animation: fadeInUp .8s ease .25s both; }
+
+/* Ombre progressive de l'en-tête au défilement */
+.site-header { transition: box-shadow .25s ease, background-color .25s ease; }
+.site-header.is-scrolled { box-shadow: 0 10px 28px rgba(10,61,99,.12); }
+
+/* Révélation au défilement (classe ajoutée par script.js — un visiteur sans
+   JavaScript voit directement le contenu final, jamais de section masquée) */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity .7s cubic-bezier(.16,.8,.24,1), transform .7s cubic-bezier(.16,.8,.24,1);
+}
+.reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+/* Micro-interactions sur les boutons */
+.btn { transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease; }
+.btn:hover { box-shadow: 0 10px 22px rgba(10,61,99,.16); }
+.btn:active { transform: translateY(0) scale(.96); box-shadow: none; }
+
+/* Lift au survol pour l'ensemble des cartes du site */
+.evenement-card,
+.initiative-card,
+.doc-card,
+.opm-block,
+.historique-card,
+.fondateur-card,
+.value-card,
+.actualite-card,
+.faq-item {
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.evenement-card:hover,
+.initiative-card:hover,
+.doc-card:hover,
+.opm-block:hover,
+.historique-card:hover,
+.fondateur-card:hover,
+.value-card:hover,
+.faq-item:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Sous-lignage animé des liens texte */
+.news-read-more, .initiative-partenaire-link {
+  position: relative;
+  transition: color .15s ease;
+}
+.news-read-more::after, .initiative-partenaire-link::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 100%; bottom: -2px;
+  height: 2px;
+  background: currentColor;
+  transition: right .25s ease;
+}
+.news-read-more:hover::after, .initiative-partenaire-link:hover::after { right: 0; }
+
+/* Icônes d'avatar : leger zoom au survol des cartes d'organigramme et de galerie */
+.org-card, .galerie-item { transition: transform .25s ease, box-shadow .25s ease; }
+.org-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.org-card .org-avatar, .org-card .org-avatar-wrap { transition: transform .25s ease; }
+.org-card:hover .org-avatar, .org-card:hover .org-avatar-wrap { transform: scale(1.06); }
+.galerie-item:hover { transform: scale(1.03); box-shadow: var(--shadow-lg); }
+
+/* Etat de chargement (squelette) pendant la récupération des données */
+.is-loading-pulse { animation: softPulse 1.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}

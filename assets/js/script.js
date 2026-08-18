@@ -4,6 +4,8 @@ document.addEventListener("DOMContentLoaded", function () {
   initNavToggle();
   initNavDropdowns();
   initLoginLink();
+  initHeaderScrollShadow();
+  initScrollReveal();
   initContactForm();
   initAdhesionForm();
   initPartenariatForm();
@@ -96,6 +98,82 @@ function initPushNotifications() {
     .catch(function () {});
 }
 
+function prefersReducedMotion() {
+  return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+
+function initHeaderScrollShadow() {
+  var header = document.querySelector(".site-header");
+  if (!header) return;
+  function update() {
+    if (window.scrollY > 12) header.classList.add("is-scrolled");
+    else header.classList.remove("is-scrolled");
+  }
+  update();
+  window.addEventListener("scroll", update, { passive: true });
+}
+
+function initScrollReveal() {
+  if (prefersReducedMotion() || !("IntersectionObserver" in window)) return;
+
+  var SELECTOR = [
+    ".mission-card", ".value-card", ".org-card", ".opm-block",
+    ".doc-card", ".news-item", ".faq-item", ".evenement-card",
+    ".initiative-card", ".ecole-card", ".ressource-officielle-card",
+    ".fondateur-card", ".historique-card", ".actualite-card",
+    ".galerie-item", ".section-head"
+  ].join(", ");
+
+  var revealObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+
+  function prepare(el) {
+    if (el.classList.contains("reveal")) return;
+    el.classList.add("reveal");
+    var siblings = el.parentElement ? el.parentElement.children : [];
+    var index = Array.prototype.indexOf.call(siblings, el);
+    el.style.transitionDelay = (Math.min(index >= 0 ? index % 6 : 0, 5) * 0.06) + "s";
+    revealObserver.observe(el);
+  }
+
+  document.querySelectorAll(SELECTOR).forEach(prepare);
+
+  var mutationObserver = new MutationObserver(function (mutations) {
+    mutations.forEach(function (mutation) {
+      mutation.addedNodes.forEach(function (node) {
+        if (node.nodeType !== 1) return;
+        if (node.matches && node.matches(SELECTOR)) prepare(node);
+        if (node.querySelectorAll) node.querySelectorAll(SELECTOR).forEach(prepare);
+      });
+    });
+  });
+  mutationObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+function animateCountUp(el, targetValue, formatFn) {
+  if (!el) return;
+  if (prefersReducedMotion()) {
+    el.textContent = formatFn(targetValue);
+    return;
+  }
+  var duration = 1200;
+  var start = null;
+  function step(timestamp) {
+    if (!start) start = timestamp;
+    var progress = Math.min((timestamp - start) / duration, 1);
+    var eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = formatFn(Math.round(targetValue * eased));
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
 function loadHeroStats() {
   var ecolesEl = document.getElementById("hero-stat-ecoles");
   var regionsEl = document.getElementById("hero-stat-regions");
@@ -112,12 +190,14 @@ function loadHeroStats() {
     })
     .then(function (stats) {
       if (!stats) return;
-      if (ecolesEl && stats.ecoles) ecolesEl.textContent = stats.ecoles + "+";
-      if (regionsEl && stats.regions) regionsEl.textContent = stats.regions + "+";
-      if (enseignantsEl && stats.enseignants) enseignantsEl.textContent = stats.enseignants + "+";
-      if (elevesEl && stats.eleves) elevesEl.textContent = stats.eleves.toLocaleString("fr-FR") + "+";
-      if (badgeEcolesEl && stats.ecoles) badgeEcolesEl.textContent = stats.ecoles + "+";
-      if (badgeRegionsEl && stats.regions) badgeRegionsEl.textContent = stats.regions + "+";
+      var plusFormat = function (v) { return v + "+"; };
+      var elevesFormat = function (v) { return v.toLocaleString("fr-FR") + "+"; };
+      if (ecolesEl && stats.ecoles) animateCountUp(ecolesEl, stats.ecoles, plusFormat);
+      if (regionsEl && stats.regions) animateCountUp(regionsEl, stats.regions, plusFormat);
+      if (enseignantsEl && stats.enseignants) animateCountUp(enseignantsEl, stats.enseignants, plusFormat);
+      if (elevesEl && stats.eleves) animateCountUp(elevesEl, stats.eleves, elevesFormat);
+      if (badgeEcolesEl && stats.ecoles) animateCountUp(badgeEcolesEl, stats.ecoles, plusFormat);
+      if (badgeRegionsEl && stats.regions) animateCountUp(badgeRegionsEl, stats.regions, plusFormat);
     })
     .catch(function () {
       // API indisponible : les chiffres par défaut codés dans la page restent affichés.
