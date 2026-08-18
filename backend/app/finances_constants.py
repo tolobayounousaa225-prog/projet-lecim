@@ -24,3 +24,16 @@ RECETTE_CATEGORIES = {
 
 def cotisation_rule(statut: str) -> dict:
     return COTISATION_RULES.get(statut, COTISATION_RULES["non_subventionne"])
+
+
+# Catégories du budget prévisionnel — alignées sur les postes agrégés par
+# reports.multi_year_financial_summary(), pour permettre une comparaison directe
+# entre montants prévus (saisis par le trésorier) et montants réalisés (calculés).
+BUDGET_CATEGORIES = {
+    "adhesions": "Droits d'adhésion",
+    "cotisations": "Cotisations",
+    "recettes": "Autres recettes",
+    "ventes_livres": "Ventes de livres",
+    "droits_examens": "Droits d'examens",
+    "depenses": "Dépenses",
+}

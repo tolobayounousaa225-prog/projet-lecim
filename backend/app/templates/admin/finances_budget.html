@@ -1,0 +1,47 @@
+{% extends "admin/base.html" %}
+{% block title %}Budget prévisionnel vs réalisé{% endblock %}
+{% block content %}
+<h1 style="margin-bottom:4px;">Budget prévisionnel vs réalisé</h1>
+<p style="color:var(--text-muted); margin-top:0;"><a href="/admin/finances">&larr; Retour aux finances</a> — comparez les montants prévus par le trésorier aux montants réellement encaissés/dépensés.</p>
+
+<form method="get" action="/admin/finances/budget" style="margin-bottom:22px;">
+  <label style="font-size:0.85rem; color:var(--text-muted);">Année scolaire</label>
+  <select name="annee_scolaire" onchange="this.form.submit()" style="display:block; margin-top:4px; max-width:220px;">
+    {% for a in annees_disponibles %}
+    <option value="{{ a }}" {% if a == annee %}selected{% endif %}>{{ a }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<form method="post" action="/admin/finances/budget">
+  <input type="hidden" name="annee_scolaire" value="{{ annee }}">
+  <div class="form-card" style="max-width:none; overflow-x:auto;">
+    <table>
+      <thead>
+        <tr><th>Catégorie</th><th>Prévu (FCFA)</th><th>Réalisé (FCFA)</th><th>Écart</th><th>Taux</th></tr>
+      </thead>
+      <tbody>
+        {% for l in lignes %}
+        <tr>
+          <td>{{ l.label }}</td>
+          <td><input type="number" min="0" step="1" name="montant_{{ l.categorie }}" value="{{ l.prevu }}" style="max-width:160px;"></td>
+          <td>{{ "{:,}".format(l.realise).replace(",", " ") }}</td>
+          <td style="color:{{ 'var(--green)' if l.ecart >= 0 else '#c0392b' }}; font-weight:700;">{{ "{:,}".format(l.ecart).replace(",", " ") }}</td>
+          <td>{{ l.taux ~ " %" if l.taux is not none else "—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="font-weight:800;">
+          <td>Total</td>
+          <td>{{ "{:,}".format(total_prevu).replace(",", " ") }}</td>
+          <td>{{ "{:,}".format(total_realise).replace(",", " ") }}</td>
+          <td style="color:{{ 'var(--green)' if (total_realise - total_prevu) >= 0 else '#c0392b' }};">{{ "{:,}".format(total_realise - total_prevu).replace(",", " ") }}</td>
+          <td>{{ total_taux ~ " %" if total_taux is not none else "—" }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <button type="submit" class="btn btn-primary" style="margin-top:16px;">Enregistrer le budget {{ annee }}</button>
+</form>
+{% endblock %}

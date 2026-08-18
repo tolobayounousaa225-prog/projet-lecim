@@ -26,6 +26,7 @@
         </form>
         {% else %}
         <span style="font-size:0.8rem; color:var(--text-muted);">Comptabilisé</span>
+        <a href="/admin/dons/{{ item.id }}/recu.pdf" target="_blank" class="btn btn-secondary btn-sm">Télécharger le reçu</a>
         {% endif %}
       </td>
     </tr>

@@ -44,7 +44,78 @@ document.addEventListener("DOMContentLoaded", function () {
   loadConseilAdministration();
   loadTemoignages();
   loadSondageExpress();
+  initNewsletterForm();
+  recordPageView();
 });
+
+function initNewsletterForm() {
+  var socialBlock = document.querySelector(".site-footer .footer-social");
+  if (!socialBlock || document.getElementById("newsletter-form")) return;
+
+  var wrap = document.createElement("div");
+  wrap.style.marginTop = "20px";
+  wrap.innerHTML =
+    '<h4 style="margin-bottom:8px;">Newsletter</h4>' +
+    '<p style="font-size:0.82rem; color:rgba(255,255,255,.65); margin-bottom:10px;">Le résumé mensuel de nos actualités, par e-mail.</p>' +
+    '<form id="newsletter-form" style="display:flex; gap:6px; flex-wrap:wrap;">' +
+    '<input type="email" id="newsletter-email" required placeholder="Votre e-mail" style="flex:1; min-width:130px; padding:8px 10px; border-radius:6px; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.08); color:#fff; font-size:0.85rem;">' +
+    "<button type=\"submit\" class=\"btn btn-primary btn-sm\">S'abonner</button>" +
+    "</form>" +
+    '<p id="newsletter-msg" style="font-size:0.8rem; margin-top:8px;"></p>';
+  socialBlock.parentNode.appendChild(wrap);
+
+  var form = wrap.querySelector("#newsletter-form");
+  var emailInput = wrap.querySelector("#newsletter-email");
+  var msg = wrap.querySelector("#newsletter-msg");
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var email = emailInput.value.trim();
+    if (!email) return;
+    var btn = form.querySelector("button");
+    btn.disabled = true;
+    fetch(API_BASE + "/api/newsletter/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email }),
+    })
+      .then(function (res) {
+        if (res.ok) {
+          msg.textContent = "Merci ! Vous êtes inscrit(e) à la newsletter.";
+          msg.style.color = "var(--gold-light)";
+          form.reset();
+        } else {
+          msg.textContent = "Adresse e-mail invalide.";
+          msg.style.color = "#e08080";
+        }
+      })
+      .catch(function () {
+        msg.textContent = "Erreur réseau, réessayez plus tard.";
+        msg.style.color = "#e08080";
+      })
+      .finally(function () {
+        btn.disabled = false;
+      });
+  });
+}
+
+function recordPageView() {
+  var path = (window.location.pathname + window.location.search).slice(0, 300);
+  var payload = JSON.stringify({ path: path });
+  try {
+    if (navigator.sendBeacon) {
+      var blob = new Blob([payload], { type: "application/json" });
+      navigator.sendBeacon(API_BASE + "/api/stats/view", blob);
+      return;
+    }
+  } catch (e) {}
+  fetch(API_BASE + "/api/stats/view", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: payload,
+    keepalive: true,
+  }).catch(function () {});
+}
 
 function urlBase64ToUint8Array(base64String) {
   var padding = "=".repeat((4 - (base64String.length % 4)) % 4);

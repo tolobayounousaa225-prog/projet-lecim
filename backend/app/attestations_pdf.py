@@ -219,6 +219,63 @@ def generate_adhesion_recepisse_pdf(demande) -> bytes:
     return bytes(pdf.output())
 
 
+def numero_recu_don(don_id: int) -> str:
+    return f"LECIM-DON-{don_id:04d}"
+
+
+def _footer_signature_only(pdf: FPDF, numero: str) -> None:
+    sig_x = 28
+    sig_y = pdf.h - 55
+    pdf.set_xy(sig_x, sig_y)
+    pdf.set_font("Helvetica", "", 10.5)
+    pdf.set_text_color(40, 40, 40)
+    pdf.cell(75, 6, f"Fait a Abidjan, le {datetime.date.today().strftime('%d/%m/%Y')}", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_xy(sig_x, sig_y + 8)
+    pdf.set_font("Helvetica", "B", 10.5)
+    pdf.cell(75, 6, "Le Tresorier General de la LECIM", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_draw_color(150, 150, 150)
+    pdf.line(sig_x, sig_y + 24, sig_x + 65, sig_y + 24)
+
+    pdf.set_xy(0, pdf.h - 16)
+    pdf.set_font("Helvetica", "", 7.5)
+    pdf.set_text_color(120, 120, 120)
+    pdf.cell(pdf.w, 4, f"Reference : {numero}  -  Contact : ben_jemci@gmail.com", align="C")
+
+
+def generate_don_recu_pdf(don) -> bytes:
+    pdf = FPDF(orientation="P", unit="mm", format="A4")
+    pdf.set_auto_page_break(auto=False)
+    _header(pdf, "RECU DE DON")
+
+    numero = numero_recu_don(don.id)
+    montant_str = f"{don.montant:,}".replace(",", " ") + " FCFA"
+
+    _body_paragraph(
+        pdf,
+        f"La Ligue des Etablissements Confessionnels et Madrassas en Cote d'Ivoire (LECIM) "
+        f"atteste par la presente avoir recu le don ci-dessous designe, et remercie "
+        f"chaleureusement le donateur pour sa generosite envers la cause de l'education "
+        f"islamique en Cote d'Ivoire.",
+    )
+
+    pdf.ln(2)
+    _kv_line(pdf, "Donateur :", don.nom_donateur)
+    _kv_line(pdf, "Montant du don :", montant_str)
+    _kv_line(pdf, "Date du don :", don.date_don.strftime("%d/%m/%Y"))
+    _kv_line(pdf, "Reference du recu :", numero)
+
+    pdf.ln(6)
+    _body_paragraph(
+        pdf,
+        "Ce recu est delivre pour servir et valoir ce que de droit, notamment aupres de "
+        "l'administration fiscale, et pour tenir lieu de justificatif du don effectue.",
+    )
+
+    _footer_signature_only(pdf, numero)
+
+    return bytes(pdf.output())
+
+
 def generate_adhesion_certificat_pdf(demande) -> bytes:
     pdf = FPDF(orientation="P", unit="mm", format="A4")
     pdf.set_auto_page_break(auto=False)
