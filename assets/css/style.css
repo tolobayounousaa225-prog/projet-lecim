@@ -420,7 +420,11 @@ ul { list-style: none; }
 
 /* ===== Hero ===== */
 .hero {
-  background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 60%, #083a5c 100%);
+  background-color: var(--green-dark);
+  background-image: url("../img/hero-bg-illustration.svg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   position: relative;
   overflow: hidden;
   color: var(--white);
@@ -1614,16 +1618,6 @@ body { animation: fadeIn .5s ease both; }
 .galerie-item:hover { transform: scale(1.03); box-shadow: var(--shadow-lg); }
 
 /* ===== Animations avancées : dégradé, flottement, tilt, blur-up, progression ===== */
-
-/* Dégradé de fond animé dans le hero */
-@keyframes heroGradientShift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-.hero {
-  background-size: 220% 220%;
-  animation: heroGradientShift 14s ease-in-out infinite;
-}
 
 /* Effet "verre" + légère respiration sur les badges flottants du hero */
 .hero-float-badge {
