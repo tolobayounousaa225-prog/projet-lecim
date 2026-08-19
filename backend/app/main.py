@@ -86,6 +86,7 @@ from .routers import (
     ressources_officielles,
     resultats_examens,
     rss,
+    satisfaction_public,
     search_public,
     site_content,
     sondages_express,
@@ -236,6 +237,7 @@ app.include_router(presence_public.router)
 app.include_router(faq_public.router)
 app.include_router(objectifs_principes_moyens.router)
 app.include_router(rss.router)
+app.include_router(satisfaction_public.router)
 app.include_router(sondages_express.router)
 app.include_router(temoignages.router)
 app.include_router(stats.router)

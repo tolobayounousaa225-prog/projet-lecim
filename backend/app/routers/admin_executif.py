@@ -1,12 +1,13 @@
 import datetime
+import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import audit, models
 from ..database import get_db
 from ..deps import require_executif_access_web
 from ..reports import (
@@ -15,8 +16,10 @@ from ..reports import (
     current_annee_scolaire,
     etablissements_en_retard,
     generate_annual_report_pdf,
+    generate_impact_report_pdf,
     money,
 )
+from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/admin/executif", tags=["admin-executif"])
 
@@ -124,6 +127,63 @@ def executif_rapport_annuel(
 
     pdf_bytes = generate_annual_report_pdf(db, annee_scolaire, debut_annee, today, user=user)
     filename = f"lecim-rapport-annuel-{annee_scolaire}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ---------- Rapport d'impact public (chiffres clés, sans détail comptable) ----------
+
+@router.get("/rapport-impact")
+def executif_rapport_impact_form(
+    request: Request,
+    user: models.User = Depends(require_executif_access_web),
+):
+    annee_courante = current_annee_scolaire()
+    annee_precedente_debut = int(annee_courante[:4]) - 1
+    annee_precedente = f"{annee_precedente_debut}-{annee_precedente_debut + 1}"
+    return templates.TemplateResponse(
+        request,
+        "admin/rapport_impact_form.html",
+        {
+            "admin": user,
+            "active": "executif",
+            "annees": [annee_courante, annee_precedente],
+            "default_annee": annee_courante,
+        },
+    )
+
+
+@router.post("/rapport-impact")
+def executif_rapport_impact_generate(
+    annee_scolaire: str = Form(...),
+    publier: bool = Form(False),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_executif_access_web),
+):
+    pdf_bytes = generate_impact_report_pdf(db, annee_scolaire)
+    filename = f"lecim-rapport-impact-{annee_scolaire}.pdf"
+
+    if publier:
+        stored_name = f"{uuid.uuid4().hex}.pdf"
+        (UPLOAD_ROOT / "publications" / stored_name).write_bytes(pdf_bytes)
+        db.add(
+            models.PublicationPublique(
+                title=f"Rapport d'impact {annee_scolaire}",
+                category="rapport_impact",
+                description="Chiffres clés de l'année : établissements, élèves, enseignants, taux de réussite.",
+                file_path=f"publications/{stored_name}",
+                original_filename=filename,
+                published_at=datetime.date.today(),
+                is_published=True,
+                uploaded_by_id=user.id,
+            )
+        )
+        audit.log(db, user, "create", "Publication", None, f"A publié le rapport d'impact {annee_scolaire}")
+        db.commit()
+
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",

@@ -6,7 +6,10 @@
     <h1 style="margin:0">Tableau de bord exécutif</h1>
     <p style="color:var(--text-muted); margin:4px 0 0;">Vue d'ensemble consolidée — Année scolaire {{ annee_scolaire }}</p>
   </div>
-  <a href="/admin/executif/rapport-annuel" class="btn btn-primary">Générer le rapport annuel (PDF)</a>
+  <div style="display:flex; gap:10px;">
+    <a href="/admin/executif/rapport-annuel" class="btn btn-primary">Générer le rapport annuel (PDF)</a>
+    <a href="/admin/executif/rapport-impact" class="btn btn-gold">Rapport d'impact public</a>
+  </div>
 </div>
 
 {% if mandats_a_surveiller %}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sondage de satisfaction — LECIM</title>
+<link rel="icon" type="image/jpeg" href="/static/img/logo.jpg">
+<link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+<div class="login-shell">
+  <div class="login-card">
+    <img src="/static/img/logo.jpg" alt="Logo LECIM" class="login-logo">
+    {% if not sondage %}
+    <h1>Lien invalide</h1>
+    <p class="sub">Ce lien de sondage n'est pas reconnu — il a peut-être déjà été utilisé ou mal copié.</p>
+    {% elif envoye %}
+    <h1>Merci !</h1>
+    <p class="sub">Votre avis a bien été enregistré. Il nous aide à améliorer nos prochaines rencontres.</p>
+    {% else %}
+    <h1>Votre avis compte</h1>
+    <p class="sub">« {{ sondage.reunion.title }} » — comment avez-vous trouvé cette rencontre ? Votre réponse est anonyme.</p>
+    <form method="post" action="/sondage-satisfaction/{{ token }}">
+      <div class="form-group">
+        <label>Votre satisfaction globale</label>
+        <div style="display:flex; gap:8px; margin-top:6px;">
+          {% for n in range(1, 6) %}
+          <label style="flex:1; text-align:center; border:1px solid var(--border); border-radius:8px; padding:10px 4px; cursor:pointer; font-size:0.85rem;">
+            <input type="radio" name="note" value="{{ n }}" required style="display:block; margin:0 auto 4px;">{{ n }}
+          </label>
+          {% endfor %}
+        </div>
+        <p style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-top:4px;">
+          <span>Insatisfait</span><span>Très satisfait</span>
+        </p>
+      </div>
+      <div class="form-group">
+        <label for="commentaire">Commentaire (optionnel)</label>
+        <textarea id="commentaire" name="commentaire" rows="4" placeholder="Ce qui vous a plu, ce qui pourrait être amélioré..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%">Envoyer mon avis</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+</body>
+</html>

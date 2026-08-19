@@ -1,0 +1,30 @@
+{% extends "admin/base.html" %}
+{% block title %}Rapport d'impact{% endblock %}
+{% block content %}
+<h1>Générer le rapport d'impact annuel</h1>
+<p style="margin-top:-14px;"><a href="/admin/executif">&larr; Retour au tableau de bord</a></p>
+
+<div class="form-card">
+  <p style="color:var(--text-muted); font-size:0.9rem; margin-top:0;">
+    Un résumé grand public de l'année scolaire (établissements affiliés, élèves scolarisés,
+    enseignants, taux de réussite, ressources mobilisées) — sans le détail comptable ligne par
+    ligne du rapport d'activités interne. Cochez « Publier » pour le rendre immédiatement
+    disponible au public dans Documents &amp; publications.
+  </p>
+  <form method="post" action="/admin/executif/rapport-impact">
+    <div class="form-group">
+      <label for="annee_scolaire">Année scolaire</label>
+      <select id="annee_scolaire" name="annee_scolaire" required>
+        {% for a in annees %}
+        <option value="{{ a }}" {% if a == default_annee %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="publier" name="publier" value="true" checked>
+      <label for="publier" style="margin:0">Publier sur le site (visible par tous, sans connexion)</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Générer le PDF</button>
+  </form>
+</div>
+{% endblock %}
