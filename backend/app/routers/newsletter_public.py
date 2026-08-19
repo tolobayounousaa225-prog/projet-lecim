@@ -48,6 +48,6 @@ def newsletter_unsubscribe(token: str, db: Session = Depends(get_db)):
         f"<!doctype html><html lang='fr'><head><meta charset='utf-8'>"
         f"<title>Désinscription — LECIM</title></head>"
         f"<body style='font-family:sans-serif; text-align:center; padding:60px 20px;'>"
-        f"<h1 style='color:#0b3d2e;'>LECIM</h1><p>{message}</p>"
+        f"<h1 style='color:#0a3d63;'>LECIM</h1><p>{message}</p>"
         f"<p><a href='/index.html'>Retour à l'accueil</a></p></body></html>"
     )
