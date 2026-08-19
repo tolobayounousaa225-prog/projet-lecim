@@ -49,7 +49,7 @@
     <tr>
       <td>{{ item.titre }}</td>
       <td>{{ item.categorie_label }}</td>
-      <td>{% if item.is_published %}<span style="color:var(--green,#0f7a4c); font-weight:600;">Publié</span>{% else %}<span style="color:#b8860b; font-weight:600;">En attente de validation</span>{% endif %}</td>
+      <td>{% if item.is_published %}<span style="color:var(--green,#043872); font-weight:600;">Publié</span>{% else %}<span style="color:#b8860b; font-weight:600;">En attente de validation</span>{% endif %}</td>
       <td>{{ item.created_at.strftime("%d/%m/%Y") }}</td>
       <td style="white-space:nowrap;">
         <a href="/etablissement/ressources/{{ item.id }}/file" class="btn btn-outline btn-sm" target="_blank" rel="noopener">Télécharger</a>
