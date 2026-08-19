@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import audit, models
@@ -106,7 +107,28 @@ async def etablissement_compte_create(
         allowed_modules="" if is_titulaire else ",".join(modules),
     )
     db.add(compte)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        # Course avec une autre création concurrente (même e-mail, ou même
+        # établissement pour deux titulaires à la fois) — l'index/la contrainte
+        # unique a bloqué la seconde requête plutôt que de laisser un doublon.
+        db.rollback()
+        comptes = db.query(models.User).filter(models.User.etablissement_id == etablissement_id).all()
+        return templates.TemplateResponse(
+            request,
+            "admin/etablissement_compte.html",
+            {
+                "admin": user,
+                "etablissement": etablissement,
+                "comptes": comptes,
+                "titulaire_existe": any(c.is_etablissement_titulaire for c in comptes),
+                "etab_modules": ETAB_MODULES,
+                "active": "finances",
+                "error": "Conflit détecté (e-mail ou titulaire déjà pris entre-temps) — veuillez réessayer.",
+            },
+            status_code=status.HTTP_409_CONFLICT,
+        )
     role_label = "titulaire" if is_titulaire else "secrétaire"
     audit.log(db, user, "create", "Compte établissement", compte.id, f"A créé un compte {role_label} pour {etablissement.nom} ({email})")
     db.commit()

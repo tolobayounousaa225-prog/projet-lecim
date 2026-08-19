@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Form, Request, Response, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from .. import audit, models
@@ -87,7 +88,11 @@ def effectifs_create(
         recorded_by_id=user.id,
     )
     db.add(effectif)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        return RedirectResponse(url="/admin/effectifs", status_code=status.HTTP_303_SEE_OTHER)
     audit.log(
         db, user, "create", "Effectif", effectif.id,
         f"A saisi l'effectif {effectif.niveau_label} {effectif.annee_scolaire} de {effectif.etablissement.nom}",
@@ -134,7 +139,10 @@ def effectifs_update(
             db, user, "update", "Effectif", effectif.id,
             f"A modifié l'effectif {effectif.niveau_label} {effectif.annee_scolaire} de {effectif.etablissement.nom}",
         )
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
     return RedirectResponse(url="/admin/effectifs", status_code=status.HTTP_303_SEE_OTHER)
 
 

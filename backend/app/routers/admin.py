@@ -8,6 +8,7 @@ from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from .. import audit, models
+from ..config import settings
 from ..attestations_pdf import generate_membre_attestation_pdf
 from ..connexion_log import record_login
 from ..database import get_db
@@ -94,7 +95,13 @@ def login_submit(
     record_login(db, user, request)
     db.commit()
     response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
-    response.set_cookie("access_token", token, httponly=True, samesite="lax", max_age=60 * 60 * 6)
+    # Le cookie ne doit jamais survivre plus longtemps que le JWT qu'il contient —
+    # sinon un utilisateur se croit connecté (cookie présent) alors que le jeton
+    # est déjà expiré côté serveur, et se fait déconnecter silencieusement.
+    response.set_cookie(
+        "access_token", token, httponly=True, samesite="lax",
+        max_age=settings.access_token_expire_minutes * 60,
+    )
     return response
 
 
@@ -332,6 +339,8 @@ def news_edit_form(
     user: models.User = Depends(require_news_access_web),
 ):
     item = db.get(models.NewsPost, news_id)
+    if not item:
+        return RedirectResponse(url="/admin/news", status_code=status.HTTP_303_SEE_OTHER)
     return templates.TemplateResponse(
         request,
         "admin/news_form.html",
@@ -475,6 +484,8 @@ def activities_edit_form(
     user: models.User = Depends(require_activities_access_web),
 ):
     item = db.get(models.Activity, activity_id)
+    if not item:
+        return RedirectResponse(url="/admin/activities", status_code=status.HTTP_303_SEE_OTHER)
     return templates.TemplateResponse(
         request,
         "admin/activities_form.html",

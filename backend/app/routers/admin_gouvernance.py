@@ -85,7 +85,7 @@ async def _handle_photo(
         return None, error_response
 
 
-def _parse_parent_id(raw: str, self_id: int | None, valid_ids: set[int]) -> int | None:
+def _parse_parent_id(raw: str, self_id: int | None, valid_ids: set[int], db: Session | None = None) -> int | None:
     if not raw:
         return None
     try:
@@ -94,6 +94,18 @@ def _parse_parent_id(raw: str, self_id: int | None, valid_ids: set[int]) -> int 
         return None
     if parsed == self_id or parsed not in valid_ids:
         return None
+    if self_id is not None and db is not None:
+        # Rejette aussi les cycles indirects (A -> parent B, B -> parent C, C ->
+        # parent A) : remonte la chaîne de parents proposée et refuse si elle
+        # revient sur self_id, pas seulement l'auto-référence directe.
+        current_id = parsed
+        seen: set[int] = set()
+        while current_id is not None and current_id not in seen:
+            if current_id == self_id:
+                return None
+            seen.add(current_id)
+            parent = db.get(models.GouvernanceMembre, current_id)
+            current_id = parent.parent_id if parent else None
     return parsed
 
 
@@ -218,7 +230,7 @@ async def gouvernance_update(
     membre.titulaire_nom = titulaire_nom or None
     membre.adjoint_nom = adjoint_nom or None
     membre.niveau = niveau if niveau in GOUVERNANCE_NIVEAUX else "autre"
-    membre.parent_id = _parse_parent_id(parent_id, membre_id, {p.id for p in parents})
+    membre.parent_id = _parse_parent_id(parent_id, membre_id, {p.id for p in parents}, db)
     membre.ordre = ordre
     membre.is_published = is_published
     db.commit()

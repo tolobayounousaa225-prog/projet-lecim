@@ -25,6 +25,34 @@ ALLOWED_DOCUMENT_EXT = {".pdf", ".doc", ".docx", ".odt"}
 ALLOWED_PHOTO_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 MAX_UPLOAD_BYTES = settings.max_upload_size_mb * 1024 * 1024
 
+# Signatures binaires (magic bytes) attendues pour chaque extension autorisée —
+# défense en profondeur en plus du contrôle d'extension : empêche de stocker un
+# contenu arbitraire simplement renommé avec une extension permise. .docx/.odt
+# sont tous deux des archives ZIP (OOXML/ODF) et partagent donc la même
+# signature ; .doc (binaire historique) utilise le format OLE Compound File.
+_MAGIC_BYTES: dict[str, tuple[bytes, ...]] = {
+    ".pdf": (b"%PDF",),
+    ".jpg": (b"\xff\xd8\xff",),
+    ".jpeg": (b"\xff\xd8\xff",),
+    ".png": (b"\x89PNG\r\n\x1a\n",),
+    ".gif": (b"GIF87a", b"GIF89a"),
+    ".webp": (b"RIFF",),  # "WEBP" suit à l'offset 8, vérifié séparément ci-dessous
+    ".docx": (b"PK\x03\x04",),
+    ".odt": (b"PK\x03\x04",),
+    ".doc": (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1",),
+}
+
+
+def _matches_magic_bytes(data: bytes, ext: str) -> bool:
+    signatures = _MAGIC_BYTES.get(ext)
+    if not signatures:
+        return True  # extension sans signature connue : pas de vérification possible
+    if not any(data.startswith(sig) for sig in signatures):
+        return False
+    if ext == ".webp" and data[8:12] != b"WEBP":
+        return False
+    return True
+
 
 async def _save_upload(file: UploadFile | None, dest_dir: Path, allowed_ext: set[str]) -> tuple[str, str]:
     if file is None or not file.filename:
@@ -35,6 +63,8 @@ async def _save_upload(file: UploadFile | None, dest_dir: Path, allowed_ext: set
     data = await file.read()
     if len(data) > MAX_UPLOAD_BYTES:
         raise ValueError("Fichier trop volumineux")
+    if not _matches_magic_bytes(data, ext):
+        raise ValueError("Le contenu du fichier ne correspond pas à son extension")
     stored_name = f"{uuid.uuid4().hex}{ext}"
     dest_path = dest_dir / stored_name
     dest_path.write_bytes(data)

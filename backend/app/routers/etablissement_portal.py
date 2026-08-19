@@ -488,7 +488,14 @@ def etablissement_effectifs_create(
         )
         db.add(effectif)
         action = "create"
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        # Deux soumissions concurrentes (double-clic, deux onglets) pour le même
+        # année/niveau : la contrainte unique a bloqué la seconde, l'autre a déjà
+        # enregistré la déclaration.
+        db.rollback()
+        return RedirectResponse(url="/etablissement/effectifs", status_code=status.HTTP_303_SEE_OTHER)
     audit.log(
         db, user, action, "Effectif", effectif.id,
         f"{etablissement.nom} a déclaré son effectif {effectif.niveau_label} {annee_scolaire}",

@@ -4,6 +4,7 @@ from urllib.parse import quote
 from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import audit, models
@@ -134,6 +135,7 @@ def delegations_delete(
 def delegation_detail(
     delegation_id: int,
     request: Request,
+    error: str | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_delegation_management_web),
 ):
@@ -157,7 +159,7 @@ def delegation_detail(
             "reunions_count": reunions_count,
             "membres_count": membres_count,
             "active": "delegations",
-            "error": None,
+            "error": error,
         },
     )
 
@@ -215,7 +217,17 @@ def delegation_user_create(
         role_local=role_local or None,
     )
     db.add(delegation_user)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        # Course avec une autre création concurrente utilisant le même e-mail —
+        # la contrainte unique a bloqué la seconde requête plutôt que de laisser
+        # un doublon.
+        db.rollback()
+        return RedirectResponse(
+            url=f"/admin/delegations/{delegation_id}?error={quote('Conflit détecté (e-mail déjà pris entre-temps) — veuillez réessayer.')}",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
     audit.log(db, user, "create", "Compte délégation", delegation_user.id, f"A créé le compte {delegation_user.full_name} pour la délégation {delegation.nom}")
     db.commit()
     return RedirectResponse(url=f"/admin/delegations/{delegation_id}", status_code=status.HTTP_303_SEE_OTHER)
