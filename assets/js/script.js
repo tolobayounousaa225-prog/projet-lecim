@@ -45,6 +45,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadTemoignages();
   loadSondageExpress();
   initNewsletterForm();
+  initLiveVisitors();
   recordPageView();
 });
 
@@ -115,6 +116,51 @@ function recordPageView() {
     body: payload,
     keepalive: true,
   }).catch(function () {});
+}
+
+function initLiveVisitors() {
+  var isArabic = document.documentElement.lang === "ar";
+  var STORAGE_KEY = "lecim_presence_session_id";
+  var HEARTBEAT_MS = 25000;
+
+  var sessionId = "";
+  try {
+    sessionId = sessionStorage.getItem(STORAGE_KEY) || "";
+    if (!sessionId) {
+      sessionId = "v-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+      sessionStorage.setItem(STORAGE_KEY, sessionId);
+    }
+  } catch (e) {
+    sessionId = "v-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+  }
+
+  var badge = document.createElement("div");
+  badge.id = "live-visitors-badge";
+  badge.setAttribute("aria-live", "polite");
+  badge.innerHTML =
+    '<span class="live-visitors-dot"></span><span id="live-visitors-count">…</span>' +
+    '<span class="live-visitors-label">' + (isArabic ? "متصل الآن" : "en ligne") + "</span>";
+  document.body.appendChild(badge);
+
+  var countEl = badge.querySelector("#live-visitors-count");
+
+  function applyCount(count) {
+    if (typeof count === "number") countEl.textContent = count;
+  }
+
+  function sendHeartbeat() {
+    fetch(API_BASE + "/api/presence/heartbeat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId }),
+    })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) { if (data) applyCount(data.count); })
+      .catch(function () {});
+  }
+
+  sendHeartbeat();
+  setInterval(sendHeartbeat, HEARTBEAT_MS);
 }
 
 function urlBase64ToUint8Array(base64String) {
