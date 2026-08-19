@@ -79,6 +79,7 @@ from .routers import (
     partenariat_requests,
     password_reset,
     photos_public,
+    presence_public,
     projets_public,
     publications,
     push_public,
@@ -231,6 +232,7 @@ app.include_router(partenariat_requests.router)
 app.include_router(dons_public.router)
 app.include_router(projets_public.router)
 app.include_router(photos_public.router)
+app.include_router(presence_public.router)
 app.include_router(faq_public.router)
 app.include_router(objectifs_principes_moyens.router)
 app.include_router(rss.router)
