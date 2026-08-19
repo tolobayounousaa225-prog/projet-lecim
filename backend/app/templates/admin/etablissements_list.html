@@ -10,6 +10,10 @@
 </div>
 <p style="margin-top:-12px;"><a href="/admin/finances">&larr; Retour aux finances</a></p>
 
+{% if error %}
+<div class="empty-state" style="background:#fdecea; color:#c0392b;">{{ error }}</div>
+{% endif %}
+
 <form method="get" action="/admin/etablissements" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; align-items:flex-end;">
   <div class="form-group" style="margin:0;">
     <label for="district">District</label>

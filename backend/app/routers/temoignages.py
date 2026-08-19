@@ -29,5 +29,7 @@ def temoignage_photo(temoignage_id: int, db: Session = Depends(get_db)):
     if not temoignage or not temoignage.is_published or not temoignage.photo_path:
         raise HTTPException(status_code=404, detail="Introuvable")
     path = UPLOAD_ROOT / temoignage.photo_path
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Introuvable")
     media_type = mimetypes.guess_type(temoignage.photo_path)[0] or "image/jpeg"
     return FileResponse(path, media_type=media_type)

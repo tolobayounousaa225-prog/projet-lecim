@@ -27,5 +27,7 @@ def publication_file(publication_id: int, db: Session = Depends(get_db)):
     if not publication or not publication.is_published:
         raise HTTPException(status_code=404, detail="Document introuvable")
     path = UPLOAD_ROOT / publication.file_path
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Document introuvable")
     media_type = mimetypes.guess_type(publication.original_filename)[0] or "application/octet-stream"
     return FileResponse(path, media_type=media_type, filename=publication.original_filename)

@@ -56,6 +56,14 @@ def _dump_postgres_to_json(destination: Path) -> None:
             rows = conn.execute(table.select()).mappings().all()
             data[table.name] = [dict(row) for row in rows]
 
+    # Les mots de passe temporaires en clair (conservés en base comme filet de
+    # secours, voir PasswordResetRequest) n'ont pas leur place dans une sauvegarde
+    # téléchargeable — une fuite d'un seul fichier de sauvegarde ne doit jamais
+    # exposer des identifiants valides.
+    for row in data.get("password_reset_requests", []):
+        if "temp_password" in row:
+            row["temp_password"] = "[EXPURGÉ — voir /admin/reinitialisations]"
+
     with destination.open("w", encoding="utf-8") as f:
         json.dump(data, f, default=_json_default, ensure_ascii=False)
 

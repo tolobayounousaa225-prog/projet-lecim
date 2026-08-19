@@ -33,15 +33,28 @@
       </tbody>
       <tfoot>
         <tr style="font-weight:800;">
-          <td>Total</td>
-          <td>{{ "{:,}".format(total_prevu).replace(",", " ") }}</td>
-          <td>{{ "{:,}".format(total_realise).replace(",", " ") }}</td>
-          <td style="color:{{ 'var(--green)' if (total_realise - total_prevu) >= 0 else '#c0392b' }};">{{ "{:,}".format(total_realise - total_prevu).replace(",", " ") }}</td>
-          <td>{{ total_taux ~ " %" if total_taux is not none else "—" }}</td>
+          <td>Total des entrées (hors dépenses)</td>
+          <td>{{ "{:,}".format(total_entrees_prevu).replace(",", " ") }}</td>
+          <td>{{ "{:,}".format(total_entrees_realise).replace(",", " ") }}</td>
+          <td style="color:{{ 'var(--green)' if (total_entrees_realise - total_entrees_prevu) >= 0 else '#c0392b' }};">{{ "{:,}".format(total_entrees_realise - total_entrees_prevu).replace(",", " ") }}</td>
+          <td>{{ total_entrees_taux ~ " %" if total_entrees_taux is not none else "—" }}</td>
         </tr>
       </tfoot>
     </table>
   </div>
+
+  <div class="form-card" style="max-width:none; margin-top:16px;">
+    <table>
+      <tbody>
+        <tr>
+          <td>Solde (entrées − dépenses)</td>
+          <td style="text-align:right; font-weight:800;">Prévu : {{ "{:,}".format(solde_prevu).replace(",", " ") }} FCFA</td>
+          <td style="text-align:right; font-weight:800; color:{{ 'var(--green)' if solde_realise >= 0 else '#c0392b' }};">Réalisé : {{ "{:,}".format(solde_realise).replace(",", " ") }} FCFA</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
   <button type="submit" class="btn btn-primary" style="margin-top:16px;">Enregistrer le budget {{ annee }}</button>
 </form>
 {% endblock %}

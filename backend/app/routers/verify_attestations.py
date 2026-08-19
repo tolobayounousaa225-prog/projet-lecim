@@ -11,8 +11,9 @@ from sqlalchemy.orm import Session
 from .. import models
 from ..attestations_pdf import numero_affiliation
 from ..database import get_db
+from ..rate_limit import rate_limiter
 
-router = APIRouter(tags=["verify"])
+router = APIRouter(tags=["verify"], dependencies=[Depends(rate_limiter("verify-attestations", 30, 60))])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))

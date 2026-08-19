@@ -107,7 +107,11 @@ def don_delete(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
-    don = db.get(models.DonDeclare, don_id)
+    # Verrou identique à don_confirmer : sans lui, une confirmation concurrente
+    # entre la lecture et la suppression pourrait effacer un don qui vient
+    # d'être confirmé et comptabilisé (le solde du don reste dans la Recette,
+    # mais la trace du don lui-même — nom, e-mail, historique — serait perdue).
+    don = db.query(models.DonDeclare).filter(models.DonDeclare.id == don_id).with_for_update().first()
     if don and not don.is_confirme:
         audit.log(db, user, "delete", "Don déclaré", don.id, f"A supprimé la déclaration de don de {don.nom_donateur}")
         db.delete(don)

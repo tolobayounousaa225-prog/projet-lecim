@@ -1,10 +1,12 @@
 import datetime
 import mimetypes
+import secrets
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from .. import audit, models
@@ -23,8 +25,15 @@ CARTE_VALIDITE_ANNEES = 1
 
 
 def _next_matricule(db: Session) -> str:
-    count = db.query(models.CarteScolaire).filter(models.CarteScolaire.matricule.isnot(None)).count()
-    return f"LECIM-EL-{count + 1:04d}"
+    """Matricule imprévisible (espace aléatoire) — un matricule séquentiel
+    permettrait d'énumérer /verify-eleve/{matricule}/photo et d'aspirer les photos
+    et identités de tous les élèves. Contrainte d'unicité en base en filet final."""
+    for _ in range(10):
+        candidate = f"LECIM-EL-{secrets.token_hex(4).upper()}"
+        exists = db.query(models.CarteScolaire.id).filter(models.CarteScolaire.matricule == candidate).first()
+        if not exists:
+            return candidate
+    raise RuntimeError("Impossible de générer un matricule disponible")
 
 
 def _validite_dans_n_ans(depuis: datetime.date, annees: int) -> datetime.date:
@@ -105,7 +114,13 @@ def carte_scolaire_valider(
                 link="/etablissement/cartes-scolaires",
             )
         audit.log(db, user, "update", "Carte scolaire", carte.id, f"A validé la carte scolaire de {carte.eleve_nom} ({carte.etablissement.nom})")
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            if carte.requested_by_id:
+                notify(db, carte.requested_by_id, "Conflit sur le matricule généré — veuillez réessayer la validation.", link=f"/admin/cartes-scolaires/{carte_id}")
+                db.commit()
     return RedirectResponse(url=f"/admin/cartes-scolaires/{carte_id}", status_code=status.HTTP_303_SEE_OTHER)
 
 

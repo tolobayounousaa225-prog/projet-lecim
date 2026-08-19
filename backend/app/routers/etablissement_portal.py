@@ -6,6 +6,7 @@ import mimetypes
 from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import audit, models
@@ -300,7 +301,11 @@ def etablissement_resultats_create(
         recorded_by_id=user.id,
     )
     db.add(resultat)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        return RedirectResponse(url="/etablissement/resultats", status_code=status.HTTP_303_SEE_OTHER)
     audit.log(
         db, user, "create", "Résultat d'examen", resultat.id,
         f"{etablissement.nom} a déclaré son résultat {type_examen} {annee_scolaire} (en attente de validation)",

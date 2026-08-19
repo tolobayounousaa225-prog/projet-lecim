@@ -11,6 +11,7 @@ from ..database import get_db
 from ..deps import require_membres_access_web, require_reunions_access_web
 from ..postes import POSTES
 from ..reminders import send_reminder_for_reunion
+from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/admin", tags=["admin-reunions"])
 
@@ -129,6 +130,11 @@ def membres_delete(
 ):
     membre = db.get(models.Membre, membre_id)
     if membre:
+        # Presence.membre_id n'a pas de cascade en base — une présence n'a de sens
+        # que rattachée à un membre existant, donc on la nettoie explicitement
+        # avant de supprimer le membre (sinon la suppression plante avec une
+        # IntegrityError dès que le membre a été convoqué à au moins une réunion).
+        db.query(models.Presence).filter(models.Presence.membre_id == membre_id).delete()
         db.delete(membre)
         db.commit()
     return RedirectResponse(url="/admin/membres", status_code=status.HTTP_303_SEE_OTHER)
@@ -232,8 +238,19 @@ def reunions_delete(
 ):
     reunion = db.get(models.Reunion, reunion_id)
     if reunion:
+        # Les Document/Photo rattachés sont supprimés en cascade côté ORM, mais
+        # leurs fichiers physiques ne le sont jamais automatiquement — on les
+        # collecte avant le commit pour ne pas laisser de fichiers orphelins.
+        file_paths = [
+            UPLOAD_ROOT / d.file_path for d in reunion.documents if d.file_path
+        ] + [
+            UPLOAD_ROOT / p.file_path for p in reunion.photos if p.file_path
+        ]
         db.delete(reunion)
         db.commit()
+        for path in file_paths:
+            if path.exists():
+                path.unlink()
     return RedirectResponse(url="/admin/reunions", status_code=status.HTTP_303_SEE_OTHER)
 
 

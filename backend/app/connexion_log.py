@@ -15,9 +15,17 @@ def record_login(db: Session, user: "models.User", request: Request) -> None:
     has_prior_logins = (
         db.query(models.ConnexionLog).filter(models.ConnexionLog.user_id == user.id).first() is not None
     )
+    # Reconnu seulement si la MÊME combinaison navigateur + adresse IP a déjà été
+    # vue — un navigateur générique (Chrome/Windows) identique ne suffit plus à
+    # masquer une connexion depuis une IP jamais vue pour ce compte (un simple
+    # User-Agent partagé par des millions de machines n'authentifiait rien).
     known_device = (
         db.query(models.ConnexionLog)
-        .filter(models.ConnexionLog.user_id == user.id, models.ConnexionLog.user_agent == user_agent)
+        .filter(
+            models.ConnexionLog.user_id == user.id,
+            models.ConnexionLog.user_agent == user_agent,
+            models.ConnexionLog.ip_address == ip_address,
+        )
         .first()
         is not None
     )

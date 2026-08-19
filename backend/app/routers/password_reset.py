@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from .. import audit, models
 from ..database import get_db
 from ..email_utils import send_email
+from ..rate_limit import rate_limiter
 from ..security import generate_temp_password, hash_password
 
 router = APIRouter(tags=["password-reset"])
@@ -29,7 +30,7 @@ def password_reset_request_page(request: Request):
     return templates.TemplateResponse(request, "password_reset_request.html", {"message": None, "error": None})
 
 
-@router.post("/mot-de-passe-oublie")
+@router.post("/mot-de-passe-oublie", dependencies=[Depends(rate_limiter("password-reset", 5, 900))])
 def password_reset_request_submit(
     request: Request,
     email: str = Form(...),

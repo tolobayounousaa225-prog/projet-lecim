@@ -5,19 +5,27 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..database import get_db
 from ..deps import get_current_user
-from ..security import create_access_token, verify_password
+from ..login_security import AccountLockedError, authenticate_user
+from ..security import create_access_token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/token", response_model=schemas.Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    try:
+        user = authenticate_user(db, form_data.username, form_data.password)
+    except AccountLockedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Compte temporairement verrouillé après plusieurs échecs. Réessayez dans {exc.minutes_left} min.",
+        )
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Identifiants incorrects",
         )
+    db.commit()
     token = create_access_token(subject=user.email)
     return schemas.Token(access_token=token)
 

@@ -30,6 +30,8 @@ def _serve_photo(path_value: str | None):
     if not path_value:
         raise HTTPException(status_code=404, detail="Photo introuvable")
     path = UPLOAD_ROOT / path_value
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Photo introuvable")
     media_type = mimetypes.guess_type(path_value)[0] or "application/octet-stream"
     return FileResponse(path, media_type=media_type)
 

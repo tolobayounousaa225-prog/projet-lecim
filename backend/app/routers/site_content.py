@@ -38,5 +38,7 @@ def site_content_image(key: str, db: Session = Depends(get_db)):
     if not row or not row.value:
         raise HTTPException(status_code=404, detail="Image introuvable")
     path = UPLOAD_ROOT / row.value
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Image introuvable")
     media_type = mimetypes.guess_type(row.value)[0] or "image/jpeg"
     return FileResponse(path, media_type=media_type)

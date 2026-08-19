@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import audit, models
@@ -74,7 +75,13 @@ def sondage_voter(
 
     db.add(models.SondageVote(sondage_id=sondage_id, option_id=option_id, user_id=user.id))
     audit.log(db, user, "create", "Vote", sondage_id, f"A voté au sondage « {sondage.titre} »")
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Double-clic/double requête concurrente : la contrainte uq_sondage_vote_user
+        # a bloqué un second vote — ce n'est pas une erreur, juste un vote déjà pris
+        # en compte par l'autre requête.
+        db.rollback()
     return RedirectResponse(url=f"/admin/sondages/{sondage_id}", status_code=status.HTTP_303_SEE_OTHER)
 
 

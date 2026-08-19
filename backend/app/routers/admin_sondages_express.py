@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import models
@@ -69,12 +70,24 @@ def sondages_express_create(
     if is_active:
         db.query(models.SondageExpress).update({"is_active": False})
 
-    sondage = models.SondageExpress(question=question, is_active=is_active, created_by_id=user.id)
-    db.add(sondage)
-    db.flush()
-    for i, texte in enumerate(textes):
-        db.add(models.SondageExpressOption(sondage_id=sondage.id, texte=texte, ordre=i))
-    db.commit()
+    def _create(active: bool) -> models.SondageExpress:
+        sondage = models.SondageExpress(question=question, is_active=active, created_by_id=user.id)
+        db.add(sondage)
+        db.flush()
+        for i, texte in enumerate(textes):
+            db.add(models.SondageExpressOption(sondage_id=sondage.id, texte=texte, ordre=i))
+        return sondage
+
+    _create(is_active)
+    try:
+        db.commit()
+    except IntegrityError:
+        # Un autre sondage a été activé entre-temps par une requête concurrente
+        # (index unique partiel "un seul actif à la fois") : on recrée le sondage
+        # sans l'activer plutôt que de perdre la saisie de l'admin.
+        db.rollback()
+        _create(False)
+        db.commit()
     return RedirectResponse(url="/admin/sondages-express", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -88,7 +101,12 @@ def sondages_express_activer(
     if sondage:
         db.query(models.SondageExpress).update({"is_active": False})
         sondage.is_active = True
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            # Course avec une autre activation concurrente — sans effet, l'autre
+            # sondage reste actif ; l'admin peut réessayer si besoin.
+            db.rollback()
     return RedirectResponse(url="/admin/sondages-express", status_code=status.HTTP_303_SEE_OTHER)
 
 

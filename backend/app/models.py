@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Boolean, DateTime, Date, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Date, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -715,9 +715,12 @@ class ResultatExamen(Base):
     année scolaire donnée — consultable publiquement, au-delà du PDF publié."""
 
     __tablename__ = "resultats_examens"
+    __table_args__ = (
+        UniqueConstraint("etablissement_id", "annee_scolaire", "type_examen", name="uq_resultat_etab_annee_examen"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    etablissement_id: Mapped[int] = mapped_column(ForeignKey("etablissements.id"), nullable=False)
+    etablissement_id: Mapped[int] = mapped_column(ForeignKey("etablissements.id"), index=True, nullable=False)
     annee_scolaire: Mapped[str] = mapped_column(String(20), nullable=False)
     type_examen: Mapped[str] = mapped_column(String(120), nullable=False)
     nombre_inscrits: Mapped[int] = mapped_column(Integer, default=0)
@@ -755,7 +758,7 @@ class Effectif(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    etablissement_id: Mapped[int] = mapped_column(ForeignKey("etablissements.id"), nullable=False)
+    etablissement_id: Mapped[int] = mapped_column(ForeignKey("etablissements.id"), index=True, nullable=False)
     annee_scolaire: Mapped[str] = mapped_column(String(20), nullable=False)
     niveau: Mapped[str] = mapped_column(String(20), nullable=False)  # "primaire" | "secondaire"
     nombre_garcons: Mapped[int] = mapped_column(Integer, default=0)
@@ -830,7 +833,7 @@ class Adhesion(Base):
     __tablename__ = "adhesions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    etablissement_id: Mapped[int] = mapped_column(ForeignKey("etablissements.id"), nullable=False)
+    etablissement_id: Mapped[int] = mapped_column(ForeignKey("etablissements.id"), unique=True, nullable=False)
     montant: Mapped[int] = mapped_column(Integer, default=12000)
     date_paiement: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
@@ -850,7 +853,7 @@ class Cotisation(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    etablissement_id: Mapped[int] = mapped_column(ForeignKey("etablissements.id"), nullable=False)
+    etablissement_id: Mapped[int] = mapped_column(ForeignKey("etablissements.id"), index=True, nullable=False)
     annee_scolaire: Mapped[str] = mapped_column(String(20), nullable=False)  # ex: "2025-2026"
     montant_du: Mapped[int] = mapped_column(Integer, nullable=False)
     montant_paye: Mapped[int] = mapped_column(Integer, default=0)
@@ -1094,7 +1097,7 @@ class CarteMembre(Base):
     contact_urgence_telephone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     email_personnel: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    numero_carte: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    numero_carte: Mapped[str | None] = mapped_column(String(30), unique=True, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="soumise")
     commentaire_rejet: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -1138,7 +1141,7 @@ class CarteScolaire(Base):
     annee_scolaire: Mapped[str] = mapped_column(String(20), nullable=False)
     photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
-    matricule: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    matricule: Mapped[str | None] = mapped_column(String(30), unique=True, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="soumise")
     commentaire_rejet: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -1666,6 +1669,12 @@ class SondageExpress(Base):
     par navigateur (empêché côté client, aucune donnée personnelle collectée)."""
 
     __tablename__ = "sondages_express"
+    __table_args__ = (
+        # Un seul sondage actif à la fois — index unique partiel (Postgres) plutôt
+        # qu'une simple vérification applicative, pour empêcher deux administrateurs
+        # concurrents de laisser deux sondages actifs simultanément.
+        Index("uq_sondage_express_one_active", "is_active", unique=True, postgresql_where=text("is_active = true")),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     question: Mapped[str] = mapped_column(String(500), nullable=False)

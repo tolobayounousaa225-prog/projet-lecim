@@ -95,8 +95,30 @@ from .routers import (
     verify_eleve,
 )
 
+def _warn_if_weak_default_secrets() -> None:
+    """Alerte bruyamment dans les logs si SECRET_KEY ou le mot de passe admin de
+    bootstrap ont encore leur valeur par défaut (publiée en clair dans
+    .env.example) — signe que les variables d'environnement n'ont pas été
+    positionnées sur ce déploiement, ce qui permettrait de forger un jeton
+    d'authentification valide pour n'importe quel compte."""
+    import logging
+
+    logger = logging.getLogger("lecim.security")
+    if settings.secret_key == "changez-cette-cle-en-production":
+        logger.critical(
+            "SECURITE : SECRET_KEY a encore sa valeur par defaut. "
+            "Definissez la variable d'environnement SECRET_KEY immediatement."
+        )
+    if settings.admin_bootstrap_password == "change-moi-123":
+        logger.critical(
+            "SECURITE : ADMIN_BOOTSTRAP_PASSWORD a encore sa valeur par defaut. "
+            "Definissez la variable d'environnement ADMIN_BOOTSTRAP_PASSWORD immediatement."
+        )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _warn_if_weak_default_secrets()
     run_startup_migrations()
     scheduler.start()
     yield
