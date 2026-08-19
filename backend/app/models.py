@@ -1343,6 +1343,7 @@ PUBLICATION_CATEGORIES = {
     "statuts": "Statuts de la LECIM",
     "resultats_examens": "Résultats aux examens nationaux",
     "kit_presse": "Kit presse & médias",
+    "rapport_impact": "Rapport d'impact annuel",
     "autre": "Autre document",
 }
 
@@ -1726,6 +1727,39 @@ class PageView(Base):
     path: Mapped[str] = mapped_column(String(300), nullable=False)
     date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     views: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class SondageSatisfaction(Base):
+    """Sondage de satisfaction envoyé aux participants d'une réunion/formation du
+    BEN après sa tenue — réponses anonymes (aucun lien avec l'identité du
+    répondant), accessible via un jeton non devinable envoyé par e-mail."""
+
+    __tablename__ = "sondages_satisfaction"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    reunion_id: Mapped[int] = mapped_column(ForeignKey("reunions.id", ondelete="CASCADE"), unique=True, nullable=False)
+    token: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    reunion: Mapped["Reunion"] = relationship()
+    reponses: Mapped[list["SondageSatisfactionReponse"]] = relationship(cascade="all, delete-orphan")
+
+    @property
+    def note_moyenne(self) -> float | None:
+        if not self.reponses:
+            return None
+        return round(sum(r.note for r in self.reponses) / len(self.reponses), 1)
+
+
+class SondageSatisfactionReponse(Base):
+    __tablename__ = "sondage_satisfaction_reponses"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    sondage_id: Mapped[int] = mapped_column(ForeignKey("sondages_satisfaction.id", ondelete="CASCADE"), nullable=False)
+    note: Mapped[int] = mapped_column(Integer, nullable=False)  # 1 (insatisfait) à 5 (très satisfait)
+    commentaire: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
 
 
 # ---------- Délégations régionales ----------

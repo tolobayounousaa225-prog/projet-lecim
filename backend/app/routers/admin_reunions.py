@@ -1,4 +1,5 @@
 import datetime
+import secrets
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Request, status
@@ -7,8 +8,10 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from .. import audit, models
+from ..config import settings
 from ..database import get_db
 from ..deps import require_membres_access_web, require_reunions_access_web
+from ..email_utils import send_email
 from ..postes import POSTES
 from ..reminders import send_reminder_for_reunion
 from .admin_files import UPLOAD_ROOT
@@ -281,11 +284,16 @@ def reunion_detail(
     db.refresh(reunion)
 
     presences = sorted(reunion.presences, key=lambda p: p.membre.full_name)
+    satisfaction = (
+        db.query(models.SondageSatisfaction)
+        .filter(models.SondageSatisfaction.reunion_id == reunion_id)
+        .first()
+    )
 
     return templates.TemplateResponse(
         request,
         "admin/reunion_detail.html",
-        {"admin": user, "reunion": reunion, "presences": presences, "active": "reunions"},
+        {"admin": user, "reunion": reunion, "presences": presences, "active": "reunions", "satisfaction": satisfaction},
     )
 
 
@@ -300,6 +308,53 @@ def reunion_rappel(
         envoyes = send_reminder_for_reunion(db, reunion)
         audit.log(db, user, "update", "Réunion", reunion.id, f"A envoyé un rappel pour la réunion « {reunion.title} » ({envoyes} e-mail(s))")
         db.commit()
+    return RedirectResponse(url=f"/admin/reunions/{reunion_id}", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/reunions/{reunion_id}/satisfaction/envoyer")
+def reunion_satisfaction_envoyer(
+    reunion_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_reunions_access_web),
+):
+    reunion = db.get(models.Reunion, reunion_id)
+    if not reunion:
+        return RedirectResponse(url="/admin/reunions", status_code=status.HTTP_303_SEE_OTHER)
+
+    sondage = (
+        db.query(models.SondageSatisfaction)
+        .filter(models.SondageSatisfaction.reunion_id == reunion_id)
+        .first()
+    )
+    if not sondage:
+        sondage = models.SondageSatisfaction(
+            reunion_id=reunion_id, token=secrets.token_urlsafe(24), created_by_id=user.id,
+        )
+        db.add(sondage)
+        db.flush()
+
+    lien = f"{settings.public_base_url}/sondage-satisfaction/{sondage.token}"
+    membres = (
+        db.query(models.Membre)
+        .filter(models.Membre.delegation_id == reunion.delegation_id, models.Membre.email.isnot(None))
+        .all()
+    )
+    subject = f"[LECIM] Votre avis sur « {reunion.title} »"
+    body = (
+        f"Bonjour,\n\nMerci d'avoir participé à la réunion « {reunion.title} » du "
+        f"{reunion.date.strftime('%d/%m/%Y')}. Votre avis nous intéresse (réponse anonyme, 1 minute) :\n\n"
+        f"{lien}\n\nLECIM — Ligue des Établissements Confessionnels et Madrassas de Côte d'Ivoire"
+    )
+    envoyes = 0
+    for membre in membres:
+        if send_email(membre.email, subject, body):
+            envoyes += 1
+
+    audit.log(
+        db, user, "create", "Sondage satisfaction", sondage.id,
+        f"A envoyé le sondage de satisfaction pour « {reunion.title} » ({envoyes} e-mail(s))",
+    )
+    db.commit()
     return RedirectResponse(url=f"/admin/reunions/{reunion_id}", status_code=status.HTTP_303_SEE_OTHER)
 
 

@@ -8,6 +8,7 @@ from pathlib import Path
 import qrcode
 from fpdf import FPDF
 from fpdf.fonts import FontFace
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from . import models
@@ -725,6 +726,146 @@ def generate_annual_report_pdf(
                 row.cell(money(r["reste"]))
 
     _report_verification_footer(pdf, rapport.code)
+    return bytes(pdf.output())
+
+
+def generate_impact_report_pdf(db: Session, annee_scolaire: str) -> bytes:
+    """Rapport d'impact grand public — chiffres clés de l'année scolaire, sans le
+    détail comptable ligne par ligne du rapport interne (generate_annual_report_pdf) :
+    destiné aux partenaires, donateurs et au grand public, pas au BEN."""
+    etablissements_total = db.query(models.Etablissement).count()
+    enseignants_total = db.query(models.Enseignant).count()
+    delegations_total = db.query(models.Delegation).count()
+
+    eleves = (
+        db.query(
+            func.coalesce(func.sum(models.Effectif.nombre_garcons), 0),
+            func.coalesce(func.sum(models.Effectif.nombre_filles), 0),
+        )
+        .filter(models.Effectif.annee_scolaire == annee_scolaire)
+        .first()
+    )
+    eleves_garcons, eleves_filles = eleves[0], eleves[1]
+    eleves_total = eleves_garcons + eleves_filles
+
+    resultats = (
+        db.query(
+            func.coalesce(func.sum(models.ResultatExamen.nombre_inscrits), 0),
+            func.coalesce(func.sum(models.ResultatExamen.nombre_admis), 0),
+        )
+        .filter(models.ResultatExamen.annee_scolaire == annee_scolaire, models.ResultatExamen.is_published.is_(True))
+        .first()
+    )
+    inscrits, admis = resultats[0], resultats[1]
+    taux_reussite = round((admis / inscrits) * 100, 1) if inscrits else None
+
+    finances_par_annee = {d["annee"]: d for d in multi_year_financial_summary(db)}
+    finances = finances_par_annee.get(annee_scolaire, {})
+    ressources_mobilisees = finances.get("total_entrees", 0)
+
+    activites = (
+        db.query(models.Activity)
+        .filter(
+            models.Activity.event_date >= datetime.date(int(annee_scolaire[:4]), 9, 1),
+            models.Activity.event_date <= datetime.date(int(annee_scolaire[:4]) + 1, 8, 31),
+        )
+        .order_by(models.Activity.event_date)
+        .all()
+    )
+
+    # Évolution pluriannuelle du nombre d'élèves scolarisés, pour un graphique.
+    eleves_par_annee_rows = (
+        db.query(
+            models.Effectif.annee_scolaire,
+            func.coalesce(func.sum(models.Effectif.nombre_garcons + models.Effectif.nombre_filles), 0),
+        )
+        .group_by(models.Effectif.annee_scolaire)
+        .order_by(models.Effectif.annee_scolaire)
+        .all()
+    )
+
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=18)
+    pdf.add_page()
+    _add_logo(pdf)
+
+    pdf.set_font("Helvetica", "B", 20)
+    pdf.set_text_color(*GREEN)
+    pdf.cell(0, 12, "LECIM - Rapport d'impact", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 12)
+    pdf.set_text_color(80, 80, 80)
+    pdf.cell(0, 8, f"Annee scolaire {annee_scolaire}", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 9)
+    pdf.cell(0, 6, f"Document public - genere le {datetime.date.today().strftime('%d/%m/%Y')}", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(6)
+
+    pdf.set_font("Helvetica", "", 11)
+    pdf.set_text_color(30, 30, 30)
+    pdf.multi_cell(
+        0, 6,
+        "La Ligue des Etablissements Confessionnels et Madrassas en Cote d'Ivoire (LECIM) "
+        "presente ici les chiffres cles de son action au service de l'education islamique "
+        "durant l'annee scolaire ecoulee.",
+    )
+    pdf.ln(6)
+
+    def stat_card(x: float, y: float, w: float, value: str, label: str) -> None:
+        pdf.set_xy(x, y)
+        pdf.set_fill_color(244, 248, 251)
+        pdf.set_draw_color(220, 232, 240)
+        pdf.rect(x, y, w, 30, style="DF")
+        pdf.set_xy(x, y + 5)
+        pdf.set_font("Helvetica", "B", 16)
+        pdf.set_text_color(*GREEN)
+        pdf.cell(w, 9, value, align="C")
+        pdf.set_xy(x, y + 16)
+        pdf.set_font("Helvetica", "", 8.5)
+        pdf.set_text_color(90, 90, 90)
+        pdf.multi_cell(w, 4, label, align="C")
+
+    card_y = pdf.get_y()
+    card_w = (pdf.w - pdf.l_margin - pdf.r_margin - 20) / 3
+    stat_card(pdf.l_margin, card_y, card_w, str(etablissements_total), "Etablissements affilies")
+    stat_card(pdf.l_margin + card_w + 10, card_y, card_w, f"{eleves_total:,}".replace(",", " "), f"Eleves scolarises ({annee_scolaire})")
+    stat_card(pdf.l_margin + 2 * (card_w + 10), card_y, card_w, str(enseignants_total), "Enseignants recenses")
+    pdf.set_y(card_y + 38)
+
+    card_y = pdf.get_y()
+    stat_card(pdf.l_margin, card_y, card_w, f"{taux_reussite} %" if taux_reussite is not None else "-", "Taux de reussite aux examens")
+    stat_card(pdf.l_margin + card_w + 10, card_y, card_w, str(delegations_total), "Delegations regionales")
+    stat_card(pdf.l_margin + 2 * (card_w + 10), card_y, card_w, money(ressources_mobilisees), "Ressources mobilisees")
+    pdf.set_y(card_y + 44)
+
+    if len(eleves_par_annee_rows) > 1:
+        pdf.set_font("Helvetica", "B", 13)
+        pdf.set_text_color(*GREEN)
+        pdf.cell(0, 9, "Evolution du nombre d'eleves scolarises", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_text_color(30, 30, 30)
+        _draw_bar_chart(
+            pdf, pdf.l_margin, pdf.get_y(),
+            pdf.w - pdf.l_margin - pdf.r_margin, 40,
+            [(annee, total, GREEN) for annee, total in eleves_par_annee_rows],
+        )
+        pdf.ln(6)
+
+    if activites:
+        pdf.set_font("Helvetica", "B", 13)
+        pdf.set_text_color(*GREEN)
+        pdf.cell(0, 9, "Temps forts de l'annee", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(30, 30, 30)
+        for a in activites[:12]:
+            pdf.cell(0, 6, f"- {a.event_date.strftime('%d/%m/%Y')} : {pdf_safe(a.title)}", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(4)
+
+    pdf.set_font("Helvetica", "I", 9)
+    pdf.set_text_color(120, 120, 120)
+    pdf.multi_cell(
+        0, 5,
+        "Ce document presente une synthese publique des indicateurs de la LECIM. Pour le detail "
+        "financier complet, se referer aux rapports internes verifiables aupres du Bureau Executif National.",
+    )
+
     return bytes(pdf.output())
 
 

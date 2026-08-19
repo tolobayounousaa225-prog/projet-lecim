@@ -1843,9 +1843,10 @@ var PUBLICATION_CATEGORY_LABELS = {
   statuts: "Statuts de la LECIM",
   resultats_examens: "Résultats aux examens nationaux",
   kit_presse: "Kit presse & médias",
+  rapport_impact: "Rapports d'impact annuels",
   autre: "Autres documents",
 };
-var PUBLICATION_CATEGORY_ORDER = ["reglement_interieur", "statuts", "resultats_examens", "kit_presse", "autre"];
+var PUBLICATION_CATEGORY_ORDER = ["reglement_interieur", "statuts", "resultats_examens", "kit_presse", "rapport_impact", "autre"];
 
 function loadPublications() {
   var container = document.getElementById("doc-categories");

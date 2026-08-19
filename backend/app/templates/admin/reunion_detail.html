@@ -13,9 +13,34 @@
     <form method="post" action="/admin/reunions/{{ reunion.id }}/rappel" onsubmit="return confirm('Envoyer un rappel par e-mail aux membres concernés dès maintenant ?');">
       <button type="submit" class="btn btn-outline">Envoyer un rappel</button>
     </form>
+    <form method="post" action="/admin/reunions/{{ reunion.id }}/satisfaction/envoyer" onsubmit="return confirm('Envoyer le sondage de satisfaction par e-mail aux membres concernés ?');">
+      <button type="submit" class="btn btn-outline">{{ "Renvoyer le sondage de satisfaction" if satisfaction else "Envoyer un sondage de satisfaction" }}</button>
+    </form>
     <a href="/admin/reunions/{{ reunion.id }}/edit" class="btn btn-outline">Modifier la réunion</a>
   </div>
 </div>
+
+{% if satisfaction %}
+<div class="form-card" style="max-width:none; margin-bottom:26px;">
+  <strong style="color:var(--green-dark)">Sondage de satisfaction</strong>
+  {% if satisfaction.reponses %}
+  <p style="margin:10px 0;">
+    <strong style="font-size:1.4rem; color:var(--green);">{{ satisfaction.note_moyenne }} / 5</strong>
+    <span style="color:var(--text-muted);"> — {{ satisfaction.reponses|length }} réponse(s), moyenne anonyme</span>
+  </p>
+  {% set commentaires = satisfaction.reponses|selectattr("commentaire")|list %}
+  {% if commentaires %}
+  <ul style="margin:10px 0 0; padding-left:20px; color:var(--text-dark); font-size:0.9rem; line-height:1.7;">
+    {% for r in commentaires %}
+    <li>« {{ r.commentaire }} » <span style="color:var(--text-muted); font-size:0.8rem;">({{ r.note }}/5)</span></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% else %}
+  <p style="color:var(--text-muted); margin-top:10px;">Sondage envoyé, aucune réponse pour le moment.</p>
+  {% endif %}
+</div>
+{% endif %}
 
 {% if reunion.ordre_du_jour %}
 <div class="form-card" style="max-width:none; margin-bottom:26px;">
