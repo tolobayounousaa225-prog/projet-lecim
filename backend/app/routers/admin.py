@@ -19,6 +19,7 @@ from ..deps import (
     require_login_web,
     require_news_access_web,
 )
+from ..login_security import AccountLockedError, authenticate_user
 from ..push import send_urgent_news_push
 from ..security import create_access_token, hash_password, password_policy_error, verify_password
 from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
@@ -38,10 +39,6 @@ def login_page(request: Request):
     return templates.TemplateResponse(request, "admin/login.html", {"error": None})
 
 
-MAX_FAILED_LOGIN_ATTEMPTS = 5
-LOCKOUT_MINUTES = 15
-
-
 @router.post("/login")
 def login_submit(
     request: Request,
@@ -50,33 +47,23 @@ def login_submit(
     portal: str = Form("ben"),
     db: Session = Depends(get_db),
 ):
-    user = db.query(models.User).filter(models.User.email == email).first()
-
-    if user and user.locked_until and user.locked_until > datetime.datetime.utcnow():
-        minutes_left = max(1, int((user.locked_until - datetime.datetime.utcnow()).total_seconds() // 60) + 1)
+    try:
+        user = authenticate_user(db, email, password)
+    except AccountLockedError as exc:
         return templates.TemplateResponse(
             request,
             "admin/login.html",
-            {"error": f"Compte temporairement verrouillé après plusieurs échecs. Réessayez dans {minutes_left} min."},
+            {"error": f"Compte temporairement verrouillé après plusieurs échecs. Réessayez dans {exc.minutes_left} min."},
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    if not user or not verify_password(password, user.hashed_password):
-        if user:
-            user.failed_login_attempts += 1
-            if user.failed_login_attempts >= MAX_FAILED_LOGIN_ATTEMPTS:
-                user.locked_until = datetime.datetime.utcnow() + datetime.timedelta(minutes=LOCKOUT_MINUTES)
-                user.failed_login_attempts = 0
-            db.commit()
+    if not user:
         return templates.TemplateResponse(
             request,
             "admin/login.html",
             {"error": "Identifiants incorrects."},
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
-
-    user.failed_login_attempts = 0
-    user.locked_until = None
 
     account_portal = (
         "delegation" if user.is_delegation_account

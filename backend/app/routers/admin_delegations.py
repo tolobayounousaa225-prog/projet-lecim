@@ -1,4 +1,5 @@
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import RedirectResponse
@@ -19,6 +20,7 @@ templates = Jinja2Templates(directory=str(templates_dir))
 @router.get("")
 def delegations_list(
     request: Request,
+    error: str | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_delegation_management_web),
 ):
@@ -26,7 +28,7 @@ def delegations_list(
     return templates.TemplateResponse(
         request,
         "admin/delegations_list.html",
-        {"admin": user, "items": items, "active": "delegations"},
+        {"admin": user, "items": items, "active": "delegations", "error": error},
     )
 
 
@@ -108,6 +110,20 @@ def delegations_delete(
 ):
     delegation = db.get(models.Delegation, delegation_id)
     if delegation:
+        blockers = []
+        if db.query(models.User).filter(models.User.delegation_id == delegation_id).first():
+            blockers.append("des comptes")
+        if db.query(models.Etablissement).filter(models.Etablissement.delegation_id == delegation_id).first():
+            blockers.append("des établissements")
+        if db.query(models.Membre).filter(models.Membre.delegation_id == delegation_id).first():
+            blockers.append("des membres")
+        if db.query(models.Reunion).filter(models.Reunion.delegation_id == delegation_id).first():
+            blockers.append("des réunions")
+        if db.query(models.AnnonceDelegation).filter(models.AnnonceDelegation.delegation_id == delegation_id).first():
+            blockers.append("des annonces")
+        if blockers:
+            message = f"Impossible de supprimer « {delegation.nom} » : elle a encore {', '.join(blockers)} rattaché(e)s. Retirez-les d'abord."
+            return RedirectResponse(url=f"/admin/delegations?error={quote(message)}", status_code=status.HTTP_303_SEE_OTHER)
         audit.log(db, user, "delete", "Délégation", delegation.id, f"A supprimé la délégation {delegation.nom}")
         db.delete(delegation)
         db.commit()

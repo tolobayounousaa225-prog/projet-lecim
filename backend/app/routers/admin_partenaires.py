@@ -160,6 +160,9 @@ def partenaires_delete(
 ):
     partenaire = db.get(models.Partenaire, partenaire_id)
     if partenaire:
+        logo_path = UPLOAD_ROOT / partenaire.logo_path if partenaire.logo_path else None
         db.delete(partenaire)
         db.commit()
+        if logo_path and logo_path.exists():
+            logo_path.unlink()
     return RedirectResponse(url="/admin/partenaires", status_code=status.HTTP_303_SEE_OTHER)

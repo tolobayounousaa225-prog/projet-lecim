@@ -6,6 +6,10 @@
   <a href="/admin/delegations/new" class="btn btn-primary">+ Créer une délégation</a>
 </div>
 
+{% if error %}
+<div class="empty-state" style="background:#fdecea; color:#c0392b;">{{ error }}</div>
+{% endif %}
+
 {% if items %}
 <table>
   <thead>

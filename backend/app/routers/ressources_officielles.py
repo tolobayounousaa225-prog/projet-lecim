@@ -27,6 +27,8 @@ def ressource_officielle_photo(ressource_id: int, db: Session = Depends(get_db))
     if not ressource or not ressource.is_published:
         raise HTTPException(status_code=404, detail="Ressource introuvable")
     path = UPLOAD_ROOT / ressource.photo_path
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Photo introuvable")
     media_type = mimetypes.guess_type(ressource.photo_path)[0] or "image/jpeg"
     return FileResponse(path, media_type=media_type)
 
@@ -37,5 +39,7 @@ def ressource_officielle_file(ressource_id: int, db: Session = Depends(get_db)):
     if not ressource or not ressource.is_published or not ressource.file_path:
         raise HTTPException(status_code=404, detail="Fichier introuvable")
     path = UPLOAD_ROOT / ressource.file_path
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Fichier introuvable")
     media_type = mimetypes.guess_type(ressource.original_filename or "")[0] or "application/octet-stream"
     return FileResponse(path, media_type=media_type, filename=ressource.original_filename)

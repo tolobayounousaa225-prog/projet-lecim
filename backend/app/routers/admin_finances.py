@@ -1,10 +1,12 @@
 import datetime
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import audit, models
@@ -367,6 +369,7 @@ def etablissements_list(
     categorie: str | None = None,
     district: str | None = None,
     region: str | None = None,
+    error: str | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
@@ -415,6 +418,7 @@ def etablissements_list(
             "selected_district": district,
             "selected_region": region,
             "active": "etablissements",
+            "error": error,
         },
     )
 
@@ -606,6 +610,26 @@ def etablissements_delete(
 ):
     etablissement = db.get(models.Etablissement, etablissement_id)
     if etablissement:
+        blockers = []
+        dependent_checks = [
+            (models.Adhesion, "des adhésions"),
+            (models.Cotisation, "des cotisations"),
+            (models.Effectif, "des effectifs déclarés"),
+            (models.Enseignant, "des enseignants"),
+            (models.ResultatExamen, "des résultats d'examens"),
+            (models.DroitExamen, "des droits d'examens"),
+            (models.RessourcePedagogique, "des ressources pédagogiques"),
+            (models.DemandeEtablissement, "des demandes"),
+            (models.MessageEtablissement, "des messages"),
+            (models.CarteScolaire, "des cartes scolaires"),
+            (models.User, "un compte portail"),
+        ]
+        for model_cls, label in dependent_checks:
+            if db.query(model_cls).filter(model_cls.etablissement_id == etablissement_id).first():
+                blockers.append(label)
+        if blockers:
+            message = f"Impossible de supprimer « {etablissement.nom} » : il a encore {', '.join(blockers)} rattaché(e)s. Retirez-les d'abord."
+            return RedirectResponse(url=f"/admin/etablissements?error={quote(message)}", status_code=status.HTTP_303_SEE_OTHER)
         audit.log(db, user, "delete", "Établissement", etablissement.id, f"A retiré l'établissement {etablissement.nom}")
         db.delete(etablissement)
         db.commit()
@@ -655,7 +679,11 @@ def adhesions_create(
             recorded_by_id=user.id,
         )
         db.add(adhesion)
-        db.flush()
+        try:
+            db.flush()
+        except IntegrityError:
+            db.rollback()
+            return RedirectResponse(url="/admin/adhesions", status_code=status.HTTP_303_SEE_OTHER)
         etablissement = db.get(models.Etablissement, etablissement_id)
         audit.log(db, user, "create", "Droit d'adhésion", adhesion.id, f"A enregistré le droit d'adhésion de {etablissement.nom if etablissement else etablissement_id}")
         db.commit()
@@ -722,7 +750,14 @@ def cotisations_create(
         .first()
     )
     rule = cotisation_rule(etablissement.statut)
-    part_bureau_local = rule["part_bureau_local"] if montant_paye > 0 else 0
+    # Proportionnel au montant effectivement versé — un paiement partiel ne doit
+    # jamais générer une part bureau local supérieure à ce qui a été encaissé
+    # (auparavant, le moindre acompte déclenchait la part statutaire complète).
+    part_bureau_local = (
+        round(rule["part_bureau_local"] * min(montant_paye, rule["montant_du"]) / rule["montant_du"])
+        if montant_paye > 0 and rule["montant_du"]
+        else 0
+    )
 
     if existing:
         existing.montant_paye = montant_paye
@@ -740,7 +775,11 @@ def cotisations_create(
             recorded_by_id=user.id,
         )
         db.add(cotisation)
-        db.flush()
+        try:
+            db.flush()
+        except IntegrityError:
+            db.rollback()
+            return RedirectResponse(url="/admin/cotisations", status_code=status.HTTP_303_SEE_OTHER)
         audit.log(db, user, "create", "Cotisation", cotisation.id, f"A enregistré la cotisation {annee_scolaire} de {etablissement.nom}")
     db.commit()
     return RedirectResponse(url="/admin/cotisations", status_code=status.HTTP_303_SEE_OTHER)
@@ -1084,9 +1123,14 @@ def budget_list(
         .all()
     }
 
+    # "depenses" est un flux sortant : l'additionner aux entrées fausserait le
+    # total (c'était le bug — les dépenses gonflaient artificiellement le total
+    # prévu/réalisé). On sépare donc entrées et dépenses, et on calcule un solde.
     lignes = []
-    total_prevu = 0
-    total_realise = 0
+    total_entrees_prevu = 0
+    total_entrees_realise = 0
+    depenses_prevu = 0
+    depenses_realise = 0
     for cle, label in BUDGET_CATEGORIES.items():
         prevu = previsions[cle].montant_prevu if cle in previsions else 0
         realise = realise_annee.get(cle, 0)
@@ -1101,8 +1145,15 @@ def budget_list(
                 "taux": taux,
             }
         )
-        total_prevu += prevu
-        total_realise += realise
+        if cle == "depenses":
+            depenses_prevu = prevu
+            depenses_realise = realise
+        else:
+            total_entrees_prevu += prevu
+            total_entrees_realise += realise
+
+    solde_prevu = total_entrees_prevu - depenses_prevu
+    solde_realise = total_entrees_realise - depenses_realise
 
     annees_disponibles = sorted(
         set(realise_par_annee.keys())
@@ -1120,9 +1171,13 @@ def budget_list(
             "annee": annee,
             "annees_disponibles": annees_disponibles,
             "lignes": lignes,
-            "total_prevu": total_prevu,
-            "total_realise": total_realise,
-            "total_taux": round(total_realise / total_prevu * 100) if total_prevu else None,
+            "total_entrees_prevu": total_entrees_prevu,
+            "total_entrees_realise": total_entrees_realise,
+            "total_entrees_taux": round(total_entrees_realise / total_entrees_prevu * 100) if total_entrees_prevu else None,
+            "depenses_prevu": depenses_prevu,
+            "depenses_realise": depenses_realise,
+            "solde_prevu": solde_prevu,
+            "solde_realise": solde_realise,
         },
     )
 
@@ -1158,7 +1213,10 @@ async def budget_save(
                 )
             )
     audit.log(db, user, "update", "Budget prévisionnel", annee_scolaire, f"A mis à jour le budget prévisionnel {annee_scolaire}")
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
     return RedirectResponse(
         url=f"/admin/finances/budget?annee_scolaire={annee_scolaire}", status_code=status.HTTP_303_SEE_OTHER
     )

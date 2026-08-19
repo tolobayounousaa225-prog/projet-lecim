@@ -1,4 +1,5 @@
 import datetime
+import secrets
 from pathlib import Path
 
 import mimetypes
@@ -6,6 +7,7 @@ import mimetypes
 from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import audit, models
@@ -24,8 +26,16 @@ CARTES_PHOTOS_DIR = UPLOAD_ROOT / "cartes_photos"
 
 
 def _next_numero_carte(db: Session) -> str:
-    count = db.query(models.CarteMembre).filter(models.CarteMembre.numero_carte.isnot(None)).count()
-    return f"LECIM-{count + 1:04d}"
+    """Génère un numéro de carte imprévisible (espace aléatoire, pas un compteur
+    séquentiel) — un numéro devinable permettrait d'énumérer /verify/{numero}/photo
+    et d'aspirer les photos/noms de tous les membres. La contrainte d'unicité en
+    base (numero_carte) est le filet de sécurité final contre toute collision."""
+    for _ in range(10):
+        candidate = f"LECIM-{secrets.token_hex(4).upper()}"
+        exists = db.query(models.CarteMembre.id).filter(models.CarteMembre.numero_carte == candidate).first()
+        if not exists:
+            return candidate
+    raise RuntimeError("Impossible de générer un numéro de carte disponible")
 
 
 CARTE_VALIDITE_ANNEES = 3
@@ -209,7 +219,12 @@ def carte_valider(
             link="/admin/cartes/mine",
         )
         audit.log(db, user, "update", "Carte de membre", carte.id, f"A validé la carte de {carte.full_name_snapshot}")
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            notify(db, user.id, "Conflit sur le numéro de carte généré — veuillez réessayer la validation.", link=f"/admin/cartes/{carte_id}")
+            db.commit()
     return RedirectResponse(url=f"/admin/cartes/{carte_id}", status_code=status.HTTP_303_SEE_OTHER)
 
 

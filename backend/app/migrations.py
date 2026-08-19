@@ -3,11 +3,81 @@ dépendance à un outil de migration externe. Chaque étape se protège elle-mê
 une vérification d'état avant d'agir, donc elle n'a plus aucun effet après son
 premier passage réussi."""
 
+import logging
 import random
 
 from sqlalchemy import inspect, text
 
 from .database import Base, SessionLocal, engine
+
+logger = logging.getLogger("lecim.migrations")
+
+
+def _add_unique_constraint_if_safe(table: str, columns: list[str], constraint_name: str) -> None:
+    """Ajoute une contrainte d'unicité sur une table déjà existante en production,
+    seulement si elle n'existe pas déjà ET si aucun doublon actuel ne bloquerait sa
+    création — pour ne jamais faire planter le démarrage sur des données réelles.
+    Si des doublons sont détectés, la contrainte n'est pas posée et un avertissement
+    est loggé (à nettoyer manuellement avant qu'elle puisse être ajoutée)."""
+    inspector = inspect(engine)
+    if not inspector.has_table(table):
+        return
+    existing = {c["name"] for c in inspector.get_unique_constraints(table)}
+    if constraint_name in existing:
+        return
+    col_list = ", ".join(columns)
+    not_null = " AND ".join(f"{c} IS NOT NULL" for c in columns)
+    with engine.connect() as conn:
+        dup = conn.execute(text(
+            f"SELECT 1 FROM {table} WHERE {not_null} GROUP BY {col_list} HAVING COUNT(*) > 1 LIMIT 1"
+        )).first()
+    if dup is not None:
+        logger.warning(
+            "Contrainte unique %s non ajoutée sur %s(%s) : des doublons existent déjà en "
+            "base — nettoyez-les manuellement puis redémarrez l'application.",
+            constraint_name, table, col_list,
+        )
+        return
+    with engine.begin() as conn:
+        conn.execute(text(f"ALTER TABLE {table} ADD CONSTRAINT {constraint_name} UNIQUE ({col_list})"))
+    logger.info("Contrainte unique %s ajoutée sur %s(%s).", constraint_name, table, col_list)
+
+
+def _fix_sondages_express_uniqueness() -> None:
+    """S'assure qu'au plus un sondage express est actif à la fois (désactive tous
+    les sondages actifs sauf le plus récent si plusieurs le sont déjà, séquelle
+    possible d'une ancienne race condition), puis pose l'index unique partiel qui
+    empêche que cela se reproduise."""
+    from . import models
+
+    inspector = inspect(engine)
+    if not inspector.has_table("sondages_express"):
+        return
+    existing_indexes = {idx["name"] for idx in inspector.get_indexes("sondages_express")}
+    if "uq_sondage_express_one_active" in existing_indexes:
+        return
+
+    db = SessionLocal()
+    try:
+        actifs = (
+            db.query(models.SondageExpress)
+            .filter(models.SondageExpress.is_active.is_(True))
+            .order_by(models.SondageExpress.created_at.desc())
+            .all()
+        )
+        if len(actifs) > 1:
+            for sondage in actifs[1:]:
+                sondage.is_active = False
+            db.commit()
+    finally:
+        db.close()
+
+    with engine.begin() as conn:
+        conn.execute(text(
+            "CREATE UNIQUE INDEX uq_sondage_express_one_active "
+            "ON sondages_express (is_active) WHERE is_active = true"
+        ))
+    logger.info("Index unique partiel posé sur sondages_express (un seul actif à la fois).")
 
 # Coordonnées approximatives (chef-lieu) des localités de Côte d'Ivoire utilisées
 # comme "bureau local" dans les fiches établissement importées. Sert uniquement à
@@ -299,3 +369,23 @@ def run_startup_migrations() -> None:
         _geocode_etablissements_sans_coordonnees()
         _deduire_district_region_depuis_commune()
         _deduire_district_depuis_region()
+
+    # Contraintes d'unicité ajoutées après coup — protègent contre des doublons
+    # silencieux (adhésion payée deux fois, résultat d'examen saisi deux fois,
+    # deux cartes/matricules identiques) qu'une simple vérification applicative
+    # ne suffit pas à empêcher sous concurrence.
+    _add_unique_constraint_if_safe("adhesions", ["etablissement_id"], "uq_adhesion_etablissement")
+    _add_unique_constraint_if_safe(
+        "resultats_examens", ["etablissement_id", "annee_scolaire", "type_examen"], "uq_resultat_etab_annee_examen"
+    )
+    _add_unique_constraint_if_safe("cartes_membres", ["numero_carte"], "cartes_membres_numero_carte_key")
+    _add_unique_constraint_if_safe("cartes_scolaires", ["matricule"], "cartes_scolaires_matricule_key")
+    _fix_sondages_express_uniqueness()
+
+    # Index sur les colonnes de clé étrangère les plus filtrées (rapports
+    # pluriannuels, portail établissement) — absents par défaut sur une table déjà
+    # créée sans eux, contrairement à ce qu'implique models.py pour une base neuve.
+    with engine.begin() as conn:
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_cotisations_etablissement_id ON cotisations (etablissement_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_effectifs_etablissement_id ON effectifs (etablissement_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_resultats_examens_etablissement_id ON resultats_examens (etablissement_id)"))

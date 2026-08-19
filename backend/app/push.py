@@ -27,7 +27,10 @@ def send_urgent_news_push(db: Session, news: models.NewsPost) -> None:
     if not subscriptions:
         return
 
-    url = f"{settings.public_base_url}/actualite.html?id={news.id}"
+    # actualite.html est une page de la vitrine (GitHub Pages), pas du backend —
+    # utiliser public_base_url (domaine Railway de l'API) enverrait vers une URL
+    # qui n'existe pas côté backend.
+    url = f"{settings.vitrine_base_url}/actualite.html?id={news.id}"
     vapid_claims = {"sub": f"mailto:{settings.vapid_claim_email}"}
 
     stale_ids: list[int] = []

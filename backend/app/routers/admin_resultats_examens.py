@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Form, Request, Response, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from .. import audit, models
@@ -94,7 +95,11 @@ def resultats_create(
         recorded_by_id=user.id,
     )
     db.add(resultat)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        return RedirectResponse(url="/admin/resultats-examens", status_code=status.HTTP_303_SEE_OTHER)
     audit.log(
         db, user, "create", "Résultat d'examen", resultat.id,
         f"A saisi le résultat {resultat.type_examen} {resultat.annee_scolaire} de {resultat.etablissement.nom}",
@@ -148,7 +153,10 @@ def resultats_update(
             db, user, "update", "Résultat d'examen", resultat.id,
             f"A modifié le résultat {resultat.type_examen} {resultat.annee_scolaire} de {resultat.etablissement.nom}",
         )
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
     return RedirectResponse(url="/admin/resultats-examens", status_code=status.HTTP_303_SEE_OTHER)
 
 

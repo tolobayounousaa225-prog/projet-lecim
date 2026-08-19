@@ -30,6 +30,8 @@ def news_image(news_id: int, db: Session = Depends(get_db)):
     if not news or not news.is_published or not news.image_path:
         raise HTTPException(status_code=404, detail="Image introuvable")
     path = UPLOAD_ROOT / news.image_path
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Image introuvable")
     media_type = mimetypes.guess_type(news.image_path)[0] or "application/octet-stream"
     return FileResponse(path, media_type=media_type)
 

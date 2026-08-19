@@ -26,7 +26,9 @@ ALLOWED_PHOTO_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 MAX_UPLOAD_BYTES = settings.max_upload_size_mb * 1024 * 1024
 
 
-async def _save_upload(file: UploadFile, dest_dir: Path, allowed_ext: set[str]) -> tuple[str, str]:
+async def _save_upload(file: UploadFile | None, dest_dir: Path, allowed_ext: set[str]) -> tuple[str, str]:
+    if file is None or not file.filename:
+        raise ValueError("Aucun fichier fourni")
     ext = Path(file.filename or "").suffix.lower()
     if ext not in allowed_ext:
         raise ValueError(f"Extension non autorisée : {ext}")
@@ -124,6 +126,8 @@ def documents_file(
     if not document:
         return RedirectResponse(url="/admin/documents", status_code=status.HTTP_303_SEE_OTHER)
     path = UPLOAD_ROOT / document.file_path
+    if not path.exists():
+        return RedirectResponse(url="/admin/documents", status_code=status.HTTP_303_SEE_OTHER)
     media_type = mimetypes.guess_type(document.original_filename)[0] or "application/octet-stream"
     return FileResponse(path, media_type=media_type, filename=document.original_filename)
 
@@ -229,6 +233,8 @@ def photos_file(
     if not photo:
         return RedirectResponse(url="/admin/photos", status_code=status.HTTP_303_SEE_OTHER)
     path = UPLOAD_ROOT / photo.file_path
+    if not path.exists():
+        return RedirectResponse(url="/admin/photos", status_code=status.HTTP_303_SEE_OTHER)
     media_type = mimetypes.guess_type(photo.original_filename)[0] or "application/octet-stream"
     return FileResponse(path, media_type=media_type)
 

@@ -32,5 +32,7 @@ def historique_photo(president_id: int, db: Session = Depends(get_db)):
     if not president or not president.is_published or not president.photo_path:
         return FileResponse(LOGO_PATH, media_type="image/jpeg")
     path = UPLOAD_ROOT / president.photo_path
+    if not path.exists():
+        return FileResponse(LOGO_PATH, media_type="image/jpeg")
     media_type = mimetypes.guess_type(president.photo_path)[0] or "application/octet-stream"
     return FileResponse(path, media_type=media_type)

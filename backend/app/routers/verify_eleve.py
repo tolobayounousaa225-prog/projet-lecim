@@ -15,9 +15,10 @@ from sqlalchemy.orm import Session
 
 from .. import models
 from ..database import get_db
+from ..rate_limit import rate_limiter
 from .admin_files import UPLOAD_ROOT
 
-router = APIRouter(prefix="/verify-eleve", tags=["verify"])
+router = APIRouter(prefix="/verify-eleve", tags=["verify"], dependencies=[Depends(rate_limiter("verify-eleve", 30, 60))])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
