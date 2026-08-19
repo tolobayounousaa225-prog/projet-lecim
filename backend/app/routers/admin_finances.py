@@ -33,6 +33,24 @@ router = APIRouter(prefix="/admin", tags=["admin-finances"])
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
+
+def _safe_float(raw: str) -> float | None:
+    if not raw:
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        return None
+
+
+def _safe_date(raw: str) -> datetime.date | None:
+    if not raw:
+        return None
+    try:
+        return datetime.date.fromisoformat(raw)
+    except ValueError:
+        return None
+
 PIECES_DIR = UPLOAD_ROOT / "justificatifs"
 ALLOWED_PIECE_EXT = ALLOWED_DOCUMENT_EXT | ALLOWED_PHOTO_EXT
 ETABLISSEMENT_LOGOS_DIR = UPLOAD_ROOT / "etablissements_logos"
@@ -502,16 +520,16 @@ async def etablissements_create(
         district=district or None,
         region=region or None,
         statut=statut if statut in COTISATION_RULES else "non_subventionne",
-        date_adhesion=datetime.date.fromisoformat(date_adhesion) if date_adhesion else None,
+        date_adhesion=_safe_date(date_adhesion),
         contact_email=contact_email or None,
         contact_telephone=contact_telephone or None,
-        latitude=float(latitude) if latitude else None,
-        longitude=float(longitude) if longitude else None,
+        latitude=_safe_float(latitude),
+        longitude=_safe_float(longitude),
         directeur_nom=directeur_nom or None,
         type_enseignement=type_enseignement if type_enseignement in {"primaire", "secondaire", "les_deux"} else "les_deux",
         numero_agrement=numero_agrement or None,
         statut_agrement=statut_agrement if statut_agrement in {"agree", "en_cours", "expire"} else "en_cours",
-        date_expiration_agrement=datetime.date.fromisoformat(date_expiration_agrement) if date_expiration_agrement else None,
+        date_expiration_agrement=_safe_date(date_expiration_agrement),
         is_ecole_modele=is_ecole_modele,
         categorie=categorie if categorie in {"membre", "partenaire"} else "membre",
         logo_path=logo_path,
@@ -531,6 +549,8 @@ def etablissements_edit_form(
     user: models.User = Depends(require_finance_access_web),
 ):
     item = db.get(models.Etablissement, etablissement_id)
+    if not item:
+        return RedirectResponse(url="/admin/etablissements", status_code=status.HTTP_303_SEE_OTHER)
     return templates.TemplateResponse(
         request,
         "admin/etablissement_form.html",
@@ -581,20 +601,16 @@ async def etablissements_update(
         etablissement.district = district or None
         etablissement.region = region or None
         etablissement.statut = statut if statut in COTISATION_RULES else "non_subventionne"
-        etablissement.date_adhesion = (
-            datetime.date.fromisoformat(date_adhesion) if date_adhesion else None
-        )
+        etablissement.date_adhesion = _safe_date(date_adhesion)
         etablissement.contact_email = contact_email or None
         etablissement.contact_telephone = contact_telephone or None
-        etablissement.latitude = float(latitude) if latitude else None
-        etablissement.longitude = float(longitude) if longitude else None
+        etablissement.latitude = _safe_float(latitude)
+        etablissement.longitude = _safe_float(longitude)
         etablissement.directeur_nom = directeur_nom or None
         etablissement.type_enseignement = type_enseignement if type_enseignement in {"primaire", "secondaire", "les_deux"} else "les_deux"
         etablissement.numero_agrement = numero_agrement or None
         etablissement.statut_agrement = statut_agrement if statut_agrement in {"agree", "en_cours", "expire"} else "en_cours"
-        etablissement.date_expiration_agrement = (
-            datetime.date.fromisoformat(date_expiration_agrement) if date_expiration_agrement else None
-        )
+        etablissement.date_expiration_agrement = _safe_date(date_expiration_agrement)
         etablissement.is_ecole_modele = is_ecole_modele
         etablissement.categorie = categorie if categorie in {"membre", "partenaire"} else "membre"
         audit.log(db, user, "update", "Établissement", etablissement.id, f"A modifié l'établissement {etablissement.nom}")

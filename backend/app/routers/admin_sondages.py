@@ -66,7 +66,9 @@ def sondage_voter(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_login_web),
 ):
-    sondage = db.get(models.Sondage, sondage_id)
+    # Même verrou que sondage_cloturer, pour que is_ouvert et l'ajout du vote
+    # soient cohérents face à une clôture concurrente.
+    sondage = db.query(models.Sondage).filter(models.Sondage.id == sondage_id).with_for_update().first()
     if not sondage or not sondage.is_ouvert or sondage.a_vote(user.id):
         return RedirectResponse(url=f"/admin/sondages/{sondage_id}", status_code=status.HTTP_303_SEE_OTHER)
     option = db.get(models.SondageOption, option_id)
@@ -165,7 +167,9 @@ def sondage_cloturer(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_sondages_access_web),
 ):
-    sondage = db.get(models.Sondage, sondage_id)
+    # Verrou pour éviter qu'un vote passe entre la lecture de is_ouvert et le
+    # commit de la clôture (fenêtre de course sinon possible avec sondage_voter).
+    sondage = db.query(models.Sondage).filter(models.Sondage.id == sondage_id).with_for_update().first()
     if sondage and sondage.is_ouvert:
         sondage.is_ouvert = False
         sondage.cloture_at = datetime.datetime.utcnow()

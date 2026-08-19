@@ -26,7 +26,11 @@ def authenticate_user(db: Session, email: str, password: str) -> "models.User | 
     Retourne None si les identifiants sont incorrects (le compteur d'échecs est
     alors incrémenté et commité immédiatement), sinon l'utilisateur authentifié
     (compteur réinitialisé en mémoire — au caller de committer)."""
-    user = db.query(models.User).filter(models.User.email == email).first()
+    # Verrou de ligne : deux tentatives concurrentes sur le même compte (script de
+    # brute-force parallélisé, ou simplement deux onglets) ne doivent jamais
+    # s'écraser mutuellement sur le compteur d'échecs, au risque de retarder ou
+    # d'empêcher le verrouillage après MAX_FAILED_LOGIN_ATTEMPTS.
+    user = db.query(models.User).filter(models.User.email == email).with_for_update().first()
 
     if user and user.locked_until and user.locked_until > datetime.datetime.utcnow():
         minutes_left = max(1, int((user.locked_until - datetime.datetime.utcnow()).total_seconds() // 60) + 1)

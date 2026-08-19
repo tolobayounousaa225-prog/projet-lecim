@@ -10,6 +10,15 @@ from .postes import poste_attributions, poste_label
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (
+        # Au plus un compte titulaire par établissement — un index unique partiel
+        # plutôt qu'une simple vérification applicative, pour empêcher deux
+        # créations concurrentes de laisser deux titulaires pour la même école.
+        Index(
+            "uq_user_etablissement_titulaire", "etablissement_id", unique=True,
+            postgresql_where=text("is_etablissement_titulaire = true AND etablissement_id IS NOT NULL"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)

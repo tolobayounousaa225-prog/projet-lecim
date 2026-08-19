@@ -43,6 +43,53 @@ def _add_unique_constraint_if_safe(table: str, columns: list[str], constraint_na
     logger.info("Contrainte unique %s ajoutée sur %s(%s).", constraint_name, table, col_list)
 
 
+def _fix_users_titulaire_uniqueness() -> None:
+    """S'assure qu'au plus un compte titulaire existe par établissement (rétrograde
+    en secrétaire tous les titulaires sauf le plus ancien, si plusieurs le sont déjà
+    — séquelle possible d'une ancienne race condition), puis pose l'index unique
+    partiel qui empêche que cela se reproduise."""
+    from . import models
+
+    inspector = inspect(engine)
+    if not inspector.has_table("users"):
+        return
+    existing_indexes = {idx["name"] for idx in inspector.get_indexes("users")}
+    if "uq_user_etablissement_titulaire" in existing_indexes:
+        return
+
+    db = SessionLocal()
+    try:
+        etablissement_ids = [
+            row[0]
+            for row in db.query(models.User.etablissement_id)
+            .filter(models.User.etablissement_id.isnot(None), models.User.is_etablissement_titulaire.is_(True))
+            .distinct()
+            .all()
+        ]
+        changed = False
+        for etab_id in etablissement_ids:
+            titulaires = (
+                db.query(models.User)
+                .filter(models.User.etablissement_id == etab_id, models.User.is_etablissement_titulaire.is_(True))
+                .order_by(models.User.created_at)
+                .all()
+            )
+            for extra in titulaires[1:]:
+                extra.is_etablissement_titulaire = False
+                changed = True
+        if changed:
+            db.commit()
+    finally:
+        db.close()
+
+    with engine.begin() as conn:
+        conn.execute(text(
+            "CREATE UNIQUE INDEX uq_user_etablissement_titulaire ON users (etablissement_id) "
+            "WHERE is_etablissement_titulaire = true AND etablissement_id IS NOT NULL"
+        ))
+    logger.info("Index unique partiel posé sur users (un seul titulaire par établissement).")
+
+
 def _fix_sondages_express_uniqueness() -> None:
     """S'assure qu'au plus un sondage express est actif à la fois (désactive tous
     les sondages actifs sauf le plus récent si plusieurs le sont déjà, séquelle
@@ -381,6 +428,7 @@ def run_startup_migrations() -> None:
     _add_unique_constraint_if_safe("cartes_membres", ["numero_carte"], "cartes_membres_numero_carte_key")
     _add_unique_constraint_if_safe("cartes_scolaires", ["matricule"], "cartes_scolaires_matricule_key")
     _fix_sondages_express_uniqueness()
+    _fix_users_titulaire_uniqueness()
 
     # Index sur les colonnes de clé étrangère les plus filtrées (rapports
     # pluriannuels, portail établissement) — absents par défaut sur une table déjà
