@@ -5,17 +5,17 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import models, storage
 from ..database import get_db
 from ..deps import require_fondateurs_access_web
-from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
+from .admin_files import ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin/fondateurs", tags=["admin-fondateurs"])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
-FONDATEURS_DIR = UPLOAD_ROOT / "fondateurs"
+FONDATEURS_DIR = "fondateurs"
 
 
 @router.get("")
@@ -63,7 +63,7 @@ async def fondateurs_create(
     photo_path = None
     if photo is not None and photo.filename:
         try:
-            stored_name, _ = await _save_upload(photo, FONDATEURS_DIR, ALLOWED_PHOTO_EXT)
+            stored_name, _ = await storage.save_upload(db, photo, FONDATEURS_DIR, ALLOWED_PHOTO_EXT)
             photo_path = f"fondateurs/{stored_name}"
         except ValueError as exc:
             return templates.TemplateResponse(
@@ -121,7 +121,7 @@ async def fondateurs_update(
 
     if photo is not None and photo.filename:
         try:
-            stored_name, _ = await _save_upload(photo, FONDATEURS_DIR, ALLOWED_PHOTO_EXT)
+            stored_name, _ = await storage.save_upload(db, photo, FONDATEURS_DIR, ALLOWED_PHOTO_EXT)
         except ValueError as exc:
             return templates.TemplateResponse(
                 request,
@@ -129,10 +129,8 @@ async def fondateurs_update(
                 {"admin": user, "item": fondateur, "active": "fondateurs", "error": str(exc)},
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-        old_path = UPLOAD_ROOT / fondateur.photo_path if fondateur.photo_path else None
+        storage.delete_stored_file(db, fondateur.photo_path)
         fondateur.photo_path = f"fondateurs/{stored_name}"
-        if old_path and old_path.exists():
-            old_path.unlink()
 
     fondateur.full_name = full_name
     fondateur.role = role or None
@@ -151,11 +149,9 @@ def fondateurs_delete(
 ):
     fondateur = db.get(models.MembreFondateur, fondateur_id)
     if fondateur:
-        path = UPLOAD_ROOT / fondateur.photo_path if fondateur.photo_path else None
+        storage.delete_stored_file(db, fondateur.photo_path)
         db.delete(fondateur)
         db.commit()
-        if path and path.exists():
-            path.unlink()
     return RedirectResponse(url="/admin/fondateurs", status_code=status.HTTP_303_SEE_OTHER)
 
 

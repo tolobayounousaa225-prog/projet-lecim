@@ -1,12 +1,9 @@
-import mimetypes
-
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from .. import models, schemas
+from .. import models, schemas, storage
 from ..database import get_db
-from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/api/ressources-officielles", tags=["ressources-officielles"])
 
@@ -26,11 +23,10 @@ def ressource_officielle_photo(ressource_id: int, db: Session = Depends(get_db))
     ressource = db.get(models.RessourceOfficielle, ressource_id)
     if not ressource or not ressource.is_published:
         raise HTTPException(status_code=404, detail="Ressource introuvable")
-    path = UPLOAD_ROOT / ressource.photo_path
-    if not path.exists():
+    stored = storage.get_stored_file(db, ressource.photo_path)
+    if not stored:
         raise HTTPException(status_code=404, detail="Photo introuvable")
-    media_type = mimetypes.guess_type(ressource.photo_path)[0] or "image/jpeg"
-    return FileResponse(path, media_type=media_type)
+    return Response(content=stored.data, media_type=stored.content_type)
 
 
 @router.get("/{ressource_id}/file")
@@ -38,8 +34,11 @@ def ressource_officielle_file(ressource_id: int, db: Session = Depends(get_db)):
     ressource = db.get(models.RessourceOfficielle, ressource_id)
     if not ressource or not ressource.is_published or not ressource.file_path:
         raise HTTPException(status_code=404, detail="Fichier introuvable")
-    path = UPLOAD_ROOT / ressource.file_path
-    if not path.exists():
+    stored = storage.get_stored_file(db, ressource.file_path)
+    if not stored:
         raise HTTPException(status_code=404, detail="Fichier introuvable")
-    media_type = mimetypes.guess_type(ressource.original_filename or "")[0] or "application/octet-stream"
-    return FileResponse(path, media_type=media_type, filename=ressource.original_filename)
+    return Response(
+        content=stored.data,
+        media_type=stored.content_type,
+        headers={"Content-Disposition": f'attachment; filename="{ressource.original_filename}"'},
+    )

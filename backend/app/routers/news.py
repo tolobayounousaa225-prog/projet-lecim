@@ -1,11 +1,9 @@
-import mimetypes
-
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from .. import models, schemas
+from .. import models, schemas, storage
 from ..database import get_db
 from ..deps import get_news_editor
 from ..share_image import generate_news_share_image
@@ -32,11 +30,10 @@ def news_image(news_id: int, db: Session = Depends(get_db)):
     news = db.get(models.NewsPost, news_id)
     if not news or not news.is_published or not news.image_path:
         raise HTTPException(status_code=404, detail="Image introuvable")
-    path = UPLOAD_ROOT / news.image_path
-    if not path.exists():
+    stored = storage.get_stored_file(db, news.image_path)
+    if not stored:
         raise HTTPException(status_code=404, detail="Image introuvable")
-    media_type = mimetypes.guess_type(news.image_path)[0] or "application/octet-stream"
-    return FileResponse(path, media_type=media_type)
+    return Response(content=stored.data, media_type=stored.content_type)
 
 
 @router.get("/{news_id}/share-image.png")

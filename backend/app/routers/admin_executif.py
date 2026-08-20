@@ -1,5 +1,4 @@
 import datetime
-import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -7,7 +6,7 @@ from fastapi.responses import Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import audit, models
+from .. import audit, models, storage
 from ..database import get_db
 from ..deps import require_executif_access_web
 from ..reports import (
@@ -19,7 +18,6 @@ from ..reports import (
     generate_impact_report_pdf,
     money,
 )
-from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/admin/executif", tags=["admin-executif"])
 
@@ -167,8 +165,7 @@ def executif_rapport_impact_generate(
     filename = f"lecim-rapport-impact-{annee_scolaire}.pdf"
 
     if publier:
-        stored_name = f"{uuid.uuid4().hex}.pdf"
-        (UPLOAD_ROOT / "publications" / stored_name).write_bytes(pdf_bytes)
+        stored_name = storage.store_bytes(db, "publications", pdf_bytes, "application/pdf")
         db.add(
             models.PublicationPublique(
                 title=f"Rapport d'impact {annee_scolaire}",

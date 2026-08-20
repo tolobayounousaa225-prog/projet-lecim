@@ -19,7 +19,7 @@ CARD_H = 54.0
 LOGO_PATH = Path(__file__).resolve().parent / "static" / "img" / "logo.jpg"
 
 
-def _add_recto(pdf: FPDF, carte, photo_full_path: Path | None) -> None:
+def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
     pdf.add_page()
 
     pdf.set_fill_color(*CREAM)
@@ -45,8 +45,8 @@ def _add_recto(pdf: FPDF, carte, photo_full_path: Path | None) -> None:
     pdf.rect(0, 14, CARD_W, 1.2, style="F")
 
     photo_x, photo_y, photo_w, photo_h = 4, 18, 21, 27
-    if photo_full_path and photo_full_path.exists():
-        pdf.image(str(photo_full_path), x=photo_x, y=photo_y, w=photo_w, h=photo_h)
+    if photo_bytes:
+        pdf.image(io.BytesIO(photo_bytes), x=photo_x, y=photo_y, w=photo_w, h=photo_h)
     else:
         pdf.set_draw_color(*GREEN)
         pdf.set_fill_color(255, 255, 255)
@@ -160,17 +160,17 @@ def _add_verso(pdf: FPDF, carte) -> None:
     pdf.cell(CARD_W, 3, f"N. {carte.numero_carte or '-'}", align="C")
 
 
-def generate_card_pdf(carte, photo_full_path: Path | None) -> bytes:
+def generate_card_pdf(carte, photo_bytes: bytes | None) -> bytes:
     pdf = FPDF(orientation="L", unit="mm", format=(CARD_H, CARD_W))
     pdf.set_auto_page_break(auto=False)
 
-    _add_recto(pdf, carte, photo_full_path)
+    _add_recto(pdf, carte, photo_bytes)
     _add_verso(pdf, carte)
 
     return bytes(pdf.output())
 
 
-def _add_recto_eleve(pdf: FPDF, carte, photo_full_path: Path | None, ecole_logo_path: Path | None) -> None:
+def _add_recto_eleve(pdf: FPDF, carte, photo_bytes: bytes | None, ecole_logo_bytes: bytes | None) -> None:
     pdf.add_page()
 
     pdf.set_fill_color(*CREAM)
@@ -180,9 +180,11 @@ def _add_recto_eleve(pdf: FPDF, carte, photo_full_path: Path | None, ecole_logo_
     pdf.rect(0, 0, CARD_W, 14, style="F")
 
     text_x = 4
-    logo_to_use = ecole_logo_path if (ecole_logo_path and ecole_logo_path.exists()) else LOGO_PATH
-    if logo_to_use.exists():
-        pdf.image(str(logo_to_use), x=3, y=1.5, w=11, h=11)
+    if ecole_logo_bytes:
+        pdf.image(io.BytesIO(ecole_logo_bytes), x=3, y=1.5, w=11, h=11)
+        text_x = 16
+    elif LOGO_PATH.exists():
+        pdf.image(str(LOGO_PATH), x=3, y=1.5, w=11, h=11)
         text_x = 16
 
     pdf.set_text_color(255, 255, 255)
@@ -197,8 +199,8 @@ def _add_recto_eleve(pdf: FPDF, carte, photo_full_path: Path | None, ecole_logo_
     pdf.rect(0, 14, CARD_W, 1.2, style="F")
 
     photo_x, photo_y, photo_w, photo_h = 4, 18, 21, 27
-    if photo_full_path and photo_full_path.exists():
-        pdf.image(str(photo_full_path), x=photo_x, y=photo_y, w=photo_w, h=photo_h)
+    if photo_bytes:
+        pdf.image(io.BytesIO(photo_bytes), x=photo_x, y=photo_y, w=photo_w, h=photo_h)
     else:
         pdf.set_draw_color(*GREEN)
         pdf.set_fill_color(255, 255, 255)
@@ -302,11 +304,11 @@ def _add_verso_eleve(pdf: FPDF, carte) -> None:
     pdf.cell(CARD_W, 3, f"Mat. {carte.matricule or '-'}", align="C")
 
 
-def generate_student_card_pdf(carte, photo_full_path: Path | None, ecole_logo_path: Path | None) -> bytes:
+def generate_student_card_pdf(carte, photo_bytes: bytes | None, ecole_logo_bytes: bytes | None) -> bytes:
     pdf = FPDF(orientation="L", unit="mm", format=(CARD_H, CARD_W))
     pdf.set_auto_page_break(auto=False)
 
-    _add_recto_eleve(pdf, carte, photo_full_path, ecole_logo_path)
+    _add_recto_eleve(pdf, carte, photo_bytes, ecole_logo_bytes)
     _add_verso_eleve(pdf, carte)
 
     return bytes(pdf.output())

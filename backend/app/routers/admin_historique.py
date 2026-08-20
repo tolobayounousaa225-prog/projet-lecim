@@ -5,17 +5,17 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import models, storage
 from ..database import get_db
 from ..deps import require_historique_access_web
-from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
+from .admin_files import ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin/historique", tags=["admin-historique"])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
-HISTORIQUE_DIR = UPLOAD_ROOT / "historique"
+HISTORIQUE_DIR = "historique"
 
 
 @router.get("")
@@ -63,7 +63,7 @@ async def historique_create(
     photo_path = None
     if photo is not None and photo.filename:
         try:
-            stored_name, _ = await _save_upload(photo, HISTORIQUE_DIR, ALLOWED_PHOTO_EXT)
+            stored_name, _ = await storage.save_upload(db, photo, HISTORIQUE_DIR, ALLOWED_PHOTO_EXT)
             photo_path = f"historique/{stored_name}"
         except ValueError as exc:
             return templates.TemplateResponse(
@@ -121,7 +121,7 @@ async def historique_update(
 
     if photo is not None and photo.filename:
         try:
-            stored_name, _ = await _save_upload(photo, HISTORIQUE_DIR, ALLOWED_PHOTO_EXT)
+            stored_name, _ = await storage.save_upload(db, photo, HISTORIQUE_DIR, ALLOWED_PHOTO_EXT)
         except ValueError as exc:
             return templates.TemplateResponse(
                 request,
@@ -129,10 +129,8 @@ async def historique_update(
                 {"admin": user, "item": president, "active": "historique", "error": str(exc)},
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-        old_path = UPLOAD_ROOT / president.photo_path if president.photo_path else None
+        storage.delete_stored_file(db, president.photo_path)
         president.photo_path = f"historique/{stored_name}"
-        if old_path and old_path.exists():
-            old_path.unlink()
 
     president.full_name = full_name
     president.periode = periode or None
@@ -151,11 +149,9 @@ def historique_delete(
 ):
     president = db.get(models.HistoriquePresident, president_id)
     if president:
-        path = UPLOAD_ROOT / president.photo_path if president.photo_path else None
+        storage.delete_stored_file(db, president.photo_path)
         db.delete(president)
         db.commit()
-        if path and path.exists():
-            path.unlink()
     return RedirectResponse(url="/admin/historique", status_code=status.HTTP_303_SEE_OTHER)
 
 

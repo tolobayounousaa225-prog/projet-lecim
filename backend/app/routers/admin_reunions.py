@@ -7,14 +7,13 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import audit, models
+from .. import audit, models, storage
 from ..config import settings
 from ..database import get_db
 from ..deps import require_membres_access_web, require_reunions_access_web
 from ..email_utils import send_email
 from ..postes import POSTES
 from ..reminders import send_reminder_for_reunion
-from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/admin", tags=["admin-reunions"])
 
@@ -242,18 +241,14 @@ def reunions_delete(
     reunion = db.get(models.Reunion, reunion_id)
     if reunion:
         # Les Document/Photo rattachés sont supprimés en cascade côté ORM, mais
-        # leurs fichiers physiques ne le sont jamais automatiquement — on les
-        # collecte avant le commit pour ne pas laisser de fichiers orphelins.
-        file_paths = [
-            UPLOAD_ROOT / d.file_path for d in reunion.documents if d.file_path
-        ] + [
-            UPLOAD_ROOT / p.file_path for p in reunion.photos if p.file_path
-        ]
+        # leurs fichiers stockés ne le sont jamais automatiquement — on les
+        # supprime explicitement pour ne pas laisser de fichiers orphelins.
+        for d in reunion.documents:
+            storage.delete_stored_file(db, d.file_path)
+        for p in reunion.photos:
+            storage.delete_stored_file(db, p.file_path)
         db.delete(reunion)
         db.commit()
-        for path in file_paths:
-            if path.exists():
-                path.unlink()
     return RedirectResponse(url="/admin/reunions", status_code=status.HTTP_303_SEE_OTHER)
 
 

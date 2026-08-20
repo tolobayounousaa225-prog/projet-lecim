@@ -1,15 +1,13 @@
 """Membres fondateurs de la LECIM, affichés publiquement (photo, rôle, mot)."""
 
-import mimetypes
 from pathlib import Path
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 
-from .. import models, schemas
+from .. import models, schemas, storage
 from ..database import get_db
-from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/api/fondateurs", tags=["fondateurs"])
 
@@ -29,10 +27,8 @@ def list_fondateurs(db: Session = Depends(get_db)):
 @router.get("/{fondateur_id}/photo")
 def fondateur_photo(fondateur_id: int, db: Session = Depends(get_db)):
     fondateur = db.get(models.MembreFondateur, fondateur_id)
-    if not fondateur or not fondateur.is_published or not fondateur.photo_path:
-        return FileResponse(LOGO_PATH, media_type="image/jpeg")
-    path = UPLOAD_ROOT / fondateur.photo_path
-    if not path.exists():
-        return FileResponse(LOGO_PATH, media_type="image/jpeg")
-    media_type = mimetypes.guess_type(fondateur.photo_path)[0] or "application/octet-stream"
-    return FileResponse(path, media_type=media_type)
+    if fondateur and fondateur.is_published:
+        stored = storage.get_stored_file(db, fondateur.photo_path)
+        if stored:
+            return Response(content=stored.data, media_type=stored.content_type)
+    return FileResponse(LOGO_PATH, media_type="image/jpeg")

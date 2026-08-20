@@ -1,14 +1,11 @@
 """Témoignages d'écoles membres, affichés publiquement (photo, rôle, texte)."""
 
-import mimetypes
-
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from .. import models, schemas
+from .. import models, schemas, storage
 from ..database import get_db
-from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/api/temoignages", tags=["temoignages"])
 
@@ -28,8 +25,7 @@ def temoignage_photo(temoignage_id: int, db: Session = Depends(get_db)):
     temoignage = db.get(models.Temoignage, temoignage_id)
     if not temoignage or not temoignage.is_published or not temoignage.photo_path:
         raise HTTPException(status_code=404, detail="Introuvable")
-    path = UPLOAD_ROOT / temoignage.photo_path
-    if not path.exists():
+    stored = storage.get_stored_file(db, temoignage.photo_path)
+    if not stored:
         raise HTTPException(status_code=404, detail="Introuvable")
-    media_type = mimetypes.guess_type(temoignage.photo_path)[0] or "image/jpeg"
-    return FileResponse(path, media_type=media_type)
+    return Response(content=stored.data, media_type=stored.content_type)

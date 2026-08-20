@@ -5,18 +5,18 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import models, storage
 from ..database import get_db
 from ..deps import require_partenaires_access_web
 from ..models import PARTENAIRE_STATUTS, PARTENAIRE_TYPES
-from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
+from .admin_files import ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin/partenaires", tags=["admin-partenaires"])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
-PARTENAIRE_LOGOS_DIR = UPLOAD_ROOT / "partenaires_logos"
+PARTENAIRE_LOGOS_DIR = "partenaires_logos"
 
 
 @router.get("")
@@ -76,7 +76,7 @@ async def partenaires_create(
     logo_path = None
     if logo is not None and logo.filename:
         try:
-            stored_name, _ = await _save_upload(logo, PARTENAIRE_LOGOS_DIR, ALLOWED_PHOTO_EXT)
+            stored_name, _ = await storage.save_upload(db, logo, PARTENAIRE_LOGOS_DIR, ALLOWED_PHOTO_EXT)
             logo_path = f"partenaires_logos/{stored_name}"
         except ValueError:
             pass
@@ -132,11 +132,9 @@ async def partenaires_update(
     if partenaire:
         if logo is not None and logo.filename:
             try:
-                stored_name, _ = await _save_upload(logo, PARTENAIRE_LOGOS_DIR, ALLOWED_PHOTO_EXT)
-                old_path = UPLOAD_ROOT / partenaire.logo_path if partenaire.logo_path else None
+                stored_name, _ = await storage.save_upload(db, logo, PARTENAIRE_LOGOS_DIR, ALLOWED_PHOTO_EXT)
+                storage.delete_stored_file(db, partenaire.logo_path)
                 partenaire.logo_path = f"partenaires_logos/{stored_name}"
-                if old_path and old_path.exists():
-                    old_path.unlink()
             except ValueError:
                 pass
 
@@ -160,9 +158,7 @@ def partenaires_delete(
 ):
     partenaire = db.get(models.Partenaire, partenaire_id)
     if partenaire:
-        logo_path = UPLOAD_ROOT / partenaire.logo_path if partenaire.logo_path else None
+        storage.delete_stored_file(db, partenaire.logo_path)
         db.delete(partenaire)
         db.commit()
-        if logo_path and logo_path.exists():
-            logo_path.unlink()
     return RedirectResponse(url="/admin/partenaires", status_code=status.HTTP_303_SEE_OTHER)

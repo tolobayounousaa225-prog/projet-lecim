@@ -1,15 +1,13 @@
 """Historique public des anciens présidents de la LECIM (photo, période, mot)."""
 
-import mimetypes
 from pathlib import Path
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 
-from .. import models, schemas
+from .. import models, schemas, storage
 from ..database import get_db
-from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/api/historique", tags=["historique"])
 
@@ -29,10 +27,8 @@ def list_historique(db: Session = Depends(get_db)):
 @router.get("/{president_id}/photo")
 def historique_photo(president_id: int, db: Session = Depends(get_db)):
     president = db.get(models.HistoriquePresident, president_id)
-    if not president or not president.is_published or not president.photo_path:
-        return FileResponse(LOGO_PATH, media_type="image/jpeg")
-    path = UPLOAD_ROOT / president.photo_path
-    if not path.exists():
-        return FileResponse(LOGO_PATH, media_type="image/jpeg")
-    media_type = mimetypes.guess_type(president.photo_path)[0] or "application/octet-stream"
-    return FileResponse(path, media_type=media_type)
+    if president and president.is_published:
+        stored = storage.get_stored_file(db, president.photo_path)
+        if stored:
+            return Response(content=stored.data, media_type=stored.content_type)
+    return FileResponse(LOGO_PATH, media_type="image/jpeg")

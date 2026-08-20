@@ -5,18 +5,18 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import models, storage
 from ..database import get_db
 from ..deps import require_gouvernance_access_web
 from ..models import GOUVERNANCE_NIVEAUX
-from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
+from .admin_files import ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin/gouvernance", tags=["admin-gouvernance"])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
-GOUVERNANCE_DIR = UPLOAD_ROOT / "gouvernance"
+GOUVERNANCE_DIR = "gouvernance"
 
 
 @router.get("")
@@ -65,12 +65,13 @@ async def _handle_photo(
     user: models.User,
     item: models.GouvernanceMembre | None,
     parents: list[models.GouvernanceMembre],
+    db: Session,
 ):
     """Sauvegarde une photo uploadée. Retourne (chemin_relatif, réponse_erreur_ou_None)."""
     if photo is None or not photo.filename:
         return None, None
     try:
-        stored_name, _ = await _save_upload(photo, GOUVERNANCE_DIR, ALLOWED_PHOTO_EXT)
+        stored_name, _ = await storage.save_upload(db, photo, GOUVERNANCE_DIR, ALLOWED_PHOTO_EXT)
         return f"gouvernance/{stored_name}", None
     except ValueError as exc:
         error_response = templates.TemplateResponse(
@@ -130,10 +131,10 @@ async def gouvernance_create(
         .order_by(models.GouvernanceMembre.ordre, models.GouvernanceMembre.id)
         .all()
     )
-    titulaire_photo_path, error = await _handle_photo(request, titulaire_photo, user, None, parents)
+    titulaire_photo_path, error = await _handle_photo(request, titulaire_photo, user, None, parents, db)
     if error:
         return error
-    adjoint_photo_path, error = await _handle_photo(request, adjoint_photo, user, None, parents)
+    adjoint_photo_path, error = await _handle_photo(request, adjoint_photo, user, None, parents, db)
     if error:
         return error
 
@@ -207,23 +208,19 @@ async def gouvernance_update(
         .all()
     )
 
-    titulaire_photo_path, error = await _handle_photo(request, titulaire_photo, user, membre, parents)
+    titulaire_photo_path, error = await _handle_photo(request, titulaire_photo, user, membre, parents, db)
     if error:
         return error
-    adjoint_photo_path, error = await _handle_photo(request, adjoint_photo, user, membre, parents)
+    adjoint_photo_path, error = await _handle_photo(request, adjoint_photo, user, membre, parents, db)
     if error:
         return error
 
     if titulaire_photo_path:
-        old_path = UPLOAD_ROOT / membre.titulaire_photo_path if membre.titulaire_photo_path else None
+        storage.delete_stored_file(db, membre.titulaire_photo_path)
         membre.titulaire_photo_path = titulaire_photo_path
-        if old_path and old_path.exists():
-            old_path.unlink()
     if adjoint_photo_path:
-        old_path = UPLOAD_ROOT / membre.adjoint_photo_path if membre.adjoint_photo_path else None
+        storage.delete_stored_file(db, membre.adjoint_photo_path)
         membre.adjoint_photo_path = adjoint_photo_path
-        if old_path and old_path.exists():
-            old_path.unlink()
 
     membre.poste_title = poste_title
     membre.poste_subtitle = poste_subtitle or None
@@ -245,15 +242,10 @@ def gouvernance_delete(
 ):
     membre = db.get(models.GouvernanceMembre, membre_id)
     if membre:
-        paths = [
-            UPLOAD_ROOT / membre.titulaire_photo_path if membre.titulaire_photo_path else None,
-            UPLOAD_ROOT / membre.adjoint_photo_path if membre.adjoint_photo_path else None,
-        ]
+        storage.delete_stored_file(db, membre.titulaire_photo_path)
+        storage.delete_stored_file(db, membre.adjoint_photo_path)
         db.delete(membre)
         db.commit()
-        for path in paths:
-            if path and path.exists():
-                path.unlink()
     return RedirectResponse(url="/admin/gouvernance", status_code=status.HTTP_303_SEE_OTHER)
 
 

@@ -6,18 +6,18 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import models, storage
 from ..database import get_db
 from ..deps import require_publications_access_web
 from ..models import PUBLICATION_CATEGORIES
-from .admin_files import ALLOWED_DOCUMENT_EXT, ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
+from .admin_files import ALLOWED_DOCUMENT_EXT, ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin/publications", tags=["admin-publications"])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
-PUBLICATIONS_DIR = UPLOAD_ROOT / "publications"
+PUBLICATIONS_DIR = "publications"
 ALLOWED_PUBLICATION_EXT = ALLOWED_DOCUMENT_EXT | ALLOWED_PHOTO_EXT
 
 
@@ -66,7 +66,7 @@ async def publications_create(
     user: models.User = Depends(require_publications_access_web),
 ):
     try:
-        stored_name, original_name = await _save_upload(file, PUBLICATIONS_DIR, ALLOWED_PUBLICATION_EXT)
+        stored_name, original_name = await storage.save_upload(db, file, PUBLICATIONS_DIR, ALLOWED_PUBLICATION_EXT)
     except ValueError as exc:
         return templates.TemplateResponse(
             request,
@@ -104,11 +104,9 @@ def publications_delete(
 ):
     publication = db.get(models.PublicationPublique, publication_id)
     if publication:
-        path = UPLOAD_ROOT / publication.file_path
+        storage.delete_stored_file(db, publication.file_path)
         db.delete(publication)
         db.commit()
-        if path.exists():
-            path.unlink()
     return RedirectResponse(url="/admin/publications", status_code=status.HTTP_303_SEE_OTHER)
 
 

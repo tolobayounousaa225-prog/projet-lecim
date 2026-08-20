@@ -1,13 +1,11 @@
-import mimetypes
-import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import models, storage
 from ..config import settings
 from ..database import get_db
 from ..deps import require_documents_access_web, require_photos_access_web
@@ -17,58 +15,16 @@ router = APIRouter(prefix="/admin", tags=["admin-files"])
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
+# Conservé pour les usages qui restent volontairement sur le disque éphémère
+# du conteneur (ex. le cache d'images de partage régénérable de news.py) —
+# les fichiers uploadés par l'admin, eux, sont désormais stockés en base de
+# données (voir storage.py) et ne dépendent plus de UPLOAD_ROOT.
 UPLOAD_ROOT = Path(__file__).resolve().parent.parent.parent / settings.upload_dir
-DOCUMENTS_DIR = UPLOAD_ROOT / "documents"
-PHOTOS_DIR = UPLOAD_ROOT / "photos"
+DOCUMENTS_DIR = "documents"
+PHOTOS_DIR = "photos"
 
-ALLOWED_DOCUMENT_EXT = {".pdf", ".doc", ".docx", ".odt"}
-ALLOWED_PHOTO_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
-MAX_UPLOAD_BYTES = settings.max_upload_size_mb * 1024 * 1024
-
-# Signatures binaires (magic bytes) attendues pour chaque extension autorisée —
-# défense en profondeur en plus du contrôle d'extension : empêche de stocker un
-# contenu arbitraire simplement renommé avec une extension permise. .docx/.odt
-# sont tous deux des archives ZIP (OOXML/ODF) et partagent donc la même
-# signature ; .doc (binaire historique) utilise le format OLE Compound File.
-_MAGIC_BYTES: dict[str, tuple[bytes, ...]] = {
-    ".pdf": (b"%PDF",),
-    ".jpg": (b"\xff\xd8\xff",),
-    ".jpeg": (b"\xff\xd8\xff",),
-    ".png": (b"\x89PNG\r\n\x1a\n",),
-    ".gif": (b"GIF87a", b"GIF89a"),
-    ".webp": (b"RIFF",),  # "WEBP" suit à l'offset 8, vérifié séparément ci-dessous
-    ".docx": (b"PK\x03\x04",),
-    ".odt": (b"PK\x03\x04",),
-    ".doc": (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1",),
-}
-
-
-def _matches_magic_bytes(data: bytes, ext: str) -> bool:
-    signatures = _MAGIC_BYTES.get(ext)
-    if not signatures:
-        return True  # extension sans signature connue : pas de vérification possible
-    if not any(data.startswith(sig) for sig in signatures):
-        return False
-    if ext == ".webp" and data[8:12] != b"WEBP":
-        return False
-    return True
-
-
-async def _save_upload(file: UploadFile | None, dest_dir: Path, allowed_ext: set[str]) -> tuple[str, str]:
-    if file is None or not file.filename:
-        raise ValueError("Aucun fichier fourni")
-    ext = Path(file.filename or "").suffix.lower()
-    if ext not in allowed_ext:
-        raise ValueError(f"Extension non autorisée : {ext}")
-    data = await file.read()
-    if len(data) > MAX_UPLOAD_BYTES:
-        raise ValueError("Fichier trop volumineux")
-    if not _matches_magic_bytes(data, ext):
-        raise ValueError("Le contenu du fichier ne correspond pas à son extension")
-    stored_name = f"{uuid.uuid4().hex}{ext}"
-    dest_path = dest_dir / stored_name
-    dest_path.write_bytes(data)
-    return stored_name, (file.filename or stored_name)
+ALLOWED_DOCUMENT_EXT = storage.ALLOWED_DOCUMENT_EXT
+ALLOWED_PHOTO_EXT = storage.ALLOWED_PHOTO_EXT
 
 
 # ---------- Documents / PV ----------
@@ -119,7 +75,7 @@ async def documents_create(
     user: models.User = Depends(require_documents_access_web),
 ):
     try:
-        stored_name, original_name = await _save_upload(file, DOCUMENTS_DIR, ALLOWED_DOCUMENT_EXT)
+        stored_name, original_name = await storage.save_upload(db, file, DOCUMENTS_DIR, ALLOWED_DOCUMENT_EXT)
     except ValueError as exc:
         reunions = db.query(models.Reunion).order_by(models.Reunion.date.desc()).all()
         return templates.TemplateResponse(
@@ -155,11 +111,14 @@ def documents_file(
     document = db.get(models.Document, document_id)
     if not document:
         return RedirectResponse(url="/admin/documents", status_code=status.HTTP_303_SEE_OTHER)
-    path = UPLOAD_ROOT / document.file_path
-    if not path.exists():
+    stored = storage.get_stored_file(db, document.file_path)
+    if not stored:
         return RedirectResponse(url="/admin/documents", status_code=status.HTTP_303_SEE_OTHER)
-    media_type = mimetypes.guess_type(document.original_filename)[0] or "application/octet-stream"
-    return FileResponse(path, media_type=media_type, filename=document.original_filename)
+    return Response(
+        content=stored.data,
+        media_type=stored.content_type,
+        headers={"Content-Disposition": f'attachment; filename="{document.original_filename}"'},
+    )
 
 
 @router.post("/documents/{document_id}/delete")
@@ -170,11 +129,9 @@ def documents_delete(
 ):
     document = db.get(models.Document, document_id)
     if document:
-        path = UPLOAD_ROOT / document.file_path
+        storage.delete_stored_file(db, document.file_path)
         db.delete(document)
         db.commit()
-        if path.exists():
-            path.unlink()
     return RedirectResponse(url="/admin/documents", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -226,7 +183,7 @@ async def photos_create(
     user: models.User = Depends(require_photos_access_web),
 ):
     try:
-        stored_name, original_name = await _save_upload(file, PHOTOS_DIR, ALLOWED_PHOTO_EXT)
+        stored_name, original_name = await storage.save_upload(db, file, PHOTOS_DIR, ALLOWED_PHOTO_EXT)
     except ValueError as exc:
         reunions = db.query(models.Reunion).order_by(models.Reunion.date.desc()).all()
         return templates.TemplateResponse(
@@ -262,11 +219,10 @@ def photos_file(
     photo = db.get(models.Photo, photo_id)
     if not photo:
         return RedirectResponse(url="/admin/photos", status_code=status.HTTP_303_SEE_OTHER)
-    path = UPLOAD_ROOT / photo.file_path
-    if not path.exists():
+    stored = storage.get_stored_file(db, photo.file_path)
+    if not stored:
         return RedirectResponse(url="/admin/photos", status_code=status.HTTP_303_SEE_OTHER)
-    media_type = mimetypes.guess_type(photo.original_filename)[0] or "application/octet-stream"
-    return FileResponse(path, media_type=media_type)
+    return Response(content=stored.data, media_type=stored.content_type)
 
 
 @router.post("/photos/{photo_id}/toggle-public")
@@ -290,9 +246,7 @@ def photos_delete(
 ):
     photo = db.get(models.Photo, photo_id)
     if photo:
-        path = UPLOAD_ROOT / photo.file_path
+        storage.delete_stored_file(db, photo.file_path)
         db.delete(photo)
         db.commit()
-        if path.exists():
-            path.unlink()
     return RedirectResponse(url="/admin/photos", status_code=status.HTTP_303_SEE_OTHER)

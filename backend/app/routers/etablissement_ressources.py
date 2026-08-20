@@ -1,26 +1,25 @@
 """Bibliothèque pédagogique : les établissements partagent des supports (manuels,
 fiches de cours) entre eux, modérés par le BEN avant publication."""
 
-import mimetypes
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile, status
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import models, storage
 from ..database import get_db
 from ..deps import require_etab_ressources_web
 from ..models import RESSOURCE_CATEGORIES
-from .admin_files import ALLOWED_DOCUMENT_EXT, UPLOAD_ROOT, _save_upload
+from .admin_files import ALLOWED_DOCUMENT_EXT
 
 router = APIRouter(tags=["etablissement-ressources"])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
-RESSOURCES_DIR = UPLOAD_ROOT / "ressources_pedagogiques"
+RESSOURCES_DIR = "ressources_pedagogiques"
 
 
 @router.get("/etablissement/ressources")
@@ -74,7 +73,7 @@ async def etablissement_ressources_create(
         return RedirectResponse(url="/etablissement/ressources", status_code=status.HTTP_303_SEE_OTHER)
 
     try:
-        stored_name, original_name = await _save_upload(file, RESSOURCES_DIR, ALLOWED_DOCUMENT_EXT)
+        stored_name, original_name = await storage.save_upload(db, file, RESSOURCES_DIR, ALLOWED_DOCUMENT_EXT)
     except ValueError as exc:
         partagees = (
             db.query(models.RessourcePedagogique)
@@ -127,11 +126,9 @@ def etablissement_ressources_delete(
 ):
     ressource = db.get(models.RessourcePedagogique, ressource_id)
     if ressource and ressource.etablissement_id == user.etablissement.id:
-        path = UPLOAD_ROOT / ressource.file_path
+        storage.delete_stored_file(db, ressource.file_path)
         db.delete(ressource)
         db.commit()
-        if path.exists():
-            path.unlink()
     return RedirectResponse(url="/etablissement/ressources", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -146,8 +143,11 @@ def etablissement_ressources_file(
         raise HTTPException(status_code=404, detail="Ressource introuvable")
     if not ressource.is_published and ressource.etablissement_id != user.etablissement.id:
         raise HTTPException(status_code=404, detail="Ressource introuvable")
-    path = UPLOAD_ROOT / ressource.file_path
-    if not path.exists():
+    stored = storage.get_stored_file(db, ressource.file_path)
+    if not stored:
         raise HTTPException(status_code=404, detail="Fichier introuvable")
-    media_type = mimetypes.guess_type(ressource.file_path)[0] or "application/octet-stream"
-    return FileResponse(path, media_type=media_type, filename=ressource.original_filename)
+    return Response(
+        content=stored.data,
+        media_type=stored.content_type,
+        headers={"Content-Disposition": f'attachment; filename="{ressource.original_filename}"'},
+    )

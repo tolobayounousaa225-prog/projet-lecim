@@ -5,18 +5,18 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import audit, models
+from .. import audit, models, storage
 from ..database import get_db
 from ..deps import require_site_content_access_web
 from ..site_content_fields import SITE_CONTENT_FIELDS
-from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
+from .admin_files import ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin/site-content", tags=["admin-site-content"])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
-SITE_CONTENT_IMAGES_DIR = UPLOAD_ROOT / "site_content"
+SITE_CONTENT_IMAGES_DIR = "site_content"
 
 
 def _grouped_fields(values: dict[str, str]) -> list[tuple[str, list[dict]]]:
@@ -67,22 +67,18 @@ async def site_content_save(
 
         if meta["type"] == "image":
             if form.get("remove_" + key):
-                old_path = UPLOAD_ROOT / row.value if row.value else None
+                storage.delete_stored_file(db, row.value)
                 row.value = None
-                if old_path and old_path.exists():
-                    old_path.unlink()
             else:
                 upload = form.get(key)
                 if upload is not None and getattr(upload, "filename", None):
                     try:
-                        stored_name, _ = await _save_upload(upload, SITE_CONTENT_IMAGES_DIR, ALLOWED_PHOTO_EXT)
+                        stored_name, _ = await storage.save_upload(db, upload, SITE_CONTENT_IMAGES_DIR, ALLOWED_PHOTO_EXT)
                     except ValueError:
                         stored_name = None
                     if stored_name:
-                        old_path = UPLOAD_ROOT / row.value if row.value else None
+                        storage.delete_stored_file(db, row.value)
                         row.value = f"site_content/{stored_name}"
-                        if old_path and old_path.exists():
-                            old_path.unlink()
         else:
             value = str(form.get(key, "")).strip()
             row.value = value or None
