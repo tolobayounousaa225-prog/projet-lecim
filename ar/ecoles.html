@@ -7,6 +7,7 @@
 <meta name="description" content="قائمة المؤسسات الدينية والمدارس القرآنية المنتسبة لـ LECIM، مصنّفة حسب المنطقة، عبر كوت ديفوار.">
 <link rel="icon" type="image/jpeg" href="../assets/img/logo.jpg">
 <link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a3d63">
 <link rel="apple-touch-icon" href="../assets/img/icons/apple-touch-icon.png">
@@ -120,26 +121,37 @@
 
 <section>
   <div class="container">
-    <div class="ecoles-tabs" role="tablist">
-      <button type="button" class="ecoles-tab active" data-categorie="membre" role="tab" aria-selected="true">المدارس المنتسبة</button>
-      <button type="button" class="ecoles-tab" data-categorie="partenaire" role="tab" aria-selected="false">الشركاء</button>
-    </div>
-
-    <div class="ecoles-toolbar" id="recherche">
-      <div class="ecoles-search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input type="text" id="ecoles-search-input" placeholder="ابحث عن مدرسة أو منطقة...">
+    <div class="ecoles-tabs-row">
+      <div class="ecoles-tabs" role="tablist">
+        <button type="button" class="ecoles-tab active" data-categorie="membre" role="tab" aria-selected="true">المدارس المنتسبة</button>
+        <button type="button" class="ecoles-tab" data-categorie="partenaire" role="tab" aria-selected="false">الشركاء</button>
       </div>
-      <select id="ecoles-region-select" class="ecoles-region-select">
-        <option value="">كل المناطق/الأقاليم</option>
-      </select>
-      <div class="ecoles-count"><strong id="ecoles-count-num">0</strong> <span id="ecoles-count-label">مؤسسة منتسبة</span></div>
+      <div class="ecoles-view-toggle">
+        <button type="button" class="ecoles-view-btn active" data-view="liste">عرض القائمة</button>
+        <button type="button" class="ecoles-view-btn" data-view="carte">عرض الخريطة</button>
+      </div>
     </div>
 
-    <div class="ecoles-regions" id="ecoles-regions-nav"></div>
+    <div id="ecoles-list-wrap">
+      <div class="ecoles-toolbar" id="recherche">
+        <div class="ecoles-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="ecoles-search-input" placeholder="ابحث عن مدرسة أو منطقة...">
+        </div>
+        <select id="ecoles-region-select" class="ecoles-region-select">
+          <option value="">كل المناطق/الأقاليم</option>
+        </select>
+        <div class="ecoles-count"><strong id="ecoles-count-num">0</strong> <span id="ecoles-count-label">مؤسسة منتسبة</span></div>
+      </div>
 
-    <div id="ecoles-list"></div>
-    <p id="ecoles-empty">لا توجد مؤسسة مطابقة لبحثك.</p>
+      <div class="ecoles-regions" id="ecoles-regions-nav"></div>
+
+      <div id="ecoles-list"></div>
+      <p id="ecoles-empty">لا توجد مؤسسة مطابقة لبحثك.</p>
+    </div>
+
+    <div id="ecoles-map" style="display:none; height:520px; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border);"></div>
+    <p id="ecoles-map-empty" style="display:none; text-align:center; color:var(--text-muted); margin-top:20px;">لا يوجد موقع جغرافي مسجل حاليًا.</p>
   </div>
 </section>
 
@@ -205,6 +217,7 @@
 </footer>
 
 <script>window.LECIM_API_BASE = "https://projet-lecim-production.up.railway.app";</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="../assets/js/script.js"></script>
 <script>
 if ("serviceWorker" in navigator) {

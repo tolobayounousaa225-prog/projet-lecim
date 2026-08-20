@@ -1,6 +1,7 @@
 var API_BASE = window.LECIM_API_BASE || "http://localhost:8000";
 
 document.addEventListener("DOMContentLoaded", function () {
+  initDataSaverMode();
   initNavToggle();
   initNavDropdowns();
   initLoginLink();
@@ -30,6 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadCarte();
   loadResultatsExamens();
   loadEcoles();
+  initEcolesMap();
   loadHeroStats();
   loadPartenaires();
   loadInitiatives();
@@ -47,6 +49,8 @@ document.addEventListener("DOMContentLoaded", function () {
   loadSondageExpress();
   initNewsletterForm();
   initLiveVisitors();
+  initWhatsappButton();
+  initFaqAssistant();
   recordPageView();
 });
 
@@ -230,6 +234,39 @@ function prefersReducedMotion() {
   return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 }
 
+var DATA_SAVER_STORAGE_KEY = "lecim_data_saver";
+
+function isDataSaverMode() {
+  return document.documentElement.classList.contains("data-saver");
+}
+
+function initDataSaverMode() {
+  var stored = null;
+  try { stored = localStorage.getItem(DATA_SAVER_STORAGE_KEY); } catch (e) {}
+
+  var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  var autoSlow = !!(conn && (conn.saveData || /2g/.test(conn.effectiveType || "")));
+  var active = stored === "on" || (stored !== "off" && autoSlow);
+
+  if (active) document.documentElement.classList.add("data-saver");
+
+  var footerBottom = document.querySelector(".footer-bottom");
+  if (!footerBottom) return;
+  var isArabic = document.documentElement.lang === "ar";
+
+  var toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "data-saver-toggle";
+  toggle.textContent = active
+    ? (isArabic ? "إيقاف وضع توفير البيانات" : "Désactiver le mode économie de données")
+    : (isArabic ? "تفعيل وضع توفير البيانات" : "Activer le mode économie de données");
+  toggle.addEventListener("click", function () {
+    try { localStorage.setItem(DATA_SAVER_STORAGE_KEY, active ? "off" : "on"); } catch (e) {}
+    window.location.reload();
+  });
+  footerBottom.appendChild(toggle);
+}
+
 function initHeaderScrollShadow() {
   var header = document.querySelector(".site-header");
   if (!header) return;
@@ -312,7 +349,7 @@ function addSuccessIcon(box) {
 
 function initHeroParallax() {
   var visual = document.querySelector(".hero-visual");
-  if (!visual || prefersReducedMotion()) return;
+  if (!visual || prefersReducedMotion() || isDataSaverMode()) return;
   function update() {
     var offset = Math.min(window.scrollY * 0.12, 40);
     visual.style.transform = "translateY(" + offset + "px)";
@@ -322,7 +359,7 @@ function initHeroParallax() {
 }
 
 function initCardTilt() {
-  if (prefersReducedMotion()) return;
+  if (prefersReducedMotion() || isDataSaverMode()) return;
   if (!(window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches)) return;
 
   var SELECTOR = [
@@ -607,7 +644,7 @@ function loadSiteContent() {
       });
       bgElements.forEach(function (el) {
         var url = values[el.getAttribute("data-content-bg-key")];
-        if (!url) return;
+        if (!url || isDataSaverMode()) return;
         el.style.backgroundImage =
           "linear-gradient(135deg, rgba(10,61,99,.88) 0%, rgba(4,56,114,.82) 55%, rgba(8,58,92,.90) 100%), url('" +
           API_BASE + url + "')";
@@ -618,6 +655,251 @@ function loadSiteContent() {
     })
     .catch(function () {
       // API indisponible : les textes/visuels par défaut codés dans la page restent affichés.
+    });
+}
+
+function initTextToSpeech(btn, text) {
+  if (!btn) return;
+  if (!("speechSynthesis" in window) || !text) {
+    btn.style.display = "none";
+    return;
+  }
+  var isArabic = document.documentElement.lang === "ar";
+  var labelPlay = isArabic ? "🔊 استماع للمقال" : "🔊 Écouter l'article";
+  var labelStop = isArabic ? "⏹ إيقاف" : "⏹ Arrêter la lecture";
+  btn.textContent = labelPlay;
+
+  btn.addEventListener("click", function () {
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      btn.textContent = labelPlay;
+      return;
+    }
+    var utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = isArabic ? "ar" : "fr-FR";
+    utterance.onend = function () { btn.textContent = labelPlay; };
+    utterance.onerror = function () { btn.textContent = labelPlay; };
+    window.speechSynthesis.speak(utterance);
+    btn.textContent = labelStop;
+  });
+
+  window.addEventListener("beforeunload", function () {
+    if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
+  });
+}
+
+function initEcolesMap() {
+  var mapContainer = document.getElementById("ecoles-map");
+  var emptyEl = document.getElementById("ecoles-map-empty");
+  var listWrap = document.getElementById("ecoles-list-wrap");
+  var viewButtons = document.querySelectorAll(".ecoles-view-btn");
+  if (!mapContainer || !viewButtons.length) return;
+
+  var map = null;
+  var loaded = false;
+
+  function ensureMap() {
+    if (typeof L === "undefined") return;
+    if (!map) {
+      map = L.map(mapContainer).setView([7.54, -5.55], 7);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; contributeurs OpenStreetMap",
+        maxZoom: 18,
+      }).addTo(map);
+    }
+    if (loaded) {
+      setTimeout(function () { map.invalidateSize(); }, 0);
+      return;
+    }
+    loaded = true;
+
+    fetch(API_BASE + "/api/carte")
+      .then(function (res) {
+        if (!res.ok) throw new Error("indisponible");
+        return res.json();
+      })
+      .then(function (markers) {
+        var ecoles = (markers || []).filter(function (m) { return m.type === "etablissement"; });
+        if (!ecoles.length) {
+          if (emptyEl) emptyEl.style.display = "block";
+          return;
+        }
+        var bounds = [];
+        ecoles.forEach(function (m) {
+          var icon = L.divIcon({
+            className: "",
+            html: '<div style="width:16px;height:16px;border-radius:50%;background:#043872;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+          });
+          var popup = "<strong>" + escapeHtml(m.nom) + "</strong>" + (m.detail ? "<br>" + escapeHtml(m.detail) : "");
+          L.marker([m.latitude, m.longitude], { icon: icon }).addTo(map).bindPopup(popup);
+          bounds.push([m.latitude, m.longitude]);
+        });
+        if (bounds.length) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 10 });
+        setTimeout(function () { map.invalidateSize(); }, 0);
+      })
+      .catch(function () {
+        if (emptyEl) emptyEl.style.display = "block";
+      });
+  }
+
+  viewButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var view = btn.getAttribute("data-view");
+      viewButtons.forEach(function (b) { b.classList.toggle("active", b === btn); });
+      if (view === "carte") {
+        if (listWrap) listWrap.style.display = "none";
+        mapContainer.style.display = "block";
+        ensureMap();
+      } else {
+        mapContainer.style.display = "none";
+        if (listWrap) listWrap.style.display = "";
+      }
+    });
+  });
+}
+
+function initFaqAssistant() {
+  var isArabic = document.documentElement.lang === "ar";
+  var L = {
+    label: isArabic ? "المساعد الافتراضي" : "Assistant LECIM",
+    placeholder: isArabic ? "اكتبوا سؤالكم..." : "Posez votre question...",
+    greeting: isArabic
+      ? "مرحبًا! اطرحوا سؤالكم حول الانتساب أو الامتحانات أو الاتصال بنا."
+      : "Bonjour ! Posez-moi une question sur l'adhésion, les examens, le contact...",
+    notFound: isArabic
+      ? "لم أجد إجابة دقيقة لهذا السؤال. يمكنكم التواصل معنا مباشرة."
+      : "Je n'ai pas trouvé de réponse précise à cette question. Vous pouvez nous contacter directement.",
+    contactLink: isArabic ? "اتصل بنا" : "Nous contacter",
+    thinking: "…",
+  };
+
+  var toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.id = "faq-assistant-toggle";
+  toggle.setAttribute("aria-label", L.label);
+  toggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
+
+  var panel = document.createElement("div");
+  panel.id = "faq-assistant-panel";
+  panel.innerHTML =
+    '<div class="faq-assistant-header"><strong>' + L.label + "</strong>" +
+    '<button type="button" id="faq-assistant-close" aria-label="Fermer">&times;</button></div>' +
+    '<div id="faq-assistant-messages"></div>' +
+    '<form id="faq-assistant-form">' +
+    '<input type="text" id="faq-assistant-input" placeholder="' + L.placeholder + '" autocomplete="off" maxlength="300">' +
+    '<button type="submit" aria-label="Envoyer"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button>' +
+    "</form>";
+
+  document.body.appendChild(toggle);
+  document.body.appendChild(panel);
+
+  var messages = panel.querySelector("#faq-assistant-messages");
+  var form = panel.querySelector("#faq-assistant-form");
+  var input = panel.querySelector("#faq-assistant-input");
+  var opened = false;
+
+  function addMessage(text, who, isHtml) {
+    var el = document.createElement("div");
+    el.className = "faq-msg faq-msg-" + who;
+    if (isHtml) el.innerHTML = text; else el.textContent = text;
+    messages.appendChild(el);
+    messages.scrollTop = messages.scrollHeight;
+    return el;
+  }
+
+  function openPanel() {
+    if (opened) return;
+    opened = true;
+    panel.classList.add("is-open");
+    if (!messages.children.length) addMessage(L.greeting, "bot");
+    input.focus();
+  }
+  function closePanel() {
+    opened = false;
+    panel.classList.remove("is-open");
+  }
+
+  toggle.addEventListener("click", function () {
+    if (opened) closePanel(); else openPanel();
+  });
+  panel.querySelector("#faq-assistant-close").addEventListener("click", closePanel);
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var q = input.value.trim();
+    if (!q) return;
+    addMessage(q, "user");
+    input.value = "";
+    var thinkingEl = addMessage(L.thinking, "bot");
+
+    fetch(API_BASE + "/api/assistant/ask?q=" + encodeURIComponent(q))
+      .then(function (res) {
+        if (!res.ok) throw new Error("indisponible");
+        return res.json();
+      })
+      .then(function (data) {
+        thinkingEl.remove();
+        if (data.found) {
+          addMessage(escapeHtml(data.reponse), "bot", true);
+        } else {
+          addMessage(escapeHtml(L.notFound) + ' <a href="contact.html">' + escapeHtml(L.contactLink) + "</a>", "bot", true);
+        }
+      })
+      .catch(function () {
+        thinkingEl.remove();
+        addMessage(escapeHtml(L.notFound) + ' <a href="contact.html">' + escapeHtml(L.contactLink) + "</a>", "bot", true);
+      });
+  });
+}
+
+function initActualiteShareButton(btn, newsId, title) {
+  if (!btn) return;
+  var isArabic = document.documentElement.lang === "ar";
+  var shareUrl = API_BASE + "/actualite/" + encodeURIComponent(newsId);
+  var label = isArabic ? "🔗 مشاركة" : "🔗 Partager";
+  var copiedLabel = isArabic ? "✓ تم نسخ الرابط" : "✓ Lien copié";
+  btn.textContent = label;
+
+  btn.addEventListener("click", function () {
+    if (navigator.share) {
+      navigator.share({ title: title, url: shareUrl }).catch(function () {});
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl).then(function () {
+        btn.textContent = copiedLabel;
+        setTimeout(function () { btn.textContent = label; }, 2000);
+      });
+    }
+  });
+}
+
+function initWhatsappButton() {
+  var btn = document.createElement("a");
+  btn.id = "whatsapp-float-btn";
+  btn.target = "_blank";
+  btn.rel = "noopener";
+  btn.setAttribute("aria-label", "Discuter sur WhatsApp");
+  btn.innerHTML =
+    '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.2-.4.1-.2 0-.3 0-.5s-.6-1.5-.8-2c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.3.3-1 .9-1 2.3s1 2.7 1.1 2.9c.1.2 2 3 4.8 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.7-.7 1.9-1.3.2-.6.2-1.2.2-1.3-.1-.1-.3-.2-.6-.3z"/><path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.6 1.4 5.1L2 22l5-1.3c1.4.8 3.1 1.2 4.9 1.2h.1c5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18.3h-.1c-1.6 0-3.2-.4-4.6-1.2l-.3-.2-3.5.9.9-3.4-.2-.3C3.4 14.6 3 13.3 3 12 3 7.1 7.1 3 12 3s9 4.1 9 9-4.1 8.3-9 8.3z"/></svg>';
+  document.body.appendChild(btn);
+
+  fetch(API_BASE + "/api/site-content")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (values) {
+      var numero = values.whatsapp_numero;
+      if (!numero) return;
+      var message = values.whatsapp_message || "";
+      btn.href = "https://wa.me/" + encodeURIComponent(numero) + (message ? "?text=" + encodeURIComponent(message) : "");
+      btn.style.display = "flex";
+    })
+    .catch(function () {
+      // API indisponible ou WhatsApp non configuré par l'admin : le bouton reste masqué.
     });
 }
 
@@ -692,6 +974,7 @@ function loadCarte() {
 function loadEcoles() {
   var list = document.getElementById("ecoles-list");
   if (!list) return;
+  showSkeleton(list, 6);
 
   var regionsNav = document.getElementById("ecoles-regions-nav");
   var countEl = document.getElementById("ecoles-count-num");
@@ -1587,6 +1870,7 @@ function valueOf(form, selector) {
 function loadNews() {
   var container = document.querySelector(".news-list");
   if (!container) return;
+  showSkeleton(container, 3);
 
   fetch(API_BASE + "/api/news?limit=3")
     .then(function (res) {
@@ -1685,7 +1969,13 @@ function loadActualiteDetail() {
         media +
         '<span class="news-date">' + formatDateFr(item.published_at) + "</span>" +
         "<h1>" + escapeHtml(item.title) + "</h1>" +
+        '<div class="actualite-detail-actions">' +
+        '<button type="button" id="actualite-listen-btn" class="tts-btn"></button>' +
+        '<button type="button" id="actualite-share-btn" class="tts-btn"></button>' +
+        "</div>" +
         '<div class="actualite-detail-body">' + escapeHtml(body).replace(/\n/g, "<br>") + "</div>";
+      initTextToSpeech(document.getElementById("actualite-listen-btn"), item.title + ". " + body);
+      initActualiteShareButton(document.getElementById("actualite-share-btn"), id, item.title);
     })
     .catch(function () {
       container.innerHTML = '<p style="text-align:center; color:var(--text-muted);">Cette actualité est introuvable ou a été retirée.</p>';
@@ -1695,6 +1985,7 @@ function loadActualiteDetail() {
 function loadActivities() {
   var container = document.querySelector(".timeline");
   if (!container) return;
+  showSkeleton(container, 4);
 
   fetch(API_BASE + "/api/activities")
     .then(function (res) {

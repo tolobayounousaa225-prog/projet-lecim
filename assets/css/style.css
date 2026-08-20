@@ -1289,8 +1289,12 @@ section { padding: 80px 0; }
 .ressource-officielle-download:hover { background: var(--green); color: var(--white); }
 
 /* ===== Écoles affiliées ===== */
+.ecoles-tabs-row {
+  display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
 .ecoles-tabs {
-  display: flex; gap: 8px; margin-bottom: 20px; background: var(--cream);
+  display: flex; gap: 8px; background: var(--cream);
   border: 1px solid var(--border); border-radius: 999px; padding: 5px; width: fit-content;
 }
 .ecoles-tab {
@@ -1300,6 +1304,18 @@ section { padding: 80px 0; }
 }
 .ecoles-tab:hover { color: var(--green); }
 .ecoles-tab.active { background: var(--green); color: var(--white); }
+
+.ecoles-view-toggle {
+  display: flex; gap: 8px; background: var(--cream);
+  border: 1px solid var(--border); border-radius: 999px; padding: 5px; width: fit-content;
+}
+.ecoles-view-btn {
+  border: none; background: none; cursor: pointer; font-family: inherit;
+  font-weight: 700; font-size: 0.82rem; color: var(--text-muted);
+  padding: 8px 16px; border-radius: 999px; transition: background .15s ease, color .15s ease;
+}
+.ecoles-view-btn:hover { color: var(--green); }
+.ecoles-view-btn.active { background: var(--green-dark); color: var(--white); }
 
 .ecoles-toolbar {
   display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: space-between;
@@ -1436,6 +1452,14 @@ section { padding: 80px 0; }
   width: 100%; max-height: 420px; object-fit: cover; border-radius: var(--radius); margin-bottom: 24px;
 }
 #actualite-detail h1 { font-size: 1.8rem; color: var(--green-dark); margin: 10px 0 20px; }
+.actualite-detail-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+.tts-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--cream); border: 1px solid var(--border); color: var(--green-dark);
+  border-radius: 999px; padding: 8px 16px; font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; transition: background .15s ease;
+}
+.tts-btn:hover { background: rgba(4,56,114,.08); }
 .actualite-detail-body { font-size: 1.02rem; line-height: 1.8; color: var(--text-dark); max-width: 760px; }
 
 /* ===== Galerie photo ===== */
@@ -1745,6 +1769,81 @@ img.img-blur-up.is-loaded { filter: blur(0); }
 .back-to-top:hover { background: var(--green-light); }
 .back-to-top svg { width: 20px; height: 20px; }
 
+/* Assistant automatisé (FAQ) — bulle de discussion flottante, toutes les pages */
+#faq-assistant-toggle {
+  position: fixed; bottom: 26px; inset-inline-start: 26px; z-index: 149;
+  width: 50px; height: 50px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--green); color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-lg);
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+#faq-assistant-toggle:hover { transform: translateY(-2px) scale(1.05); background: var(--green-light); }
+#faq-assistant-toggle svg { width: 24px; height: 24px; }
+@media (max-width: 640px) {
+  #faq-assistant-toggle { bottom: 20px; inset-inline-start: 16px; width: 46px; height: 46px; }
+}
+
+#faq-assistant-panel {
+  position: fixed; bottom: 88px; inset-inline-start: 26px; z-index: 149;
+  width: 320px; max-width: calc(100vw - 40px); max-height: 440px;
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); display: flex; flex-direction: column; overflow: hidden;
+  opacity: 0; visibility: hidden; transform: translateY(12px) scale(.98);
+  transition: opacity .2s ease, transform .2s ease, visibility .2s;
+}
+#faq-assistant-panel.is-open { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+@media (max-width: 640px) { #faq-assistant-panel { bottom: 74px; inset-inline-start: 16px; } }
+
+.faq-assistant-header {
+  background: var(--green); color: var(--white); padding: 14px 16px;
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.faq-assistant-header strong { font-size: 0.92rem; }
+.faq-assistant-header button {
+  background: none; border: none; color: var(--white); cursor: pointer;
+  opacity: .8; font-size: 1.1rem; line-height: 1; padding: 2px;
+}
+.faq-assistant-header button:hover { opacity: 1; }
+
+#faq-assistant-messages {
+  flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;
+  min-height: 180px;
+}
+.faq-msg { max-width: 88%; padding: 9px 13px; border-radius: 14px; font-size: 0.85rem; line-height: 1.5; }
+.faq-msg-bot { background: var(--cream); color: var(--text-dark); align-self: flex-start; border-end-start-radius: 3px; }
+.faq-msg-user { background: var(--green); color: var(--white); align-self: flex-end; border-end-end-radius: 3px; }
+.faq-msg-bot a { color: var(--green); font-weight: 600; text-decoration: underline; }
+
+#faq-assistant-form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); flex-shrink: 0; }
+#faq-assistant-input {
+  flex: 1; border: 1px solid var(--border); border-radius: 999px; padding: 9px 14px;
+  font-size: 0.85rem; font-family: inherit;
+}
+#faq-assistant-form button {
+  background: var(--green); color: var(--white); border: none; border-radius: 999px;
+  width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+}
+#faq-assistant-form button svg { width: 17px; height: 17px; }
+[dir="rtl"] #faq-assistant-form button svg { transform: scaleX(-1); }
+
+/* Bouton flottant de contact WhatsApp, visible sur toutes les pages une fois configuré par l'admin */
+#whatsapp-float-btn {
+  position: fixed; bottom: 84px; inset-inline-end: 26px; z-index: 149;
+  width: 50px; height: 50px; border-radius: 50%;
+  background: #25d366; color: var(--white);
+  display: none; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-lg);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+#whatsapp-float-btn:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 14px 30px rgba(37,211,102,.4); }
+#whatsapp-float-btn svg { width: 26px; height: 26px; }
+@media (max-width: 640px) {
+  #whatsapp-float-btn { bottom: 80px; inset-inline-end: 20px; width: 46px; height: 46px; }
+  #whatsapp-float-btn svg { width: 24px; height: 24px; }
+}
+
 /* Compteur de visiteurs en ligne, visible sur toutes les pages */
 #live-visitors-badge {
   position: fixed; top: 88px; inset-inline-start: 16px; z-index: 90;
@@ -1869,3 +1968,21 @@ body.page-fade-out { opacity: 0; transition: opacity .22s ease; }
   }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* Mode économie de données : désactive les animations décoratives coûteuses
+   (parallaxe, tilt, défilement) et n'affiche pas les photos de fond en HD. */
+html.data-saver *, html.data-saver *::before, html.data-saver *::after {
+  animation-duration: .001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .001ms !important;
+  scroll-behavior: auto !important;
+}
+html.data-saver .reveal { opacity: 1; transform: none; }
+html.data-saver .hero-visual { transform: none !important; }
+
+.data-saver-toggle {
+  background: none; border: none; color: rgba(255,255,255,.6);
+  font-size: 0.78rem; text-decoration: underline; cursor: pointer;
+  padding: 0;
+}
+.data-saver-toggle:hover { color: var(--white); }

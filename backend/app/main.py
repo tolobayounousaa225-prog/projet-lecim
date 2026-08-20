@@ -20,6 +20,7 @@ from .deps import (
 )
 from .routers import (
     activities,
+    actualite_share,
     adhesion,
     admin,
     admin_audit,
@@ -59,6 +60,7 @@ from .routers import (
     admin_statistiques,
     admin_temoignages,
     admin_users,
+    assistant_public,
     auth,
     carte,
     conseil_administration,
@@ -221,6 +223,8 @@ def delegation_not_authenticated_handler(request: Request, exc: DelegationNotAut
 
 
 app.include_router(auth.router)
+app.include_router(assistant_public.router)
+app.include_router(actualite_share.router)
 app.include_router(password_reset.router)
 app.include_router(carte.router)
 app.include_router(etablissements_public.router)

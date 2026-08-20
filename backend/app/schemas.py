@@ -361,6 +361,12 @@ class SearchResultOut(BaseModel):
     url: str
 
 
+class AssistantAnswerOut(BaseModel):
+    found: bool
+    question: str | None = None
+    reponse: str | None = None
+
+
 class EtablissementsStatsOut(BaseModel):
     ecoles: int
     regions: int
