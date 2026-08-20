@@ -1,15 +1,12 @@
 """Contenu texte et images personnalisés du site vitrine (voir site_content_fields.py)."""
 
-import mimetypes
-
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import models, storage
 from ..database import get_db
 from ..site_content_fields import SITE_CONTENT_FIELDS
-from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/api/site-content", tags=["site-content"])
 
@@ -37,8 +34,7 @@ def site_content_image(key: str, db: Session = Depends(get_db)):
     row = db.get(models.SiteContent, key)
     if not row or not row.value:
         raise HTTPException(status_code=404, detail="Image introuvable")
-    path = UPLOAD_ROOT / row.value
-    if not path.exists():
+    stored = storage.get_stored_file(db, row.value)
+    if not stored:
         raise HTTPException(status_code=404, detail="Image introuvable")
-    media_type = mimetypes.guess_type(row.value)[0] or "image/jpeg"
-    return FileResponse(path, media_type=media_type)
+    return Response(content=stored.data, media_type=stored.content_type)

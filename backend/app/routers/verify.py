@@ -7,18 +7,16 @@ d'urgence ni les coordonnées personnelles, qui restent internes à la LECIM).
 """
 
 import datetime
-import mimetypes
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import models, storage
 from ..database import get_db
 from ..rate_limit import rate_limiter
-from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/verify", tags=["verify"], dependencies=[Depends(rate_limiter("verify-carte", 30, 60))])
 
@@ -58,11 +56,11 @@ def verify_card_photo(numero_carte: str, db: Session = Depends(get_db)):
         .filter(models.CarteMembre.numero_carte == numero_carte)
         .first()
     )
-    if _check(carte) == "introuvable" or not carte.photo_path:
-        return FileResponse(
-            Path(__file__).resolve().parent.parent / "static" / "img" / "logo.jpg",
-            media_type="image/jpeg",
-        )
-    path = UPLOAD_ROOT / carte.photo_path
-    media_type = mimetypes.guess_type(carte.photo_path)[0] or "application/octet-stream"
-    return FileResponse(path, media_type=media_type)
+    if _check(carte) != "introuvable" and carte.photo_path:
+        stored = storage.get_stored_file(db, carte.photo_path)
+        if stored:
+            return Response(content=stored.data, media_type=stored.content_type)
+    return FileResponse(
+        Path(__file__).resolve().parent.parent / "static" / "img" / "logo.jpg",
+        media_type="image/jpeg",
+    )

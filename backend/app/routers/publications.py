@@ -1,12 +1,9 @@
-import mimetypes
-
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from .. import models, schemas
+from .. import models, schemas, storage
 from ..database import get_db
-from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/api/publications", tags=["publications"])
 
@@ -26,8 +23,11 @@ def publication_file(publication_id: int, db: Session = Depends(get_db)):
     publication = db.get(models.PublicationPublique, publication_id)
     if not publication or not publication.is_published:
         raise HTTPException(status_code=404, detail="Document introuvable")
-    path = UPLOAD_ROOT / publication.file_path
-    if not path.exists():
+    stored = storage.get_stored_file(db, publication.file_path)
+    if not stored:
         raise HTTPException(status_code=404, detail="Document introuvable")
-    media_type = mimetypes.guess_type(publication.original_filename)[0] or "application/octet-stream"
-    return FileResponse(path, media_type=media_type, filename=publication.original_filename)
+    return Response(
+        content=stored.data,
+        media_type=stored.content_type,
+        headers={"Content-Disposition": f'attachment; filename="{publication.original_filename}"'},
+    )

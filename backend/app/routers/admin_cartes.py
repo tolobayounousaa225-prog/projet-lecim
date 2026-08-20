@@ -2,27 +2,25 @@ import datetime
 import secrets
 from pathlib import Path
 
-import mimetypes
-
 from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
-from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .. import audit, models
+from .. import audit, models, storage
 from ..card_pdf import generate_card_pdf
 from ..database import get_db
 from ..deps import require_cartes_gestion_web, require_login_web
 from ..notifications import notify, notify_cartes_gestionnaires
-from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
+from .admin_files import ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin", tags=["admin-cartes"])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
-CARTES_PHOTOS_DIR = UPLOAD_ROOT / "cartes_photos"
+CARTES_PHOTOS_DIR = "cartes_photos"
 
 
 def _next_numero_carte(db: Session) -> str:
@@ -108,7 +106,7 @@ async def carte_mine_create(
     photo_path = None
     if photo is not None and photo.filename:
         try:
-            stored_name, _original = await _save_upload(photo, CARTES_PHOTOS_DIR, ALLOWED_PHOTO_EXT)
+            stored_name, _original = await storage.save_upload(db, photo, CARTES_PHOTOS_DIR, ALLOWED_PHOTO_EXT)
             photo_path = f"cartes_photos/{stored_name}"
         except ValueError as exc:
             return templates.TemplateResponse(
@@ -193,9 +191,10 @@ def carte_photo(
         return RedirectResponse(url="/admin/cartes", status_code=status.HTTP_303_SEE_OTHER)
     if not (user.is_admin or user.can_manage_cartes or user.id == carte.user_id):
         return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
-    path = UPLOAD_ROOT / carte.photo_path
-    media_type = mimetypes.guess_type(carte.photo_path)[0] or "application/octet-stream"
-    return FileResponse(path, media_type=media_type)
+    stored = storage.get_stored_file(db, carte.photo_path)
+    if not stored:
+        return RedirectResponse(url="/admin/cartes", status_code=status.HTTP_303_SEE_OTHER)
+    return Response(content=stored.data, media_type=stored.content_type)
 
 
 @router.post("/cartes/{carte_id}/valider")
@@ -301,8 +300,8 @@ def carte_pdf(
     carte = db.get(models.CarteMembre, carte_id)
     if not carte or carte.status not in {"validee", "imprimee", "disponible"}:
         return RedirectResponse(url="/admin/cartes", status_code=status.HTTP_303_SEE_OTHER)
-    photo_path = UPLOAD_ROOT / carte.photo_path if carte.photo_path else None
-    pdf_bytes = generate_card_pdf(carte, photo_path)
+    stored_photo = storage.get_stored_file(db, carte.photo_path)
+    pdf_bytes = generate_card_pdf(carte, stored_photo.data if stored_photo else None)
     filename = f"carte_{carte.numero_carte or carte.id}.pdf"
     return Response(
         content=pdf_bytes,

@@ -23,14 +23,15 @@ from ..deps import (
 from ..login_security import AccountLockedError, authenticate_user
 from ..push import send_urgent_news_push
 from ..security import create_access_token, hash_password, password_policy_error, verify_password
-from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
+from .. import storage
+from .admin_files import ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin", tags=["admin-panel"])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
-NEWS_IMAGES_DIR = UPLOAD_ROOT / "news"
+NEWS_IMAGES_DIR = "news"
 
 
 # ---------- Auth ----------
@@ -297,7 +298,7 @@ async def news_create(
     image_path = None
     if image is not None and image.filename:
         try:
-            stored_name, _ = await _save_upload(image, NEWS_IMAGES_DIR, ALLOWED_PHOTO_EXT)
+            stored_name, _ = await storage.save_upload(db, image, NEWS_IMAGES_DIR, ALLOWED_PHOTO_EXT)
             image_path = f"news/{stored_name}"
         except ValueError as exc:
             return templates.TemplateResponse(
@@ -378,7 +379,7 @@ async def news_update(
     if news:
         if image is not None and image.filename:
             try:
-                stored_name, _ = await _save_upload(image, NEWS_IMAGES_DIR, ALLOWED_PHOTO_EXT)
+                stored_name, _ = await storage.save_upload(db, image, NEWS_IMAGES_DIR, ALLOWED_PHOTO_EXT)
             except ValueError as exc:
                 return templates.TemplateResponse(
                     request,
@@ -386,10 +387,8 @@ async def news_update(
                     {"admin": user, "item": news, "active": "news", "error": str(exc)},
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
-            old_path = UPLOAD_ROOT / news.image_path if news.image_path else None
+            storage.delete_stored_file(db, news.image_path)
             news.image_path = f"news/{stored_name}"
-            if old_path and old_path.exists():
-                old_path.unlink()
 
         news.title = title
         news.excerpt = excerpt
@@ -413,11 +412,9 @@ def news_delete(
 ):
     news = db.get(models.NewsPost, news_id)
     if news:
-        old_path = UPLOAD_ROOT / news.image_path if news.image_path else None
+        storage.delete_stored_file(db, news.image_path)
         db.delete(news)
         db.commit()
-        if old_path and old_path.exists():
-            old_path.unlink()
     return RedirectResponse(url="/admin/news", status_code=status.HTTP_303_SEE_OTHER)
 
 

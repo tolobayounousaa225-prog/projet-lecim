@@ -2,19 +2,17 @@
 le BEN valide (ou refuse) chaque dépôt avant qu'il ne devienne visible aux autres
 écoles membres."""
 
-import mimetypes
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import audit, models
+from .. import audit, models, storage
 from ..database import get_db
 from ..deps import require_publications_access_web
 from ..models import RESSOURCE_CATEGORIES
-from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/admin/ressources-pedagogiques", tags=["admin-ressources"])
 
@@ -67,12 +65,10 @@ def ressource_delete(
 ):
     ressource = db.get(models.RessourcePedagogique, ressource_id)
     if ressource:
-        path = UPLOAD_ROOT / ressource.file_path
+        storage.delete_stored_file(db, ressource.file_path)
         audit.log(db, user, "delete", "Ressource pédagogique", ressource.id, f"A supprimé la ressource « {ressource.titre} »")
         db.delete(ressource)
         db.commit()
-        if path.exists():
-            path.unlink()
     return RedirectResponse(url="/admin/ressources-pedagogiques", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -85,8 +81,11 @@ def ressource_file(
     ressource = db.get(models.RessourcePedagogique, ressource_id)
     if not ressource:
         raise HTTPException(status_code=404, detail="Ressource introuvable")
-    path = UPLOAD_ROOT / ressource.file_path
-    if not path.exists():
+    stored = storage.get_stored_file(db, ressource.file_path)
+    if not stored:
         raise HTTPException(status_code=404, detail="Fichier introuvable")
-    media_type = mimetypes.guess_type(ressource.file_path)[0] or "application/octet-stream"
-    return FileResponse(path, media_type=media_type, filename=ressource.original_filename)
+    return Response(
+        content=stored.data,
+        media_type=stored.content_type,
+        headers={"Content-Disposition": f'attachment; filename="{ressource.original_filename}"'},
+    )

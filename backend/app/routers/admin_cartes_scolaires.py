@@ -1,20 +1,18 @@
 import datetime
-import mimetypes
 import secrets
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Request, status
-from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
-from .. import audit, models
+from .. import audit, models, storage
 from ..card_pdf import generate_student_card_pdf
 from ..database import get_db
 from ..deps import require_cartes_scolaires_access_web
 from ..notifications import notify
-from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/admin/cartes-scolaires", tags=["admin-cartes-scolaires"])
 
@@ -88,9 +86,10 @@ def carte_scolaire_photo(
     carte = db.get(models.CarteScolaire, carte_id)
     if not carte or not carte.photo_path:
         return RedirectResponse(url="/admin/cartes-scolaires", status_code=status.HTTP_303_SEE_OTHER)
-    path = UPLOAD_ROOT / carte.photo_path
-    media_type = mimetypes.guess_type(carte.photo_path)[0] or "application/octet-stream"
-    return FileResponse(path, media_type=media_type)
+    stored = storage.get_stored_file(db, carte.photo_path)
+    if not stored:
+        return RedirectResponse(url="/admin/cartes-scolaires", status_code=status.HTTP_303_SEE_OTHER)
+    return Response(content=stored.data, media_type=stored.content_type)
 
 
 @router.post("/{carte_id}/valider")
@@ -193,9 +192,13 @@ def carte_scolaire_pdf(
     carte = db.get(models.CarteScolaire, carte_id)
     if not carte or carte.status not in {"validee", "imprimee", "disponible"}:
         return RedirectResponse(url="/admin/cartes-scolaires", status_code=status.HTTP_303_SEE_OTHER)
-    photo_path = UPLOAD_ROOT / carte.photo_path if carte.photo_path else None
-    logo_path = UPLOAD_ROOT / carte.etablissement.logo_path if carte.etablissement.logo_path else None
-    pdf_bytes = generate_student_card_pdf(carte, photo_path, logo_path)
+    stored_photo = storage.get_stored_file(db, carte.photo_path)
+    stored_logo = storage.get_stored_file(db, carte.etablissement.logo_path)
+    pdf_bytes = generate_student_card_pdf(
+        carte,
+        stored_photo.data if stored_photo else None,
+        stored_logo.data if stored_logo else None,
+    )
     filename = f"carte_scolaire_{carte.matricule or carte.id}.pdf"
     return Response(
         content=pdf_bytes,

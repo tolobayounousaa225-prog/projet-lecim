@@ -1,11 +1,29 @@
 import datetime
 
-from sqlalchemy import Boolean, DateTime, Date, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint, text
+from sqlalchemy import Boolean, DateTime, Date, Float, ForeignKey, Index, Integer, LargeBinary, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
 from .finances_constants import cotisation_rule
 from .postes import poste_attributions, poste_label
+
+
+class StoredFile(Base):
+    """Fichier uploadé (photo, document, logo...) stocké en base de données
+    plutôt que sur le disque du conteneur — le disque de Railway est éphémère
+    et se réinitialise à chaque déploiement, ce qui faisait perdre tous les
+    fichiers uploadés (incident du 2026-08-20). `path` sert de clé logique
+    (ex. "documents/<uuid>.pdf"), exactement comme l'ancien chemin relatif
+    sur disque, pour que les tables qui référencent un fichier n'aient pas eu
+    besoin de changer de schéma."""
+
+    __tablename__ = "stored_files"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    path: Mapped[str] = mapped_column(String(300), unique=True, nullable=False, index=True)
+    content_type: Mapped[str] = mapped_column(String(120), nullable=False)
+    data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
 
 
 class User(Base):

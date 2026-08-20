@@ -5,17 +5,17 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import models, storage
 from ..database import get_db
 from ..deps import require_gouvernance_access_web
-from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
+from .admin_files import ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin/conseil-administration", tags=["admin-conseil-administration"])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
-CONSEIL_ADMINISTRATION_DIR = UPLOAD_ROOT / "conseil_administration"
+CONSEIL_ADMINISTRATION_DIR = "conseil_administration"
 
 
 @router.get("")
@@ -63,7 +63,7 @@ async def conseil_administration_create(
     photo_path = None
     if photo is not None and photo.filename:
         try:
-            stored_name, _ = await _save_upload(photo, CONSEIL_ADMINISTRATION_DIR, ALLOWED_PHOTO_EXT)
+            stored_name, _ = await storage.save_upload(db, photo, CONSEIL_ADMINISTRATION_DIR, ALLOWED_PHOTO_EXT)
             photo_path = f"conseil_administration/{stored_name}"
         except ValueError as exc:
             return templates.TemplateResponse(
@@ -121,7 +121,7 @@ async def conseil_administration_update(
 
     if photo is not None and photo.filename:
         try:
-            stored_name, _ = await _save_upload(photo, CONSEIL_ADMINISTRATION_DIR, ALLOWED_PHOTO_EXT)
+            stored_name, _ = await storage.save_upload(db, photo, CONSEIL_ADMINISTRATION_DIR, ALLOWED_PHOTO_EXT)
         except ValueError as exc:
             return templates.TemplateResponse(
                 request,
@@ -129,10 +129,8 @@ async def conseil_administration_update(
                 {"admin": user, "item": membre, "active": "conseil_administration", "error": str(exc)},
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-        old_path = UPLOAD_ROOT / membre.photo_path if membre.photo_path else None
+        storage.delete_stored_file(db, membre.photo_path)
         membre.photo_path = f"conseil_administration/{stored_name}"
-        if old_path and old_path.exists():
-            old_path.unlink()
 
     membre.full_name = full_name
     membre.role = role or None
@@ -151,11 +149,9 @@ def conseil_administration_delete(
 ):
     membre = db.get(models.MembreConseilAdministration, membre_id)
     if membre:
-        path = UPLOAD_ROOT / membre.photo_path if membre.photo_path else None
+        storage.delete_stored_file(db, membre.photo_path)
         db.delete(membre)
         db.commit()
-        if path and path.exists():
-            path.unlink()
     return RedirectResponse(url="/admin/conseil-administration", status_code=status.HTTP_303_SEE_OTHER)
 
 

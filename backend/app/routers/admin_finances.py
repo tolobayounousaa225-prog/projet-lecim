@@ -3,13 +3,13 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
-from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .. import audit, models
+from .. import audit, models, storage
 from ..database import get_db
 from ..deps import require_finance_access_web
 from ..email_utils import send_email
@@ -24,9 +24,7 @@ from ..reports import (
     money,
     multi_year_financial_summary,
 )
-from .admin_files import ALLOWED_DOCUMENT_EXT, ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
-import mimetypes
-import uuid
+from .admin_files import ALLOWED_DOCUMENT_EXT, ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin", tags=["admin-finances"])
 
@@ -51,9 +49,9 @@ def _safe_date(raw: str) -> datetime.date | None:
     except ValueError:
         return None
 
-PIECES_DIR = UPLOAD_ROOT / "justificatifs"
+PIECES_DIR = "justificatifs"
 ALLOWED_PIECE_EXT = ALLOWED_DOCUMENT_EXT | ALLOWED_PHOTO_EXT
-ETABLISSEMENT_LOGOS_DIR = UPLOAD_ROOT / "etablissements_logos"
+ETABLISSEMENT_LOGOS_DIR = "etablissements_logos"
 
 
 # ---------- Tableau de bord finances ----------
@@ -139,8 +137,7 @@ def finances_rapport_generate(
     filename = f"Rapport financier {date_debut.strftime('%d-%m-%Y')} au {date_fin.strftime('%d-%m-%Y')}.pdf"
 
     if archiver:
-        stored_name = f"{uuid.uuid4().hex}.pdf"
-        (UPLOAD_ROOT / "documents" / stored_name).write_bytes(pdf_bytes)
+        stored_name = storage.store_bytes(db, "documents", pdf_bytes, "application/pdf")
         db.add(
             models.Document(
                 title=f"Rapport financier — {date_debut.strftime('%d/%m/%Y')} au {date_fin.strftime('%d/%m/%Y')}",
@@ -358,8 +355,7 @@ def finances_rapport_comparatif_generate(
     filename = "Rapport comparatif " + date_fin_b.strftime("%d-%m-%Y") + ".pdf"
 
     if archiver:
-        stored_name = f"{uuid.uuid4().hex}.pdf"
-        (UPLOAD_ROOT / "documents" / stored_name).write_bytes(pdf_bytes)
+        stored_name = storage.store_bytes(db, "documents", pdf_bytes, "application/pdf")
         db.add(
             models.Document(
                 title=f"Rapport comparatif — {label_a} vs {label_b} (généré le {datetime.date.today().strftime('%d/%m/%Y')})",
@@ -508,7 +504,7 @@ async def etablissements_create(
     logo_path = None
     if logo is not None and logo.filename:
         try:
-            stored_name, _ = await _save_upload(logo, ETABLISSEMENT_LOGOS_DIR, ALLOWED_PHOTO_EXT)
+            stored_name, _ = await storage.save_upload(db, logo, ETABLISSEMENT_LOGOS_DIR, ALLOWED_PHOTO_EXT)
             logo_path = f"etablissements_logos/{stored_name}"
         except ValueError:
             pass
@@ -587,11 +583,9 @@ async def etablissements_update(
     if etablissement:
         if logo is not None and logo.filename:
             try:
-                stored_name, _ = await _save_upload(logo, ETABLISSEMENT_LOGOS_DIR, ALLOWED_PHOTO_EXT)
-                old_path = UPLOAD_ROOT / etablissement.logo_path if etablissement.logo_path else None
+                stored_name, _ = await storage.save_upload(db, logo, ETABLISSEMENT_LOGOS_DIR, ALLOWED_PHOTO_EXT)
+                storage.delete_stored_file(db, etablissement.logo_path)
                 etablissement.logo_path = f"etablissements_logos/{stored_name}"
-                if old_path and old_path.exists():
-                    old_path.unlink()
             except ValueError:
                 pass
 
@@ -1057,7 +1051,7 @@ async def depenses_create(
     justificatif_filename = None
     if justificatif is not None and justificatif.filename:
         try:
-            stored_name, original_name = await _save_upload(justificatif, PIECES_DIR, ALLOWED_PIECE_EXT)
+            stored_name, original_name = await storage.save_upload(db, justificatif, PIECES_DIR, ALLOWED_PIECE_EXT)
             justificatif_path = f"justificatifs/{stored_name}"
             justificatif_filename = original_name
         except ValueError as exc:
@@ -1097,9 +1091,14 @@ def depenses_justificatif(
     depense = db.get(models.Depense, depense_id)
     if not depense or not depense.justificatif_path:
         return RedirectResponse(url="/admin/depenses", status_code=status.HTTP_303_SEE_OTHER)
-    path = UPLOAD_ROOT / depense.justificatif_path
-    media_type = mimetypes.guess_type(depense.justificatif_filename)[0] or "application/octet-stream"
-    return FileResponse(path, media_type=media_type, filename=depense.justificatif_filename)
+    stored = storage.get_stored_file(db, depense.justificatif_path)
+    if not stored:
+        return RedirectResponse(url="/admin/depenses", status_code=status.HTTP_303_SEE_OTHER)
+    return Response(
+        content=stored.data,
+        media_type=stored.content_type,
+        headers={"Content-Disposition": f'attachment; filename="{depense.justificatif_filename}"'},
+    )
 
 
 @router.post("/depenses/{depense_id}/delete")
@@ -1110,10 +1109,7 @@ def depenses_delete(
 ):
     depense = db.get(models.Depense, depense_id)
     if depense:
-        if depense.justificatif_path:
-            path = UPLOAD_ROOT / depense.justificatif_path
-            if path.exists():
-                path.unlink()
+        storage.delete_stored_file(db, depense.justificatif_path)
         audit.log(db, user, "delete", "Dépense", depense.id, f"A supprimé la dépense : {depense.libelle} ({money(depense.montant)})")
         db.delete(depense)
         db.commit()

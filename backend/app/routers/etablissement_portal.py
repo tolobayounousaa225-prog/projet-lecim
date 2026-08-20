@@ -1,15 +1,13 @@
 import datetime
 from pathlib import Path
 
-import mimetypes
-
 from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
-from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .. import audit, models
+from .. import audit, models, storage
 from ..attestations_pdf import generate_etablissement_attestation_pdf
 from ..card_pdf import generate_student_card_pdf
 from ..database import get_db
@@ -28,10 +26,10 @@ from ..finances_constants import cotisation_rule
 from ..notifications import notify_cartes_scolaires_gestionnaires, notify_messagerie_gestionnaires
 from ..reports import current_annee_scolaire
 from ..security import hash_password, password_policy_error, verify_password
-from .admin_files import ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
+from .admin_files import ALLOWED_PHOTO_EXT
 
 TYPES_EXAMEN = ["CEPE", "BEPC", "BAC"]
-CARTES_SCOLAIRES_PHOTOS_DIR = UPLOAD_ROOT / "cartes_scolaires"
+CARTES_SCOLAIRES_PHOTOS_DIR = "cartes_scolaires"
 
 router = APIRouter(tags=["etablissement-portal"])
 
@@ -548,7 +546,7 @@ async def etablissement_cartes_scolaires_create(
     photo_path = None
     if photo is not None and photo.filename:
         try:
-            stored_name, _original = await _save_upload(photo, CARTES_SCOLAIRES_PHOTOS_DIR, ALLOWED_PHOTO_EXT)
+            stored_name, _original = await storage.save_upload(db, photo, CARTES_SCOLAIRES_PHOTOS_DIR, ALLOWED_PHOTO_EXT)
             photo_path = f"cartes_scolaires/{stored_name}"
         except ValueError as exc:
             items = (
@@ -602,9 +600,13 @@ def etablissement_carte_scolaire_pdf(
     carte = db.get(models.CarteScolaire, carte_id)
     if not carte or carte.etablissement_id != etablissement.id or carte.status not in {"validee", "imprimee", "disponible"}:
         return RedirectResponse(url="/etablissement/cartes-scolaires", status_code=status.HTTP_303_SEE_OTHER)
-    photo_path = UPLOAD_ROOT / carte.photo_path if carte.photo_path else None
-    logo_path = UPLOAD_ROOT / etablissement.logo_path if etablissement.logo_path else None
-    pdf_bytes = generate_student_card_pdf(carte, photo_path, logo_path)
+    stored_photo = storage.get_stored_file(db, carte.photo_path)
+    stored_logo = storage.get_stored_file(db, etablissement.logo_path)
+    pdf_bytes = generate_student_card_pdf(
+        carte,
+        stored_photo.data if stored_photo else None,
+        stored_logo.data if stored_logo else None,
+    )
     filename = f"carte_scolaire_{carte.matricule or carte.id}.pdf"
     return Response(
         content=pdf_bytes,
@@ -623,9 +625,10 @@ def etablissement_carte_scolaire_photo(
     carte = db.get(models.CarteScolaire, carte_id)
     if not carte or carte.etablissement_id != etablissement.id or not carte.photo_path:
         return RedirectResponse(url="/etablissement/cartes-scolaires", status_code=status.HTTP_303_SEE_OTHER)
-    path = UPLOAD_ROOT / carte.photo_path
-    media_type = mimetypes.guess_type(carte.photo_path)[0] or "application/octet-stream"
-    return FileResponse(path, media_type=media_type)
+    stored = storage.get_stored_file(db, carte.photo_path)
+    if not stored:
+        return RedirectResponse(url="/etablissement/cartes-scolaires", status_code=status.HTTP_303_SEE_OTHER)
+    return Response(content=stored.data, media_type=stored.content_type)
 
 
 @router.get("/etablissement/demandes")

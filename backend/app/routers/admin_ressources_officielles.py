@@ -5,18 +5,18 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import models, storage
 from ..database import get_db
 from ..deps import require_publications_access_web
 from ..models import RESSOURCE_OFFICIELLE_LANGUES, RESSOURCE_OFFICIELLE_SECTIONS
-from .admin_files import ALLOWED_DOCUMENT_EXT, ALLOWED_PHOTO_EXT, UPLOAD_ROOT, _save_upload
+from .admin_files import ALLOWED_DOCUMENT_EXT, ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin/ressources-officielles", tags=["admin-ressources-officielles"])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
-RESSOURCES_OFFICIELLES_DIR = UPLOAD_ROOT / "ressources_officielles"
+RESSOURCES_OFFICIELLES_DIR = "ressources_officielles"
 
 
 @router.get("")
@@ -83,7 +83,7 @@ async def ressources_officielles_create(
     try:
         if photo is None or not photo.filename:
             raise ValueError("Une photo est obligatoire")
-        photo_stored_name, _ = await _save_upload(photo, RESSOURCES_OFFICIELLES_DIR, ALLOWED_PHOTO_EXT)
+        photo_stored_name, _ = await storage.save_upload(db, photo, RESSOURCES_OFFICIELLES_DIR, ALLOWED_PHOTO_EXT)
     except ValueError as exc:
         return templates.TemplateResponse(
             request, "admin/ressource_officielle_form.html",
@@ -94,8 +94,8 @@ async def ressources_officielles_create(
     file_original_name = None
     if file is not None and file.filename:
         try:
-            file_stored_name, file_original_name = await _save_upload(
-                file, RESSOURCES_OFFICIELLES_DIR, ALLOWED_DOCUMENT_EXT
+            file_stored_name, file_original_name = await storage.save_upload(
+                db, file, RESSOURCES_OFFICIELLES_DIR, ALLOWED_DOCUMENT_EXT
             )
         except ValueError as exc:
             return templates.TemplateResponse(
@@ -128,14 +128,10 @@ def ressources_officielles_delete(
 ):
     ressource = db.get(models.RessourceOfficielle, ressource_id)
     if ressource:
-        photo_path = UPLOAD_ROOT / ressource.photo_path
-        file_path = UPLOAD_ROOT / ressource.file_path if ressource.file_path else None
+        storage.delete_stored_file(db, ressource.photo_path)
+        storage.delete_stored_file(db, ressource.file_path)
         db.delete(ressource)
         db.commit()
-        if photo_path.exists():
-            photo_path.unlink()
-        if file_path and file_path.exists():
-            file_path.unlink()
     return RedirectResponse(url="/admin/ressources-officielles", status_code=status.HTTP_303_SEE_OTHER)
 
 

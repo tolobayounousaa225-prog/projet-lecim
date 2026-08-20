@@ -5,12 +5,11 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import audit, models
+from .. import audit, models, storage
 from ..database import get_db
 from ..deps import require_admin_web
 from ..postes import DEFAULT_MODULES_BY_POSTE, MODULES, POSTES
 from ..security import hash_password, password_policy_error
-from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/admin/users", tags=["admin-users"])
 
@@ -201,18 +200,12 @@ def users_delete(
     user = db.get(models.User, user_id)
     if user:
         # Les CarteMembre du compte sont supprimées en cascade côté base
-        # (ondelete="CASCADE"), mais leurs photos sur disque ne le sont jamais
-        # automatiquement — on les collecte avant le commit pour ne pas laisser
+        # (ondelete="CASCADE"), mais leurs photos stockées ne le sont jamais
+        # automatiquement — on les supprime explicitement pour ne pas laisser
         # de fichiers orphelins.
-        photo_paths = [
-            UPLOAD_ROOT / c.photo_path
-            for c in db.query(models.CarteMembre).filter(models.CarteMembre.user_id == user_id).all()
-            if c.photo_path
-        ]
+        for c in db.query(models.CarteMembre).filter(models.CarteMembre.user_id == user_id).all():
+            storage.delete_stored_file(db, c.photo_path)
         audit.log(db, admin, "delete", "Compte utilisateur", user.id, f"A révoqué le compte de {user.full_name} ({user.email})")
         db.delete(user)
         db.commit()
-        for path in photo_paths:
-            if path.exists():
-                path.unlink()
     return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
