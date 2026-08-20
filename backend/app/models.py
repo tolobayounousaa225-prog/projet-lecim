@@ -1814,3 +1814,140 @@ class Delegation(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
+
+
+# ---------- Calendrier scolaire national ----------
+
+class CalendrierScolaireEntry(Base):
+    """Date commune à toutes les écoles membres (rentrée, vacances, examens...),
+    distincte du calendrier interne des réunions/activités du BEN — visible sur la
+    vitrine et dans les espaces établissement."""
+
+    __tablename__ = "calendrier_scolaire_entries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    type: Mapped[str] = mapped_column(String(20), default="autre")  # rentree | vacances | examen | autre
+    date_debut: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    date_fin: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    annee_scolaire: Mapped[str] = mapped_column(String(20), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    @property
+    def type_label(self) -> str:
+        return {
+            "rentree": "Rentrée scolaire",
+            "vacances": "Vacances",
+            "examen": "Examen",
+            "autre": "Autre",
+        }.get(self.type, "Autre")
+
+
+CALENDRIER_SCOLAIRE_TYPES = {
+    "rentree": "Rentrée scolaire",
+    "vacances": "Vacances",
+    "examen": "Examen",
+    "autre": "Autre",
+}
+
+
+# ---------- Boîte à idées interne ----------
+
+class Idee(Base):
+    """Suggestion soumise par un membre du BEN ou un établissement affilié, votable
+    par tous les comptes connectés, pour aider à prioriser les prochains chantiers
+    de la plateforme."""
+
+    __tablename__ = "idees"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    statut: Mapped[str] = mapped_column(String(20), default="nouvelle")  # nouvelle | en_etude | retenue | rejetee
+    auteur_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    auteur: Mapped["User | None"] = relationship()
+    votes: Mapped[list["IdeeVote"]] = relationship(cascade="all, delete-orphan")
+
+    @property
+    def nombre_votes(self) -> int:
+        return len(self.votes)
+
+    def votant_ids(self) -> set[int]:
+        return {v.user_id for v in self.votes}
+
+    def a_vote(self, user_id: int) -> bool:
+        return user_id in self.votant_ids()
+
+    @property
+    def statut_label(self) -> str:
+        return {
+            "nouvelle": "Nouvelle",
+            "en_etude": "À l'étude",
+            "retenue": "Retenue",
+            "rejetee": "Rejetée",
+        }.get(self.statut, "Nouvelle")
+
+    @property
+    def auteur_label(self) -> str:
+        if not self.auteur:
+            return "Compte supprimé"
+        if self.auteur.is_etablissement_account and self.auteur.etablissement:
+            return self.auteur.etablissement.nom
+        return self.auteur.full_name
+
+
+class IdeeVote(Base):
+    __tablename__ = "idee_votes"
+    __table_args__ = (UniqueConstraint("idee_id", "user_id", name="uq_idee_vote_user"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    idee_id: Mapped[int] = mapped_column(ForeignKey("idees.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    user: Mapped["User"] = relationship()
+
+
+# ---------- Journal des changements (admin) ----------
+
+class ChangelogEntry(Base):
+    """Nouveauté ou correctif de la plateforme, consigné pour informer le bureau de
+    son évolution sans passer par un canal externe."""
+
+    __tablename__ = "changelog_entries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    categorie: Mapped[str] = mapped_column(String(20), default="nouveaute")  # nouveaute | correctif | amelioration
+    published_at: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    @property
+    def categorie_label(self) -> str:
+        return {
+            "nouveaute": "Nouveauté",
+            "correctif": "Correctif",
+            "amelioration": "Amélioration",
+        }.get(self.categorie, "Nouveauté")
+
+
+CHANGELOG_CATEGORIES = {
+    "nouveaute": "Nouveauté",
+    "correctif": "Correctif",
+    "amelioration": "Amélioration",
+}

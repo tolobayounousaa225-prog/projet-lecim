@@ -40,6 +40,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadGalerie();
   loadFaq();
   loadUpcomingEvents();
+  loadCalendrierScolaire();
   initPushNotifications();
   loadBaremetre();
   loadRessourcesOfficielles();
@@ -1102,6 +1103,9 @@ function loadEcoles() {
           if (e.is_ecole_modele) {
             listHtml += '<span class="ecole-modele-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 2.9 6.3 6.9.8-5.1 4.6 1.5 6.8L12 17l-6.2 3.5 1.5-6.8-5.1-4.6 6.9-.8Z"/></svg>École modèle</span>';
           }
+          if (e.is_engagee) {
+            listHtml += '<span class="ecole-engagee-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>École engagée</span>';
+          }
           listHtml += "</div></div>";
         });
 
@@ -2052,6 +2056,55 @@ function loadUpcomingEvents() {
       section.style.display = "";
     })
     .catch(function () { list.innerHTML = ""; });
+}
+
+var CALENDRIER_SCOLAIRE_TYPE_LABELS_AR = {
+  rentree: "الدخول المدرسي",
+  vacances: "عطلة",
+  examen: "امتحان",
+  autre: "أخرى",
+};
+
+function loadCalendrierScolaire() {
+  var section = document.getElementById("calendrier-scolaire-section");
+  var list = document.getElementById("calendrier-scolaire-list");
+  if (!section || !list) return;
+
+  var lang = document.documentElement.getAttribute("lang") === "ar" ? "ar" : "fr";
+  showSkeleton(list, 3);
+
+  fetch(API_BASE + "/api/calendrier-scolaire")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) { list.innerHTML = ""; return; }
+      list.innerHTML = items
+        .map(function (item) {
+          var typeLabel = lang === "ar" ? (CALENDRIER_SCOLAIRE_TYPE_LABELS_AR[item.type] || item.type_label) : item.type_label;
+          var debut = new Date(item.date_debut + "T00:00:00");
+          var dateStr = debut.toLocaleDateString(lang === "ar" ? "ar-EG" : "fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+          if (item.date_fin) {
+            var fin = new Date(item.date_fin + "T00:00:00");
+            dateStr += " → " + fin.toLocaleDateString(lang === "ar" ? "ar-EG" : "fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+          }
+          return (
+            '<div class="calendrier-scolaire-item">' +
+            '<div class="calendrier-scolaire-date">' + escapeHtml(dateStr) + "</div>" +
+            '<div class="calendrier-scolaire-body">' +
+            '<span class="calendrier-scolaire-type ' + escapeHtml(item.type) + '">' + escapeHtml(typeLabel) + "</span>" +
+            "<h3>" + escapeHtml(item.titre) + "</h3>" +
+            (item.description ? "<p>" + escapeHtml(item.description) + "</p>" : "") +
+            "</div></div>"
+          );
+        })
+        .join("");
+      section.style.display = "";
+    })
+    .catch(function () {
+      // API indisponible ou aucune date publiée : la section reste masquée.
+    });
 }
 
 var RESSOURCE_OFFICIELLE_SECTIONS_JS = ["manuel_scolaire", "programme_officiel", "enseignement_islamique"];

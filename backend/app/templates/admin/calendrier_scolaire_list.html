@@ -1,0 +1,45 @@
+{% extends "admin/base.html" %}
+{% block title %}Calendrier scolaire national{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Calendrier scolaire national</h1>
+  <a href="/admin/calendrier-scolaire/new" class="btn btn-primary">+ Ajouter une date</a>
+</div>
+<p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">
+  Dates communes à toutes les écoles membres (rentrée, vacances, examens) — visibles sur la vitrine et
+  dans les espaces établissement, distinctes du calendrier interne des réunions du BEN.
+</p>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Titre</th><th>Type</th><th>Dates</th><th>Année scolaire</th><th>Visibilité</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.titre }}</td>
+      <td>{{ item.type_label }}</td>
+      <td>
+        {{ item.date_debut.strftime("%d/%m/%Y") }}
+        {% if item.date_fin %}&rarr; {{ item.date_fin.strftime("%d/%m/%Y") }}{% endif %}
+      </td>
+      <td>{{ item.annee_scolaire }}</td>
+      <td>
+        {% if item.is_published %}<span class="pill pill-green">Publié</span>
+        {% else %}<span class="pill pill-muted">Brouillon</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/calendrier-scolaire/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/calendrier-scolaire/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cette date ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune date ajoutée pour le moment.</div>
+{% endif %}
+{% endblock %}

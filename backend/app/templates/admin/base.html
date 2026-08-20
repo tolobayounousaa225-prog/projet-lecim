@@ -24,6 +24,8 @@
       <a href="/admin/mon-compte/mot-de-passe" class="{{ 'active' if active == 'mon_compte' else '' }}">Changer mon mot de passe</a>
       <a href="/admin/calendrier" class="{{ 'active' if active == 'calendrier' else '' }}">Calendrier</a>
       <a href="/admin/sondages" class="{{ 'active' if active == 'sondages' else '' }}">Sondages</a>
+      <a href="/admin/idees" class="{{ 'active' if active == 'idees' else '' }}">Boîte à idées</a>
+      <a href="/admin/changelog" class="{{ 'active' if active == 'changelog' else '' }}">Nouveautés de la plateforme</a>
 
       {% if admin.can_manage_reunions or admin.can_manage_membres or admin.can_manage_cartes or admin.can_manage_sondages or admin.can_manage_executif or admin.can_manage_delegations or admin.can_manage_historique or admin.can_manage_fondateurs or admin.can_manage_gouvernance or admin.can_examine_adhesions %}
       <div class="nav-section">
@@ -70,6 +72,7 @@
         {% if admin.can_manage_photos %}<a href="/admin/photos" class="{{ 'active' if active == 'photos' else '' }}">Galerie photo</a>{% endif %}
         {% if admin.can_manage_news %}<a href="/admin/news" class="{{ 'active' if active == 'news' else '' }}">Actualités du site</a>{% endif %}
         {% if admin.can_manage_activities %}<a href="/admin/activities" class="{{ 'active' if active == 'activities' else '' }}">Activités du site</a>{% endif %}
+        {% if admin.can_manage_activities %}<a href="/admin/calendrier-scolaire" class="{{ 'active' if active == 'calendrier_scolaire' else '' }}">Calendrier scolaire national</a>{% endif %}
         {% if admin.can_manage_contact %}<a href="/admin/messages" class="{{ 'active' if active == 'messages' else '' }}">Messages de contact</a>{% endif %}
         {% if admin.can_manage_publications %}<a href="/admin/publications" class="{{ 'active' if active == 'publications' else '' }}">Publications du site</a>{% endif %}
         {% if admin.can_manage_publications %}<a href="/admin/faq" class="{{ 'active' if active == 'faq' else '' }}">FAQ</a>{% endif %}

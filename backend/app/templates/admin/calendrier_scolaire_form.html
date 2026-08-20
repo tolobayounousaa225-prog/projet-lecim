@@ -1,0 +1,46 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouvelle" }} date du calendrier scolaire{% endblock %}
+{% block content %}
+<h1>{{ "Modifier la date" if item else "Ajouter une date" }}</h1>
+<div class="form-card">
+  <form method="post" action="{{ '/admin/calendrier-scolaire/' ~ item.id ~ '/edit' if item else '/admin/calendrier-scolaire/new' }}">
+    <div class="form-group">
+      <label for="titre">Titre</label>
+      <input type="text" id="titre" name="titre" required placeholder="Ex : Rentrée scolaire 2026-2027" value="{{ item.titre if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="type">Type</label>
+      <select id="type" name="type">
+        {% for key, label in types.items() %}
+        <option value="{{ key }}" {% if item and item.type == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="date_debut">Date de début</label>
+        <input type="date" id="date_debut" name="date_debut" required value="{{ item.date_debut.isoformat() if item else '' }}">
+      </div>
+      <div class="form-group">
+        <label for="date_fin">Date de fin (optionnelle, pour une période)</label>
+        <input type="date" id="date_fin" name="date_fin" value="{{ item.date_fin.isoformat() if item and item.date_fin else '' }}">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="annee_scolaire">Année scolaire</label>
+      <input type="text" id="annee_scolaire" name="annee_scolaire" required placeholder="2026-2027" value="{{ item.annee_scolaire if item else default_annee }}">
+    </div>
+    <div class="form-group">
+      <label for="description">Description (optionnelle)</label>
+      <textarea id="description" name="description">{{ item.description if item else '' }}</textarea>
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_published" name="is_published" value="true"
+             {% if (item and item.is_published) or not item %}checked{% endif %}>
+      <label for="is_published" style="margin:0">Visible sur le site et dans les espaces établissement</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/calendrier-scolaire" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

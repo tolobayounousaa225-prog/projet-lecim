@@ -26,6 +26,8 @@
       {% if user.has_etab_module('messagerie') %}<a href="/etablissement/messagerie" class="{{ 'active' if active == 'messagerie' else '' }}">Messagerie{% if user.unread_messages_count %}<span class="nav-badge">{{ user.unread_messages_count }}</span>{% endif %}</a>{% endif %}
       {% if user.has_etab_module('ressources') %}<a href="/etablissement/ressources" class="{{ 'active' if active == 'ressources' else '' }}">Bibliothèque pédagogique</a>{% endif %}
       {% if user.has_etab_module('demandes') %}<a href="/etablissement/demandes" class="{{ 'active' if active == 'demandes' else '' }}">Mes demandes</a>{% endif %}
+      <a href="/etablissement/idees" class="{{ 'active' if active == 'idees' else '' }}">Boîte à idées</a>
+      <a href="/etablissement/export-donnees">Exporter mes données</a>
       <a href="/etablissement/mon-compte/mot-de-passe" class="{{ 'active' if active == 'mon_compte' else '' }}">Changer mon mot de passe</a>
     </nav>
     <div class="logout">

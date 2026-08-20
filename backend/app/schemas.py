@@ -330,8 +330,23 @@ class EtablissementPublicOut(BaseModel):
     statut_agrement: str
     statut_agrement_label: str
     is_ecole_modele: bool
+    is_engagee: bool = False
     categorie: str
     categorie_label: str
+
+
+# ---------- Calendrier scolaire national ----------
+
+class CalendrierScolaireOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    titre: str
+    type: str
+    type_label: str
+    date_debut: datetime.date
+    date_fin: datetime.date | None
+    annee_scolaire: str
+    description: str | None
 
 
 class PartenariatRequestCreate(BaseModel):

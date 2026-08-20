@@ -1403,7 +1403,7 @@ section { padding: 80px 0; }
 }
 .ecole-card-body span.agrement-badge {
   display: inline-block; margin-top: 4px; padding: 2px 10px; border-radius: 999px;
-  background: rgba(15,122,76,.12); color: var(--green); font-size: 0.68rem; font-weight: 700;
+  background: rgba(4,56,114,.12); color: var(--green); font-size: 0.68rem; font-weight: 700;
 }
 .ecole-card-body span.agrement-badge.en_cours { background: rgba(224,165,44,.16); color: #b8860b; }
 .ecole-card-body span.agrement-badge.expire { background: rgba(220,53,69,.14); color: #dc3545; }
@@ -1413,7 +1413,29 @@ section { padding: 80px 0; }
   font-size: 0.68rem; font-weight: 700;
 }
 .ecole-card-body span.ecole-modele-badge svg { width: 11px; height: 11px; }
+.ecole-card-body span.ecole-engagee-badge {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; margin-inline-start: 6px;
+  padding: 2px 10px; border-radius: 999px; background: rgba(4,56,114,.10); color: var(--green);
+  font-size: 0.68rem; font-weight: 700;
+}
+.ecole-card-body span.ecole-engagee-badge svg { width: 11px; height: 11px; }
 #ecoles-empty { display: none; text-align: center; color: var(--text-muted); margin-top: 30px; }
+
+/* ===== Calendrier scolaire national ===== */
+.calendrier-scolaire-list { display: flex; flex-direction: column; gap: 14px; max-width: 760px; margin: 0 auto; }
+.calendrier-scolaire-item {
+  display: flex; align-items: flex-start; gap: 18px;
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 18px 22px; box-shadow: var(--shadow);
+}
+.calendrier-scolaire-date { flex-shrink: 0; min-width: 120px; font-weight: 700; color: var(--green); font-size: 0.88rem; }
+.calendrier-scolaire-body h3 { font-size: 1.05rem; color: var(--green-dark); margin-bottom: 6px; }
+.calendrier-scolaire-body p { color: var(--text-muted); font-size: 0.88rem; margin: 6px 0 0; }
+.calendrier-scolaire-type { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.68rem; font-weight: 700; }
+.calendrier-scolaire-type.rentree { background: rgba(4,56,114,.12); color: var(--green); }
+.calendrier-scolaire-type.vacances { background: rgba(224,165,44,.16); color: #8a6510; }
+.calendrier-scolaire-type.examen { background: rgba(220,53,69,.14); color: #dc3545; }
+.calendrier-scolaire-type.autre { background: rgba(88,112,127,.12); color: var(--text-muted); }
 
 /* ===== Actualités ===== */
 .news-read-more {

@@ -149,6 +149,28 @@ def etablissements_en_retard(db: Session, annee_scolaire: str | None = None) -> 
     return en_retard
 
 
+def etablissements_engagees_ids(db: Session, annee_scolaire: str | None = None) -> set[int]:
+    """Établissements considérés "engagés" pour le badge automatique : cotisation de
+    l'année scolaire soldée ET effectif déclaré pour cette même année — distinct du
+    badge "École modèle" (accordé manuellement par le BEN)."""
+    annee_scolaire = annee_scolaire or current_annee_scolaire()
+    cotisations_a_jour = {
+        c.etablissement_id
+        for c in db.query(models.Cotisation)
+        .filter(models.Cotisation.annee_scolaire == annee_scolaire)
+        .all()
+        if c.statut_paiement == "paye"
+    }
+    effectifs_declares = {
+        e.etablissement_id
+        for e in db.query(models.Effectif.etablissement_id)
+        .filter(models.Effectif.annee_scolaire == annee_scolaire)
+        .distinct()
+        .all()
+    }
+    return cotisations_a_jour & effectifs_declares
+
+
 def multi_year_financial_summary(db: Session) -> list[dict]:
     """Totaux financiers regroupés par année scolaire, toutes années confondues,
     pour visualiser l'évolution pluriannuelle des finances de la LECIM."""
