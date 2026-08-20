@@ -1,0 +1,66 @@
+{% extends "admin/base.html" %}
+{% block title %}Bande d'informations flash{% endblock %}
+{% block content %}
+<h1>Bande d'informations flash</h1>
+<p style="margin-top:-14px; color:var(--text-muted); font-size:0.9rem;">
+  Message court affiché en bande déroulante en haut de toutes les pages du site — pour une
+  information urgente et brève (fermeture exceptionnelle, changement de date, alerte...).
+</p>
+
+<div class="form-card" style="max-width:none; margin-bottom:26px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:14px;">Ajouter un message</strong>
+  <form method="post" action="/admin/flash-info/new">
+    <div class="form-group">
+      <label for="message">Message</label>
+      <input type="text" id="message" name="message" required maxlength="500">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="lien">Lien (optionnel)</label>
+        <input type="url" id="lien" name="lien" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label for="ordre">Ordre d'affichage</label>
+        <input type="number" id="ordre" name="ordre" value="0">
+      </div>
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_active" name="is_active" value="true" checked>
+      <label for="is_active" style="margin:0">Actif (visible immédiatement sur le site)</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Ajouter</button>
+  </form>
+</div>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Ordre</th><th>Message</th><th>Lien</th><th>Statut</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.ordre }}</td>
+      <td style="max-width:360px;">{{ item.message }}</td>
+      <td>{% if item.lien %}<a href="{{ item.lien }}" target="_blank" rel="noopener">{{ item.lien[:40] }}{% if item.lien|length > 40 %}…{% endif %}</a>{% else %}<span style="color:var(--text-muted)">—</span>{% endif %}</td>
+      <td>
+        {% if item.is_active %}<span class="pill pill-green">Actif</span>
+        {% else %}<span class="pill pill-muted">Inactif</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/flash-info/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/flash-info/{{ item.id }}/toggle">
+          <button type="submit" class="btn btn-outline btn-sm">{{ "Désactiver" if item.is_active else "Activer" }}</button>
+        </form>
+        <form method="post" action="/admin/flash-info/{{ item.id }}/delete" onsubmit="return confirm('Supprimer ce message ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun message flash pour le moment.</div>
+{% endif %}
+{% endblock %}

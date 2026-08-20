@@ -349,6 +349,15 @@ class CalendrierScolaireOut(BaseModel):
     description: str | None
 
 
+# ---------- Bande d'informations flash ----------
+
+class FlashInfoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    message: str
+    lien: str | None
+
+
 class PartenariatRequestCreate(BaseModel):
     nom: str = Field(min_length=2, max_length=255)
     type: str = Field(min_length=2, max_length=30)

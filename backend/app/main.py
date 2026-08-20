@@ -41,6 +41,7 @@ from .routers import (
     admin_faq,
     admin_files,
     admin_finances,
+    admin_flash_info,
     admin_fondateurs,
     admin_gouvernance,
     admin_historique,
@@ -74,6 +75,7 @@ from .routers import (
     etablissement_ressources,
     etablissements_public,
     faq_public,
+    flash_info_public,
     fondateurs,
     gouvernance,
     historique,
@@ -308,6 +310,8 @@ app.include_router(admin_calendrier_scolaire.router)
 app.include_router(calendrier_scolaire_public.router)
 app.include_router(idees.router)
 app.include_router(admin_changelog.router)
+app.include_router(admin_flash_info.router)
+app.include_router(flash_info_public.router)
 
 
 @app.get("/")

@@ -1,6 +1,7 @@
 var API_BASE = window.LECIM_API_BASE || "http://localhost:8000";
 
 document.addEventListener("DOMContentLoaded", function () {
+  initFlashInfoBar();
   initDataSaverMode();
   initNavToggle();
   initNavDropdowns();
@@ -875,6 +876,41 @@ function initActualiteShareButton(btn, newsId, title) {
       });
     }
   });
+}
+
+function initFlashInfoBar() {
+  fetch(API_BASE + "/api/flash-info")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) return;
+
+      var piecesHtml = items
+        .map(function (item) {
+          var inner = escapeHtml(item.message);
+          if (item.lien) {
+            inner = '<a href="' + escapeHtml(item.lien) + '" target="_blank" rel="noopener">' + inner + "</a>";
+          }
+          return '<span class="flash-info-item">' + inner + '</span><span class="flash-info-sep">&bull;</span>';
+        })
+        .join("");
+
+      var bar = document.createElement("div");
+      bar.id = "flash-info-bar";
+      bar.innerHTML =
+        '<div class="flash-info-badge">' +
+        '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>' +
+        "Flash Info</div>" +
+        '<div class="flash-info-track"><div class="flash-info-content">' +
+        piecesHtml + piecesHtml + // dupliqué pour un défilement continu sans coupure visible
+        "</div></div>";
+      document.body.insertBefore(bar, document.body.firstChild);
+    })
+    .catch(function () {
+      // API indisponible ou aucun message flash actif : la bande n'est pas affichée.
+    });
 }
 
 function initWhatsappButton() {
