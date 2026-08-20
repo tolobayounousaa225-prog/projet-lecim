@@ -1,4 +1,5 @@
 import datetime
+import json
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
@@ -132,6 +133,115 @@ def etablissement_change_password_submit(
         request,
         "etablissement/change_password.html",
         {"user": user, "etablissement": user.etablissement, "active": "mon_compte", "error": None, "success": "Mot de passe mis à jour."},
+    )
+
+
+@router.get("/etablissement/export-donnees")
+def etablissement_export_donnees(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_etablissement_login_web),
+):
+    """Export RGPD : toutes les données propres à l'établissement, en un fichier
+    JSON téléchargeable, pour que l'établissement garde une copie de ce qu'il a
+    déclaré sur la plateforme."""
+    etablissement = user.etablissement
+
+    def d(value):
+        return value.isoformat() if value is not None else None
+
+    payload = {
+        "genere_le": datetime.datetime.utcnow().isoformat(),
+        "etablissement": {
+            "nom": etablissement.nom,
+            "code_adhesion": etablissement.code_adhesion,
+            "bureau_local": etablissement.bureau_local,
+            "district": etablissement.district,
+            "region": etablissement.region,
+            "statut_cotisation": etablissement.statut,
+            "date_adhesion": d(etablissement.date_adhesion),
+            "contact_email": etablissement.contact_email,
+            "contact_telephone": etablissement.contact_telephone,
+            "directeur_nom": etablissement.directeur_nom,
+            "type_enseignement": etablissement.type_enseignement,
+            "numero_agrement": etablissement.numero_agrement,
+            "statut_agrement": etablissement.statut_agrement,
+            "date_expiration_agrement": d(etablissement.date_expiration_agrement),
+        },
+        "effectifs": [
+            {
+                "annee_scolaire": e.annee_scolaire,
+                "niveau": e.niveau,
+                "nombre_garcons": e.nombre_garcons,
+                "nombre_filles": e.nombre_filles,
+            }
+            for e in db.query(models.Effectif).filter(models.Effectif.etablissement_id == etablissement.id).all()
+        ],
+        "resultats_examens": [
+            {
+                "annee_scolaire": r.annee_scolaire,
+                "type_examen": r.type_examen,
+                "nombre_inscrits": r.nombre_inscrits,
+                "nombre_admis": r.nombre_admis,
+                "is_published": r.is_published,
+            }
+            for r in db.query(models.ResultatExamen).filter(models.ResultatExamen.etablissement_id == etablissement.id).all()
+        ],
+        "enseignants": [
+            {
+                "full_name": ens.full_name,
+                "matiere": ens.matiere,
+                "diplome": ens.diplome,
+                "telephone": ens.telephone,
+                "email": ens.email,
+                "date_debut": d(ens.date_debut),
+            }
+            for ens in db.query(models.Enseignant).filter(models.Enseignant.etablissement_id == etablissement.id).all()
+        ],
+        "cartes_scolaires": [
+            {
+                "eleve_nom": c.eleve_nom,
+                "classe": c.classe,
+                "annee_scolaire": c.annee_scolaire,
+                "matricule": c.matricule,
+                "status": c.status,
+                "date_soumission": d(c.date_soumission),
+            }
+            for c in db.query(models.CarteScolaire).filter(models.CarteScolaire.etablissement_id == etablissement.id).all()
+        ],
+        "cotisations": [
+            {
+                "annee_scolaire": c.annee_scolaire,
+                "montant_du": c.montant_du,
+                "montant_paye": c.montant_paye,
+                "date_paiement": d(c.date_paiement),
+            }
+            for c in db.query(models.Cotisation).filter(models.Cotisation.etablissement_id == etablissement.id).all()
+        ],
+        "demandes": [
+            {
+                "objet": dem.objet,
+                "message": dem.message,
+                "reponse": dem.reponse,
+                "statut": dem.statut,
+                "created_at": d(dem.created_at),
+            }
+            for dem in db.query(models.DemandeEtablissement).filter(models.DemandeEtablissement.etablissement_id == etablissement.id).all()
+        ],
+        "messages": [
+            {
+                "expediteur": "LECIM" if m.is_from_ben else etablissement.nom,
+                "message": m.body,
+                "date": d(m.created_at),
+            }
+            for m in db.query(models.MessageEtablissement).filter(models.MessageEtablissement.etablissement_id == etablissement.id).all()
+        ],
+    }
+
+    filename = f"lecim-export-{etablissement.nom.replace(' ', '_')}-{datetime.date.today().isoformat()}.json"
+    return Response(
+        content=json.dumps(payload, ensure_ascii=False, indent=2),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 

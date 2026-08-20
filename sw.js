@@ -9,7 +9,7 @@
 // la racine, donc un chemin absolu comme "/sw.js" ou "/assets/..." pointerait vers
 // une URL inexistante et ferait échouer silencieusement toute l'installation.
 
-var CACHE_NAME = "lecim-shell-v32";
+var CACHE_NAME = "lecim-shell-v33";
 
 var APP_SHELL_RELATIVE = [
   "assets/css/style.css",

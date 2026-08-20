@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas, storage
 from ..database import get_db
+from ..reports import etablissements_engagees_ids
 
 router = APIRouter(prefix="/api/etablissements", tags=["etablissements"])
 
@@ -25,6 +26,9 @@ def list_etablissements(db: Session = Depends(get_db)):
         .order_by(models.Etablissement.bureau_local, models.Etablissement.nom)
         .all()
     )
+    engagees = etablissements_engagees_ids(db)
+    for item in items:
+        item.is_engagee = item.id in engagees
     return items
 
 

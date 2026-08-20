@@ -1,0 +1,63 @@
+{% extends "admin/base.html" %}
+{% block title %}Nouveautés de la plateforme{% endblock %}
+{% block content %}
+<h1>Nouveautés de la plateforme</h1>
+<p style="margin-top:-14px; color:var(--text-muted); font-size:0.9rem;">
+  Journal des nouveautés et correctifs apportés à la plateforme LECIM.
+</p>
+
+{% if admin.is_admin %}
+<div class="form-card" style="max-width:none; margin-bottom:26px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:14px;">Ajouter une entrée</strong>
+  <form method="post" action="/admin/changelog/new">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="titre">Titre</label>
+        <input type="text" id="titre" name="titre" required maxlength="255">
+      </div>
+      <div class="form-group">
+        <label for="categorie">Catégorie</label>
+        <select id="categorie" name="categorie">
+          {% for key, label in categories.items() %}
+          <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="published_at">Date</label>
+      <input type="date" id="published_at" name="published_at">
+    </div>
+    <div class="form-group">
+      <label for="description">Description (optionnelle)</label>
+      <textarea id="description" name="description" rows="3"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Publier</button>
+  </form>
+</div>
+{% endif %}
+
+{% if items %}
+<div style="display:flex; flex-direction:column; gap:14px;">
+  {% for item in items %}
+  <div class="form-card" style="max-width:none;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px;">
+      <div>
+        <span class="pill {{ 'pill-green' if item.categorie == 'nouveaute' else ('pill-gold' if item.categorie == 'amelioration' else 'pill-muted') }}">{{ item.categorie_label }}</span>
+        <strong style="display:block; margin-top:8px; color:var(--green-dark);">{{ item.titre }}</strong>
+        <span style="color:var(--text-muted); font-size:0.8rem;">{{ item.published_at.strftime("%d/%m/%Y") }}</span>
+        {% if item.description %}<p style="margin:8px 0 0; color:var(--text-dark); font-size:0.9rem;">{{ item.description }}</p>{% endif %}
+      </div>
+      {% if admin.is_admin %}
+      <form method="post" action="/admin/changelog/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cette entrée ?');">
+        <button type="submit" class="btn btn-outline btn-sm">Supprimer</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">Aucune entrée pour le moment.</div>
+{% endif %}
+{% endblock %}

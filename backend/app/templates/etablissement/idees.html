@@ -1,0 +1,55 @@
+{% extends "etablissement/base.html" %}
+{% block title %}Boîte à idées{% endblock %}
+{% block content %}
+<h1>Boîte à idées</h1>
+<p style="margin-top:-14px; color:var(--text-muted); font-size:0.9rem;">
+  Suggestions du bureau et des établissements affiliés, votables par tous — aide la LECIM à
+  prioriser les prochains chantiers de la plateforme.
+</p>
+
+<div class="form-card" style="max-width:none; margin-bottom:26px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:14px;">Proposer une idée</strong>
+  <form method="post" action="/etablissement/idees/new">
+    <div class="form-group">
+      <label for="titre">Titre</label>
+      <input type="text" id="titre" name="titre" required maxlength="255">
+    </div>
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea id="description" name="description" required rows="3"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Soumettre</button>
+  </form>
+</div>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Idée</th><th>Auteur</th><th>Votes</th><th>Statut</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td style="max-width:340px;">
+        <strong>{{ item.titre }}</strong>
+        <p style="margin:4px 0 0; color:var(--text-muted); font-size:0.85rem;">{{ item.description }}</p>
+      </td>
+      <td>{{ item.auteur_label }}</td>
+      <td>
+        <form method="post" action="/etablissement/idees/{{ item.id }}/vote" style="display:inline;">
+          <button type="submit" class="btn {{ 'btn-primary' if item.a_vote(user.id) else 'btn-outline' }} btn-sm">
+            {{ "✓ " if item.a_vote(user.id) }}{{ item.nombre_votes }} vote{{ "s" if item.nombre_votes != 1 }}
+          </button>
+        </form>
+      </td>
+      <td>
+        <span class="pill {{ 'pill-green' if item.statut == 'retenue' else ('pill-red' if item.statut == 'rejetee' else 'pill-muted') }}">{{ item.statut_label }}</span>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune idée soumise pour le moment.</div>
+{% endif %}
+{% endblock %}

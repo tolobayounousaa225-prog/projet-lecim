@@ -26,8 +26,10 @@ from .routers import (
     admin_audit,
     admin_backups,
     admin_calendar,
+    admin_calendrier_scolaire,
     admin_cartes,
     admin_cartes_scolaires,
+    admin_changelog,
     admin_connexions,
     admin_conseil_administration,
     admin_delegations,
@@ -62,6 +64,7 @@ from .routers import (
     admin_users,
     assistant_public,
     auth,
+    calendrier_scolaire_public,
     carte,
     conseil_administration,
     contact,
@@ -74,6 +77,7 @@ from .routers import (
     fondateurs,
     gouvernance,
     historique,
+    idees,
     news,
     newsletter_public,
     objectifs_principes_moyens,
@@ -300,6 +304,10 @@ app.include_router(admin_connexions.router)
 app.include_router(admin_password_resets.router)
 app.include_router(etablissement_portal.router)
 app.include_router(etablissement_ressources.router)
+app.include_router(admin_calendrier_scolaire.router)
+app.include_router(calendrier_scolaire_public.router)
+app.include_router(idees.router)
+app.include_router(admin_changelog.router)
 
 
 @app.get("/")
