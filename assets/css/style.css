@@ -41,7 +41,7 @@ ul { list-style: none; }
 /* ===== Header ===== */
 .site-header {
   position: sticky;
-  top: 0;
+  top: var(--flash-bar-offset, 0px);
   z-index: 100;
   background: rgba(255,255,255,.88);
   backdrop-filter: blur(14px);
@@ -1853,6 +1853,7 @@ img.img-blur-up.is-loaded { filter: blur(0); }
 /* Bande d'informations flash déroulante, en haut de toutes les pages, visible une fois
    qu'au moins un message actif est configuré par l'admin */
 #flash-info-bar {
+  position: sticky; top: 0; z-index: 101;
   display: flex; align-items: stretch;
   background: var(--white); border-bottom: 1px solid var(--border);
   overflow: hidden;
@@ -1899,7 +1900,7 @@ img.img-blur-up.is-loaded { filter: blur(0); }
 
 /* Compteur de visiteurs en ligne, visible sur toutes les pages */
 #live-visitors-badge {
-  position: fixed; top: 88px; inset-inline-start: 16px; z-index: 90;
+  position: fixed; top: calc(88px + var(--flash-bar-offset, 0px)); inset-inline-start: 16px; z-index: 90;
   display: flex; align-items: center; gap: 7px;
   background: rgba(255,255,255,.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--border); border-radius: 999px;

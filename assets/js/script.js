@@ -907,6 +907,9 @@ function initFlashInfoBar() {
         piecesHtml + piecesHtml + // dupliqué pour un défilement continu sans coupure visible
         "</div></div>";
       document.body.insertBefore(bar, document.body.firstChild);
+      // Décale les éléments fixes calés sur le haut de l'en-tête (ex. compteur de
+      // visiteurs) de la hauteur de la bande, sans quoi ils chevauchent l'en-tête.
+      document.documentElement.style.setProperty("--flash-bar-offset", bar.offsetHeight + "px");
     })
     .catch(function () {
       // API indisponible ou aucun message flash actif : la bande n'est pas affichée.
