@@ -138,6 +138,18 @@ SITE_CONTENT_FIELDS: dict[str, dict] = {
             "de leurs élèves et de leurs communautés."
         ),
     },
+    "whatsapp_numero": {
+        "group": "Bouton de contact WhatsApp (toutes les pages)",
+        "label": "Numéro WhatsApp au format international, sans le + (ex : 2250101020304) — le laisser vide masque le bouton sur le site",
+        "type": "text",
+        "default": "",
+    },
+    "whatsapp_message": {
+        "group": "Bouton de contact WhatsApp (toutes les pages)",
+        "label": "Message pré-rempli à l'ouverture de la discussion (optionnel)",
+        "type": "text",
+        "default": "Bonjour, je souhaite avoir des informations sur la LECIM.",
+    },
     "adhesion_wave_link": {
         "group": "Adhésion — Paiement Wave",
         "label": "Lien de paiement Wave (ex : https://pay.wave.com/m/M_ci_.../c/ci/) — le laisser vide masque tout le bloc paiement sur le site",

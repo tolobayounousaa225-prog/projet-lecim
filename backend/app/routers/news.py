@@ -8,9 +8,12 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..database import get_db
 from ..deps import get_news_editor
+from ..share_image import generate_news_share_image
 from .admin_files import UPLOAD_ROOT
 
 router = APIRouter(prefix="/api/news", tags=["news"])
+
+NEWS_SHARE_DIR = UPLOAD_ROOT / "news_share"
 
 
 @router.get("", response_model=list[schemas.NewsOut])
@@ -34,6 +37,25 @@ def news_image(news_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Image introuvable")
     media_type = mimetypes.guess_type(news.image_path)[0] or "application/octet-stream"
     return FileResponse(path, media_type=media_type)
+
+
+@router.get("/{news_id}/share-image.png")
+def news_share_image(news_id: int, db: Session = Depends(get_db)):
+    news = db.get(models.NewsPost, news_id)
+    if not news or not news.is_published:
+        raise HTTPException(status_code=404, detail="Actualité introuvable")
+
+    NEWS_SHARE_DIR.mkdir(parents=True, exist_ok=True)
+    cached_path = NEWS_SHARE_DIR / f"{news_id}.png"
+    is_stale = (
+        not cached_path.exists()
+        or cached_path.stat().st_mtime < news.updated_at.timestamp()
+    )
+    if is_stale:
+        png_bytes = generate_news_share_image(news.title, news.published_at.strftime("%d/%m/%Y"))
+        cached_path.write_bytes(png_bytes)
+
+    return FileResponse(cached_path, media_type="image/png")
 
 
 @router.get("/{news_id}", response_model=schemas.NewsOut)

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% if found %}
+<title>{{ title }} — LECIM</title>
+<meta name="description" content="{{ description }}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ title }} — LECIM">
+<meta property="og:description" content="{{ description }}">
+<meta property="og:image" content="{{ image_url }}">
+<meta property="og:url" content="{{ page_url }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ title }} — LECIM">
+<meta name="twitter:description" content="{{ description }}">
+<meta name="twitter:image" content="{{ image_url }}">
+{% else %}
+<title>Actualité introuvable — LECIM</title>
+{% endif %}
+<link rel="icon" type="image/jpeg" href="/static/img/logo.jpg">
+<meta http-equiv="refresh" content="0; url={{ redirect_url }}">
+<style>
+  body { font-family: "Segoe UI", Arial, sans-serif; background: #0a3d63; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; padding: 24px; }
+  a { color: #f3c869; }
+</style>
+</head>
+<body>
+<div>
+  <p>Redirection vers la LECIM…</p>
+  <p><a href="{{ redirect_url }}">Cliquez ici si la redirection ne démarre pas automatiquement</a></p>
+</div>
+</body>
+</html>
