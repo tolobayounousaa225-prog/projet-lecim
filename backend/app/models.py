@@ -1951,3 +1951,23 @@ CHANGELOG_CATEGORIES = {
     "correctif": "Correctif",
     "amelioration": "Amélioration",
 }
+
+
+# ---------- Bande d'informations flash ----------
+
+class FlashInfo(Base):
+    """Information urgente et brève affichée en bande déroulante sur toutes les
+    pages du site vitrine — distincte des actualités urgentes (NewsPost.is_urgent,
+    qui déclenchent une notification push et restent dans le fil d'actualités)."""
+
+    __tablename__ = "flash_infos"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    message: Mapped[str] = mapped_column(String(500), nullable=False)
+    lien: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    ordre: Mapped[int] = mapped_column(Integer, default=0)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )

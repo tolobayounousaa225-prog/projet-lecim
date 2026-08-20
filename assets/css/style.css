@@ -1850,6 +1850,37 @@ img.img-blur-up.is-loaded { filter: blur(0); }
 #faq-assistant-form button svg { width: 17px; height: 17px; }
 [dir="rtl"] #faq-assistant-form button svg { transform: scaleX(-1); }
 
+/* Bande d'informations flash déroulante, en haut de toutes les pages, visible une fois
+   qu'au moins un message actif est configuré par l'admin */
+#flash-info-bar {
+  display: flex; align-items: stretch;
+  background: var(--white); border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+.flash-info-badge {
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+  background: var(--gold); color: var(--green-dark);
+  font-weight: 800; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .5px;
+  padding: 8px 16px; white-space: nowrap;
+}
+.flash-info-badge svg { width: 13px; height: 13px; }
+.flash-info-track { flex: 1; overflow: hidden; white-space: nowrap; position: relative; }
+.flash-info-content { display: inline-block; animation: flashInfoScroll 28s linear infinite; }
+.flash-info-track:hover .flash-info-content { animation-play-state: paused; }
+.flash-info-item { display: inline-block; color: var(--text-dark); font-size: 0.85rem; font-weight: 600; padding: 8px 0; }
+.flash-info-item a { color: var(--green); text-decoration: underline; }
+.flash-info-sep { display: inline-block; color: var(--text-muted); margin: 0 24px; }
+@keyframes flashInfoScroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+[dir="rtl"] .flash-info-content { animation-direction: reverse; }
+@media (max-width: 640px) {
+  .flash-info-badge { padding: 6px 10px; font-size: 0.65rem; }
+  .flash-info-item { font-size: 0.78rem; }
+  .flash-info-sep { margin: 0 16px; }
+}
+
 /* Bouton flottant de contact WhatsApp, visible sur toutes les pages une fois configuré par l'admin */
 #whatsapp-float-btn {
   position: fixed; bottom: 84px; inset-inline-end: 26px; z-index: 149;
