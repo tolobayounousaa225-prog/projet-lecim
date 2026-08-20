@@ -138,6 +138,18 @@ SITE_CONTENT_FIELDS: dict[str, dict] = {
             "de leurs élèves et de leurs communautés."
         ),
     },
+    "adhesion_wave_link": {
+        "group": "Adhésion — Paiement Wave",
+        "label": "Lien de paiement Wave (ex : https://pay.wave.com/m/M_ci_.../c/ci/) — le laisser vide masque tout le bloc paiement sur le site",
+        "type": "text",
+        "default": "",
+    },
+    "adhesion_wave_qr": {
+        "group": "Adhésion — Paiement Wave",
+        "label": "Code QR Wave (image, optionnelle — affichée à côté du bouton si fournie)",
+        "type": "image",
+        "default": "",
+    },
     "don_coordonnees": {
         "group": "Faire un don — Coordonnées bancaires",
         "label": "Coordonnées bancaires (RIB, banque, titulaire du compte...)",

@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadFondateurs();
   loadGouvernance();
   loadSiteContent();
+  loadAdhesionWavePayment();
   loadCarte();
   loadResultatsExamens();
   loadEcoles();
@@ -617,6 +618,33 @@ function loadSiteContent() {
     })
     .catch(function () {
       // API indisponible : les textes/visuels par défaut codés dans la page restent affichés.
+    });
+}
+
+function loadAdhesionWavePayment() {
+  var container = document.getElementById("adhesion-wave-payment");
+  if (!container) return;
+
+  var linkEl = document.getElementById("adhesion-wave-link");
+  var qrImg = document.getElementById("adhesion-wave-qr-img");
+
+  fetch(API_BASE + "/api/site-content")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (values) {
+      var link = values.adhesion_wave_link;
+      if (!link) return;
+      if (linkEl) linkEl.href = link;
+      if (qrImg && values.adhesion_wave_qr) {
+        qrImg.src = API_BASE + values.adhesion_wave_qr;
+        qrImg.style.display = "";
+      }
+      container.style.display = "block";
+    })
+    .catch(function () {
+      // API indisponible ou paiement Wave non configuré par l'admin : le bloc reste masqué.
     });
 }
 
