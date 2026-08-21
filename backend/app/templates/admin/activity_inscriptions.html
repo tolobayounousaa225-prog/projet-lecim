@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+{% block title %}Inscrits — {{ activity.title }}{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1 style="margin:0">Inscrits — {{ activity.title }}</h1>
+    <p style="color:var(--text-muted); margin:4px 0 0;">{{ activity.event_date.strftime("%d/%m/%Y") }} — {{ items|length }} inscription(s)</p>
+  </div>
+  <div style="display:flex; gap:10px;">
+    {% if items %}
+    <a href="/admin/activities/{{ activity.id }}/inscriptions.csv" class="btn btn-outline">Exporter en CSV</a>
+    {% endif %}
+    <a href="/admin/activities" class="btn btn-outline">&larr; Retour aux activités</a>
+  </div>
+</div>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Nom</th><th>Téléphone</th><th>E-mail</th><th>Établissement</th><th>Inscrit le</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.nom }}</td>
+      <td>{{ item.telephone or "—" }}</td>
+      <td>{{ item.email or "—" }}</td>
+      <td>{{ item.etablissement or "—" }}</td>
+      <td>{{ item.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Personne ne s'est encore inscrit à cette activité.</div>
+{% endif %}
+{% endblock %}

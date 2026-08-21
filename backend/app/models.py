@@ -326,6 +326,23 @@ class Activity(Base):
     def status(self) -> str:
         return "upcoming" if self.event_date >= datetime.date.today() else "past"
 
+    inscriptions: Mapped[list["ActivityInscription"]] = relationship(cascade="all, delete-orphan")
+
+
+class ActivityInscription(Base):
+    """Inscription publique à une activité/formation à venir — sert de liste de
+    présence pour le BEN, distincte du simple ajout au calendrier personnel (.ics)."""
+
+    __tablename__ = "activity_inscriptions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    activity_id: Mapped[int] = mapped_column(ForeignKey("activities.id", ondelete="CASCADE"), nullable=False)
+    nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    telephone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    etablissement: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
 
 class ContactMessage(Base):
     __tablename__ = "contact_messages"
@@ -533,6 +550,31 @@ class Photo(Base):
     @property
     def image_url(self) -> str:
         return f"/api/photos/{self.id}/image"
+
+
+class VideoPublic(Base):
+    """Vidéo publiée dans la vidéothèque du site — hébergée sur YouTube, pas de
+    fichier vidéo stocké : l'admin colle un lien, la vignette et la lecture
+    viennent directement de YouTube."""
+
+    __tablename__ = "videos_publiques"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    youtube_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    ordre: Mapped[int] = mapped_column(Integer, default=0)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    @property
+    def embed_url(self) -> str:
+        return f"https://www.youtube-nocookie.com/embed/{self.youtube_id}"
+
+    @property
+    def thumbnail_url(self) -> str:
+        return f"https://img.youtube.com/vi/{self.youtube_id}/hqdefault.jpg"
 
 
 class PushSubscription(Base):

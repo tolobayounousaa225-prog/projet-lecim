@@ -70,6 +70,7 @@
         <span class="nav-section-title">Communication &amp; site vitrine</span>
         {% if admin.can_manage_documents %}<a href="/admin/documents" class="{{ 'active' if active == 'documents' else '' }}">Documents &amp; PV</a>{% endif %}
         {% if admin.can_manage_photos %}<a href="/admin/photos" class="{{ 'active' if active == 'photos' else '' }}">Galerie photo</a>{% endif %}
+        {% if admin.can_manage_publications %}<a href="/admin/videos" class="{{ 'active' if active == 'videos' else '' }}">Vidéothèque</a>{% endif %}
         {% if admin.can_manage_news %}<a href="/admin/news" class="{{ 'active' if active == 'news' else '' }}">Actualités du site</a>{% endif %}
         {% if admin.can_manage_news %}<a href="/admin/flash-info" class="{{ 'active' if active == 'flash_info' else '' }}">Bande d'informations flash</a>{% endif %}
         {% if admin.can_manage_activities %}<a href="/admin/activities" class="{{ 'active' if active == 'activities' else '' }}">Activités du site</a>{% endif %}

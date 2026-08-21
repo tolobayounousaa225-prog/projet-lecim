@@ -24,6 +24,7 @@
         {% endif %}
       </td>
       <td class="actions-cell">
+        <a href="/admin/activities/{{ item.id }}/inscriptions" class="btn btn-outline btn-sm">Inscrits ({{ item.inscriptions|length }})</a>
         <a href="/admin/activities/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
         <form method="post" action="/admin/activities/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cette activité ?');">
           <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>

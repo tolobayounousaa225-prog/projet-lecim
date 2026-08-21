@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..database import get_db
 from ..deps import get_activities_editor
+from ..rate_limit import rate_limiter
 
 router = APIRouter(prefix="/api/activities", tags=["activities"])
 
@@ -31,6 +32,26 @@ def get_activity(activity_id: int, db: Session = Depends(get_db)):
     if not activity:
         raise HTTPException(status_code=404, detail="Activité introuvable")
     return activity
+
+
+@router.post(
+    "/{activity_id}/inscriptions",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limiter("activity-inscription", 10, 60))],
+)
+def create_inscription(
+    activity_id: int,
+    payload: schemas.ActivityInscriptionCreate,
+    db: Session = Depends(get_db),
+):
+    activity = db.get(models.Activity, activity_id)
+    if not activity:
+        raise HTTPException(status_code=404, detail="Activité introuvable")
+    if activity.status != "upcoming":
+        raise HTTPException(status_code=400, detail="Cette activité est déjà terminée")
+    db.add(models.ActivityInscription(activity_id=activity_id, **payload.model_dump()))
+    db.commit()
+    return {"ok": True}
 
 
 @router.get("/{activity_id}/ics")

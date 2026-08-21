@@ -1,4 +1,6 @@
+import csv
 import datetime
+import io
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
@@ -535,6 +537,60 @@ def activities_delete(
         db.delete(activity)
         db.commit()
     return RedirectResponse(url="/admin/activities", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.get("/activities/{activity_id}/inscriptions")
+def activities_inscriptions(
+    activity_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_activities_access_web),
+):
+    activity = db.get(models.Activity, activity_id)
+    if not activity:
+        return RedirectResponse(url="/admin/activities", status_code=status.HTTP_303_SEE_OTHER)
+    items = (
+        db.query(models.ActivityInscription)
+        .filter(models.ActivityInscription.activity_id == activity_id)
+        .order_by(models.ActivityInscription.created_at)
+        .all()
+    )
+    return templates.TemplateResponse(
+        request,
+        "admin/activity_inscriptions.html",
+        {"admin": user, "activity": activity, "items": items, "active": "activities"},
+    )
+
+
+@router.get("/activities/{activity_id}/inscriptions.csv")
+def activities_inscriptions_csv(
+    activity_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_activities_access_web),
+):
+    activity = db.get(models.Activity, activity_id)
+    if not activity:
+        return RedirectResponse(url="/admin/activities", status_code=status.HTTP_303_SEE_OTHER)
+    items = (
+        db.query(models.ActivityInscription)
+        .filter(models.ActivityInscription.activity_id == activity_id)
+        .order_by(models.ActivityInscription.created_at)
+        .all()
+    )
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["Nom", "Téléphone", "E-mail", "Établissement", "Inscrit le"])
+    for item in items:
+        writer.writerow([
+            item.nom, item.telephone or "", item.email or "", item.etablissement or "",
+            item.created_at.strftime("%d/%m/%Y %H:%M"),
+        ])
+    filename = f"inscriptions-{activity.title[:40]}.csv".replace("/", "-")
+    return Response(
+        content=buf.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # ---------- Messages ----------

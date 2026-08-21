@@ -63,6 +63,7 @@ from .routers import (
     admin_statistiques,
     admin_temoignages,
     admin_users,
+    admin_videos,
     assistant_public,
     auth,
     calendrier_scolaire_public,
@@ -103,6 +104,7 @@ from .routers import (
     verify,
     verify_attestations,
     verify_eleve,
+    videos_public,
 )
 
 def _warn_if_weak_default_secrets() -> None:
@@ -243,6 +245,7 @@ app.include_router(partenariat_requests.router)
 app.include_router(dons_public.router)
 app.include_router(projets_public.router)
 app.include_router(photos_public.router)
+app.include_router(videos_public.router)
 app.include_router(presence_public.router)
 app.include_router(faq_public.router)
 app.include_router(objectifs_principes_moyens.router)
@@ -297,6 +300,7 @@ app.include_router(site_content.router)
 app.include_router(admin_sondages.router)
 app.include_router(admin_sondages_express.router)
 app.include_router(admin_temoignages.router)
+app.include_router(admin_videos.router)
 app.include_router(admin_statistiques.router)
 app.include_router(admin_newsletter.router)
 app.include_router(delegation_portal.router)
