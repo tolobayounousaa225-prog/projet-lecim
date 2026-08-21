@@ -1,0 +1,76 @@
+{% extends "admin/base.html" %}
+{% block title %}Vidéothèque{% endblock %}
+{% block content %}
+<h1>Vidéothèque</h1>
+<p style="margin-top:-14px; color:var(--text-muted); font-size:0.9rem;">
+  Vidéos hébergées sur YouTube (cérémonies, conférences, événements) — collez simplement le
+  lien de la vidéo, aucun fichier à téléverser. Visible sur la page « Galerie » du site une fois publiée.
+</p>
+
+{% if error %}
+<div class="form-card" style="max-width:none; margin-bottom:20px; border-left:4px solid #c0392b;">
+  <strong style="color:#c0392b">{{ error }}</strong>
+</div>
+{% endif %}
+
+<div class="form-card" style="max-width:none; margin-bottom:26px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:14px;">Ajouter une vidéo</strong>
+  <form method="post" action="/admin/videos/new">
+    <div class="form-group">
+      <label for="titre">Titre</label>
+      <input type="text" id="titre" name="titre" required maxlength="255">
+    </div>
+    <div class="form-group">
+      <label for="lien">Lien YouTube</label>
+      <input type="text" id="lien" name="lien" required placeholder="https://www.youtube.com/watch?v=...">
+    </div>
+    <div class="form-group">
+      <label for="description">Description (optionnel)</label>
+      <textarea id="description" name="description"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="ordre">Ordre d'affichage</label>
+        <input type="number" id="ordre" name="ordre" value="0">
+      </div>
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_published" name="is_published" value="true" checked>
+      <label for="is_published" style="margin:0">Publiée (visible immédiatement sur le site)</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Ajouter</button>
+  </form>
+</div>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Ordre</th><th>Vignette</th><th>Titre</th><th>Statut</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.ordre }}</td>
+      <td><img src="{{ item.thumbnail_url }}" alt="" style="width:80px; height:45px; object-fit:cover; border-radius:6px;"></td>
+      <td>{{ item.titre }}</td>
+      <td>
+        {% if item.is_published %}<span class="pill pill-green">Publiée</span>
+        {% else %}<span class="pill pill-muted">Brouillon</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/videos/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/videos/{{ item.id }}/toggle">
+          <button type="submit" class="btn btn-outline btn-sm">{{ "Dépublier" if item.is_published else "Publier" }}</button>
+        </form>
+        <form method="post" action="/admin/videos/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cette vidéo ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune vidéo ajoutée pour le moment.</div>
+{% endif %}
+{% endblock %}

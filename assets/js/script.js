@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initGlobalSearch();
   loadNews();
   loadActivities();
+  initActivityInscriptions();
   loadPublications();
   loadHistorique();
   loadFondateurs();
@@ -39,6 +40,8 @@ document.addEventListener("DOMContentLoaded", function () {
   loadActualitesFull();
   loadActualiteDetail();
   loadGalerie();
+  loadVideotheque();
+  initVideoPlayback();
   loadFaq();
   loadUpcomingEvents();
   loadCalendrierScolaire();
@@ -1852,6 +1855,58 @@ function loadGalerie() {
     });
 }
 
+function loadVideotheque() {
+  var container = document.getElementById("video-grid");
+  var emptyEl = document.getElementById("video-empty");
+  if (!container) return;
+  showSkeleton(container, 3);
+
+  fetch(API_BASE + "/api/videos")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) {
+        container.innerHTML = "";
+        if (emptyEl) emptyEl.style.display = "block";
+        return;
+      }
+      container.innerHTML = items
+        .map(function (v) {
+          return (
+            '<div class="video-card">' +
+            '<div class="video-thumb" data-embed-url="' + escapeHtml(v.embed_url) + '">' +
+            '<img src="' + escapeHtml(v.thumbnail_url) + '" alt="' + escapeHtml(v.titre) + '" loading="lazy">' +
+            '<div class="video-play-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 7.2v9.6l8.4-4.8L9 7.2Z"/></svg></div>' +
+            "</div>" +
+            '<div class="video-body"><h4>' + escapeHtml(v.titre) + "</h4>" +
+            (v.description ? "<p>" + escapeHtml(v.description) + "</p>" : "") +
+            "</div></div>"
+          );
+        })
+        .join("");
+    })
+    .catch(function () {
+      container.innerHTML = "";
+      if (emptyEl) emptyEl.style.display = "block";
+    });
+}
+
+function initVideoPlayback() {
+  document.addEventListener("click", function (e) {
+    var thumb = e.target.closest ? e.target.closest(".video-thumb") : null;
+    if (!thumb || thumb.classList.contains("is-playing")) return;
+    var embedUrl = thumb.getAttribute("data-embed-url");
+    if (!embedUrl) return;
+    thumb.classList.add("is-playing");
+    thumb.innerHTML =
+      '<iframe src="' + embedUrl + '?autoplay=1&rel=0" title="Vidéo" ' +
+      'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+      "allowfullscreen></iframe>";
+  });
+}
+
 function loadFaq() {
   var container = document.getElementById("faq-list");
   var emptyEl = document.getElementById("faq-empty");
@@ -2028,10 +2083,26 @@ function loadActualiteDetail() {
     });
 }
 
+var INSCRIPTION_LABELS = {
+  fr: {
+    toggle: "S'inscrire", nom: "Nom complet", telephone: "Téléphone",
+    etablissement: "Établissement (optionnel)", submit: "Confirmer mon inscription",
+    success: "Inscription confirmée !", error: "Erreur — réessayez",
+  },
+  ar: {
+    toggle: "التسجيل", nom: "الاسم الكامل", telephone: "الهاتف",
+    etablissement: "المؤسسة (اختياري)", submit: "تأكيد التسجيل",
+    success: "!تم تأكيد التسجيل", error: "خطأ - حاول مرة أخرى",
+  },
+};
+
 function loadActivities() {
   var container = document.querySelector(".timeline");
   if (!container) return;
   showSkeleton(container, 4);
+
+  var lang = document.documentElement.getAttribute("lang") === "ar" ? "ar" : "fr";
+  var t = INSCRIPTION_LABELS[lang];
 
   fetch(API_BASE + "/api/activities")
     .then(function (res) {
@@ -2053,9 +2124,19 @@ function loadActivities() {
           "<h3>" + escapeHtml(item.title) + "</h3>" +
           "<p>" + escapeHtml(item.description) + "</p>" +
           (isPast ? "" :
+            '<div class="activity-actions">' +
             '<a class="ics-link" href="' + API_BASE + "/api/activities/" + item.id + '/ics" download>' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' +
-            "Ajouter à mon calendrier</a>") +
+            "Ajouter à mon calendrier</a>" +
+            '<button type="button" class="btn-inscription-toggle" data-activity-id="' + item.id + '">' + t.toggle + "</button>" +
+            "</div>" +
+            '<form class="inscription-form" data-activity-id="' + item.id + '" style="display:none;">' +
+            '<input type="text" name="nom" placeholder="' + t.nom + '" required>' +
+            '<input type="tel" name="telephone" placeholder="' + t.telephone + '">' +
+            '<input type="text" name="etablissement" placeholder="' + t.etablissement + '">' +
+            '<button type="submit" class="btn btn-primary btn-sm">' + t.submit + "</button>" +
+            "</form>" +
+            '<p class="inscription-success" style="display:none;">' + t.success + "</p>") +
           "</div>";
         container.appendChild(el);
       });
@@ -2063,6 +2144,54 @@ function loadActivities() {
     .catch(function () {
       // API indisponible : le contenu statique reste affiché.
     });
+}
+
+function initActivityInscriptions() {
+  document.addEventListener("click", function (e) {
+    var toggle = e.target.closest ? e.target.closest(".btn-inscription-toggle") : null;
+    if (!toggle) return;
+    var card = toggle.closest(".timeline-card");
+    var form = card ? card.querySelector(".inscription-form") : null;
+    if (form) form.style.display = form.style.display === "none" ? "flex" : "none";
+  });
+
+  document.addEventListener("submit", function (e) {
+    var form = e.target.closest ? e.target.closest(".inscription-form") : null;
+    if (!form) return;
+    e.preventDefault();
+    var lang = document.documentElement.getAttribute("lang") === "ar" ? "ar" : "fr";
+    var t = INSCRIPTION_LABELS[lang];
+    var activityId = form.getAttribute("data-activity-id");
+    var btn = form.querySelector("button[type=submit]");
+    var original = btn.textContent;
+    var payload = {
+      nom: valueOf(form, "[name=nom]"),
+      telephone: valueOf(form, "[name=telephone]") || null,
+      etablissement: valueOf(form, "[name=etablissement]") || null,
+    };
+    btn.disabled = true;
+    fetch(API_BASE + "/api/activities/" + activityId + "/inscriptions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error("Échec de l'inscription");
+        var card = form.closest(".timeline-card");
+        var successEl = card ? card.querySelector(".inscription-success") : null;
+        var toggleBtn = card ? card.querySelector(".btn-inscription-toggle") : null;
+        form.style.display = "none";
+        if (toggleBtn) toggleBtn.style.display = "none";
+        if (successEl) successEl.style.display = "block";
+      })
+      .catch(function () {
+        btn.textContent = t.error;
+        setTimeout(function () {
+          btn.textContent = original;
+          btn.disabled = false;
+        }, 3000);
+      });
+  });
 }
 
 function loadUpcomingEvents() {

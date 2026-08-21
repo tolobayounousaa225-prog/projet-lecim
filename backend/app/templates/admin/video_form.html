@@ -1,0 +1,43 @@
+{% extends "admin/base.html" %}
+{% block title %}Modifier la vidéo{% endblock %}
+{% block content %}
+<h1>Modifier la vidéo</h1>
+
+{% if error %}
+<div class="form-card" style="max-width:none; margin-bottom:20px; border-left:4px solid #c0392b;">
+  <strong style="color:#c0392b">{{ error }}</strong>
+</div>
+{% endif %}
+
+<div class="form-card">
+  <div style="margin-bottom:16px;">
+    <img src="{{ item.thumbnail_url }}" alt="" style="width:100%; max-width:280px; border-radius:8px;">
+  </div>
+  <form method="post" action="/admin/videos/{{ item.id }}/edit">
+    <div class="form-group">
+      <label for="titre">Titre</label>
+      <input type="text" id="titre" name="titre" required maxlength="255" value="{{ item.titre }}">
+    </div>
+    <div class="form-group">
+      <label for="lien">Lien YouTube</label>
+      <input type="text" id="lien" name="lien" required value="https://www.youtube.com/watch?v={{ item.youtube_id }}">
+    </div>
+    <div class="form-group">
+      <label for="description">Description (optionnel)</label>
+      <textarea id="description" name="description">{{ item.description or "" }}</textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="ordre">Ordre d'affichage</label>
+        <input type="number" id="ordre" name="ordre" value="{{ item.ordre }}">
+      </div>
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_published" name="is_published" value="true" {% if item.is_published %}checked{% endif %}>
+      <label for="is_published" style="margin:0">Publiée (visible immédiatement sur le site)</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/videos" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}
