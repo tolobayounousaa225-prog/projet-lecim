@@ -588,12 +588,15 @@ function loadHeroStats() {
       if (!stats) return;
       var plusFormat = function (v) { return v + "+"; };
       var elevesFormat = function (v) { return v.toLocaleString("fr-FR") + "+"; };
+      // Le nombre de régions est un total officiel fixe (31), pas une mesure
+      // approximative appelée à grandir — pas de "+" comme pour les autres chiffres.
+      var exactFormat = function (v) { return String(v); };
       if (ecolesEl && stats.ecoles) animateCountUp(ecolesEl, stats.ecoles, plusFormat);
-      if (regionsEl && stats.regions) animateCountUp(regionsEl, stats.regions, plusFormat);
+      if (regionsEl && stats.regions) animateCountUp(regionsEl, stats.regions, exactFormat);
       if (enseignantsEl && stats.enseignants) animateCountUp(enseignantsEl, stats.enseignants, plusFormat);
       if (elevesEl && stats.eleves) animateCountUp(elevesEl, stats.eleves, elevesFormat);
       if (badgeEcolesEl && stats.ecoles) animateCountUp(badgeEcolesEl, stats.ecoles, plusFormat);
-      if (badgeRegionsEl && stats.regions) animateCountUp(badgeRegionsEl, stats.regions, plusFormat);
+      if (badgeRegionsEl && stats.regions) animateCountUp(badgeRegionsEl, stats.regions, exactFormat);
     })
     .catch(function () {
       // API indisponible : les chiffres par défaut codés dans la page restent affichés.
