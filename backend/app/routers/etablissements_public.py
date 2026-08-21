@@ -36,12 +36,12 @@ def list_etablissements(db: Session = Depends(get_db)):
 def etablissements_stats(db: Session = Depends(get_db)):
     """Chiffres clés publics pour la page d'accueil de la vitrine."""
     ecoles = db.query(models.Etablissement).count()
-    regions = (
-        db.query(models.Etablissement.bureau_local)
-        .filter(models.Etablissement.bureau_local.isnot(None))
-        .distinct()
-        .count()
-    )
+    # Nombre officiel de régions de Côte d'Ivoire (donnée géographique fixe, pas une
+    # mesure de couverture réelle) — la Côte d'Ivoire compte 31 régions rattachées à
+    # 12 districts ordinaires, plus 2 districts autonomes (Abidjan, Yamoussoukro) sans
+    # région propre. Ancien calcul (distinct(bureau_local)) comptait les communes, pas
+    # les régions, d'où un total supérieur à 31 affiché par erreur.
+    regions = 31
     enseignants = db.query(models.Enseignant).count()
 
     derniere_annee = db.query(func.max(models.Effectif.annee_scolaire)).scalar()
