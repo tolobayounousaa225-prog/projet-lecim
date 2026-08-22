@@ -214,6 +214,10 @@ class User(Base):
     def can_manage_messagerie(self) -> bool:
         return self.has_module("messagerie")
 
+    @property
+    def can_manage_courrier(self) -> bool:
+        return self.has_module("courrier")
+
     def pending_action_counts(self) -> dict[str, int]:
         """Nombre d'éléments en attente d'action par rubrique de la barre latérale
         admin (ex : ressources non publiées, dons non confirmés...) — calculé via
@@ -526,6 +530,36 @@ class Document(Base):
     )
 
     uploaded_by: Mapped["User | None"] = relationship()
+
+
+class Courrier(Base):
+    """Registre du courrier arrivé/départ de la LECIM — numéro de référence, date,
+    correspondant, objet et copie scannée optionnelle. Module distinct de
+    `Document` (PV de réunion) : usage administratif courant, pas lié à une réunion."""
+
+    __tablename__ = "courriers"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    type: Mapped[str] = mapped_column(String(10), nullable=False)  # "arrivee" | "depart"
+    numero: Mapped[str] = mapped_column(String(100), nullable=False)
+    date_courrier: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    correspondant: Mapped[str] = mapped_column(String(255), nullable=False)
+    objet: Mapped[str] = mapped_column(String(500), nullable=False)
+    observation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    original_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    @property
+    def type_label(self) -> str:
+        return {"arrivee": "Courrier arrivé", "depart": "Courrier départ"}.get(self.type, self.type)
+
+
+COURRIER_TYPES = {
+    "arrivee": "Arrivée",
+    "depart": "Départ",
+}
 
 
 class Photo(Base):

@@ -181,6 +181,7 @@ MODULES: dict[str, str] = {
     "cartes_scolaires": "Cartes scolaires des élèves (validation, impression)",
     "messagerie": "Messagerie avec les établissements membres",
     "adhesion_examen": "Examen et validation des demandes d'adhésion",
+    "courrier": "Registre du courrier (arrivée / départ)",
 }
 
 # Suggestion de cases pré-cochées lorsqu'un poste est sélectionné à la création

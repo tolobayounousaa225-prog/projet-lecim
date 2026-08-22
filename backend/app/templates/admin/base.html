@@ -65,10 +65,11 @@
       </div>
       {% endif %}
 
-      {% if admin.can_manage_documents or admin.can_manage_photos or admin.can_manage_news or admin.can_manage_activities or admin.can_manage_contact or admin.can_manage_publications or admin.can_manage_site_content %}
+      {% if admin.can_manage_documents or admin.can_manage_photos or admin.can_manage_news or admin.can_manage_activities or admin.can_manage_contact or admin.can_manage_publications or admin.can_manage_site_content or admin.can_manage_courrier %}
       <div class="nav-section">
         <span class="nav-section-title">Communication &amp; site vitrine</span>
         {% if admin.can_manage_documents %}<a href="/admin/documents" class="{{ 'active' if active == 'documents' else '' }}">Documents &amp; PV</a>{% endif %}
+        {% if admin.can_manage_courrier %}<a href="/admin/courrier" class="{{ 'active' if active == 'courrier' else '' }}">Registre du courrier</a>{% endif %}
         {% if admin.can_manage_photos %}<a href="/admin/photos" class="{{ 'active' if active == 'photos' else '' }}">Galerie photo</a>{% endif %}
         {% if admin.can_manage_publications %}<a href="/admin/videos" class="{{ 'active' if active == 'videos' else '' }}">Vidéothèque</a>{% endif %}
         {% if admin.can_manage_news %}<a href="/admin/news" class="{{ 'active' if active == 'news' else '' }}">Actualités du site</a>{% endif %}
