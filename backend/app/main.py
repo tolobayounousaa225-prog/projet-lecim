@@ -46,6 +46,7 @@ from .routers import (
     admin_fondateurs,
     admin_gouvernance,
     admin_historique,
+    admin_historique_postes,
     admin_messagerie,
     admin_newsletter,
     admin_objectifs_principes_moyens,
@@ -62,6 +63,7 @@ from .routers import (
     admin_sondages,
     admin_sondages_express,
     admin_statistiques,
+    admin_taches,
     admin_temoignages,
     admin_users,
     admin_videos,
@@ -295,6 +297,7 @@ app.include_router(fondateurs.router)
 app.include_router(admin_conseil_administration.router)
 app.include_router(conseil_administration.router)
 app.include_router(admin_courrier.router)
+app.include_router(admin_historique_postes.router)
 app.include_router(admin_gouvernance.router)
 app.include_router(gouvernance.router)
 app.include_router(admin_site_content.router)
@@ -302,6 +305,7 @@ app.include_router(site_content.router)
 app.include_router(admin_sondages.router)
 app.include_router(admin_sondages_express.router)
 app.include_router(admin_temoignages.router)
+app.include_router(admin_taches.router)
 app.include_router(admin_videos.router)
 app.include_router(admin_statistiques.router)
 app.include_router(admin_newsletter.router)

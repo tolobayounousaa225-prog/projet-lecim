@@ -1,0 +1,63 @@
+{% extends "admin/base.html" %}
+{% block title %}Mes tâches{% endblock %}
+{% block content %}
+<h1>Mes tâches</h1>
+<p style="margin-top:-14px; color:var(--text-muted); font-size:0.9rem;">
+  Liste privée — visible par vous seul(e). Utile pour vos dossiers en cours (courriers à
+  répondre, demandes à traiter, suivis personnels).
+</p>
+
+<div class="form-card" style="max-width:none; margin-bottom:26px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:14px;">Ajouter une tâche</strong>
+  <form method="post" action="/admin/taches/new">
+    <div class="form-group">
+      <label for="titre">Titre</label>
+      <input type="text" id="titre" name="titre" required maxlength="255">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="description">Note (optionnel)</label>
+        <input type="text" id="description" name="description">
+      </div>
+      <div class="form-group">
+        <label for="echeance">Échéance (optionnel)</label>
+        <input type="date" id="echeance" name="echeance">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Ajouter</button>
+  </form>
+</div>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th style="width:44px"></th><th>Titre</th><th>Note</th><th>Échéance</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr style="{% if item.is_done %}opacity:.55;{% endif %}">
+      <td>
+        <form method="post" action="/admin/taches/{{ item.id }}/toggle">
+          <button type="submit" class="btn btn-outline btn-sm" style="padding:4px 9px;" title="{{ 'Marquer à faire' if item.is_done else 'Marquer terminée' }}">{{ "✓" if item.is_done else "○" }}</button>
+        </form>
+      </td>
+      <td style="{% if item.is_done %}text-decoration:line-through;{% endif %}">{{ item.titre }}</td>
+      <td style="color:var(--text-muted); font-size:0.85rem;">{{ item.description or "—" }}</td>
+      <td>
+        {% if item.echeance %}
+          <span class="pill {{ 'pill-red' if not item.is_done and item.echeance < today else 'pill-muted' }}">{{ item.echeance.strftime("%d/%m/%Y") }}</span>
+        {% else %}<span style="color:var(--text-muted)">—</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <form method="post" action="/admin/taches/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cette tâche ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune tâche pour le moment.</div>
+{% endif %}
+{% endblock %}

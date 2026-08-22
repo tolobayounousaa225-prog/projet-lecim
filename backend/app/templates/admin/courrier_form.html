@@ -16,13 +16,15 @@
         <label for="type">Type</label>
         <select id="type" name="type" required>
           {% for key, label in types.items() %}
-          <option value="{{ key }}" {% if item and item.type == key %}selected{% endif %}>{{ label }}</option>
+          <option value="{{ key }}" {% if (item and item.type == key) or (not item and (default_type|default('arrivee')) == key) %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
       </div>
       <div class="form-group">
         <label for="numero">N° de référence</label>
-        <input type="text" id="numero" name="numero" required value="{{ item.numero if item else '' }}">
+        <input type="text" id="numero" name="numero" required
+               value="{{ item.numero if item else (suggestions|default({})).get(default_type|default('arrivee'), '') }}">
+        {% if not item %}<p style="margin:6px 0 0; font-size:0.78rem; color:var(--text-muted);">Numéro suggéré automatiquement — modifiable avant l'enregistrement.</p>{% endif %}
       </div>
     </div>
     <div class="form-row">
@@ -54,4 +56,25 @@
     <a href="/admin/courrier" class="btn btn-outline">Annuler</a>
   </form>
 </div>
+
+{% if not item %}
+<script>
+(function () {
+  var suggestions = {{ (suggestions|default({}))|tojson }};
+  var typeSelect = document.getElementById("type");
+  var numeroInput = document.getElementById("numero");
+  if (!typeSelect || !numeroInput) return;
+  var numeroEditedManually = false;
+  numeroInput.addEventListener("input", function () {
+    // Dès que l'utilisateur touche au champ, on arrête de le réécrire à sa place.
+    numeroEditedManually = true;
+  });
+  typeSelect.addEventListener("change", function () {
+    if (numeroEditedManually) return;
+    var suggestion = suggestions[typeSelect.value];
+    if (suggestion) numeroInput.value = suggestion;
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}

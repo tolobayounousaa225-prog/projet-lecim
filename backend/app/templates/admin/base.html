@@ -25,6 +25,7 @@
       <a href="/admin/calendrier" class="{{ 'active' if active == 'calendrier' else '' }}">Calendrier</a>
       <a href="/admin/sondages" class="{{ 'active' if active == 'sondages' else '' }}">Sondages</a>
       <a href="/admin/idees" class="{{ 'active' if active == 'idees' else '' }}">Boîte à idées</a>
+      <a href="/admin/taches" class="{{ 'active' if active == 'taches' else '' }}">Mes tâches</a>
       <a href="/admin/changelog" class="{{ 'active' if active == 'changelog' else '' }}">Nouveautés de la plateforme</a>
 
       {% if admin.can_manage_reunions or admin.can_manage_membres or admin.can_manage_cartes or admin.can_manage_sondages or admin.can_manage_executif or admin.can_manage_delegations or admin.can_manage_historique or admin.can_manage_fondateurs or admin.can_manage_gouvernance or admin.can_examine_adhesions %}
@@ -41,6 +42,7 @@
         {% if admin.can_manage_fondateurs %}<a href="/admin/fondateurs" class="{{ 'active' if active == 'fondateurs' else '' }}">Membres fondateurs</a>{% endif %}
         {% if admin.can_manage_gouvernance %}<a href="/admin/gouvernance" class="{{ 'active' if active == 'gouvernance' else '' }}">Gouvernance (photos du BEN)</a>{% endif %}
         {% if admin.can_manage_gouvernance %}<a href="/admin/conseil-administration" class="{{ 'active' if active == 'conseil_administration' else '' }}">Conseil d'administration</a>{% endif %}
+        {% if admin.can_manage_gouvernance %}<a href="/admin/historique-postes" class="{{ 'active' if active == 'historique_postes' else '' }}">Historique des postes du BEN</a>{% endif %}
       </div>
       {% endif %}
 

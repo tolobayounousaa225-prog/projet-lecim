@@ -1521,6 +1521,45 @@ class HistoriquePresident(Base):
         return f"/api/historique/{self.id}/photo"
 
 
+class HistoriquePoste(Base):
+    """Archive interne (non publique) des postes occupés au Bureau Exécutif
+    National au fil du temps — distinct de HistoriquePresident (public,
+    présidents uniquement) : couvre tous les postes du bureau."""
+
+    __tablename__ = "historique_postes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    poste_label: Mapped[str] = mapped_column(String(255), nullable=False)
+    titulaire_nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    date_debut: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    date_fin: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    @property
+    def statut(self) -> str:
+        return "en_cours" if self.date_fin is None else "termine"
+
+
+# ---------- Tâches personnelles ----------
+
+class TachePersonnelle(Base):
+    """Liste de tâches privée par utilisateur — dossiers à traiter, suivis en
+    cours. Distincte des notifications (informatives et partagées) : ici
+    l'utilisateur gère lui-même sa propre liste et son état d'avancement."""
+
+    __tablename__ = "taches_personnelles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    echeance: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    is_done: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
 # ---------- Membres fondateurs (site vitrine) ----------
 
 class MembreFondateur(Base):

@@ -1,0 +1,42 @@
+{% extends "admin/base.html" %}
+{% block title %}Historique des postes du BEN{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Historique des postes du BEN</h1>
+  <a href="/admin/historique-postes/new" class="btn btn-primary">+ Ajouter une entrée</a>
+</div>
+<p style="color:var(--text-muted); margin-top:-12px;">
+  Archive interne — qui a occupé quel poste et quand. Non visible sur le site public
+  (distinct de l'historique des présidents affiché sur la vitrine).
+</p>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Poste</th><th>Titulaire</th><th>Début</th><th>Fin</th><th>Statut</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.poste_label }}</td>
+      <td>{{ item.titulaire_nom }}</td>
+      <td>{{ item.date_debut.strftime("%d/%m/%Y") }}</td>
+      <td>{{ item.date_fin.strftime("%d/%m/%Y") if item.date_fin else "—" }}</td>
+      <td>
+        {% if item.statut == "en_cours" %}<span class="pill pill-green">En cours</span>
+        {% else %}<span class="pill pill-muted">Terminé</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/historique-postes/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/historique-postes/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cette entrée ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune entrée pour le moment.</div>
+{% endif %}
+{% endblock %}
