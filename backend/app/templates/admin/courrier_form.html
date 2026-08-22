@@ -1,0 +1,57 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier le courrier" if item else "Enregistrer un courrier" }}{% endblock %}
+{% block content %}
+<h1>{{ "Modifier le courrier" if item else "Enregistrer un courrier" }}</h1>
+
+{% if error %}
+<div class="form-card" style="max-width:none; margin-bottom:20px; border-left:4px solid #c0392b;">
+  <strong style="color:#c0392b">{{ error }}</strong>
+</div>
+{% endif %}
+
+<div class="form-card">
+  <form method="post" action="{{ '/admin/courrier/' ~ item.id ~ '/edit' if item else '/admin/courrier/new' }}" enctype="multipart/form-data">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="type">Type</label>
+        <select id="type" name="type" required>
+          {% for key, label in types.items() %}
+          <option value="{{ key }}" {% if item and item.type == key %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="numero">N° de référence</label>
+        <input type="text" id="numero" name="numero" required value="{{ item.numero if item else '' }}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="date_courrier">Date du courrier</label>
+        <input type="date" id="date_courrier" name="date_courrier" required value="{{ item.date_courrier.isoformat() if item else '' }}">
+      </div>
+      <div class="form-group">
+        <label for="correspondant">Correspondant (expéditeur ou destinataire)</label>
+        <input type="text" id="correspondant" name="correspondant" required value="{{ item.correspondant if item else '' }}">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="objet">Objet</label>
+      <input type="text" id="objet" name="objet" required value="{{ item.objet if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="observation">Observation (optionnel)</label>
+      <textarea id="observation" name="observation">{{ item.observation or "" if item else "" }}</textarea>
+    </div>
+    <div class="form-group">
+      <label for="file">Copie scannée (optionnel)</label>
+      {% if item and item.file_path %}
+      <p style="margin:0 0 8px; font-size:0.85rem;"><a href="/admin/courrier/{{ item.id }}/file" target="_blank">{{ item.original_filename }}</a> déjà jointe — choisissez un fichier pour la remplacer.</p>
+      {% endif %}
+      <input type="file" id="file" name="file" accept=".pdf,.doc,.docx,.odt,.jpg,.jpeg,.png,.webp,.gif">
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/courrier" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

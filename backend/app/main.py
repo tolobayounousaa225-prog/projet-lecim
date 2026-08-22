@@ -32,6 +32,7 @@ from .routers import (
     admin_changelog,
     admin_connexions,
     admin_conseil_administration,
+    admin_courrier,
     admin_delegations,
     admin_dons,
     admin_effectifs,
@@ -293,6 +294,7 @@ app.include_router(admin_fondateurs.router)
 app.include_router(fondateurs.router)
 app.include_router(admin_conseil_administration.router)
 app.include_router(conseil_administration.router)
+app.include_router(admin_courrier.router)
 app.include_router(admin_gouvernance.router)
 app.include_router(gouvernance.router)
 app.include_router(admin_site_content.router)

@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+{% block title %}Registre du courrier{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Registre du courrier</h1>
+  <a href="/admin/courrier/new" class="btn btn-primary">+ Enregistrer un courrier</a>
+</div>
+<p style="color:var(--text-muted); margin-top:-12px;">Courrier arrivé et courrier départ de la LECIM — réservé aux comptes connectés.</p>
+
+<div style="display:flex; gap:8px; margin-bottom:20px;">
+  <a href="/admin/courrier" class="btn btn-sm {{ 'btn-primary' if not filtre_type else 'btn-outline' }}">Tous</a>
+  {% for key, label in types.items() %}
+  <a href="/admin/courrier?type={{ key }}" class="btn btn-sm {{ 'btn-primary' if filtre_type == key else 'btn-outline' }}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Type</th><th>N°</th><th>Date</th><th>Correspondant</th><th>Objet</th><th>Fichier</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>
+        {% if item.type == "arrivee" %}<span class="pill pill-green">Arrivée</span>
+        {% else %}<span class="pill pill-gold">Départ</span>{% endif %}
+      </td>
+      <td>{{ item.numero }}</td>
+      <td>{{ item.date_courrier.strftime("%d/%m/%Y") }}</td>
+      <td>{{ item.correspondant }}</td>
+      <td style="max-width:280px;">{{ item.objet }}</td>
+      <td>
+        {% if item.file_path %}<a href="/admin/courrier/{{ item.id }}/file" target="_blank">{{ item.original_filename }}</a>
+        {% else %}<span style="color:var(--text-muted)">—</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/courrier/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/courrier/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cette entrée du registre ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun courrier enregistré pour le moment.</div>
+{% endif %}
+{% endblock %}
