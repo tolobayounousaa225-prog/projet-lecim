@@ -1,0 +1,42 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier l'entrée" if item else "Ajouter une entrée" }}{% endblock %}
+{% block content %}
+<h1>{{ "Modifier l'entrée" if item else "Ajouter une entrée" }}</h1>
+
+{% if error %}
+<div class="form-card" style="max-width:none; margin-bottom:20px; border-left:4px solid #c0392b;">
+  <strong style="color:#c0392b">{{ error }}</strong>
+</div>
+{% endif %}
+
+<div class="form-card">
+  <form method="post" action="{{ '/admin/historique-postes/' ~ item.id ~ '/edit' if item else '/admin/historique-postes/new' }}">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="poste_label">Poste</label>
+        <input type="text" id="poste_label" name="poste_label" required placeholder="ex. 2e Vice-Président chargé de l'Intérieur" value="{{ item.poste_label if item else '' }}">
+      </div>
+      <div class="form-group">
+        <label for="titulaire_nom">Titulaire</label>
+        <input type="text" id="titulaire_nom" name="titulaire_nom" required value="{{ item.titulaire_nom if item else '' }}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="date_debut">Date de début</label>
+        <input type="date" id="date_debut" name="date_debut" required value="{{ item.date_debut.isoformat() if item else '' }}">
+      </div>
+      <div class="form-group">
+        <label for="date_fin">Date de fin (laisser vide si toujours en poste)</label>
+        <input type="date" id="date_fin" name="date_fin" value="{{ item.date_fin.isoformat() if item and item.date_fin else '' }}">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="notes">Notes (optionnel)</label>
+      <textarea id="notes" name="notes">{{ item.notes or "" if item else "" }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/historique-postes" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

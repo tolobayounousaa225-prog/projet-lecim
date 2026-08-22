@@ -3,15 +3,25 @@
 {% block content %}
 <div class="topbar">
   <h1 style="margin:0">Registre du courrier</h1>
-  <a href="/admin/courrier/new" class="btn btn-primary">+ Enregistrer un courrier</a>
+  <div style="display:flex; gap:10px;">
+    <a href="/admin/courrier/export.csv{% if filtre_type or q %}?{% endif %}{% if filtre_type %}type={{ filtre_type }}{% endif %}{% if filtre_type and q %}&{% endif %}{% if q %}q={{ q|urlencode }}{% endif %}" class="btn btn-outline">Exporter en CSV</a>
+    <a href="/admin/courrier/new" class="btn btn-primary">+ Enregistrer un courrier</a>
+  </div>
 </div>
 <p style="color:var(--text-muted); margin-top:-12px;">Courrier arrivé et courrier départ de la LECIM — réservé aux comptes connectés.</p>
 
-<div style="display:flex; gap:8px; margin-bottom:20px;">
-  <a href="/admin/courrier" class="btn btn-sm {{ 'btn-primary' if not filtre_type else 'btn-outline' }}">Tous</a>
-  {% for key, label in types.items() %}
-  <a href="/admin/courrier?type={{ key }}" class="btn btn-sm {{ 'btn-primary' if filtre_type == key else 'btn-outline' }}">{{ label }}</a>
-  {% endfor %}
+<div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:20px; justify-content:space-between;">
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <a href="/admin/courrier{% if q %}?q={{ q|urlencode }}{% endif %}" class="btn btn-sm {{ 'btn-primary' if not filtre_type else 'btn-outline' }}">Tous</a>
+    {% for key, label in types.items() %}
+    <a href="/admin/courrier?type={{ key }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="btn btn-sm {{ 'btn-primary' if filtre_type == key else 'btn-outline' }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+  <form method="get" action="/admin/courrier" style="display:flex; gap:8px;">
+    {% if filtre_type %}<input type="hidden" name="type" value="{{ filtre_type }}">{% endif %}
+    <input type="search" name="q" value="{{ q }}" placeholder="Rechercher (correspondant, objet)..." style="padding:8px 12px; border:1px solid var(--border); border-radius:999px; font-size:0.85rem; min-width:240px;">
+    <button type="submit" class="btn btn-outline btn-sm">Rechercher</button>
+  </form>
 </div>
 
 {% if items %}
@@ -45,6 +55,6 @@
   </tbody>
 </table>
 {% else %}
-<div class="empty-state">Aucun courrier enregistré pour le moment.</div>
+<div class="empty-state">{% if q or filtre_type %}Aucun courrier ne correspond à ce filtre.{% else %}Aucun courrier enregistré pour le moment.{% endif %}</div>
 {% endif %}
 {% endblock %}
