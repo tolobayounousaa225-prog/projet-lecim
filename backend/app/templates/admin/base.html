@@ -8,8 +8,14 @@
 <link rel="stylesheet" href="/static/admin.css">
 </head>
 <body>
+<div class="admin-topbar-mobile">
+  <button type="button" class="admin-nav-toggle" id="admin-nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  <img src="/static/img/logo.jpg" alt="Logo LECIM">
+  <strong>LECIM</strong>
+</div>
+<div class="sidebar-overlay" id="admin-sidebar-overlay"></div>
 <div class="admin-shell">
-  <aside class="sidebar">
+  <aside class="sidebar" id="admin-sidebar">
     <div class="sidebar-brand">
       <img src="/static/img/logo.jpg" alt="Logo LECIM">
       <h2>LECIM</h2>
@@ -125,6 +131,29 @@
     {% block content %}{% endblock %}
   </main>
 </div>
+<script>
+(function () {
+  var toggle = document.getElementById("admin-nav-toggle");
+  var sidebar = document.getElementById("admin-sidebar");
+  var overlay = document.getElementById("admin-sidebar-overlay");
+  if (!toggle || !sidebar || !overlay) return;
+  function close() {
+    sidebar.classList.remove("open");
+    overlay.classList.remove("open");
+    toggle.setAttribute("aria-expanded", "false");
+  }
+  toggle.addEventListener("click", function () {
+    var willOpen = !sidebar.classList.contains("open");
+    sidebar.classList.toggle("open", willOpen);
+    overlay.classList.toggle("open", willOpen);
+    toggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+  });
+  overlay.addEventListener("click", close);
+  sidebar.addEventListener("click", function (e) {
+    if (e.target.closest("a")) close();
+  });
+})();
+</script>
 {% if admin.is_observer %}
 <script>
 document.addEventListener("submit", function (e) {
