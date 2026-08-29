@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session, joinedload
 from . import models
 from .config import settings
 from .finances_constants import RECETTE_CATEGORIES
+from .security_utils import csv_safe
 
 LOGO_PATH = Path(__file__).resolve().parent / "static" / "img" / "logo.jpg"
 
@@ -1026,24 +1027,24 @@ def export_transactions_csv(db: Session, date_debut: datetime.date, date_fin: da
     writer.writerow(["Date", "Type", "Categorie", "Libelle / Etablissement", "Montant (FCFA)"])
 
     for a in data["adhesions"]:
-        writer.writerow([a.date_paiement.isoformat(), "Adhesion", "-", a.etablissement.nom, a.montant])
+        writer.writerow([a.date_paiement.isoformat(), "Adhesion", "-", csv_safe(a.etablissement.nom), a.montant])
     for c in data["cotisations"]:
         writer.writerow(
-            [c.date_paiement.isoformat(), "Cotisation", c.annee_scolaire, c.etablissement.nom, c.montant_paye]
+            [c.date_paiement.isoformat(), "Cotisation", c.annee_scolaire, csv_safe(c.etablissement.nom), c.montant_paye]
         )
     for r in data["recettes"]:
         writer.writerow(
-            [r.date.isoformat(), "Recette", RECETTE_CATEGORIES.get(r.categorie, r.categorie), r.libelle, r.montant]
+            [r.date.isoformat(), "Recette", RECETTE_CATEGORIES.get(r.categorie, r.categorie), csv_safe(r.libelle), r.montant]
         )
     for v in data["ventes_livres"]:
-        writer.writerow([v.date.isoformat(), "Vente de livre", f"Qte {v.quantite}", v.titre, v.montant])
+        writer.writerow([v.date.isoformat(), "Vente de livre", f"Qte {v.quantite}", csv_safe(v.titre), v.montant])
     for de in data["droits_examens"]:
         writer.writerow([
             de.date.isoformat(), "Droit d'examen", de.type_examen or "-",
-            de.libelle + (f" ({de.etablissement.nom})" if de.etablissement else ""), de.montant,
+            csv_safe(de.libelle + (f" ({de.etablissement.nom})" if de.etablissement else "")), de.montant,
         ])
     for d in data["depenses"]:
-        writer.writerow([d.date.isoformat(), "Depense", "-", d.libelle, -d.montant])
+        writer.writerow([d.date.isoformat(), "Depense", "-", csv_safe(d.libelle), -d.montant])
 
     return buffer.getvalue()
 
@@ -1060,7 +1061,7 @@ def export_resultats_csv(db: Session) -> str:
     writer.writerow(["Annee scolaire", "Etablissement", "Examen", "Inscrits", "Admis", "Dont garcons", "Dont filles", "Taux de reussite (%)", "Publie"])
     for r in items:
         writer.writerow([
-            r.annee_scolaire, r.etablissement.nom, r.type_examen,
+            r.annee_scolaire, csv_safe(r.etablissement.nom), r.type_examen,
             r.nombre_inscrits, r.nombre_admis, r.nombre_admis_garcons, r.nombre_admis_filles,
             r.taux_reussite, "Oui" if r.is_published else "Non",
         ])
@@ -1078,7 +1079,7 @@ def export_effectifs_csv(db: Session) -> str:
     writer = csv.writer(buffer, delimiter=";")
     writer.writerow(["Annee scolaire", "Etablissement", "Niveau", "Garcons", "Filles", "Total"])
     for e in items:
-        writer.writerow([e.annee_scolaire, e.etablissement.nom, e.niveau_label, e.nombre_garcons, e.nombre_filles, e.total])
+        writer.writerow([e.annee_scolaire, csv_safe(e.etablissement.nom), e.niveau_label, e.nombre_garcons, e.nombre_filles, e.total])
     return buffer.getvalue()
 
 
@@ -1176,22 +1177,22 @@ def export_transactions_xlsx(db: Session, date_debut: datetime.date, date_fin: d
         cell.alignment = Alignment(horizontal="center")
 
     for a in data["adhesions"]:
-        sheet.append([a.date_paiement, "Adhésion", "-", a.etablissement.nom, a.montant])
+        sheet.append([a.date_paiement, "Adhésion", "-", csv_safe(a.etablissement.nom), a.montant])
     for c in data["cotisations"]:
-        sheet.append([c.date_paiement, "Cotisation", c.annee_scolaire, c.etablissement.nom, c.montant_paye])
+        sheet.append([c.date_paiement, "Cotisation", c.annee_scolaire, csv_safe(c.etablissement.nom), c.montant_paye])
     for r in data["recettes"]:
         sheet.append(
-            [r.date, "Recette", RECETTE_CATEGORIES.get(r.categorie, r.categorie), r.libelle, r.montant]
+            [r.date, "Recette", RECETTE_CATEGORIES.get(r.categorie, r.categorie), csv_safe(r.libelle), r.montant]
         )
     for v in data["ventes_livres"]:
-        sheet.append([v.date, "Vente de livre", f"Qté {v.quantite}", v.titre, v.montant])
+        sheet.append([v.date, "Vente de livre", f"Qté {v.quantite}", csv_safe(v.titre), v.montant])
     for de in data["droits_examens"]:
         sheet.append([
             de.date, "Droit d'examen", de.type_examen or "-",
-            de.libelle + (f" ({de.etablissement.nom})" if de.etablissement else ""), de.montant,
+            csv_safe(de.libelle + (f" ({de.etablissement.nom})" if de.etablissement else "")), de.montant,
         ])
     for d in data["depenses"]:
-        sheet.append([d.date, "Dépense", "-", d.libelle, -d.montant])
+        sheet.append([d.date, "Dépense", "-", csv_safe(d.libelle), -d.montant])
 
     for row in sheet.iter_rows(min_row=2, min_col=1, max_col=1):
         row[0].number_format = "DD/MM/YYYY"

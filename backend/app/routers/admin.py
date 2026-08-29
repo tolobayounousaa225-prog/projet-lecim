@@ -25,6 +25,7 @@ from ..deps import (
 from ..login_security import AccountLockedError, authenticate_user
 from ..push import send_urgent_news_push
 from ..security import create_access_token, hash_password, password_policy_error, verify_password
+from ..security_utils import csv_safe, safe_content_disposition
 from .. import storage
 from .admin_files import ALLOWED_PHOTO_EXT
 
@@ -582,10 +583,10 @@ def activities_inscriptions_csv(
     writer.writerow(["Nom", "Téléphone", "E-mail", "Établissement", "Inscrit le"])
     for item in items:
         writer.writerow([
-            item.nom, item.telephone or "", item.email or "", item.etablissement or "",
+            csv_safe(item.nom), csv_safe(item.telephone or ""), csv_safe(item.email or ""), csv_safe(item.etablissement or ""),
             item.created_at.strftime("%d/%m/%Y %H:%M"),
         ])
-    filename = f"inscriptions-{activity.title[:40]}.csv".replace("/", "-")
+    filename = safe_content_disposition(f"inscriptions-{activity.title[:40]}.csv".replace("/", "-"), "inscriptions.csv")
     return Response(
         content=buf.getvalue(),
         media_type="text/csv",

@@ -66,6 +66,12 @@ def historique_postes_create(
             {"admin": user, "item": None, "active": "historique_postes", "error": "Date invalide."},
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+    if parsed_fin and parsed_fin < parsed_debut:
+        return templates.TemplateResponse(
+            request, "admin/historique_postes_form.html",
+            {"admin": user, "item": None, "active": "historique_postes", "error": "La date de fin ne peut pas être antérieure à la date de début."},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
     poste = models.HistoriquePoste(
         poste_label=poste_label, titulaire_nom=titulaire_nom, date_debut=parsed_debut,
         date_fin=parsed_fin, notes=notes or None, created_by_id=user.id,
@@ -116,6 +122,12 @@ def historique_postes_update(
         return templates.TemplateResponse(
             request, "admin/historique_postes_form.html",
             {"admin": user, "item": item, "active": "historique_postes", "error": "Date invalide."},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    if parsed_fin and parsed_fin < parsed_debut:
+        return templates.TemplateResponse(
+            request, "admin/historique_postes_form.html",
+            {"admin": user, "item": item, "active": "historique_postes", "error": "La date de fin ne peut pas être antérieure à la date de début."},
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     item.poste_label = poste_label

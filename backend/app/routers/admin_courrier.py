@@ -13,6 +13,7 @@ from .. import audit, models, storage
 from ..database import get_db
 from ..deps import require_courrier_access_web
 from ..models import COURRIER_TYPES
+from ..security_utils import csv_safe, safe_content_disposition
 from .admin_files import ALLOWED_DOCUMENT_EXT, ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin/courrier", tags=["admin-courrier"])
@@ -79,8 +80,8 @@ def courrier_export_csv(
     writer.writerow(["Type", "Numéro", "Date", "Correspondant", "Objet", "Observation"])
     for item in items:
         writer.writerow([
-            item.type_label, item.numero, item.date_courrier.strftime("%d/%m/%Y"),
-            item.correspondant, item.objet, item.observation or "",
+            item.type_label, csv_safe(item.numero), item.date_courrier.strftime("%d/%m/%Y"),
+            csv_safe(item.correspondant), csv_safe(item.objet), csv_safe(item.observation or ""),
         ])
     return Response(
         content=buf.getvalue(),
@@ -268,5 +269,5 @@ def courrier_file(
     return Response(
         content=stored.data,
         media_type=stored.content_type,
-        headers={"Content-Disposition": f'attachment; filename="{item.original_filename}"'},
+        headers={"Content-Disposition": f'attachment; filename="{safe_content_disposition(item.original_filename)}"'},
     )

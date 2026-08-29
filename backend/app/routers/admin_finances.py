@@ -14,6 +14,7 @@ from ..database import get_db
 from ..deps import require_finance_access_web
 from ..email_utils import send_email
 from ..finances_constants import ADHESION_MONTANT, BUDGET_CATEGORIES, COTISATION_RULES, RECETTE_CATEGORIES, cotisation_rule
+from ..security_utils import csv_safe, safe_content_disposition
 from ..reports import (
     current_annee_scolaire,
     etablissements_en_retard,
@@ -451,12 +452,12 @@ def etablissements_export_csv(
     writer.writerow(["Code adhesion", "Nom", "Categorie", "District", "Region", "Commune (bureau local)", "Statut", "Date adhesion", "Telephone", "Email", "Agrement"])
     for e in items:
         writer.writerow([
-            e.code_adhesion or "", e.nom,
+            csv_safe(e.code_adhesion or ""), csv_safe(e.nom),
             "Partenaire" if e.categorie == "partenaire" else "Membre affilie",
-            e.district or "", e.region or "", e.bureau_local or "",
+            csv_safe(e.district or ""), csv_safe(e.region or ""), csv_safe(e.bureau_local or ""),
             "Subventionne" if e.statut == "subventionne" else "Non subventionne",
             e.date_adhesion.isoformat() if e.date_adhesion else "",
-            e.contact_telephone or "", e.contact_email or "", e.numero_agrement or "",
+            csv_safe(e.contact_telephone or ""), csv_safe(e.contact_email or ""), csv_safe(e.numero_agrement or ""),
         ])
     return Response(
         content="﻿" + buffer.getvalue(),
@@ -1097,7 +1098,7 @@ def depenses_justificatif(
     return Response(
         content=stored.data,
         media_type=stored.content_type,
-        headers={"Content-Disposition": f'attachment; filename="{depense.justificatif_filename}"'},
+        headers={"Content-Disposition": f'attachment; filename="{safe_content_disposition(depense.justificatif_filename)}"'},
     )
 
 

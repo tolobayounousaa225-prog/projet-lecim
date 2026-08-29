@@ -9,6 +9,7 @@ from .. import models, storage
 from ..config import settings
 from ..database import get_db
 from ..deps import require_documents_access_web, require_photos_access_web
+from ..security_utils import safe_content_disposition
 
 router = APIRouter(prefix="/admin", tags=["admin-files"])
 
@@ -117,7 +118,7 @@ def documents_file(
     return Response(
         content=stored.data,
         media_type=stored.content_type,
-        headers={"Content-Disposition": f'attachment; filename="{document.original_filename}"'},
+        headers={"Content-Disposition": f'attachment; filename="{safe_content_disposition(document.original_filename)}"'},
     )
 
 
