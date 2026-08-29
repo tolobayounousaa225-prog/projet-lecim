@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas, storage
 from ..database import get_db
+from ..security_utils import safe_content_disposition
 
 router = APIRouter(prefix="/api/ressources-officielles", tags=["ressources-officielles"])
 
@@ -40,5 +41,5 @@ def ressource_officielle_file(ressource_id: int, db: Session = Depends(get_db)):
     return Response(
         content=stored.data,
         media_type=stored.content_type,
-        headers={"Content-Disposition": f'attachment; filename="{ressource.original_filename}"'},
+        headers={"Content-Disposition": f'attachment; filename="{safe_content_disposition(ressource.original_filename)}"'},
     )

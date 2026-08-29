@@ -12,6 +12,7 @@ from .. import models, storage
 from ..database import get_db
 from ..deps import require_etab_ressources_web
 from ..models import RESSOURCE_CATEGORIES
+from ..security_utils import safe_content_disposition
 from .admin_files import ALLOWED_DOCUMENT_EXT
 
 router = APIRouter(tags=["etablissement-ressources"])
@@ -149,5 +150,5 @@ def etablissement_ressources_file(
     return Response(
         content=stored.data,
         media_type=stored.content_type,
-        headers={"Content-Disposition": f'attachment; filename="{ressource.original_filename}"'},
+        headers={"Content-Disposition": f'attachment; filename="{safe_content_disposition(ressource.original_filename)}"'},
     )

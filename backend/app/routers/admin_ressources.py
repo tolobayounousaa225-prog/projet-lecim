@@ -13,6 +13,7 @@ from .. import audit, models, storage
 from ..database import get_db
 from ..deps import require_publications_access_web
 from ..models import RESSOURCE_CATEGORIES
+from ..security_utils import safe_content_disposition
 
 router = APIRouter(prefix="/admin/ressources-pedagogiques", tags=["admin-ressources"])
 
@@ -87,5 +88,5 @@ def ressource_file(
     return Response(
         content=stored.data,
         media_type=stored.content_type,
-        headers={"Content-Disposition": f'attachment; filename="{ressource.original_filename}"'},
+        headers={"Content-Disposition": f'attachment; filename="{safe_content_disposition(ressource.original_filename)}"'},
     )
