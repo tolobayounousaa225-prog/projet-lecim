@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # URL publique de ce backend, utilisée pour générer le lien encodé dans le QR code
     # des cartes, attestations et certificats. Doit toujours pointer vers le domaine
     # réellement joignable par le public qui scanne le code — jamais localhost.
-    public_base_url: str = "https://projet-lecim-production.up.railway.app"
+    public_base_url: str = "https://213-199-37-74.sslip.io"
 
     # URL publique du site vitrine (GitHub Pages), distinct du backend ci-dessus —
     # utilisée pour les liens dans le flux RSS et le sitemap.
