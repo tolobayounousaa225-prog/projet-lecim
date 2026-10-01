@@ -22,7 +22,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: "Segoe UI", "Poppins", Arial, sans-serif;
+  font-family: "Plus Jakarta Sans", "Segoe UI", "Poppins", Arial, sans-serif;
   color: var(--text-dark);
   background: var(--white);
   line-height: 1.6;
@@ -583,6 +583,12 @@ ul { list-style: none; }
   padding: 20px;
   text-align: center;
   backdrop-filter: blur(4px);
+  transition: background-color .25s ease, border-color .25s ease, transform .25s ease;
+}
+.stat-card:hover {
+  background: rgba(255,255,255,.14);
+  border-color: rgba(255,255,255,.3);
+  transform: translateY(-3px);
 }
 
 .stat-card strong { display: block; font-size: 1.8rem; color: var(--gold-light); }
@@ -727,9 +733,13 @@ section { padding: 80px 0; }
   border-radius: var(--radius);
   padding: 30px 24px;
   box-shadow: var(--shadow);
-  transition: transform .2s ease;
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
 }
-.mission-card:hover { transform: translateY(-5px); }
+.mission-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(4,56,114,.18);
+}
 
 .mission-icon {
   width: 54px; height: 54px;
