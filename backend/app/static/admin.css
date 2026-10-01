@@ -32,7 +32,9 @@ a { color: var(--green); text-decoration: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--green-dark), var(--green));
+  background: linear-gradient(135deg, var(--green-dark), var(--green), var(--green-dark));
+  background-size: 200% 200%;
+  animation: loginGradientDrift 18s ease-in-out infinite;
   padding: 20px;
 }
 .login-card {
@@ -42,8 +44,28 @@ a { color: var(--green); text-decoration: none; }
   width: 100%;
   max-width: 380px;
   box-shadow: var(--shadow);
+  animation: loginCardIn .6s cubic-bezier(.16,.8,.24,1) both;
 }
-.login-logo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; margin: 0 auto 16px; display: block; }
+.login-logo {
+  width: 72px; height: 72px; border-radius: 50%; object-fit: cover; margin: 0 auto 16px; display: block;
+  animation: loginLogoIn .7s ease .1s both;
+}
+
+@keyframes loginGradientDrift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes loginCardIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes loginLogoIn {
+  from { opacity: 0; transform: scale(.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-shell, .login-card, .login-logo { animation: none !important; }
+}
 .login-card h1 { color: var(--green-dark); font-size: 1.3rem; margin: 0 0 6px; text-align: center; }
 .login-card p.sub { color: var(--text-muted); font-size: 0.88rem; margin: 0 0 22px; text-align: center; }
 .error-box {
@@ -126,6 +148,13 @@ a { color: var(--green); text-decoration: none; }
 .form-group input, .form-group textarea {
   width: 100%; padding: 11px 13px; border: 1px solid var(--border); border-radius: 8px;
   font-size: 0.9rem; font-family: inherit; background: var(--cream);
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+.form-group input:focus, .form-group textarea:focus {
+  outline: none;
+  border-color: var(--green-light);
+  background: var(--white);
+  box-shadow: 0 0 0 4px rgba(4,56,114,.10);
 }
 .form-group textarea { min-height: 130px; resize: vertical; }
 .checkbox-row { display: flex; align-items: center; gap: 8px; }
