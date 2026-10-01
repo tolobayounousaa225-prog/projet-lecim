@@ -653,11 +653,11 @@ function loadSiteContent() {
       bgElements.forEach(function (el) {
         var url = values[el.getAttribute("data-content-bg-key")];
         if (!url || isDataSaverMode()) return;
-        el.style.backgroundImage =
+        el.style.setProperty(
+          "--hero-bg-image",
           "linear-gradient(135deg, rgba(10,61,99,.88) 0%, rgba(4,56,114,.82) 55%, rgba(8,58,92,.90) 100%), url('" +
-          API_BASE + url + "')";
-        el.style.backgroundSize = "cover";
-        el.style.backgroundPosition = "center";
+          API_BASE + url + "')"
+        );
         el.classList.add("has-bg-image");
       });
     })
