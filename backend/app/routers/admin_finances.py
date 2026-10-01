@@ -18,6 +18,7 @@ from ..security_utils import csv_safe, safe_content_disposition
 from ..reports import (
     current_annee_scolaire,
     etablissements_en_retard,
+    export_etablissements_xlsx,
     export_transactions_csv,
     export_transactions_xlsx,
     generate_comparative_report_pdf,
@@ -377,6 +378,22 @@ def finances_rapport_comparatif_generate(
 
 # ---------- Établissements affiliés ----------
 
+def _etablissements_filtered(
+    db: Session, bureau_local: str | None, categorie: str | None,
+    district: str | None, region: str | None,
+):
+    query = db.query(models.Etablissement)
+    if bureau_local:
+        query = query.filter(models.Etablissement.bureau_local == bureau_local)
+    if categorie in ("membre", "partenaire"):
+        query = query.filter(models.Etablissement.categorie == categorie)
+    if district:
+        query = query.filter(models.Etablissement.district == district)
+    if region:
+        query = query.filter(models.Etablissement.region == region)
+    return query.order_by(models.Etablissement.nom).all()
+
+
 @router.get("/etablissements")
 def etablissements_list(
     request: Request,
@@ -388,16 +405,7 @@ def etablissements_list(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
-    query = db.query(models.Etablissement)
-    if bureau_local:
-        query = query.filter(models.Etablissement.bureau_local == bureau_local)
-    if categorie in ("membre", "partenaire"):
-        query = query.filter(models.Etablissement.categorie == categorie)
-    if district:
-        query = query.filter(models.Etablissement.district == district)
-    if region:
-        query = query.filter(models.Etablissement.region == region)
-    items = query.order_by(models.Etablissement.nom).all()
+    items = _etablissements_filtered(db, bureau_local, categorie, district, region)
     bureaux_locaux = [
         row[0] for row in db.query(models.Etablissement.bureau_local)
         .filter(models.Etablissement.bureau_local.isnot(None))
@@ -463,6 +471,24 @@ def etablissements_export_csv(
         content="﻿" + buffer.getvalue(),
         media_type="text/csv",
         headers={"Content-Disposition": 'attachment; filename="etablissements_affilies.csv"'},
+    )
+
+
+@router.get("/etablissements/export.xlsx")
+def etablissements_export_xlsx(
+    bureau_local: str | None = None,
+    categorie: str | None = None,
+    district: str | None = None,
+    region: str | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    items = _etablissements_filtered(db, bureau_local, categorie, district, region)
+    xlsx_bytes = export_etablissements_xlsx(items)
+    return Response(
+        content=xlsx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="etablissements_affilies.xlsx"'},
     )
 
 

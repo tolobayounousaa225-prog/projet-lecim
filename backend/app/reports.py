@@ -216,6 +216,97 @@ def multi_year_financial_summary(db: Session) -> list[dict]:
     return result
 
 
+def etablissements_growth_by_year(db: Session) -> list[dict]:
+    """Évolution du nombre d'établissements affiliés, regroupés par année scolaire
+    d'adhésion — pour visualiser la croissance du réseau dans le temps sur le tableau
+    de bord exécutif. Les établissements sans date d'adhésion renseignée (champ
+    nullable, fiches anciennes) n'apparaissent pas dans la chronologie, uniquement
+    dans le total actuel affiché ailleurs sur le tableau de bord."""
+    dates = [
+        row[0] for row in db.query(models.Etablissement.date_adhesion)
+        .filter(models.Etablissement.date_adhesion.isnot(None))
+        .all()
+    ]
+    nouveaux_par_annee: dict[str, int] = {}
+    for d in dates:
+        annee = current_annee_scolaire(d)
+        nouveaux_par_annee[annee] = nouveaux_par_annee.get(annee, 0) + 1
+
+    result = []
+    cumule = 0
+    for annee in sorted(nouveaux_par_annee.keys()):
+        cumule += nouveaux_par_annee[annee]
+        result.append({"annee": annee, "nouveaux": nouveaux_par_annee[annee], "cumule": cumule})
+    return result
+
+
+def comparatif_regions(db: Session, annee_scolaire: str | None = None) -> list[dict]:
+    """Vue comparative multi-indicateurs par région (écoles affiliées, effectifs
+    déclarés, taux de réussite aux examens) — distincte du baromètre existant qui
+    ne compare que les résultats d'examens, et qui regroupe par bureau_local
+    (commune) plutôt que par région. Les établissements sans région renseignée
+    (`region` est un champ texte libre nullable) sont exclus de la comparaison."""
+    annee_scolaire = annee_scolaire or current_annee_scolaire()
+
+    ecoles_rows = (
+        db.query(models.Etablissement.region, func.count(models.Etablissement.id))
+        .filter(models.Etablissement.region.isnot(None))
+        .group_by(models.Etablissement.region)
+        .all()
+    )
+    effectifs_rows = (
+        db.query(
+            models.Etablissement.region,
+            func.coalesce(func.sum(models.Effectif.nombre_garcons + models.Effectif.nombre_filles), 0),
+        )
+        .join(models.Etablissement, models.Etablissement.id == models.Effectif.etablissement_id)
+        .filter(models.Etablissement.region.isnot(None), models.Effectif.annee_scolaire == annee_scolaire)
+        .group_by(models.Etablissement.region)
+        .all()
+    )
+    examens_rows = (
+        db.query(
+            models.Etablissement.region,
+            func.coalesce(func.sum(models.ResultatExamen.nombre_inscrits), 0),
+            func.coalesce(func.sum(models.ResultatExamen.nombre_admis), 0),
+        )
+        .join(models.Etablissement, models.Etablissement.id == models.ResultatExamen.etablissement_id)
+        .filter(
+            models.Etablissement.region.isnot(None),
+            models.ResultatExamen.is_published.is_(True),
+            models.ResultatExamen.annee_scolaire == annee_scolaire,
+        )
+        .group_by(models.Etablissement.region)
+        .all()
+    )
+
+    buckets: dict[str, dict] = {}
+
+    def bucket(region: str) -> dict:
+        return buckets.setdefault(region, {"ecoles": 0, "effectifs": 0, "inscrits": 0, "admis": 0})
+
+    for region, count in ecoles_rows:
+        bucket(region)["ecoles"] = count
+    for region, total in effectifs_rows:
+        bucket(region)["effectifs"] = total
+    for region, inscrits, admis in examens_rows:
+        bucket(region)["inscrits"] = inscrits
+        bucket(region)["admis"] = admis
+
+    result = []
+    for region in sorted(buckets.keys()):
+        b = buckets[region]
+        result.append({
+            "region": region,
+            "ecoles": b["ecoles"],
+            "effectifs": b["effectifs"],
+            "inscrits": b["inscrits"],
+            "admis": b["admis"],
+            "taux_reussite": round(b["admis"] / b["inscrits"] * 100, 1) if b["inscrits"] else None,
+        })
+    return result
+
+
 def _period_data(db: Session, date_debut: datetime.date, date_fin: datetime.date) -> dict:
     adhesions = (
         db.query(models.Adhesion)
@@ -1209,3 +1300,91 @@ def export_transactions_xlsx(db: Session, date_debut: datetime.date, date_fin: d
     buffer = io.BytesIO()
     wb.save(buffer)
     return buffer.getvalue()
+
+
+def export_etablissements_xlsx(items: list["models.Etablissement"]) -> bytes:
+    """Export Excel de la liste des établissements affiliés — items déjà filtrés par
+    l'appelant (mêmes filtres région/district/catégorie/commune que la liste admin)."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+
+    wb = Workbook()
+    sheet = wb.active
+    sheet.title = "Établissements"
+
+    header_fill = PatternFill(start_color="0B3D2E", end_color="0B3D2E", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+
+    headers = [
+        "Code adhésion", "Nom", "Catégorie", "District", "Région", "Commune (bureau local)",
+        "Statut", "Date adhésion", "Téléphone", "E-mail", "Agrément",
+    ]
+    sheet.append(headers)
+    for col in range(1, len(headers) + 1):
+        cell = sheet.cell(row=1, column=col)
+        cell.fill = header_fill
+        cell.font = header_font
+
+    for e in items:
+        sheet.append([
+            e.code_adhesion or "", e.nom,
+            "Partenaire" if e.categorie == "partenaire" else "Membre affilié",
+            e.district or "", e.region or "", e.bureau_local or "",
+            "Subventionné" if e.statut == "subventionne" else "Non subventionné",
+            e.date_adhesion, e.contact_telephone or "", e.contact_email or "", e.numero_agrement or "",
+        ])
+
+    for row in sheet.iter_rows(min_row=2, min_col=8, max_col=8):
+        row[0].number_format = "DD/MM/YYYY"
+
+    sheet.auto_filter.ref = f"A1:{chr(64 + len(headers))}{sheet.max_row}"
+    widths = [16, 32, 16, 18, 16, 22, 18, 14, 16, 26, 16]
+    for i, w in enumerate(widths, start=1):
+        sheet.column_dimensions[chr(64 + i)].width = w
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    return buffer.getvalue()
+
+
+def generate_courrier_registre_pdf(items: list["models.Courrier"], filtre_label: str | None = None) -> bytes:
+    """Export PDF du registre du courrier (arrivée/départ) — document de travail interne,
+    pas de QR de vérification publique contrairement aux rapports financiers (pas de sens
+    pour une simple liste de courriers, et évite d'enregistrer un `RapportGenere` par export)."""
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=18)
+    pdf.add_page()
+    _add_logo(pdf)
+
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_text_color(11, 61, 46)
+    pdf.cell(0, 10, "LECIM - Registre du courrier", new_x="LMARGIN", new_y="NEXT")
+
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(80, 80, 80)
+    sous_titre = filtre_label or "Toutes les entrées"
+    pdf.cell(0, 6, sous_titre, new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(
+        0, 6, f"Genere le {datetime.date.today().strftime('%d/%m/%Y')} - {len(items)} entree(s)",
+        new_x="LMARGIN", new_y="NEXT",
+    )
+    pdf.ln(4)
+
+    pdf.set_font("Helvetica", "", 9)
+    pdf.set_text_color(30, 30, 30)
+    with pdf.table(
+        col_widths=(18, 28, 22, 42, 65),
+        text_align=("LEFT", "LEFT", "LEFT", "LEFT", "LEFT"),
+    ) as table:
+        row = table.row()
+        for h in ("Type", "Numero", "Date", "Correspondant", "Objet"):
+            row.cell(h, style=FontFace(emphasis="BOLD"))
+        for item in items:
+            row = table.row()
+            row.cell(item.type_label)
+            row.cell(pdf_safe(item.numero))
+            row.cell(item.date_courrier.strftime("%d/%m/%Y"))
+            row.cell(pdf_safe(item.correspondant))
+            row.cell(pdf_safe(item.objet))
+
+    return bytes(pdf.output())

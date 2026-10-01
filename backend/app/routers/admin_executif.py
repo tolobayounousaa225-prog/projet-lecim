@@ -12,8 +12,10 @@ from ..deps import require_executif_access_web
 from ..reports import (
     _period_data,
     _solde_cumule_au,
+    comparatif_regions,
     current_annee_scolaire,
     etablissements_en_retard,
+    etablissements_growth_by_year,
     generate_annual_report_pdf,
     generate_impact_report_pdf,
     money,
@@ -77,6 +79,22 @@ def executif_dashboard(
     documents_total = db.query(models.Document).count()
     publications_total = db.query(models.PublicationPublique).count()
     etablissements_total = db.query(models.Etablissement).count()
+    growth_data = etablissements_growth_by_year(db)
+    growth_chart_width, growth_chart_height = 760, 160
+    growth_baseline = growth_chart_height
+    growth_max = max([1] + [d["cumule"] for d in growth_data])
+    growth_year_width = growth_chart_width / len(growth_data) if growth_data else growth_chart_width
+    growth_bar_width = growth_year_width * 0.5
+    growth_bars = []
+    growth_labels = []
+    for i, d in enumerate(growth_data):
+        bar_x = i * growth_year_width + growth_year_width * 0.25
+        bar_h = (d["cumule"] / growth_max) * growth_chart_height
+        growth_bars.append({
+            "x": bar_x, "y": growth_baseline - bar_h, "width": growth_bar_width, "height": bar_h,
+            "value": d["cumule"],
+        })
+        growth_labels.append({"x": bar_x + growth_bar_width / 2, "y": growth_baseline + 18, "text": d["annee"]})
 
     delegations = db.query(models.Delegation).order_by(models.Delegation.nom).all()
     delegations_comptes = db.query(models.User).filter(models.User.delegation_id.isnot(None)).count()
@@ -107,10 +125,31 @@ def executif_dashboard(
             "documents_total": documents_total,
             "publications_total": publications_total,
             "etablissements_total": etablissements_total,
+            "growth_data": growth_data,
+            "growth_chart_width": growth_chart_width,
+            "growth_chart_height": growth_chart_height,
+            "growth_bars": growth_bars,
+            "growth_labels": growth_labels,
             "delegations": delegations,
             "delegations_comptes": delegations_comptes,
             "money": money,
         },
+    )
+
+
+@router.get("/comparatif-regions")
+def executif_comparatif_regions(
+    request: Request,
+    annee_scolaire: str | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_executif_access_web),
+):
+    annee = annee_scolaire or current_annee_scolaire()
+    data = comparatif_regions(db, annee)
+    return templates.TemplateResponse(
+        request,
+        "admin/executif_comparatif_regions.html",
+        {"admin": user, "active": "executif", "data": data, "annee_scolaire": annee},
     )
 
 

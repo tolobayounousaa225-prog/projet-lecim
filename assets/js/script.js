@@ -51,6 +51,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadObjectifsPrincipesMoyens();
   loadConseilAdministration();
   loadTemoignages();
+  loadDelegations();
   loadSondageExpress();
   initNewsletterForm();
   initLiveVisitors();
@@ -2583,6 +2584,44 @@ function loadSondageExpress() {
       });
     })
     .catch(function () {});
+}
+
+function loadDelegations() {
+  var container = document.getElementById("delegations-grid");
+  var section = document.getElementById("delegations-section");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/delegations")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) return;
+      if (section) section.style.display = "";
+      var isArabic = document.documentElement.lang === "ar";
+      var labels = isArabic
+        ? { ecoles: "مدرسة", reunions: "اجتماع", membres: "عضو" }
+        : { ecoles: "école(s)", reunions: "réunion(s)", membres: "membre(s)" };
+      container.innerHTML = items
+        .map(function (d) {
+          return (
+            '<div class="mission-card">' +
+            '<div class="mission-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>' +
+            "<h3>" + escapeHtml(d.nom) + "</h3>" +
+            (d.region ? "<p>" + escapeHtml(d.region) + "</p>" : "") +
+            '<p style="font-size:0.82rem; color:var(--text-muted); margin-top:10px;">' +
+            d.ecoles_count + " " + labels.ecoles + " &middot; " +
+            d.reunions_count + " " + labels.reunions + " &middot; " +
+            d.membres_count + " " + labels.membres +
+            "</p></div>"
+          );
+        })
+        .join("");
+    })
+    .catch(function () {
+      // API indisponible ou aucune délégation enregistrée : la section reste masquée.
+    });
 }
 
 function loadTemoignages() {
