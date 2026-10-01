@@ -1,10 +1,13 @@
 {% extends "admin/base.html" %}
 {% block title %}Registre du courrier{% endblock %}
 {% block content %}
+{% set qs_no_type = (('q=' ~ q|urlencode) if q else '') ~ (('&date_debut=' ~ date_debut) if date_debut else '') ~ (('&date_fin=' ~ date_fin) if date_fin else '') %}
+{% set qs_full = (('type=' ~ filtre_type) if filtre_type else '') ~ (('&' if filtre_type and qs_no_type else '')) ~ qs_no_type %}
 <div class="topbar">
   <h1 style="margin:0">Registre du courrier</h1>
   <div style="display:flex; gap:10px;">
-    <a href="/admin/courrier/export.csv{% if filtre_type or q %}?{% endif %}{% if filtre_type %}type={{ filtre_type }}{% endif %}{% if filtre_type and q %}&{% endif %}{% if q %}q={{ q|urlencode }}{% endif %}" class="btn btn-outline">Exporter en CSV</a>
+    <a href="/admin/courrier/export.pdf{% if qs_full %}?{{ qs_full }}{% endif %}" class="btn btn-outline">Exporter en PDF</a>
+    <a href="/admin/courrier/export.csv{% if qs_full %}?{{ qs_full }}{% endif %}" class="btn btn-outline">Exporter en CSV</a>
     <a href="/admin/courrier/new" class="btn btn-primary">+ Enregistrer un courrier</a>
   </div>
 </div>
@@ -12,14 +15,20 @@
 
 <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:20px; justify-content:space-between;">
   <div style="display:flex; gap:8px; flex-wrap:wrap;">
-    <a href="/admin/courrier{% if q %}?q={{ q|urlencode }}{% endif %}" class="btn btn-sm {{ 'btn-primary' if not filtre_type else 'btn-outline' }}">Tous</a>
+    <a href="/admin/courrier{% if qs_no_type %}?{{ qs_no_type }}{% endif %}" class="btn btn-sm {{ 'btn-primary' if not filtre_type else 'btn-outline' }}">Tous</a>
     {% for key, label in types.items() %}
-    <a href="/admin/courrier?type={{ key }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="btn btn-sm {{ 'btn-primary' if filtre_type == key else 'btn-outline' }}">{{ label }}</a>
+    <a href="/admin/courrier?type={{ key }}{% if qs_no_type %}&{{ qs_no_type }}{% endif %}" class="btn btn-sm {{ 'btn-primary' if filtre_type == key else 'btn-outline' }}">{{ label }}</a>
     {% endfor %}
   </div>
-  <form method="get" action="/admin/courrier" style="display:flex; gap:8px;">
+  <form method="get" action="/admin/courrier" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
     {% if filtre_type %}<input type="hidden" name="type" value="{{ filtre_type }}">{% endif %}
-    <input type="search" name="q" value="{{ q }}" placeholder="Rechercher (correspondant, objet)..." style="padding:8px 12px; border:1px solid var(--border); border-radius:999px; font-size:0.85rem; min-width:240px;">
+    <input type="search" name="q" value="{{ q }}" placeholder="Rechercher (correspondant, objet)..." style="padding:8px 12px; border:1px solid var(--border); border-radius:999px; font-size:0.85rem; min-width:220px;">
+    <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--text-muted);">Du
+      <input type="date" name="date_debut" value="{{ date_debut }}" style="padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:0.85rem;">
+    </label>
+    <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--text-muted);">au
+      <input type="date" name="date_fin" value="{{ date_fin }}" style="padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:0.85rem;">
+    </label>
     <button type="submit" class="btn btn-outline btn-sm">Rechercher</button>
   </form>
 </div>

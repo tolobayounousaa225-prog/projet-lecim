@@ -13,6 +13,7 @@ from .. import audit, models, storage
 from ..database import get_db
 from ..deps import require_courrier_access_web
 from ..models import COURRIER_TYPES
+from ..reports import generate_courrier_registre_pdf
 from ..security_utils import csv_safe, safe_content_disposition
 from .admin_files import ALLOWED_DOCUMENT_EXT, ALLOWED_PHOTO_EXT
 
@@ -26,12 +27,25 @@ ALLOWED_COURRIER_EXT = ALLOWED_DOCUMENT_EXT | ALLOWED_PHOTO_EXT
 COURRIER_PREFIXES = {"arrivee": "ARR", "depart": "DEP"}
 
 
-def _apply_filters(query, type: str | None, q: str | None):
+def _apply_filters(
+    query, type: str | None, q: str | None,
+    date_debut: str | None = None, date_fin: str | None = None,
+):
     if type in COURRIER_TYPES:
         query = query.filter(models.Courrier.type == type)
     if q:
         like = f"%{q}%"
         query = query.filter(or_(models.Courrier.correspondant.ilike(like), models.Courrier.objet.ilike(like)))
+    if date_debut:
+        try:
+            query = query.filter(models.Courrier.date_courrier >= datetime.date.fromisoformat(date_debut))
+        except ValueError:
+            pass
+    if date_fin:
+        try:
+            query = query.filter(models.Courrier.date_courrier <= datetime.date.fromisoformat(date_fin))
+        except ValueError:
+            pass
     return query
 
 
@@ -54,15 +68,20 @@ def courrier_list(
     request: Request,
     type: str | None = None,
     q: str | None = None,
+    date_debut: str | None = None,
+    date_fin: str | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_courrier_access_web),
 ):
-    query = _apply_filters(db.query(models.Courrier), type, q)
+    query = _apply_filters(db.query(models.Courrier), type, q, date_debut, date_fin)
     items = query.order_by(models.Courrier.date_courrier.desc(), models.Courrier.id.desc()).all()
     return templates.TemplateResponse(
         request,
         "admin/courrier_list.html",
-        {"admin": user, "items": items, "types": COURRIER_TYPES, "filtre_type": type, "q": q or "", "active": "courrier"},
+        {
+            "admin": user, "items": items, "types": COURRIER_TYPES, "filtre_type": type, "q": q or "",
+            "date_debut": date_debut or "", "date_fin": date_fin or "", "active": "courrier",
+        },
     )
 
 
@@ -70,10 +89,12 @@ def courrier_list(
 def courrier_export_csv(
     type: str | None = None,
     q: str | None = None,
+    date_debut: str | None = None,
+    date_fin: str | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_courrier_access_web),
 ):
-    query = _apply_filters(db.query(models.Courrier), type, q)
+    query = _apply_filters(db.query(models.Courrier), type, q, date_debut, date_fin)
     items = query.order_by(models.Courrier.date_courrier.desc(), models.Courrier.id.desc()).all()
     buf = io.StringIO()
     writer = csv.writer(buf)
@@ -87,6 +108,37 @@ def courrier_export_csv(
         content=buf.getvalue(),
         media_type="text/csv",
         headers={"Content-Disposition": 'attachment; filename="registre-courrier.csv"'},
+    )
+
+
+@router.get("/export.pdf")
+def courrier_export_pdf(
+    type: str | None = None,
+    q: str | None = None,
+    date_debut: str | None = None,
+    date_fin: str | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_courrier_access_web),
+):
+    query = _apply_filters(db.query(models.Courrier), type, q, date_debut, date_fin)
+    items = query.order_by(models.Courrier.date_courrier.desc(), models.Courrier.id.desc()).all()
+
+    filtre_parts = []
+    if type in COURRIER_TYPES:
+        filtre_parts.append(COURRIER_TYPES[type])
+    if date_debut:
+        filtre_parts.append(f"a partir du {date_debut}")
+    if date_fin:
+        filtre_parts.append(f"jusqu'au {date_fin}")
+    if q:
+        filtre_parts.append(f'recherche "{q}"')
+    filtre_label = " - ".join(filtre_parts) if filtre_parts else None
+
+    pdf_bytes = generate_courrier_registre_pdf(items, filtre_label)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="registre-courrier.pdf"'},
     )
 
 

@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+{% block title %}Comparatif par région{% endblock %}
+{% block content %}
+<h1 style="margin-bottom:4px;">Comparatif par région</h1>
+<p style="color:var(--text-muted); margin-top:0;"><a href="/admin/executif">&larr; Retour au tableau de bord</a> — écoles affiliées, effectifs déclarés et taux de réussite aux examens, année scolaire {{ annee_scolaire }}.</p>
+
+{% if data %}
+<table>
+  <thead>
+    <tr><th>Région</th><th>Écoles affiliées</th><th>Effectifs déclarés</th><th>Inscrits aux examens</th><th>Admis</th><th>Taux de réussite</th></tr>
+  </thead>
+  <tbody>
+    {% for r in data %}
+    <tr>
+      <td><strong>{{ r.region }}</strong></td>
+      <td>{{ r.ecoles }}</td>
+      <td>{{ r.effectifs }}</td>
+      <td>{{ r.inscrits }}</td>
+      <td>{{ r.admis }}</td>
+      <td>
+        {% if r.taux_reussite is not none %}
+        <span class="pill {{ 'pill-green' if r.taux_reussite >= 60 else ('pill-gold' if r.taux_reussite >= 40 else 'pill-red') }}">{{ r.taux_reussite }}%</span>
+        {% else %}<span style="color:var(--text-muted)">—</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p style="color:var(--text-muted); font-size:0.82rem; margin-top:12px;">Les établissements sans région renseignée n'apparaissent pas dans ce comparatif. Les effectifs et résultats d'examens correspondent à l'année scolaire {{ annee_scolaire }} uniquement.</p>
+{% else %}
+<div class="empty-state">Aucune région renseignée sur les établissements pour le moment.</div>
+{% endif %}
+{% endblock %}

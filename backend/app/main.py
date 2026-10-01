@@ -74,6 +74,7 @@ from .routers import (
     conseil_administration,
     contact,
     delegation_portal,
+    delegations_public,
     dons_public,
     etablissement_portal,
     etablissement_ressources,
@@ -310,6 +311,7 @@ app.include_router(admin_videos.router)
 app.include_router(admin_statistiques.router)
 app.include_router(admin_newsletter.router)
 app.include_router(delegation_portal.router)
+app.include_router(delegations_public.router)
 app.include_router(admin_etablissement_portail.router)
 app.include_router(admin_messagerie.router)
 app.include_router(admin_connexions.router)

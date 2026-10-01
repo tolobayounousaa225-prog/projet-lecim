@@ -216,6 +216,15 @@ class VideoPublicOut(BaseModel):
     thumbnail_url: str
 
 
+class DelegationPublicOut(BaseModel):
+    id: int
+    nom: str
+    region: str | None
+    ecoles_count: int
+    reunions_count: int
+    membres_count: int
+
+
 class FaqOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
