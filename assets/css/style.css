@@ -444,8 +444,23 @@ ul { list-style: none; }
 .hero.has-bg-image { animation: none; }
 .hero.has-bg-image::before { opacity: .6; }
 
+/* Couche dédiée à la photo (posée par script.js via la variable --hero-bg-image),
+   séparée du ::before décoratif ci-dessus pour pouvoir l'animer seule : lent
+   zoom-respiration continu, effet "paisible" plutôt qu'un simple fond statique. */
+.hero.has-bg-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: var(--hero-bg-image);
+  background-size: cover;
+  background-position: center;
+  animation: heroSlowZoom 26s ease-in-out infinite alternate;
+}
+
 .hero-inner {
   position: relative;
+  z-index: 1;
   max-width: 1200px;
   margin: 0 auto;
   display: grid;
@@ -569,6 +584,7 @@ ul { list-style: none; }
 
 .hero-stats {
   position: relative;
+  z-index: 1;
   max-width: 1140px;
   margin: 60px auto 0;
   display: grid;
@@ -1699,6 +1715,13 @@ section { padding: 80px 0; }
   from { opacity: 0; transform: translateY(22px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* Respiration lente de la photo de fond du hero — effet calme, pas un zoom marqué.
+   Les badges flottants au-dessus (hero-float-badge) ont déjà leur propre animation
+   douce (floatBadge, plus bas dans ce fichier) — inutile d'en ajouter une autre ici. */
+@keyframes heroSlowZoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.07); }
+}
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -2087,6 +2110,8 @@ html.data-saver *, html.data-saver *::before, html.data-saver *::after {
 }
 html.data-saver .reveal { opacity: 1; transform: none; }
 html.data-saver .hero-visual { transform: none !important; }
+html.data-saver .hero.has-bg-image::after,
+html.data-saver .hero-float-badge { animation: none !important; }
 
 .data-saver-toggle {
   background: none; border: none; color: rgba(255,255,255,.6);
