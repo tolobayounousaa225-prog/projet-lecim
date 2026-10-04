@@ -18,6 +18,9 @@
     </form>
     <a href="/admin/reunions/{{ reunion.id }}/edit" class="btn btn-outline">Modifier la réunion</a>
     <a href="/admin/reunions/{{ reunion.id }}/visio" target="_blank" class="btn btn-primary">Démarrer la visioconférence</a>
+    <form method="post" action="/admin/reunions/{{ reunion.id }}/visio/inviter" onsubmit="return confirm('Prévenir tous les membres concernés (notification + e-mail) que l\'appel est en cours ?');">
+      <button type="submit" class="btn btn-outline">Inviter les membres à rejoindre</button>
+    </form>
     <a href="/admin/reunions/{{ reunion.id }}/presentation" target="_blank" class="btn btn-gold">Mode présentation</a>
   </div>
 </div>

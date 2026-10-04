@@ -7,6 +7,7 @@ import datetime
 from sqlalchemy.orm import Session
 
 from . import models
+from .config import settings
 from .database import SessionLocal
 from .email_utils import send_email
 from .notifications import notify
@@ -54,6 +55,56 @@ def send_reminder_for_reunion(db: Session, reunion: models.Reunion) -> int:
             envoyes += 1
 
     reunion.reminder_sent = True
+    db.commit()
+    return envoyes
+
+
+def send_visio_invitation(db: Session, reunion: models.Reunion, started_by: models.User) -> int:
+    """Déclenchée explicitement (bouton dédié, distinct de l'ouverture de l'appel)
+    quand un appel vidéo vient de démarrer pour une réunion — notifie et e-maile tous
+    les membres concernés avec un lien direct pour rejoindre immédiatement. Même
+    logique de destinataires que send_reminder_for_reunion (roster `Membre` + comptes
+    `User`), mais sans marquer `reminder_sent` : ce n'est pas un rappel planifié, donc
+    rien n'empêche de relancer une invitation plusieurs fois pour la même réunion."""
+    link = f"{settings.public_base_url}/admin/reunions/{reunion.id}/visio"
+    subject = f"[LECIM] Appel en cours — {reunion.title}"
+    body = (
+        f"{started_by.full_name} vient de démarrer l'appel vidéo pour la réunion "
+        f"« {reunion.title} ».\n\n"
+        f"Rejoignez maintenant : {link}\n\n"
+        "(Connectez-vous à votre espace LECIM si ce n'est pas déjà fait, puis cliquez "
+        "à nouveau sur ce lien.)\n\n"
+        "LECIM — Ligue des Établissements Confessionnels et Madrassas de Côte d'Ivoire"
+    )
+
+    membres = (
+        db.query(models.Membre)
+        .filter(models.Membre.delegation_id == reunion.delegation_id, models.Membre.email.isnot(None))
+        .all()
+    )
+    envoyes = 0
+    for membre in membres:
+        if send_email(membre.email, subject, body):
+            envoyes += 1
+
+    users_query = db.query(models.User)
+    if reunion.delegation_id:
+        users = users_query.filter(models.User.delegation_id == reunion.delegation_id).all()
+    else:
+        users = [u for u in users_query.all() if u.can_manage_reunions and not u.is_delegation_account]
+
+    for user in users:
+        if user.id == started_by.id:
+            continue
+        notify(
+            db,
+            user.id,
+            f"{started_by.full_name} a démarré l'appel vidéo de la réunion « {reunion.title} ». Rejoignez maintenant.",
+            link=f"/admin/reunions/{reunion.id}/visio",
+        )
+        if user.email and send_email(user.email, subject, body):
+            envoyes += 1
+
     db.commit()
     return envoyes
 

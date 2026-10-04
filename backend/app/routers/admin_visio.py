@@ -11,6 +11,7 @@ from ..config import settings
 from ..database import get_db
 from ..deps import require_reunions_access_web
 from ..jitsi import generate_jitsi_token, jitsi_room_name
+from ..reminders import send_visio_invitation
 
 router = APIRouter(prefix="/admin", tags=["admin-visio"])
 
@@ -46,3 +47,20 @@ def reunion_visio(
             "jitsi_token": token,
         },
     )
+
+
+@router.post("/reunions/{reunion_id}/visio/inviter")
+def reunion_visio_inviter(
+    reunion_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_reunions_access_web),
+):
+    """Action explicite, distincte de l'ouverture de l'appel : prévient tous les
+    membres concernés (notification interne + e-mail) qu'un appel est en cours et
+    qu'ils peuvent le rejoindre maintenant. Volontairement séparée de la simple
+    ouverture de /visio pour ne pas re-notifier tout le monde à chaque fois qu'un
+    participant rouvre ou rejoint le même appel."""
+    reunion = db.get(models.Reunion, reunion_id)
+    if reunion:
+        send_visio_invitation(db, reunion, user)
+    return RedirectResponse(url=f"/admin/reunions/{reunion_id}", status_code=status.HTTP_303_SEE_OTHER)
