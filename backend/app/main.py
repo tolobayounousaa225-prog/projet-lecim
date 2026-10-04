@@ -68,6 +68,7 @@ from .routers import (
     admin_temoignages,
     admin_users,
     admin_videos,
+    admin_visio,
     assistant_public,
     auth,
     calendrier_scolaire_public,
@@ -310,6 +311,7 @@ app.include_router(admin_sondages_express.router)
 app.include_router(admin_temoignages.router)
 app.include_router(admin_taches.router)
 app.include_router(admin_videos.router)
+app.include_router(admin_visio.router)
 app.include_router(admin_statistiques.router)
 app.include_router(admin_newsletter.router)
 app.include_router(delegation_portal.router)

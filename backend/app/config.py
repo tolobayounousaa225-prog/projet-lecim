@@ -41,6 +41,13 @@ class Settings(BaseSettings):
     # utilisée pour les liens dans le flux RSS et le sitemap.
     vitrine_base_url: str = "https://tolobayounousaa225-prog.github.io/projet-lecim"
 
+    # Visioconférence interne (Jitsi Meet auto-hébergé) — jitsi_app_secret doit être
+    # identique au JWT_APP_SECRET configuré côté serveur Jitsi (deploy/jitsi-meet/.env),
+    # sinon les jetons générés ici sont rejetés à la connexion.
+    jitsi_domain: str = "visio.213-199-37-74.sslip.io"
+    jitsi_app_id: str = "lecim"
+    jitsi_app_secret: str = ""
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

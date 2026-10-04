@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visioconférence — {{ reunion.title }}</title>
+<link rel="icon" type="image/jpeg" href="/static/img/logo.jpg">
+<script src="https://{{ jitsi_domain }}/external_api.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #0a3d63; font-family: "Segoe UI", "Poppins", Arial, sans-serif; }
+  #visio-container { width: 100%; height: 100vh; }
+  .exit-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10000;
+    display: flex; align-items: center; gap: 12px; padding: 8px 16px;
+    background: rgba(10,61,99,.92); color: #fff; font-size: 0.85rem;
+  }
+  .exit-bar a { color: #f3c869; text-decoration: none; font-weight: 600; }
+  .exit-bar a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+  <div class="exit-bar">
+    <strong>{{ reunion.title }}</strong>
+    <a href="/admin/reunions/{{ reunion.id }}">&larr; Retour à la fiche de la réunion</a>
+  </div>
+  <div id="visio-container"></div>
+
+  <script>
+    var api = new JitsiMeetExternalAPI("{{ jitsi_domain }}", {
+      roomName: "{{ jitsi_room }}",
+      jwt: "{{ jitsi_token }}",
+      parentNode: document.getElementById("visio-container"),
+      width: "100%",
+      height: "100%",
+      configOverwrite: {
+        prejoinConfig: { enabled: true },
+        disableDeepLinking: true,
+      },
+      interfaceConfigOverwrite: {
+        SHOW_JITSI_WATERMARK: false,
+        SHOW_WATERMARK_FOR_GUESTS: false,
+        DEFAULT_REMOTE_DISPLAY_NAME: "Membre LECIM",
+      },
+    });
+  </script>
+</body>
+</html>
