@@ -216,6 +216,32 @@ def multi_year_financial_summary(db: Session) -> list[dict]:
     return result
 
 
+def cotisations_by_year(db: Session) -> list[dict]:
+    """Évolution des cotisations (dû/versé) par année scolaire — distinct de
+    multi_year_financial_summary qui ne retient que les montants effectivement versés,
+    mêlés aux autres recettes. Se base sur le champ `annee_scolaire` de la cotisation
+    elle-même plutôt que sur la date de paiement, afin d'inclure aussi les cotisations
+    encore impayées (date_paiement NULL)."""
+    rows = (
+        db.query(
+            models.Cotisation.annee_scolaire,
+            func.coalesce(func.sum(models.Cotisation.montant_du), 0),
+            func.coalesce(func.sum(models.Cotisation.montant_paye), 0),
+        )
+        .group_by(models.Cotisation.annee_scolaire)
+        .all()
+    )
+    result = []
+    for annee, montant_du, montant_paye in sorted(rows, key=lambda r: r[0]):
+        result.append({
+            "annee": annee,
+            "montant_du": montant_du,
+            "montant_paye": montant_paye,
+            "taux_recouvrement": round(montant_paye / montant_du * 100, 1) if montant_du else None,
+        })
+    return result
+
+
 def etablissements_growth_by_year(db: Session) -> list[dict]:
     """Évolution du nombre d'établissements affiliés, regroupés par année scolaire
     d'adhésion — pour visualiser la croissance du réseau dans le temps sur le tableau
@@ -720,6 +746,8 @@ def generate_annual_report_pdf(
     )
     delegations = db.query(models.Delegation).order_by(models.Delegation.nom).all()
     etablissements_total = db.query(models.Etablissement).count()
+    growth_data = etablissements_growth_by_year(db)
+    regions_data = comparatif_regions(db, annee_scolaire)
 
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=18)
@@ -823,6 +851,29 @@ def generate_annual_report_pdf(
                 row = table.row()
                 row.cell(pdf_safe(d.nom))
                 row.cell(pdf_safe(d.region) or "-")
+        pdf.ln(6)
+
+    if growth_data:
+        section_title("Evolution du nombre d'etablissements affilies")
+        chart_bars = [(g["annee"], g["cumule"], GREEN) for g in growth_data[-8:]]
+        _draw_bar_chart(pdf, pdf.l_margin, pdf.get_y(), pdf.w - pdf.l_margin - pdf.r_margin, 36, chart_bars)
+        pdf.ln(8)
+
+    if regions_data:
+        section_title("Comparatif par region")
+        pdf.set_font("Helvetica", "", 10)
+        with pdf.table(col_widths=(50, 30, 35, 30, 30, 30), text_align=("LEFT", "RIGHT", "RIGHT", "RIGHT", "RIGHT", "RIGHT")) as table:
+            row = table.row()
+            for h in ("Region", "Ecoles", "Effectifs", "Inscrits", "Admis", "Taux"):
+                row.cell(h, style=FontFace(emphasis="BOLD"))
+            for r in regions_data:
+                row = table.row()
+                row.cell(pdf_safe(r["region"]))
+                row.cell(str(r["ecoles"]))
+                row.cell(str(r["effectifs"]))
+                row.cell(str(r["inscrits"]))
+                row.cell(str(r["admis"]))
+                row.cell(f"{r['taux_reussite']:.1f}%" if r["taux_reussite"] is not None else "-")
         pdf.ln(6)
 
     if retards:
@@ -1386,5 +1437,47 @@ def generate_courrier_registre_pdf(items: list["models.Courrier"], filtre_label:
             row.cell(item.date_courrier.strftime("%d/%m/%Y"))
             row.cell(pdf_safe(item.correspondant))
             row.cell(pdf_safe(item.objet))
+
+    return bytes(pdf.output())
+
+
+def generate_comparatif_regions_pdf(data: list[dict], annee_scolaire: str) -> bytes:
+    """Export PDF du comparatif par region — document de travail interne, meme logique
+    que le registre du courrier (pas de QR de verification publique)."""
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=18)
+    pdf.add_page()
+    _add_logo(pdf)
+
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_text_color(11, 61, 46)
+    pdf.cell(0, 10, "LECIM - Comparatif par region", new_x="LMARGIN", new_y="NEXT")
+
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(80, 80, 80)
+    pdf.cell(0, 6, f"Annee scolaire {annee_scolaire}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(
+        0, 6, f"Genere le {datetime.date.today().strftime('%d/%m/%Y')} - {len(data)} region(s)",
+        new_x="LMARGIN", new_y="NEXT",
+    )
+    pdf.ln(4)
+
+    pdf.set_font("Helvetica", "", 9)
+    pdf.set_text_color(30, 30, 30)
+    with pdf.table(
+        col_widths=(50, 30, 35, 30, 30, 30),
+        text_align=("LEFT", "RIGHT", "RIGHT", "RIGHT", "RIGHT", "RIGHT"),
+    ) as table:
+        row = table.row()
+        for h in ("Region", "Ecoles", "Effectifs", "Inscrits", "Admis", "Taux"):
+            row.cell(h, style=FontFace(emphasis="BOLD"))
+        for r in data:
+            row = table.row()
+            row.cell(pdf_safe(r["region"]))
+            row.cell(str(r["ecoles"]))
+            row.cell(str(r["effectifs"]))
+            row.cell(str(r["inscrits"]))
+            row.cell(str(r["admis"]))
+            row.cell(f"{r['taux_reussite']:.1f}%" if r["taux_reussite"] is not None else "-")
 
     return bytes(pdf.output())

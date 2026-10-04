@@ -1,9 +1,11 @@
+import datetime
 from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -17,6 +19,10 @@ router = APIRouter(prefix="/admin/delegations", tags=["admin-delegations"])
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
+# Seuils (en jours) utilisés pour signaler une délégation inactive sur la liste admin.
+INACTIVITE_SEUIL_ALERTE = 120
+INACTIVITE_SEUIL_SURVEILLANCE = 60
+
 
 @router.get("")
 def delegations_list(
@@ -26,10 +32,32 @@ def delegations_list(
     user: models.User = Depends(require_delegation_management_web),
 ):
     items = db.query(models.Delegation).order_by(models.Delegation.nom).all()
+
+    dernieres_reunions = dict(
+        db.query(models.Reunion.delegation_id, func.max(models.Reunion.date))
+        .filter(models.Reunion.delegation_id.isnot(None))
+        .group_by(models.Reunion.delegation_id)
+        .all()
+    )
+    today = datetime.date.today()
+    activite = {}
+    for item in items:
+        derniere = dernieres_reunions.get(item.id)
+        jours = (today - derniere).days if derniere else None
+        if jours is None:
+            niveau = "alerte"
+        elif jours > INACTIVITE_SEUIL_ALERTE:
+            niveau = "alerte"
+        elif jours > INACTIVITE_SEUIL_SURVEILLANCE:
+            niveau = "surveillance"
+        else:
+            niveau = "actif"
+        activite[item.id] = {"derniere_reunion": derniere, "jours": jours, "niveau": niveau}
+
     return templates.TemplateResponse(
         request,
         "admin/delegations_list.html",
-        {"admin": user, "items": items, "active": "delegations", "error": error},
+        {"admin": user, "items": items, "activite": activite, "active": "delegations", "error": error},
     )
 
 

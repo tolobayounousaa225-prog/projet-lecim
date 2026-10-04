@@ -292,6 +292,32 @@ def reunion_detail(
     )
 
 
+@router.get("/reunions/{reunion_id}/presentation")
+def reunion_presentation(
+    reunion_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_reunions_access_web),
+):
+    """Vue projecteur plein écran pour l'ouverture d'une réunion — ordre du jour et
+    liste des présents en gros caractères, sans la barre latérale ni les formulaires
+    d'édition de l'espace admin habituel."""
+    reunion = db.get(models.Reunion, reunion_id)
+    if not reunion:
+        return RedirectResponse(url="/admin/reunions", status_code=status.HTTP_303_SEE_OTHER)
+
+    presents = sorted(
+        (p for p in reunion.presences if p.present),
+        key=lambda p: p.membre.full_name,
+    )
+
+    return templates.TemplateResponse(
+        request,
+        "admin/reunion_presentation.html",
+        {"reunion": reunion, "presents": presents},
+    )
+
+
 @router.post("/reunions/{reunion_id}/rappel")
 def reunion_rappel(
     reunion_id: int,

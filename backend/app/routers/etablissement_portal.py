@@ -71,6 +71,12 @@ def etablissement_dashboard(
         "demandes_ouvertes": db.query(models.DemandeEtablissement)
         .filter(models.DemandeEtablissement.etablissement_id == etablissement.id, models.DemandeEtablissement.statut == "nouvelle")
         .count(),
+        "cartes_en_cours": db.query(models.CarteScolaire)
+        .filter(
+            models.CarteScolaire.etablissement_id == etablissement.id,
+            models.CarteScolaire.status.in_(["soumise", "validee", "imprimee"]),
+        )
+        .count(),
     }
     return templates.TemplateResponse(
         request,

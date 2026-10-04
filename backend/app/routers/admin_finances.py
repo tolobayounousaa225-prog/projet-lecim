@@ -16,6 +16,7 @@ from ..email_utils import send_email
 from ..finances_constants import ADHESION_MONTANT, BUDGET_CATEGORIES, COTISATION_RULES, RECETTE_CATEGORIES, cotisation_rule
 from ..security_utils import csv_safe, safe_content_disposition
 from ..reports import (
+    cotisations_by_year,
     current_annee_scolaire,
     etablissements_en_retard,
     export_etablissements_xlsx,
@@ -269,6 +270,57 @@ def finances_evolution(
             "chart_width": chart_width,
             "chart_height": chart_height,
             "baseline": baseline,
+        },
+    )
+
+
+@router.get("/finances/cotisations-evolution")
+def finances_cotisations_evolution(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    data = cotisations_by_year(db)
+
+    chart_width, chart_height, chart_top = 760, 220, 20
+    baseline = chart_top + chart_height
+    max_val = max([1] + [d["montant_du"] for d in data] + [d["montant_paye"] for d in data])
+    year_width = chart_width / len(data) if data else chart_width
+    bar_width = year_width * 0.32
+
+    bars = []
+    labels = []
+    for i, d in enumerate(data):
+        group_x = i * year_width + year_width * 0.12
+        du_h = (d["montant_du"] / max_val) * chart_height
+        paye_h = (d["montant_paye"] / max_val) * chart_height
+        bars.append(
+            {"x": group_x, "y": baseline - du_h, "width": bar_width, "height": du_h, "color": "var(--gold)"}
+        )
+        bars.append(
+            {
+                "x": group_x + bar_width + 4,
+                "y": baseline - paye_h,
+                "width": bar_width,
+                "height": paye_h,
+                "color": "var(--green)",
+            }
+        )
+        labels.append({"x": group_x + bar_width, "y": baseline + 18, "text": d["annee"]})
+
+    return templates.TemplateResponse(
+        request,
+        "admin/finances_cotisations_evolution.html",
+        {
+            "admin": user,
+            "active": "finances",
+            "data": data,
+            "bars": bars,
+            "labels": labels,
+            "chart_width": chart_width,
+            "chart_height": chart_height,
+            "baseline": baseline,
+            "money": money,
         },
     )
 

@@ -17,6 +17,7 @@
       <button type="submit" class="btn btn-outline">{{ "Renvoyer le sondage de satisfaction" if satisfaction else "Envoyer un sondage de satisfaction" }}</button>
     </form>
     <a href="/admin/reunions/{{ reunion.id }}/edit" class="btn btn-outline">Modifier la réunion</a>
+    <a href="/admin/reunions/{{ reunion.id }}/presentation" target="_blank" class="btn btn-gold">Mode présentation</a>
   </div>
 </div>
 

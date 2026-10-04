@@ -58,6 +58,7 @@ from .routers import (
     admin_ressources_officielles,
     admin_resultats_examens,
     admin_reunions,
+    admin_search,
     admin_site_content,
     admin_social,
     admin_sondages,
@@ -260,6 +261,7 @@ app.include_router(temoignages.router)
 app.include_router(stats.router)
 app.include_router(newsletter_public.router)
 app.include_router(search_public.router)
+app.include_router(admin_search.router)
 app.include_router(push_public.router)
 app.include_router(publications.router)
 app.include_router(ressources_officielles.router)

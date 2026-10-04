@@ -21,6 +21,10 @@
       <h2>LECIM</h2>
     </div>
     <span class="tag">{{ admin.poste_label }}</span>
+    <div class="admin-search">
+      <input type="text" id="admin-search-input" placeholder="Rechercher (courrier, tâches...)" autocomplete="off">
+      <div class="admin-search-results" id="admin-search-results"></div>
+    </div>
     {% set pending = admin.pending_action_counts() %}
     <nav>
       <a href="/admin" class="{{ 'active' if active == 'dashboard' else '' }}">Tableau de bord</a>
@@ -151,6 +155,60 @@
   overlay.addEventListener("click", close);
   sidebar.addEventListener("click", function (e) {
     if (e.target.closest("a")) close();
+  });
+})();
+</script>
+<script>
+(function () {
+  var input = document.getElementById("admin-search-input");
+  var results = document.getElementById("admin-search-results");
+  if (!input || !results) return;
+
+  var TYPE_LABELS = {
+    courrier: "Courrier", tache: "Tâche", ecole: "École",
+    actualite: "Actualité", document: "Document", faq: "FAQ",
+  };
+
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  var timer = null;
+  input.addEventListener("input", function () {
+    clearTimeout(timer);
+    var term = input.value.trim();
+    if (term.length < 2) {
+      results.classList.remove("open");
+      results.innerHTML = "";
+      return;
+    }
+    timer = setTimeout(function () {
+      fetch("/api/admin-search?q=" + encodeURIComponent(term), { credentials: "same-origin" })
+        .then(function (res) { return res.ok ? res.json() : []; })
+        .then(function (items) {
+          if (!items || !items.length) {
+            results.innerHTML = '<div class="admin-search-empty">Aucun résultat</div>';
+          } else {
+            results.innerHTML = items.map(function (item) {
+              return (
+                '<a class="admin-search-result" href="' + item.url + '">' +
+                '<span class="type">' + escapeHtml(TYPE_LABELS[item.type] || item.type) + "</span>" +
+                '<div class="title">' + escapeHtml(item.title) + "</div>" +
+                (item.subtitle ? '<div class="subtitle">' + escapeHtml(item.subtitle) + "</div>" : "") +
+                "</a>"
+              );
+            }).join("");
+          }
+          results.classList.add("open");
+        })
+        .catch(function () { results.classList.remove("open"); });
+    }, 300);
+  });
+
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest(".admin-search")) results.classList.remove("open");
   });
 })();
 </script>

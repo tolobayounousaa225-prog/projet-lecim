@@ -5,6 +5,7 @@
 <p style="color:var(--text-muted); margin-top:0;"><a href="/admin/executif">&larr; Retour au tableau de bord</a> — écoles affiliées, effectifs déclarés et taux de réussite aux examens, année scolaire {{ annee_scolaire }}.</p>
 
 {% if data %}
+<p><a href="/admin/executif/comparatif-regions/export.pdf?annee_scolaire={{ annee_scolaire }}">Exporter en PDF</a></p>
 <table>
   <thead>
     <tr><th>Région</th><th>Écoles affiliées</th><th>Effectifs déclarés</th><th>Inscrits aux examens</th><th>Admis</th><th>Taux de réussite</th></tr>

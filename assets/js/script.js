@@ -2098,6 +2098,9 @@ var INSCRIPTION_LABELS = {
 };
 
 function loadActivities() {
+  var subscribeLink = document.getElementById("calendar-subscribe-link");
+  if (subscribeLink) subscribeLink.href = API_BASE + "/api/activities/calendar.ics";
+
   var container = document.querySelector(".timeline");
   if (!container) return;
   showSkeleton(container, 4);

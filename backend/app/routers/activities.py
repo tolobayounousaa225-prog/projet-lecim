@@ -26,6 +26,45 @@ def list_activities(db: Session = Depends(get_db)):
     )
 
 
+def _activity_vevent(activity: models.Activity, dtstamp: str) -> str:
+    dtstart = activity.event_date.strftime("%Y%m%d")
+    return (
+        "BEGIN:VEVENT\r\n"
+        f"UID:lecim-activity-{activity.id}@lecim\r\n"
+        f"DTSTAMP:{dtstamp}\r\n"
+        f"DTSTART;VALUE=DATE:{dtstart}\r\n"
+        f"SUMMARY:{_ics_escape(activity.title)}\r\n"
+        f"DESCRIPTION:{_ics_escape(activity.description)}\r\n"
+        "END:VEVENT\r\n"
+    )
+
+
+@router.get("/calendar.ics")
+def activities_calendar_ics(db: Session = Depends(get_db)):
+    """Calendrier combine de toutes les activites, abonnable (URL stable) dans un
+    calendrier personnel (Google Calendar "A partir d'une URL", Outlook, Apple Calendar)
+    plutot que telecharge evenement par evenement comme /{id}/ics ci-dessous. Doit rester
+    enregistree avant /{activity_id} pour ne pas etre interceptee par ce chemin generique."""
+    activities = db.query(models.Activity).order_by(models.Activity.event_date).all()
+    dtstamp = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    body = "".join(_activity_vevent(a, dtstamp) for a in activities)
+    ics = (
+        "BEGIN:VCALENDAR\r\n"
+        "VERSION:2.0\r\n"
+        "PRODID:-//LECIM//Evenements//FR\r\n"
+        "CALSCALE:GREGORIAN\r\n"
+        "METHOD:PUBLISH\r\n"
+        "X-WR-CALNAME:LECIM - Activites\r\n"
+        + body
+        + "END:VCALENDAR\r\n"
+    )
+    return Response(
+        content=ics,
+        media_type="text/calendar",
+        headers={"Content-Disposition": 'inline; filename="lecim-calendrier.ics"'},
+    )
+
+
 @router.get("/{activity_id}", response_model=schemas.ActivityOut)
 def get_activity(activity_id: int, db: Session = Depends(get_db)):
     activity = db.get(models.Activity, activity_id)
@@ -62,21 +101,14 @@ def activity_ics(activity_id: int, db: Session = Depends(get_db)):
     if not activity:
         raise HTTPException(status_code=404, detail="Activité introuvable")
 
-    dtstart = activity.event_date.strftime("%Y%m%d")
     dtstamp = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
     ics = (
         "BEGIN:VCALENDAR\r\n"
         "VERSION:2.0\r\n"
         "PRODID:-//LECIM//Evenements//FR\r\n"
         "CALSCALE:GREGORIAN\r\n"
-        "BEGIN:VEVENT\r\n"
-        f"UID:lecim-activity-{activity.id}@lecim\r\n"
-        f"DTSTAMP:{dtstamp}\r\n"
-        f"DTSTART;VALUE=DATE:{dtstart}\r\n"
-        f"SUMMARY:{_ics_escape(activity.title)}\r\n"
-        f"DESCRIPTION:{_ics_escape(activity.description)}\r\n"
-        "END:VEVENT\r\n"
-        "END:VCALENDAR\r\n"
+        + _activity_vevent(activity, dtstamp)
+        + "END:VCALENDAR\r\n"
     )
     return Response(
         content=ics,

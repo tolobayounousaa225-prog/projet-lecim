@@ -76,6 +76,18 @@ def get_current_admin(
     return user
 
 
+def require_login_api(
+    user: models.User = Depends(get_current_user),
+) -> models.User:
+    """Équivalent API (JSON, 403 propre) de require_login_web : tout compte du Bureau
+    Exécutif National, comptes délégation/établissement exclus (ils ont leurs propres
+    portails). Utilisé par les endpoints appelés en fetch() depuis le panneau admin,
+    où une redirection HTML (comme le fait require_login_web) casserait le JSON attendu."""
+    if user.is_delegation_account or user.is_etablissement_account:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Accès réservé au Bureau Exécutif National")
+    return user
+
+
 def require_login_web(
     access_token: str | None = Cookie(default=None),
     db: Session = Depends(get_db),

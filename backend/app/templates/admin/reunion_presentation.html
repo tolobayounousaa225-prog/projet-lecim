@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ reunion.title }} — Mode présentation</title>
+<link rel="icon" type="image/jpeg" href="/static/img/logo.jpg">
+<style>
+  :root {
+    --green-dark: #0a3d63;
+    --gold: #e0a52c;
+    --gold-light: #f3c869;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--green-dark); color: #fff;
+    font-family: "Segoe UI", "Poppins", Arial, sans-serif;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 48px 32px; text-align: center;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 36px; opacity: .9; }
+  .brand img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+  .brand span { font-size: 1.1rem; font-weight: 700; letter-spacing: .5px; }
+  h1 { font-size: clamp(2rem, 5vw, 3.4rem); margin: 0 0 14px; line-height: 1.15; }
+  .meta { font-size: clamp(1.1rem, 2.4vw, 1.5rem); color: var(--gold-light); margin-bottom: 40px; }
+  .block { max-width: 900px; width: 100%; margin-bottom: 40px; }
+  .block h2 {
+    font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--gold-light); margin-bottom: 14px; font-weight: 700;
+  }
+  .ordre-du-jour { font-size: clamp(1.1rem, 2.4vw, 1.6rem); line-height: 1.7; white-space: pre-line; }
+  .presents-list {
+    list-style: none; margin: 0; padding: 0; display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 24px;
+  }
+  .presents-list li { font-size: clamp(1rem, 2vw, 1.3rem); padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.15); }
+  .presents-count { font-size: clamp(1.1rem, 2.4vw, 1.6rem); color: var(--gold-light); margin-bottom: 18px; }
+  .exit-link {
+    position: fixed; top: 20px; right: 24px; color: rgba(255,255,255,.65);
+    font-size: 0.85rem; text-decoration: none; border: 1px solid rgba(255,255,255,.3);
+    padding: 6px 12px; border-radius: 6px;
+  }
+  .exit-link:hover { color: #fff; border-color: #fff; }
+  @media print { .exit-link { display: none; } }
+</style>
+</head>
+<body>
+  <a class="exit-link" href="/admin/reunions/{{ reunion.id }}">&larr; Quitter le mode présentation</a>
+
+  <div class="brand">
+    <img src="/static/img/logo.jpg" alt="Logo LECIM">
+    <span>LECIM — Bureau Exécutif National</span>
+  </div>
+
+  <h1>{{ reunion.title }}</h1>
+  <p class="meta">{{ reunion.date.strftime("%d/%m/%Y") }}{% if reunion.lieu %} — {{ reunion.lieu }}{% endif %}</p>
+
+  {% if reunion.ordre_du_jour %}
+  <div class="block">
+    <h2>Ordre du jour</h2>
+    <p class="ordre-du-jour">{{ reunion.ordre_du_jour }}</p>
+  </div>
+  {% endif %}
+
+  <div class="block">
+    <h2>Membres présents</h2>
+    <p class="presents-count">{{ presents|length }} présent{{ "s" if presents|length != 1 else "" }}</p>
+    {% if presents %}
+    <ul class="presents-list">
+      {% for p in presents %}
+      <li>{{ p.membre.full_name }} <span style="opacity:.65;">— {{ p.membre.poste_label }}</span></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</body>
+</html>

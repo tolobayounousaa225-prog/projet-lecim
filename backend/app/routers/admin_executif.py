@@ -17,6 +17,7 @@ from ..reports import (
     etablissements_en_retard,
     etablissements_growth_by_year,
     generate_annual_report_pdf,
+    generate_comparatif_regions_pdf,
     generate_impact_report_pdf,
     money,
 )
@@ -150,6 +151,22 @@ def executif_comparatif_regions(
         request,
         "admin/executif_comparatif_regions.html",
         {"admin": user, "active": "executif", "data": data, "annee_scolaire": annee},
+    )
+
+
+@router.get("/comparatif-regions/export.pdf")
+def executif_comparatif_regions_export_pdf(
+    annee_scolaire: str | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_executif_access_web),
+):
+    annee = annee_scolaire or current_annee_scolaire()
+    data = comparatif_regions(db, annee)
+    pdf_bytes = generate_comparatif_regions_pdf(data, annee)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="comparatif-regions.pdf"'},
     )
 
 

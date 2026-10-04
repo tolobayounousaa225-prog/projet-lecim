@@ -13,13 +13,23 @@
 {% if items %}
 <table>
   <thead>
-    <tr><th>Nom</th><th>Région</th><th>Actions</th></tr>
+    <tr><th>Nom</th><th>Région</th><th>Dernière réunion</th><th>Actions</th></tr>
   </thead>
   <tbody>
     {% for item in items %}
+    {% set a = activite[item.id] %}
     <tr>
       <td>{{ item.nom }}</td>
       <td>{{ item.region or "—" }}</td>
+      <td>
+        {% if a.derniere_reunion %}
+        <span class="pill {{ 'pill-red' if a.niveau == 'alerte' else ('pill-gold' if a.niveau == 'surveillance' else 'pill-green') }}">
+          {{ a.derniere_reunion.strftime("%d/%m/%Y") }} ({{ a.jours }} j)
+        </span>
+        {% else %}
+        <span class="pill pill-red">Aucune réunion</span>
+        {% endif %}
+      </td>
       <td class="actions-cell">
         <a href="/admin/delegations/{{ item.id }}" class="btn btn-outline btn-sm">Ouvrir</a>
         <a href="/admin/delegations/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
