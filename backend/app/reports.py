@@ -105,12 +105,16 @@ _PDF_CHAR_REPLACEMENTS = {
 
 def pdf_safe(text: str | None) -> str:
     """Remplace les caractères typographiques hors Latin-1 (tirets cadratins,
-    guillemets courbes, etc.) que la police Helvetica de base ne sait pas rendre."""
+    guillemets courbes, etc.) que la police Helvetica de base ne sait pas rendre, puis
+    remplace tout caractère Latin-1 restant (ex: écriture arabe dans le nom d'une
+    madrassa) par « ? » plutôt que de laisser fpdf2 lever une exception et faire
+    échouer tout le document — mieux vaut un nom partiellement illisible qu'un rapport
+    qui ne se génère pas du tout."""
     if not text:
         return ""
     for char, replacement in _PDF_CHAR_REPLACEMENTS.items():
         text = text.replace(char, replacement)
-    return text
+    return text.encode("latin-1", errors="replace").decode("latin-1")
 
 
 def etablissements_en_retard(db: Session, annee_scolaire: str | None = None) -> list[dict]:
