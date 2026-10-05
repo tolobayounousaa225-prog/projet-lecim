@@ -1587,6 +1587,47 @@ def export_etablissements_xlsx(items: list["models.Etablissement"]) -> bytes:
     return buffer.getvalue()
 
 
+def export_membres_xlsx(items: list["models.Membre"]) -> bytes:
+    """Export Excel du répertoire des membres, usage interne (contient téléphone/e-mail,
+    jamais exposés par le trombinoscope public)."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+
+    wb = Workbook()
+    sheet = wb.active
+    sheet.title = "Membres"
+
+    header_fill = PatternFill(start_color="0B3D2E", end_color="0B3D2E", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+
+    headers = ["Nom", "Poste", "Téléphone", "E-mail", "Début mandat", "Fin mandat", "Statut mandat"]
+    sheet.append(headers)
+    for col in range(1, len(headers) + 1):
+        cell = sheet.cell(row=1, column=col)
+        cell.fill = header_fill
+        cell.font = header_font
+
+    statut_labels = {"expire": "Expiré", "bientot": "Expire bientôt", "en_cours": "En cours"}
+    for m in items:
+        sheet.append([
+            m.full_name, m.poste_label, m.phone or "", m.email or "",
+            m.mandat_debut, m.mandat_fin, statut_labels.get(m.mandat_status, ""),
+        ])
+
+    for row in sheet.iter_rows(min_row=2, min_col=5, max_col=6):
+        for cell in row:
+            cell.number_format = "DD/MM/YYYY"
+
+    sheet.auto_filter.ref = f"A1:{chr(64 + len(headers))}{sheet.max_row}"
+    widths = [28, 30, 18, 28, 14, 14, 16]
+    for i, w in enumerate(widths, start=1):
+        sheet.column_dimensions[chr(64 + i)].width = w
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    return buffer.getvalue()
+
+
 def generate_courrier_registre_pdf(items: list["models.Courrier"], filtre_label: str | None = None) -> bytes:
     """Export PDF du registre du courrier (arrivée/départ) — document de travail interne,
     pas de QR de vérification publique contrairement aux rapports financiers (pas de sens

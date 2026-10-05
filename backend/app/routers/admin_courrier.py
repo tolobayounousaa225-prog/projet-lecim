@@ -169,6 +169,7 @@ async def courrier_create(
     correspondant: str = Form(...),
     objet: str = Form(...),
     observation: str = Form(""),
+    delai_relance_jours: int = Form(7),
     file: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_courrier_access_web),
@@ -207,6 +208,8 @@ async def courrier_create(
         type=type, numero=numero, date_courrier=parsed_date, correspondant=correspondant,
         objet=objet, observation=observation or None, file_path=file_path,
         original_filename=original_filename, created_by_id=user.id,
+        statut_reponse="en_attente" if type == "arrivee" else None,
+        delai_relance_jours=max(1, delai_relance_jours),
     )
     db.add(courrier)
     db.flush()
@@ -242,6 +245,7 @@ async def courrier_update(
     correspondant: str = Form(...),
     objet: str = Form(...),
     observation: str = Form(""),
+    delai_relance_jours: int = Form(7),
     file: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_courrier_access_web),
@@ -280,14 +284,34 @@ async def courrier_update(
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
+    if type == "arrivee" and item.statut_reponse is None:
+        item.statut_reponse = "en_attente"
+    elif type == "depart":
+        item.statut_reponse = None
+
     item.type = type
     item.numero = numero
     item.date_courrier = parsed_date
     item.correspondant = correspondant
     item.objet = objet
     item.observation = observation or None
+    item.delai_relance_jours = max(1, delai_relance_jours)
     audit.log(db, user, "update", "Courrier", item.id, f"A modifié le courrier {numero} ({correspondant})")
     db.commit()
+    return RedirectResponse(url="/admin/courrier", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/{courrier_id}/marquer-repondu")
+def courrier_marquer_repondu(
+    courrier_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_courrier_access_web),
+):
+    item = db.get(models.Courrier, courrier_id)
+    if item and item.statut_reponse == "en_attente":
+        item.statut_reponse = "repondu"
+        audit.log(db, user, "update", "Courrier", item.id, f"A marque le courrier {item.numero} comme repondu")
+        db.commit()
     return RedirectResponse(url="/admin/courrier", status_code=status.HTTP_303_SEE_OTHER)
 
 

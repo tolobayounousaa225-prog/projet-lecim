@@ -1,0 +1,32 @@
+{% extends "admin/base.html" %}
+{% block title %}Santé du système{% endblock %}
+{% block content %}
+<h1>Santé du système</h1>
+<p style="color:var(--text-muted); margin-top:-12px;">Réservé aux administrateurs — vue d'ensemble technique de la plateforme.</p>
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin:26px 0 14px;">Sauvegardes</h2>
+<div class="form-card" style="max-width:none;">
+  {% if derniere_sauvegarde %}
+  <p style="margin:0 0 6px;">Dernière sauvegarde : <strong>{{ derniere_sauvegarde.created_at.strftime("%d/%m/%Y à %H:%M") }}</strong> ({{ derniere_sauvegarde.size_kb }} Ko)</p>
+  <p style="margin:0; color:var(--text-muted); font-size:0.85rem;">{{ nb_sauvegardes }} sauvegarde(s) conservée(s).</p>
+  {% else %}
+  <p style="margin:0; color:#c0392b;">Aucune sauvegarde trouvée.</p>
+  {% endif %}
+  <a href="/admin/backups" class="btn btn-outline btn-sm" style="margin-top:12px; display:inline-block;">Voir toutes les sauvegardes</a>
+</div>
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin:26px 0 14px;">Stockage des fichiers</h2>
+<div class="form-card" style="max-width:none;">
+  <p style="margin:0;">{{ fichiers_count }} fichier(s) uploadé(s) (photos, documents, justificatifs...) — <strong>{{ fichiers_taille_mo }} Mo</strong> au total, stockés en base de données.</p>
+</div>
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin:26px 0 14px;">Volumétrie</h2>
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:14px;">
+  {% for label, valeur in compteurs.items() %}
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ valeur }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">{{ label }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

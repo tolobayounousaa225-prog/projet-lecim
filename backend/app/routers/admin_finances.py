@@ -1107,12 +1107,14 @@ def depenses_list(
 @router.get("/depenses/new")
 def depenses_new_form(
     request: Request,
+    db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
+    projets = db.query(models.Projet).order_by(models.Projet.titre).all()
     return templates.TemplateResponse(
         request,
         "admin/depense_form.html",
-        {"admin": user, "today": datetime.date.today(), "active": "finances", "error": None},
+        {"admin": user, "today": datetime.date.today(), "projets": projets, "active": "finances", "error": None},
     )
 
 
@@ -1122,6 +1124,7 @@ async def depenses_create(
     libelle: str = Form(...),
     montant: int = Form(...),
     date: datetime.date = Form(...),
+    projet_id: str = Form(""),
     justificatif: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
@@ -1134,12 +1137,14 @@ async def depenses_create(
             justificatif_path = f"justificatifs/{stored_name}"
             justificatif_filename = original_name
         except ValueError as exc:
+            projets = db.query(models.Projet).order_by(models.Projet.titre).all()
             return templates.TemplateResponse(
                 request,
                 "admin/depense_form.html",
                 {
                     "admin": user,
                     "today": datetime.date.today(),
+                    "projets": projets,
                     "active": "finances",
                     "error": str(exc),
                 },
@@ -1152,6 +1157,7 @@ async def depenses_create(
         date=date,
         justificatif_path=justificatif_path,
         justificatif_filename=justificatif_filename,
+        projet_id=int(projet_id) if projet_id else None,
         recorded_by_id=user.id,
     )
     db.add(depense)

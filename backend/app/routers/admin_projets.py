@@ -96,6 +96,15 @@ def projets_edit_form(
         if item
         else []
     )
+    depenses = (
+        db.query(models.Depense)
+        .filter(models.Depense.projet_id == projet_id)
+        .order_by(models.Depense.date.desc())
+        .all()
+        if item
+        else []
+    )
+    total_depenses = sum(d.montant for d in depenses)
     return templates.TemplateResponse(
         request,
         "admin/projet_form.html",
@@ -104,6 +113,8 @@ def projets_edit_form(
             "item": item,
             "statuts": PROJET_STATUTS,
             "demandes_partenariat": demandes_partenariat,
+            "depenses": depenses,
+            "total_depenses": total_depenses,
             "active": "projets",
         },
     )

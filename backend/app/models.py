@@ -218,6 +218,10 @@ class User(Base):
     def can_manage_courrier(self) -> bool:
         return self.has_module("courrier")
 
+    @property
+    def can_manage_visites(self) -> bool:
+        return self.has_module("visites")
+
     def pending_action_counts(self) -> dict[str, int]:
         """Nombre d'éléments en attente d'action par rubrique de la barre latérale
         admin (ex : ressources non publiées, dons non confirmés...) — calculé via
@@ -560,6 +564,11 @@ class Courrier(Base):
     observation: Mapped[str | None] = mapped_column(Text, nullable=True)
     file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     original_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Suivi de réponse — uniquement pertinent pour le courrier arrivé (NULL pour le
+    # courrier départ, qui n'attend pas de réponse). "en_attente" | "repondu" | None.
+    statut_reponse: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    delai_relance_jours: Mapped[int] = mapped_column(Integer, default=7)
+    relance_envoyee: Mapped[bool] = mapped_column(Boolean, default=False)
     created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
 
@@ -1076,6 +1085,9 @@ class Depense(Base):
     date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     justificatif_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     justificatif_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Rattachement optionnel à un projet, pour le suivi budgétaire détaillé — une
+    # dépense générale de la LECIM n'est pas forcément liée à un projet précis.
+    projet_id: Mapped[int | None] = mapped_column(ForeignKey("projets.id", ondelete="SET NULL"), nullable=True)
     recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
@@ -1552,6 +1564,26 @@ class HistoriquePoste(Base):
     @property
     def statut(self) -> str:
         return "en_cours" if self.date_fin is None else "termine"
+
+
+# ---------- Journal des visites d'établissements ----------
+
+class VisiteEtablissement(Base):
+    """Visite ou inspection d'un établissement par le BEN — distinct du registre du
+    courrier (pas une correspondance écrite, un passage sur place)."""
+
+    __tablename__ = "visites_etablissements"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    etablissement_id: Mapped[int] = mapped_column(ForeignKey("etablissements.id", ondelete="CASCADE"), nullable=False)
+    date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    constat: Mapped[str] = mapped_column(Text, nullable=False)
+    suites_a_donner: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    etablissement: Mapped["Etablissement"] = relationship()
+    created_by: Mapped["User | None"] = relationship()
 
 
 # ---------- Tâches personnelles ----------

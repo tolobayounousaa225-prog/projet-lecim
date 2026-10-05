@@ -428,6 +428,26 @@ def run_startup_migrations() -> None:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE taches_personnelles ADD COLUMN retard_rappel_envoye BOOLEAN DEFAULT FALSE"))
 
+    if inspector.has_table("depenses"):
+        columns = {c["name"] for c in inspector.get_columns("depenses")}
+        if "projet_id" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text(
+                    "ALTER TABLE depenses ADD COLUMN projet_id INTEGER REFERENCES projets(id) ON DELETE SET NULL"
+                ))
+
+    if inspector.has_table("courriers"):
+        columns = {c["name"] for c in inspector.get_columns("courriers")}
+        if "statut_reponse" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE courriers ADD COLUMN statut_reponse VARCHAR(20)"))
+        if "delai_relance_jours" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE courriers ADD COLUMN delai_relance_jours INTEGER DEFAULT 7"))
+        if "relance_envoyee" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE courriers ADD COLUMN relance_envoyee BOOLEAN DEFAULT FALSE"))
+
     Base.metadata.create_all(bind=engine)
 
     if inspector.has_table("etablissements"):

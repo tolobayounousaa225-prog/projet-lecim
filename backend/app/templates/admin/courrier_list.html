@@ -36,7 +36,7 @@
 {% if items %}
 <table>
   <thead>
-    <tr><th>Type</th><th>N°</th><th>Date</th><th>Correspondant</th><th>Objet</th><th>Fichier</th><th>Actions</th></tr>
+    <tr><th>Type</th><th>N°</th><th>Date</th><th>Correspondant</th><th>Objet</th><th>Réponse</th><th>Fichier</th><th>Actions</th></tr>
   </thead>
   <tbody>
     {% for item in items %}
@@ -50,10 +50,20 @@
       <td>{{ item.correspondant }}</td>
       <td style="max-width:280px;">{{ item.objet }}</td>
       <td>
+        {% if item.statut_reponse == "en_attente" %}<span class="pill pill-red">En attente</span>
+        {% elif item.statut_reponse == "repondu" %}<span class="pill pill-green">Répondu</span>
+        {% else %}<span style="color:var(--text-muted); font-size:0.8rem;">—</span>{% endif %}
+      </td>
+      <td>
         {% if item.file_path %}<a href="/admin/courrier/{{ item.id }}/file" target="_blank">{{ item.original_filename }}</a>
         {% else %}<span style="color:var(--text-muted)">—</span>{% endif %}
       </td>
       <td class="actions-cell">
+        {% if item.statut_reponse == "en_attente" %}
+        <form method="post" action="/admin/courrier/{{ item.id }}/marquer-repondu">
+          <button type="submit" class="btn btn-outline btn-sm">Marquer répondu</button>
+        </form>
+        {% endif %}
         <a href="/admin/courrier/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
         <form method="post" action="/admin/courrier/{{ item.id }}/delete" onsubmit="return confirm('Supprimer cette entrée du registre ?');">
           <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>

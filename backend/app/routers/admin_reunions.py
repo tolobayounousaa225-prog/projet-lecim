@@ -17,6 +17,7 @@ from ..deps import require_membres_access_web, require_reunions_access_web
 from ..email_utils import send_email
 from ..postes import POSTES
 from ..reminders import send_reminder_for_reunion
+from ..reports import export_membres_xlsx
 from .admin_files import ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin", tags=["admin-reunions"])
@@ -254,6 +255,25 @@ def membres_export_vcf(
         content=vcf_content,
         media_type="text/vcard",
         headers={"Content-Disposition": 'attachment; filename="membres-bureau-lecim.vcf"'},
+    )
+
+
+@router.get("/membres/export.xlsx")
+def membres_export_xlsx(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_membres_access_web),
+):
+    items = (
+        db.query(models.Membre)
+        .filter(models.Membre.delegation_id.is_(None))
+        .order_by(models.Membre.full_name)
+        .all()
+    )
+    xlsx_bytes = export_membres_xlsx(items)
+    return Response(
+        content=xlsx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="membres-bureau-lecim.xlsx"'},
     )
 
 

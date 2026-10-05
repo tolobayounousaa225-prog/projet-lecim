@@ -64,11 +64,13 @@ from .routers import (
     admin_sondages,
     admin_sondages_express,
     admin_statistiques,
+    admin_systeme,
     admin_taches,
     admin_temoignages,
     admin_users,
     admin_videos,
     admin_visio,
+    admin_visites,
     assistant_public,
     auth,
     calendrier_scolaire_public,
@@ -316,7 +318,9 @@ app.include_router(admin_temoignages.router)
 app.include_router(admin_taches.router)
 app.include_router(admin_videos.router)
 app.include_router(admin_visio.router)
+app.include_router(admin_visites.router)
 app.include_router(admin_statistiques.router)
+app.include_router(admin_systeme.router)
 app.include_router(admin_newsletter.router)
 app.include_router(delegation_portal.router)
 app.include_router(delegations_public.router)

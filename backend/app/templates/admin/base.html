@@ -56,7 +56,7 @@
       </div>
       {% endif %}
 
-      {% if admin.can_manage_enseignants or admin.can_manage_resultats_examens or admin.can_manage_effectifs or admin.can_manage_cartes_scolaires or admin.can_manage_finances or admin.can_manage_messagerie %}
+      {% if admin.can_manage_enseignants or admin.can_manage_resultats_examens or admin.can_manage_effectifs or admin.can_manage_cartes_scolaires or admin.can_manage_finances or admin.can_manage_messagerie or admin.can_manage_visites %}
       <div class="nav-section">
         <span class="nav-section-title">Écoles membres</span>
         {% if admin.can_manage_finances %}<a href="/admin/etablissements" class="{{ 'active' if active == 'etablissements' else '' }}">Établissements &amp; partenaires</a>{% endif %}
@@ -66,6 +66,7 @@
         {% if admin.can_manage_cartes_scolaires %}<a href="/admin/cartes-scolaires" class="{{ 'active' if active == 'cartes_scolaires' else '' }}">Cartes scolaires{% if pending.cartes_scolaires %}<span class="nav-badge">{{ pending.cartes_scolaires }}</span>{% endif %}</a>{% endif %}
         {% if admin.can_manage_finances %}<a href="/admin/demandes-etablissements" class="{{ 'active' if active == 'demandes_etablissements' else '' }}">Demandes des établissements{% if pending.demandes_etablissements %}<span class="nav-badge">{{ pending.demandes_etablissements }}</span>{% endif %}</a>{% endif %}
         {% if admin.can_manage_messagerie %}<a href="/admin/messagerie" class="{{ 'active' if active == 'messagerie' else '' }}">Messagerie établissements{% if pending.messagerie %}<span class="nav-badge">{{ pending.messagerie }}</span>{% endif %}</a>{% endif %}
+        {% if admin.can_manage_visites %}<a href="/admin/visites" class="{{ 'active' if active == 'visites' else '' }}">Journal des visites</a>{% endif %}
       </div>
       {% endif %}
 
@@ -119,6 +120,7 @@
         <a href="/admin/connexions" class="{{ 'active' if active == 'connexions' else '' }}">Journal des connexions</a>
         <a href="/admin/reinitialisations" class="{{ 'active' if active == 'reinitialisations' else '' }}">Réinitialisations de mot de passe</a>
         <a href="/admin/backups" class="{{ 'active' if active == 'backups' else '' }}">Sauvegardes</a>
+        <a href="/admin/systeme" class="{{ 'active' if active == 'systeme' else '' }}">Santé du système</a>
       </div>
       {% endif %}
     </nav>

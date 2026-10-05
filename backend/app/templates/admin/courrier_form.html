@@ -46,6 +46,10 @@
       <textarea id="observation" name="observation">{{ item.observation or "" if item else "" }}</textarea>
     </div>
     <div class="form-group">
+      <label for="delai_relance_jours">Délai avant relance automatique (jours, courrier arrivé uniquement)</label>
+      <input type="number" id="delai_relance_jours" name="delai_relance_jours" min="1" value="{{ item.delai_relance_jours if item else 7 }}">
+    </div>
+    <div class="form-group">
       <label for="file">Copie scannée (optionnel)</label>
       {% if item and item.file_path %}
       <p style="margin:0 0 8px; font-size:0.85rem;"><a href="/admin/courrier/{{ item.id }}/file" target="_blank">{{ item.original_filename }}</a> déjà jointe — choisissez un fichier pour la remplacer.</p>
