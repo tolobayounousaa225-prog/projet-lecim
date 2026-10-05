@@ -3,10 +3,18 @@
 {% block content %}
 <h1>{{ "Modifier le membre" if item else "Ajouter un membre" }}</h1>
 <div class="form-card">
-  <form method="post" action="{{ '/admin/membres/' ~ item.id ~ '/edit' if item else '/admin/membres/new' }}">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <form method="post" action="{{ '/admin/membres/' ~ item.id ~ '/edit' if item else '/admin/membres/new' }}" enctype="multipart/form-data">
     <div class="form-group">
       <label for="full_name">Nom complet</label>
       <input type="text" id="full_name" name="full_name" required value="{{ item.full_name if item else '' }}">
+    </div>
+    {% if item and item.photo_url %}
+    <div class="form-group"><img src="{{ item.photo_url }}" alt="" style="width:80px; height:80px; border-radius:50%; object-fit:cover;"></div>
+    {% endif %}
+    <div class="form-group">
+      <label for="photo">Photo (pour le trombinoscope public — optionnelle)</label>
+      <input type="file" id="photo" name="photo" accept=".jpg,.jpeg,.png,.webp,.gif">
     </div>
     <div class="form-group">
       <label for="poste">Poste occupé au sein du BEN</label>

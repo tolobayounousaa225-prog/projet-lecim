@@ -73,6 +73,7 @@ from .routers import (
     auth,
     calendrier_scolaire_public,
     carte,
+    checkin_public,
     conseil_administration,
     contact,
     delegation_portal,
@@ -87,6 +88,7 @@ from .routers import (
     gouvernance,
     historique,
     idees,
+    membres_bureau_public,
     news,
     newsletter_public,
     objectifs_principes_moyens,
@@ -241,6 +243,7 @@ app.include_router(assistant_public.router)
 app.include_router(actualite_share.router)
 app.include_router(password_reset.router)
 app.include_router(carte.router)
+app.include_router(checkin_public.router)
 app.include_router(etablissements_public.router)
 app.include_router(news.router)
 app.include_router(activities.router)
@@ -304,6 +307,7 @@ app.include_router(admin_courrier.router)
 app.include_router(admin_historique_postes.router)
 app.include_router(admin_gouvernance.router)
 app.include_router(gouvernance.router)
+app.include_router(membres_bureau_public.router)
 app.include_router(admin_site_content.router)
 app.include_router(site_content.router)
 app.include_router(admin_sondages.router)

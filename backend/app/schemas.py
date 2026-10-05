@@ -472,3 +472,11 @@ class GouvernanceOut(BaseModel):
     niveau: str
     parent_id: int | None
     ordre: int
+
+
+class MembreBureauOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    full_name: str
+    poste_label: str
+    photo_url: str | None

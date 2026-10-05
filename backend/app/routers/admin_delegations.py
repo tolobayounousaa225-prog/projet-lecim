@@ -3,7 +3,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
@@ -12,7 +12,9 @@ from sqlalchemy.orm import Session
 from .. import audit, models
 from ..database import get_db
 from ..deps import require_delegation_management_web
+from ..reports import current_annee_scolaire, generate_delegation_report_pdf
 from ..security import hash_password, password_policy_error
+from ..security_utils import safe_content_disposition
 
 router = APIRouter(prefix="/admin/delegations", tags=["admin-delegations"])
 
@@ -189,6 +191,28 @@ def delegation_detail(
             "active": "delegations",
             "error": error,
         },
+    )
+
+
+@router.get("/{delegation_id}/rapport.pdf")
+def delegation_rapport_pdf(
+    delegation_id: int,
+    annee_scolaire: str | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_management_web),
+):
+    delegation = db.get(models.Delegation, delegation_id)
+    if not delegation:
+        return RedirectResponse(url="/admin/delegations", status_code=status.HTTP_303_SEE_OTHER)
+    annee = annee_scolaire or current_annee_scolaire()
+    today = datetime.date.today()
+    debut_annee = datetime.date(today.year if today.month >= 9 else today.year - 1, 9, 1)
+    pdf_bytes = generate_delegation_report_pdf(db, delegation, annee, debut_annee, today, user)
+    filename = safe_content_disposition(f"rapport-delegation-{delegation.nom}.pdf".replace(" ", "-"))
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 

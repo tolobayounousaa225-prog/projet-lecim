@@ -410,6 +410,18 @@ def run_startup_migrations() -> None:
                     "REFERENCES gouvernance_membres(id) ON DELETE SET NULL"
                 ))
 
+    if inspector.has_table("membres"):
+        columns = {c["name"] for c in inspector.get_columns("membres")}
+        if "photo_path" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE membres ADD COLUMN photo_path VARCHAR(500)"))
+
+    if inspector.has_table("reunions"):
+        columns = {c["name"] for c in inspector.get_columns("reunions")}
+        if "checkin_token" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE reunions ADD COLUMN checkin_token VARCHAR(64) UNIQUE"))
+
     Base.metadata.create_all(bind=engine)
 
     if inspector.has_table("etablissements"):

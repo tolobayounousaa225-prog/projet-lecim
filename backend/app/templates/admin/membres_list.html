@@ -9,11 +9,16 @@
 {% if items %}
 <table>
   <thead>
-    <tr><th>Nom</th><th>Poste au BEN</th><th>Contact</th><th>Mandat</th><th>Actions</th></tr>
+    <tr><th></th><th>Nom</th><th>Poste au BEN</th><th>Contact</th><th>Mandat</th><th>Actions</th></tr>
   </thead>
   <tbody>
     {% for item in items %}
     <tr>
+      <td>
+        {% if item.photo_url %}
+        <img src="{{ item.photo_url }}" alt="" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+        {% else %}<span style="color:var(--text-muted); font-size:0.75rem;">—</span>{% endif %}
+      </td>
       <td>{{ item.full_name }}</td>
       <td>{{ item.poste_label }}</td>
       <td>{{ item.phone or "" }}{% if item.phone and item.email %}<br>{% endif %}{{ item.email or "" }}</td>

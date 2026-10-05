@@ -449,6 +449,10 @@ class Membre(Base):
     mandat_debut: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
     mandat_fin: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
     mandat_alert_sent: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Photo pour le trombinoscope public — un membre sans photo n'apparaît simplement
+    # pas sur la page publique (pas de case à cocher "publié" séparée, la présence
+    # d'une photo suffit à décider de l'affichage).
+    photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
@@ -459,6 +463,10 @@ class Membre(Base):
         if not self.poste:
             return "—"
         return f"{label} (adjoint)" if self.is_adjoint else label
+
+    @property
+    def photo_url(self) -> str | None:
+        return f"/api/membres-bureau/{self.id}/photo" if self.photo_path else None
 
     @property
     def mandat_status(self) -> str | None:
@@ -484,6 +492,10 @@ class Reunion(Base):
     # NULL = réunion nationale du BEN ; renseigné = réunion locale d'une délégation.
     delegation_id: Mapped[int | None] = mapped_column(ForeignKey("delegations.id"), nullable=True)
     reminder_sent: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Jeton opaque utilisé dans le QR code de pointage de présence (mode présentation) —
+    # jamais l'id séquentiel de la réunion, pour ne pas laisser deviner/scanner une autre
+    # réunion. Généré à la volée au premier besoin (réunions déjà existantes sans jeton).
+    checkin_token: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )

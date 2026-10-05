@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pointage de présence — LECIM</title>
+<link rel="icon" type="image/jpeg" href="/static/img/logo.jpg">
+<style>
+  :root {
+    --green-dark: #0a3d63; --green: #043872; --gold: #e0a52c;
+    --cream: #f4f8fb; --red: #c0392b; --border: #dce8f0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: linear-gradient(160deg, var(--green-dark), var(--green));
+    font-family: "Segoe UI", "Poppins", Arial, sans-serif; display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .card {
+    background: #fff; border-radius: 18px; max-width: 420px; width: 100%;
+    box-shadow: 0 20px 50px rgba(10,61,99,.25); overflow: hidden; text-align: center;
+  }
+  .card-header { padding: 24px 20px 16px; }
+  .card-header img.logo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; }
+  .card-header h1 { font-size: 1.05rem; color: var(--green-dark); margin: 0; }
+  .card-header p { font-size: 0.85rem; color: #58707f; margin: 6px 0 0; }
+
+  .not-found { padding: 30px 24px 34px; color: #58707f; font-size: 0.92rem; }
+
+  .membres-list { padding: 4px 16px 20px; text-align: left; }
+  .membre-row { display: block; width: 100%; }
+  .membre-btn {
+    width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    border: 1px solid var(--border); border-radius: 12px; background: #fff; margin-bottom: 8px;
+    font-size: 0.95rem; color: var(--green-dark); font-family: inherit; cursor: pointer; text-align: left;
+  }
+  .membre-btn:active { background: var(--cream); }
+  .membre-btn.present { background: #eafaf0; border-color: #4caf7d; color: #1a7a4c; font-weight: 600; }
+  .membre-avatar {
+    width: 34px; height: 34px; border-radius: 50%; background: var(--cream); color: var(--green-dark);
+    display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
+  }
+  .membre-check { margin-left: auto; color: #1a7a4c; font-weight: 700; }
+
+  .confirm-banner {
+    margin: 0 16px 14px; padding: 12px; border-radius: 10px; background: #eafaf0; color: #1a7a4c;
+    font-size: 0.88rem; font-weight: 600;
+  }
+  .footer-note { padding: 14px; font-size: 0.72rem; color: #97a9b9; background: var(--cream); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-header">
+    <img class="logo" src="/static/img/logo.jpg" alt="Logo LECIM">
+    <h1>Pointage de présence</h1>
+    {% if reunion %}<p>{{ reunion.title }} — {{ reunion.date.strftime("%d/%m/%Y") }}</p>{% endif %}
+  </div>
+
+  {% if not reunion %}
+  <div class="not-found">
+    Ce lien de pointage n'est plus valable (réunion introuvable ou déjà passée). Demandez
+    un nouveau QR code affiché sur l'écran de la réunion en cours.
+  </div>
+  {% else %}
+    {% if confirme %}
+    <div class="confirm-banner">✓ Présence enregistrée, merci !</div>
+    {% endif %}
+    {% if membres %}
+    <div class="membres-list">
+      <p style="font-size:0.82rem; color:#58707f; margin:0 0 10px;">Touchez votre nom pour confirmer votre présence :</p>
+      {% for m in membres %}
+      <form method="post" action="/checkin/{{ token }}" class="membre-row">
+        <input type="hidden" name="membre_id" value="{{ m.id }}">
+        <button type="submit" class="membre-btn {{ 'present' if m.id in presents_ids else '' }}">
+          <span class="membre-avatar">{{ (m.full_name[:2] | upper) }}</span>
+          <span>{{ m.full_name }}</span>
+          {% if m.id in presents_ids %}<span class="membre-check">✓</span>{% endif %}
+        </button>
+      </form>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="not-found">Aucun membre enregistré pour cette réunion.</div>
+    {% endif %}
+  {% endif %}
+
+  <div class="footer-note">Ligue des Établissements Confessionnels et Madrassas en Côte d'Ivoire</div>
+</div>
+</body>
+</html>

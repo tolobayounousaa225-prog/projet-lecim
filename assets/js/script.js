@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadHistorique();
   loadFondateurs();
   loadGouvernance();
+  loadMembresBureau();
   loadSiteContent();
   loadAdhesionWavePayment();
   loadCarte();
@@ -2790,6 +2791,39 @@ function loadGouvernance() {
     })
     .catch(function () {
       // API indisponible : l'organigramme statique par défaut reste affiché.
+    });
+}
+
+function loadMembresBureau() {
+  var container = document.getElementById("membres-bureau-grid");
+  var section = document.getElementById("membres-bureau-section");
+  if (!container) return;
+
+  fetch(API_BASE + "/api/membres-bureau")
+    .then(function (res) {
+      if (!res.ok) throw new Error("API indisponible");
+      return res.json();
+    })
+    .then(function (items) {
+      if (!items || !items.length) return;
+      if (section) section.style.display = "";
+      container.innerHTML = items
+        .map(function (m) {
+          var avatarInner = m.photo_url
+            ? '<img src="' + API_BASE + m.photo_url + '" alt="" style="width:100%; height:100%; object-fit:cover;">'
+            : initialsFrom(m.full_name);
+          return (
+            '<div class="mission-card">' +
+            '<div class="mission-icon" style="overflow:hidden; border-radius:50%;">' + avatarInner + "</div>" +
+            "<h3>" + escapeHtml(m.full_name) + "</h3>" +
+            "<p>" + escapeHtml(m.poste_label) + "</p>" +
+            "</div>"
+          );
+        })
+        .join("");
+    })
+    .catch(function () {
+      // API indisponible ou aucune photo publiée : la section reste masquée.
     });
 }
 

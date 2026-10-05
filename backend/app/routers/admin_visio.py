@@ -35,7 +35,8 @@ def reunion_visio(
         return RedirectResponse(url="/admin/reunions", status_code=status.HTTP_303_SEE_OTHER)
 
     room = jitsi_room_name(reunion.id)
-    token = generate_jitsi_token(room, user.full_name, user.email, moderator=True)
+    moderator = user.is_admin or reunion.created_by_id == user.id
+    token = generate_jitsi_token(room, user.full_name, user.email, moderator=moderator)
 
     return templates.TemplateResponse(
         request,

@@ -41,11 +41,22 @@
     padding: 6px 12px; border-radius: 6px;
   }
   .exit-link:hover { color: #fff; border-color: #fff; }
-  @media print { .exit-link { display: none; } }
+  .checkin-qr {
+    position: fixed; bottom: 20px; right: 24px; background: #fff; border-radius: 12px;
+    padding: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  }
+  .checkin-qr img { width: 130px; height: 130px; display: block; }
+  .checkin-qr span { display: block; margin-top: 8px; font-size: 0.72rem; color: var(--green-dark); font-weight: 700; max-width: 130px; }
+  @media print { .exit-link, .checkin-qr { display: none; } }
 </style>
 </head>
 <body>
   <a class="exit-link" href="/admin/reunions/{{ reunion.id }}">&larr; Quitter le mode présentation</a>
+
+  <div class="checkin-qr">
+    <img src="/admin/reunions/{{ reunion.id }}/presentation/qr.png" alt="QR code de pointage de présence">
+    <span>Scannez pour pointer votre présence</span>
+  </div>
 
   <div class="brand">
     <img src="/static/img/logo.jpg" alt="Logo LECIM">

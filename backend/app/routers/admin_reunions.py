@@ -1,9 +1,11 @@
 import datetime
+import io
 import secrets
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, Request, status
-from fastapi.responses import RedirectResponse
+import qrcode
+from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
@@ -14,11 +16,14 @@ from ..deps import require_membres_access_web, require_reunions_access_web
 from ..email_utils import send_email
 from ..postes import POSTES
 from ..reminders import send_reminder_for_reunion
+from .admin_files import ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin", tags=["admin-reunions"])
 
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
+
+MEMBRES_PHOTOS_DIR = "membres"
 
 
 # ---------- Membres (répertoire permanent) ----------
@@ -54,8 +59,32 @@ def membres_new_form(
     )
 
 
+async def _handle_membre_photo(
+    request: Request,
+    photo: UploadFile | None,
+    user: models.User,
+    item: models.Membre | None,
+    db: Session,
+):
+    """Sauvegarde une photo uploadée pour un membre. Retourne (chemin_relatif, réponse_erreur_ou_None)."""
+    if photo is None or not photo.filename:
+        return None, None
+    try:
+        stored_name, _ = await storage.save_upload(db, photo, MEMBRES_PHOTOS_DIR, ALLOWED_PHOTO_EXT)
+        return f"{MEMBRES_PHOTOS_DIR}/{stored_name}", None
+    except ValueError as exc:
+        error_response = templates.TemplateResponse(
+            request,
+            "admin/membre_form.html",
+            {"admin": user, "item": item, "postes": POSTES, "active": "membres", "error": str(exc)},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+        return None, error_response
+
+
 @router.post("/membres/new")
-def membres_create(
+async def membres_create(
+    request: Request,
     full_name: str = Form(...),
     poste: str = Form(""),
     is_adjoint: bool = Form(False),
@@ -63,9 +92,14 @@ def membres_create(
     email: str = Form(""),
     mandat_debut: str = Form(""),
     mandat_fin: str = Form(""),
+    photo: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_membres_access_web),
 ):
+    photo_path, error = await _handle_membre_photo(request, photo, user, None, db)
+    if error:
+        return error
+
     membre = models.Membre(
         full_name=full_name,
         poste=poste or None,
@@ -74,6 +108,7 @@ def membres_create(
         email=email or None,
         mandat_debut=datetime.date.fromisoformat(mandat_debut) if mandat_debut else None,
         mandat_fin=datetime.date.fromisoformat(mandat_fin) if mandat_fin else None,
+        photo_path=photo_path,
     )
     db.add(membre)
     db.commit()
@@ -96,8 +131,9 @@ def membres_edit_form(
 
 
 @router.post("/membres/{membre_id}/edit")
-def membres_update(
+async def membres_update(
     membre_id: int,
+    request: Request,
     full_name: str = Form(...),
     poste: str = Form(""),
     is_adjoint: bool = Form(False),
@@ -105,11 +141,15 @@ def membres_update(
     email: str = Form(""),
     mandat_debut: str = Form(""),
     mandat_fin: str = Form(""),
+    photo: UploadFile | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_membres_access_web),
 ):
     membre = db.get(models.Membre, membre_id)
     if membre:
+        photo_path, error = await _handle_membre_photo(request, photo, user, membre, db)
+        if error:
+            return error
         membre.full_name = full_name
         membre.poste = poste or None
         membre.is_adjoint = is_adjoint
@@ -120,6 +160,8 @@ def membres_update(
             membre.mandat_alert_sent = False
         membre.mandat_debut = datetime.date.fromisoformat(mandat_debut) if mandat_debut else None
         membre.mandat_fin = new_mandat_fin
+        if photo_path:
+            membre.photo_path = photo_path
         db.commit()
     return RedirectResponse(url="/admin/membres", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -301,10 +343,16 @@ def reunion_presentation(
 ):
     """Vue projecteur plein écran pour l'ouverture d'une réunion — ordre du jour et
     liste des présents en gros caractères, sans la barre latérale ni les formulaires
-    d'édition de l'espace admin habituel."""
+    d'édition de l'espace admin habituel. Affiche aussi un QR code de pointage de
+    présence (voir checkin_public.py) — généré à la volée si cette réunion n'en a pas
+    encore (réunions créées avant l'ajout de cette fonctionnalité)."""
     reunion = db.get(models.Reunion, reunion_id)
     if not reunion:
         return RedirectResponse(url="/admin/reunions", status_code=status.HTTP_303_SEE_OTHER)
+
+    if not reunion.checkin_token:
+        reunion.checkin_token = secrets.token_urlsafe(24)
+        db.commit()
 
     presents = sorted(
         (p for p in reunion.presences if p.present),
@@ -314,8 +362,28 @@ def reunion_presentation(
     return templates.TemplateResponse(
         request,
         "admin/reunion_presentation.html",
-        {"reunion": reunion, "presents": presents},
+        {
+            "reunion": reunion,
+            "presents": presents,
+            "checkin_url": f"{settings.public_base_url}/checkin/{reunion.checkin_token}",
+        },
     )
+
+
+@router.get("/reunions/{reunion_id}/presentation/qr.png")
+def reunion_presentation_qr(
+    reunion_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_reunions_access_web),
+):
+    reunion = db.get(models.Reunion, reunion_id)
+    if not reunion or not reunion.checkin_token:
+        return RedirectResponse(url="/admin/reunions", status_code=status.HTTP_303_SEE_OTHER)
+
+    checkin_url = f"{settings.public_base_url}/checkin/{reunion.checkin_token}"
+    buf = io.BytesIO()
+    qrcode.make(checkin_url, border=1).save(buf, format="PNG")
+    return Response(content=buf.getvalue(), media_type="image/png")
 
 
 @router.post("/reunions/{reunion_id}/rappel")

@@ -6,7 +6,10 @@
     <h1 style="margin:0">{{ delegation.nom }}</h1>
     <p style="color:var(--text-muted); margin:4px 0 0;">{{ delegation.region or "Région non précisée" }}</p>
   </div>
-  <a href="/admin/delegations/{{ delegation.id }}/edit" class="btn btn-outline">Modifier la délégation</a>
+  <div style="display:flex; gap:10px;">
+    <a href="/admin/delegations/{{ delegation.id }}/rapport.pdf" class="btn btn-outline">Générer le rapport PDF</a>
+    <a href="/admin/delegations/{{ delegation.id }}/edit" class="btn btn-outline">Modifier la délégation</a>
+  </div>
 </div>
 
 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:14px; margin-bottom:30px;">

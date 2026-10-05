@@ -898,6 +898,191 @@ def generate_annual_report_pdf(
     return bytes(pdf.output())
 
 
+def _period_data_delegation(db: Session, date_debut: datetime.date, date_fin: datetime.date, delegation_id: int) -> dict:
+    """Variante de _period_data() limitee aux etablissements d'une delegation donnee.
+    Recettes/ventes de livres/depenses ne sont pas rattachees a un etablissement dans ce
+    modele (ce sont des ecritures nationales) : elles sont volontairement exclues plutot
+    que faussement attribuees a une delegation."""
+    adhesions = (
+        db.query(models.Adhesion)
+        .join(models.Etablissement, models.Etablissement.id == models.Adhesion.etablissement_id)
+        .options(joinedload(models.Adhesion.etablissement))
+        .filter(
+            models.Etablissement.delegation_id == delegation_id,
+            models.Adhesion.date_paiement >= date_debut,
+            models.Adhesion.date_paiement <= date_fin,
+        )
+        .all()
+    )
+    cotisations = (
+        db.query(models.Cotisation)
+        .join(models.Etablissement, models.Etablissement.id == models.Cotisation.etablissement_id)
+        .options(joinedload(models.Cotisation.etablissement))
+        .filter(
+            models.Etablissement.delegation_id == delegation_id,
+            models.Cotisation.date_paiement.isnot(None),
+            models.Cotisation.date_paiement >= date_debut,
+            models.Cotisation.date_paiement <= date_fin,
+        )
+        .all()
+    )
+    droits_examens = (
+        db.query(models.DroitExamen)
+        .join(models.Etablissement, models.Etablissement.id == models.DroitExamen.etablissement_id)
+        .options(joinedload(models.DroitExamen.etablissement))
+        .filter(
+            models.Etablissement.delegation_id == delegation_id,
+            models.DroitExamen.date >= date_debut,
+            models.DroitExamen.date <= date_fin,
+        )
+        .all()
+    )
+
+    total_adhesions = sum(a.montant for a in adhesions)
+    total_cotisations = sum(c.montant_paye for c in cotisations)
+    total_droits_examens = sum(d.montant for d in droits_examens)
+    total_entrees = total_adhesions + total_cotisations + total_droits_examens
+
+    return {
+        "adhesions": adhesions,
+        "cotisations": cotisations,
+        "droits_examens": droits_examens,
+        "total_adhesions": total_adhesions,
+        "total_cotisations": total_cotisations,
+        "total_droits_examens": total_droits_examens,
+        "total_entrees": total_entrees,
+    }
+
+
+def generate_delegation_report_pdf(
+    db: Session,
+    delegation: "models.Delegation",
+    annee_scolaire: str,
+    date_debut: datetime.date,
+    date_fin: datetime.date,
+    user: "models.User",
+) -> bytes:
+    """Rapport PDF individualise pour une delegation regionale — equivalent allege du
+    rapport annuel national (generate_annual_report_pdf), limite a ce que le modele de
+    donnees permet reellement de rattacher a une delegation : reunions locales,
+    etablissements affilies, droits d'adhesion/cotisations/droits d'examens de ces
+    etablissements, retards de cotisation. Pas de section Activites (Activity n'a pas de
+    notion de delegation) ni Recettes/Ventes de livres/Depenses (ecritures nationales,
+    non rattachees a un etablissement) — volontairement absentes plutot qu'approximees."""
+    finances = _period_data_delegation(db, date_debut, date_fin, delegation.id)
+    etablissements = (
+        db.query(models.Etablissement)
+        .filter(models.Etablissement.delegation_id == delegation.id)
+        .order_by(models.Etablissement.nom)
+        .all()
+    )
+    retards = [
+        r for r in etablissements_en_retard(db, annee_scolaire)
+        if r["etablissement"].delegation_id == delegation.id
+    ]
+    reunions = (
+        db.query(models.Reunion)
+        .filter(
+            models.Reunion.delegation_id == delegation.id,
+            models.Reunion.date >= date_debut,
+            models.Reunion.date <= date_fin,
+        )
+        .order_by(models.Reunion.date)
+        .all()
+    )
+    membres_count = db.query(models.Membre).filter(models.Membre.delegation_id == delegation.id).count()
+
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=18)
+    pdf.add_page()
+    _add_logo(pdf)
+
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_text_color(11, 61, 46)
+    pdf.cell(0, 10, f"LECIM - Rapport de la delegation {pdf_safe(delegation.nom)}", new_x="LMARGIN", new_y="NEXT")
+
+    pdf.set_font("Helvetica", "", 11)
+    pdf.set_text_color(80, 80, 80)
+    pdf.cell(0, 7, f"Annee scolaire {annee_scolaire}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(
+        0, 7, f"Genere le {datetime.date.today().strftime('%d/%m/%Y')} par {user.full_name}",
+        new_x="LMARGIN", new_y="NEXT",
+    )
+    pdf.ln(4)
+
+    def section_title(text: str) -> None:
+        pdf.set_font("Helvetica", "B", 13)
+        pdf.set_text_color(11, 61, 46)
+        pdf.cell(0, 9, text, new_x="LMARGIN", new_y="NEXT")
+        pdf.set_text_color(30, 30, 30)
+
+    def kv_row(label: str, value: str, bold: bool = False) -> None:
+        pdf.set_font("Helvetica", "B" if bold else "", 11)
+        pdf.cell(100, 7, label)
+        pdf.cell(0, 7, value, new_x="LMARGIN", new_y="NEXT")
+
+    section_title("Vue d'ensemble")
+    kv_row("Etablissements affilies", str(len(etablissements)))
+    kv_row("Membres locaux", str(membres_count))
+    kv_row("Reunions tenues sur la periode", str(len(reunions)))
+    pdf.ln(6)
+
+    section_title("Bilan financier de la periode")
+    kv_row("Droits d'adhesion encaisses", money(finances["total_adhesions"]))
+    kv_row("Cotisations encaissees", money(finances["total_cotisations"]))
+    kv_row("Droits d'examens", money(finances["total_droits_examens"]))
+    kv_row("Total des entrees rattachees aux etablissements", money(finances["total_entrees"]), bold=True)
+    pdf.set_font("Helvetica", "I", 9)
+    pdf.set_text_color(130, 130, 130)
+    pdf.cell(0, 6, "(hors recettes, ventes de livres et depenses, qui sont des ecritures nationales)", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(30, 30, 30)
+    pdf.ln(4)
+
+    if reunions:
+        section_title("Reunions de la delegation")
+        pdf.set_font("Helvetica", "", 10)
+        with pdf.table(col_widths=(35, 90, 40, 25), text_align=("LEFT", "LEFT", "LEFT", "RIGHT")) as table:
+            row = table.row()
+            for h in ("Date", "Titre", "Lieu", "Presents"):
+                row.cell(h, style=FontFace(emphasis="BOLD"))
+            for r in reunions:
+                row = table.row()
+                row.cell(r.date.strftime("%d/%m/%Y"))
+                row.cell(pdf_safe(r.title))
+                row.cell(pdf_safe(r.lieu) or "-")
+                row.cell(f"{r.present_count}/{len(r.presences)}")
+        pdf.ln(6)
+
+    if etablissements:
+        section_title("Etablissements affilies")
+        pdf.set_font("Helvetica", "", 10)
+        with pdf.table(col_widths=(120, 70), text_align=("LEFT", "LEFT")) as table:
+            row = table.row()
+            for h in ("Etablissement", "Statut"):
+                row.cell(h, style=FontFace(emphasis="BOLD"))
+            for e in etablissements:
+                row = table.row()
+                row.cell(pdf_safe(e.nom))
+                row.cell(pdf_safe(e.statut))
+        pdf.ln(6)
+
+    if retards:
+        section_title(f"Etablissements en retard de cotisation ({annee_scolaire})")
+        pdf.set_font("Helvetica", "", 10)
+        with pdf.table(col_widths=(70, 40, 40, 40), text_align=("LEFT", "RIGHT", "RIGHT", "RIGHT")) as table:
+            row = table.row()
+            for h in ("Etablissement", "Du", "Verse", "Reste"):
+                row.cell(h, style=FontFace(emphasis="BOLD"))
+            for r in retards:
+                row = table.row()
+                row.cell(pdf_safe(r["etablissement"].nom))
+                row.cell(money(r["montant_du"]))
+                row.cell(money(r["montant_paye"]))
+                row.cell(money(r["reste"]))
+
+    return bytes(pdf.output())
+
+
 def generate_impact_report_pdf(db: Session, annee_scolaire: str) -> bytes:
     """Rapport d'impact grand public — chiffres clés de l'année scolaire, sans le
     détail comptable ligne par ligne du rapport interne (generate_annual_report_pdf) :
