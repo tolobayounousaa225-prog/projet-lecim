@@ -12,7 +12,7 @@ par le passé ne puisse pas servir à pointer une présence a posteriori."""
 import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -62,7 +62,7 @@ def checkin_page(token: str, request: Request, confirme: str | None = None, db: 
 
 
 @router.post("/{token}")
-def checkin_confirm(token: str, membre_id: int, db: Session = Depends(get_db)):
+def checkin_confirm(token: str, membre_id: int = Form(...), db: Session = Depends(get_db)):
     reunion = _reunion_du_jour(db, token)
     if not reunion:
         return RedirectResponse(url=f"/checkin/{token}", status_code=status.HTTP_303_SEE_OTHER)
