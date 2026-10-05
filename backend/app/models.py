@@ -1569,6 +1569,9 @@ class TachePersonnelle(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     echeance: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
     is_done: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Évite de ré-envoyer le rappel de retard chaque jour tant que la tâche n'est pas
+    # terminée — un seul e-mail au moment où l'échéance est dépassée.
+    retard_rappel_envoye: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
 
 

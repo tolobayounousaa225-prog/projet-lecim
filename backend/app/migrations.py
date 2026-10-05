@@ -422,6 +422,12 @@ def run_startup_migrations() -> None:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE reunions ADD COLUMN checkin_token VARCHAR(64) UNIQUE"))
 
+    if inspector.has_table("taches_personnelles"):
+        columns = {c["name"] for c in inspector.get_columns("taches_personnelles")}
+        if "retard_rappel_envoye" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE taches_personnelles ADD COLUMN retard_rappel_envoye BOOLEAN DEFAULT FALSE"))
+
     Base.metadata.create_all(bind=engine)
 
     if inspector.has_table("etablissements"):

@@ -9,6 +9,7 @@ from .backup import create_backup
 from .mandates import check_mandate_expirations
 from .newsletter import run_monthly_newsletter
 from .reminders import run_daily_reminders
+from .taches_reminders import check_overdue_taches
 
 logger = logging.getLogger("lecim.scheduler")
 
@@ -43,10 +44,20 @@ def _run_newsletter_job() -> None:
         logger.exception("Échec de l'envoi de la newsletter mensuelle")
 
 
+def _run_taches_reminders_job() -> None:
+    try:
+        check_overdue_taches()
+    except Exception:
+        logger.exception("Échec de la vérification des tâches en retard")
+
+
 def start() -> None:
     scheduler.add_job(_run_backup_job, "cron", hour=2, minute=0, id="daily_backup", replace_existing=True)
     scheduler.add_job(_run_reminders_job, "cron", hour=7, minute=0, id="daily_reminders", replace_existing=True)
     scheduler.add_job(_run_mandates_job, "cron", hour=7, minute=15, id="daily_mandates", replace_existing=True)
+    scheduler.add_job(
+        _run_taches_reminders_job, "cron", hour=7, minute=30, id="daily_taches_reminders", replace_existing=True
+    )
     scheduler.add_job(
         _run_newsletter_job, "cron", day=1, hour=8, minute=0, id="monthly_newsletter", replace_existing=True
     )

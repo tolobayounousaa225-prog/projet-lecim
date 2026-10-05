@@ -1,5 +1,6 @@
 import datetime
 import io
+import re
 import secrets
 from pathlib import Path
 
@@ -40,10 +41,37 @@ def membres_list(
         .order_by(models.Membre.full_name)
         .all()
     )
+
+    # Statistiques d'assiduite aux reunions nationales — un membre n'a de taux
+    # significatif que par rapport aux reunions tenues depuis son arrivee au bureau,
+    # donc on ne compte que celles a partir de sa date d'ajout au repertoire.
+    total_reunions_nationales = (
+        db.query(models.Reunion).filter(models.Reunion.delegation_id.is_(None)).count()
+    )
+    assiduite = {}
+    for item in items:
+        reunions_eligibles = (
+            db.query(models.Reunion)
+            .filter(models.Reunion.delegation_id.is_(None), models.Reunion.created_at >= item.created_at)
+            .count()
+        ) if total_reunions_nationales else 0
+        presences = (
+            db.query(models.Presence)
+            .join(models.Reunion, models.Reunion.id == models.Presence.reunion_id)
+            .filter(
+                models.Presence.membre_id == item.id,
+                models.Presence.present.is_(True),
+                models.Reunion.delegation_id.is_(None),
+            )
+            .count()
+        )
+        taux = round(presences / reunions_eligibles * 100) if reunions_eligibles else None
+        assiduite[item.id] = {"reunions": reunions_eligibles, "presences": presences, "taux": taux}
+
     return templates.TemplateResponse(
         request,
         "admin/membres_list.html",
-        {"admin": user, "items": items, "active": "membres"},
+        {"admin": user, "items": items, "assiduite": assiduite, "active": "membres"},
     )
 
 
@@ -182,6 +210,51 @@ def membres_delete(
         db.delete(membre)
         db.commit()
     return RedirectResponse(url="/admin/membres", status_code=status.HTTP_303_SEE_OTHER)
+
+
+def _vcard_escape(text: str) -> str:
+    return re.sub(r"([,;\\])", r"\\\1", text).replace("\n", "\\n")
+
+
+@router.get("/membres/export.vcf")
+def membres_export_vcf(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_membres_access_web),
+):
+    """Carnet de contacts du bureau au format vCard — usage interne uniquement (le
+    téléphone/e-mail des membres n'est jamais exposé par le trombinoscope public,
+    voir membres_bureau_public.py). Importable directement dans le répertoire du
+    téléphone (Contacts > Importer un fichier .vcf)."""
+    items = (
+        db.query(models.Membre)
+        .filter(models.Membre.delegation_id.is_(None))
+        .order_by(models.Membre.full_name)
+        .all()
+    )
+    cards = []
+    for m in items:
+        lines = [
+            "BEGIN:VCARD",
+            "VERSION:3.0",
+            f"FN:{_vcard_escape(m.full_name)}",
+            f"N:{_vcard_escape(m.full_name)};;;;",
+            "ORG:LECIM",
+        ]
+        if m.poste:
+            lines.append(f"TITLE:{_vcard_escape(m.poste_label)}")
+        if m.phone:
+            lines.append(f"TEL;TYPE=CELL:{_vcard_escape(m.phone)}")
+        if m.email:
+            lines.append(f"EMAIL:{_vcard_escape(m.email)}")
+        lines.append("END:VCARD")
+        cards.append("\r\n".join(lines))
+
+    vcf_content = "\r\n".join(cards) + "\r\n"
+    return Response(
+        content=vcf_content,
+        media_type="text/vcard",
+        headers={"Content-Disposition": 'attachment; filename="membres-bureau-lecim.vcf"'},
+    )
 
 
 # ---------- Réunions ----------
