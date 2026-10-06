@@ -4,6 +4,29 @@
 <h1>Bienvenue, {{ admin.full_name }}</h1>
 <p style="color:var(--text-muted); margin-top:-14px; margin-bottom:26px;">{{ admin.poste_label }}</p>
 
+{% set pending = admin.pending_action_counts() %}
+{% set pending_meta = {
+  'adhesion_requests': {'label': "demande(s) d'adhésion à examiner", 'url': '/admin/adhesion-requests'},
+  'cartes': {'label': "carte(s) de membre à valider", 'url': '/admin/cartes'},
+  'cartes_scolaires': {'label': "carte(s) scolaire(s) à valider", 'url': '/admin/cartes-scolaires'},
+  'demandes_etablissements': {'label': "demande(s) d'établissement à traiter", 'url': '/admin/demandes-etablissements'},
+  'messagerie': {'label': "message(s) d'établissement non lu(s)", 'url': '/admin/messagerie'},
+  'dons': {'label': "don(s) déclaré(s) à confirmer", 'url': '/admin/dons'},
+  'ressources': {'label': "ressource(s) pédagogique(s) à publier", 'url': '/admin/ressources-pedagogiques'},
+} %}
+{% if pending %}
+<div class="form-card pending-actions-card" style="max-width:none; margin-bottom:24px; border-left:4px solid #dc3545;">
+  <strong style="color:var(--green-dark)">📋 À traiter</strong>
+  <ul class="pending-actions-list">
+    {% for key, count in pending.items() %}
+    {% if key in pending_meta %}
+    <li><a href="{{ pending_meta[key].url }}"><span class="nav-badge">{{ count }}</span> {{ pending_meta[key].label }}</a></li>
+    {% endif %}
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
 {% if unread_notifications %}
 <div class="form-card" style="max-width:none; margin-bottom:24px; border-left:4px solid var(--gold);">
   <strong style="color:var(--green-dark)">🔔 {{ unread_notifications|length }} nouvelle(s) notification(s)</strong>

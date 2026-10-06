@@ -31,6 +31,36 @@ def admin_search(
 
     results: list[tuple[float, schemas.SearchResultOut]] = []
 
+    if user.can_manage_membres or user.can_manage_delegations:
+        membres = db.query(models.Membre).limit(CANDIDATES_CAP).all()
+        for m in membres:
+            if m.delegation_id and not user.can_manage_delegations:
+                continue
+            if m.delegation_id is None and not user.can_manage_membres:
+                continue
+            score = _score(term, m.full_name, m.phone, m.email, m.poste_label)
+            if score >= MIN_SCORE:
+                # Pas de fiche individuelle côté admin pour un membre de délégation —
+                # on renvoie vers la fiche de la délégation elle-même.
+                url = f"/admin/delegations/{m.delegation_id}" if m.delegation_id else "/admin/membres"
+                results.append((
+                    score,
+                    schemas.SearchResultOut(type="membre", title=m.full_name, subtitle=m.poste_label, url=url),
+                ))
+
+    if user.can_manage_finances:
+        etablissements = db.query(models.Etablissement).limit(CANDIDATES_CAP).all()
+        for e in etablissements:
+            score = _score(term, e.nom, e.directeur_nom, e.bureau_local, e.contact_telephone)
+            if score >= MIN_SCORE:
+                results.append((
+                    score,
+                    schemas.SearchResultOut(
+                        type="etablissement", title=e.nom, subtitle=e.bureau_local,
+                        url=f"/admin/etablissements/{e.id}/edit",
+                    ),
+                ))
+
     if user.has_module("courrier"):
         courriers = db.query(models.Courrier).limit(CANDIDATES_CAP).all()
         for c in courriers:
