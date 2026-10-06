@@ -504,6 +504,95 @@ def etablissements_list(
     )
 
 
+@router.get("/etablissements/{etablissement_id}/fiche")
+def etablissement_fiche(
+    etablissement_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_finance_access_web),
+):
+    """Vue consolidée d'un établissement : regroupe en une seule page ce qui est
+    autrement éparpillé sur 7 listes globales distinctes (cotisations, effectifs,
+    résultats aux examens, enseignants, cartes scolaires, visites, messagerie) —
+    utile pour une revue complète avant une décision (renouvellement d'agrément,
+    litige, contrôle...)."""
+    etablissement = db.get(models.Etablissement, etablissement_id)
+    if not etablissement:
+        return RedirectResponse(url="/admin/etablissements", status_code=status.HTTP_303_SEE_OTHER)
+
+    annee = current_annee_scolaire()
+    regle = cotisation_rule(etablissement.statut)
+
+    adhesion = db.query(models.Adhesion).filter(models.Adhesion.etablissement_id == etablissement_id).first()
+    cotisations = (
+        db.query(models.Cotisation)
+        .filter(models.Cotisation.etablissement_id == etablissement_id)
+        .order_by(models.Cotisation.annee_scolaire.desc())
+        .all()
+    )
+    cotisation_courante = next((c for c in cotisations if c.annee_scolaire == annee), None)
+
+    effectifs = (
+        db.query(models.Effectif)
+        .filter(models.Effectif.etablissement_id == etablissement_id)
+        .order_by(models.Effectif.annee_scolaire.desc(), models.Effectif.niveau)
+        .all()
+    )
+    resultats = (
+        db.query(models.ResultatExamen)
+        .filter(models.ResultatExamen.etablissement_id == etablissement_id)
+        .order_by(models.ResultatExamen.annee_scolaire.desc())
+        .all()
+    )
+    enseignants = (
+        db.query(models.Enseignant)
+        .filter(models.Enseignant.etablissement_id == etablissement_id)
+        .order_by(models.Enseignant.full_name)
+        .all()
+    )
+    cartes_scolaires = (
+        db.query(models.CarteScolaire)
+        .filter(models.CarteScolaire.etablissement_id == etablissement_id)
+        .order_by(models.CarteScolaire.date_soumission.desc())
+        .all()
+    )
+    visites = (
+        db.query(models.VisiteEtablissement)
+        .filter(models.VisiteEtablissement.etablissement_id == etablissement_id)
+        .order_by(models.VisiteEtablissement.date.desc())
+        .all()
+    )
+    derniers_messages = (
+        db.query(models.MessageEtablissement)
+        .filter(models.MessageEtablissement.etablissement_id == etablissement_id)
+        .order_by(models.MessageEtablissement.created_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    return templates.TemplateResponse(
+        request,
+        "admin/etablissement_fiche.html",
+        {
+            "admin": user,
+            "etablissement": etablissement,
+            "annee": annee,
+            "regle": regle,
+            "adhesion": adhesion,
+            "cotisations": cotisations,
+            "cotisation_courante": cotisation_courante,
+            "effectifs": effectifs,
+            "resultats": resultats,
+            "enseignants": enseignants,
+            "cartes_scolaires": cartes_scolaires,
+            "visites": visites,
+            "derniers_messages": derniers_messages,
+            "money": money,
+            "active": "etablissements",
+        },
+    )
+
+
 @router.get("/etablissements/export.csv")
 def etablissements_export_csv(
     db: Session = Depends(get_db),

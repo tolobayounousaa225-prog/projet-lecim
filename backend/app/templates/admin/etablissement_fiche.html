@@ -1,0 +1,188 @@
+{% extends "admin/base.html" %}
+{% block title %}Fiche de {{ etablissement.nom }}{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1 style="margin-bottom:4px;">{{ etablissement.nom }}</h1>
+    <p style="color:var(--text-muted); margin:0;">
+      {{ etablissement.categorie_label }} &middot; {{ etablissement.statut_label }}
+      {% if etablissement.is_ecole_modele %} &middot; <span class="pill pill-gold">École modèle</span>{% endif %}
+    </p>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <a href="/admin/etablissements/{{ etablissement.id }}/edit" class="btn btn-outline">Modifier</a>
+    <a href="/admin/etablissements/{{ etablissement.id }}/compte" class="btn btn-outline">Espace établissement</a>
+  </div>
+</div>
+<p style="margin-top:-12px;"><a href="/admin/etablissements">&larr; Retour aux établissements</a></p>
+
+<div class="form-card" style="max-width:none; margin-bottom:24px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:10px;">Informations générales</strong>
+  <table>
+    <tbody>
+      <tr><td>Code d'adhésion</td><td>{{ etablissement.code_adhesion or "—" }}</td></tr>
+      <tr><td>Directeur</td><td>{{ etablissement.directeur_nom or "—" }}</td></tr>
+      <tr><td>Localisation</td><td>{{ etablissement.bureau_local or "—" }}{% if etablissement.district %} — {{ etablissement.district }}{% endif %}{% if etablissement.region %} ({{ etablissement.region }}){% endif %}</td></tr>
+      <tr><td>Contact</td><td>{{ etablissement.contact_telephone or "—" }}{% if etablissement.contact_email %} &middot; {{ etablissement.contact_email }}{% endif %}</td></tr>
+      <tr><td>Numéro d'agrément</td><td>{{ etablissement.numero_agrement or "—" }}</td></tr>
+      <tr>
+        <td>Statut d'agrément</td>
+        <td>
+          {% if etablissement.statut_agrement == "agree" %}<span class="pill pill-green">{{ etablissement.statut_agrement_label }}</span>
+          {% elif etablissement.statut_agrement == "expire" %}<span class="pill pill-red">{{ etablissement.statut_agrement_label }}</span>
+          {% else %}<span class="pill pill-muted">{{ etablissement.statut_agrement_label }}</span>{% endif %}
+          {% if etablissement.date_expiration_agrement %} — expire le {{ etablissement.date_expiration_agrement.strftime("%d/%m/%Y") }}{% endif %}
+        </td>
+      </tr>
+      <tr><td>Adhésion à la LECIM</td><td>{% if adhesion %}Réglée le {{ adhesion.date_paiement.strftime("%d/%m/%Y") }} ({{ money(adhesion.montant) }}){% else %}<span class="pill pill-red">Non réglée</span>{% endif %}</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="form-card" style="max-width:none; margin-bottom:24px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:10px;">Cotisations</strong>
+  <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0;">
+    Barème {{ regle.label }} : {{ money(regle.montant_du) }}/an (dont {{ money(regle.part_bureau_local) }} pour le bureau local).
+  </p>
+  {% if cotisation_courante %}
+  <p>
+    Année {{ annee }} :
+    {% if cotisation_courante.statut_paiement == "paye" %}<span class="pill pill-green">À jour</span>
+    {% elif cotisation_courante.statut_paiement == "partiel" %}<span class="pill pill-gold">Partiellement réglée ({{ money(cotisation_courante.montant_paye) }} / {{ money(cotisation_courante.montant_du) }})</span>
+    {% else %}<span class="pill pill-red">Impayée</span>{% endif %}
+  </p>
+  {% else %}
+  <p><span class="pill pill-red">Aucune cotisation enregistrée pour {{ annee }}</span></p>
+  {% endif %}
+  {% if cotisations %}
+  <table>
+    <thead><tr><th>Année</th><th>Dû</th><th>Payé</th><th>Statut</th><th>Date de paiement</th></tr></thead>
+    <tbody>
+      {% for c in cotisations %}
+      <tr>
+        <td>{{ c.annee_scolaire }}</td>
+        <td>{{ money(c.montant_du) }}</td>
+        <td>{{ money(c.montant_paye) }}</td>
+        <td>
+          {% if c.statut_paiement == "paye" %}<span class="pill pill-green">Payée</span>
+          {% elif c.statut_paiement == "partiel" %}<span class="pill pill-gold">Partielle</span>
+          {% else %}<span class="pill pill-red">Impayée</span>{% endif %}
+        </td>
+        <td>{{ c.date_paiement.strftime("%d/%m/%Y") if c.date_paiement else "—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+<div class="form-card" style="max-width:none; margin-bottom:24px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:10px;">Effectifs déclarés</strong>
+  {% if effectifs %}
+  <table>
+    <thead><tr><th>Année</th><th>Niveau</th><th>Garçons</th><th>Filles</th><th>Total</th></tr></thead>
+    <tbody>
+      {% for e in effectifs %}
+      <tr><td>{{ e.annee_scolaire }}</td><td>{{ e.niveau_label }}</td><td>{{ e.nombre_garcons }}</td><td>{{ e.nombre_filles }}</td><td><strong>{{ e.total }}</strong></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--text-muted);">Aucun effectif déclaré.</p>
+  {% endif %}
+</div>
+
+<div class="form-card" style="max-width:none; margin-bottom:24px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:10px;">Résultats aux examens</strong>
+  {% if resultats %}
+  <table>
+    <thead><tr><th>Année</th><th>Examen</th><th>Inscrits</th><th>Admis</th><th>Taux</th><th>Visibilité</th></tr></thead>
+    <tbody>
+      {% for r in resultats %}
+      <tr>
+        <td>{{ r.annee_scolaire }}</td><td>{{ r.type_examen }}</td><td>{{ r.nombre_inscrits }}</td><td>{{ r.nombre_admis }}</td>
+        <td><strong>{{ r.taux_reussite }}%</strong></td>
+        <td>{% if r.is_published %}<span class="pill pill-green">Publié</span>{% else %}<span class="pill pill-muted">Non publié</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--text-muted);">Aucun résultat enregistré.</p>
+  {% endif %}
+</div>
+
+<div class="form-card" style="max-width:none; margin-bottom:24px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <strong style="color:var(--green-dark);">Enseignants ({{ enseignants|length }})</strong>
+    <a href="/admin/enseignants?etablissement_id={{ etablissement.id }}" class="btn btn-outline btn-sm">Gérer</a>
+  </div>
+  {% if enseignants %}
+  <table>
+    <thead><tr><th>Nom</th><th>Matière</th><th>Téléphone</th></tr></thead>
+    <tbody>
+      {% for ens in enseignants %}
+      <tr><td>{{ ens.full_name }}</td><td>{{ ens.matiere or "—" }}</td><td>{{ ens.telephone or "—" }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--text-muted);">Aucun enseignant enregistré.</p>
+  {% endif %}
+</div>
+
+<div class="form-card" style="max-width:none; margin-bottom:24px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:10px;">Cartes scolaires ({{ cartes_scolaires|length }})</strong>
+  {% if cartes_scolaires %}
+  <table>
+    <thead><tr><th>Élève</th><th>Classe</th><th>Année</th><th>Statut</th></tr></thead>
+    <tbody>
+      {% for cs in cartes_scolaires %}
+      <tr>
+        <td>{{ cs.eleve_nom }}</td><td>{{ cs.classe }}</td><td>{{ cs.annee_scolaire }}</td>
+        <td>
+          {% if cs.status == "disponible" %}<span class="pill pill-green">{{ cs.status_label }}</span>
+          {% elif cs.status == "rejetee" %}<span class="pill pill-red">{{ cs.status_label }}</span>
+          {% else %}<span class="pill pill-gold">{{ cs.status_label }}</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--text-muted);">Aucune carte scolaire demandée.</p>
+  {% endif %}
+</div>
+
+<div class="form-card" style="max-width:none; margin-bottom:24px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:10px;">Journal des visites</strong>
+  {% if visites %}
+  <table>
+    <thead><tr><th>Date</th><th>Constat</th><th>Suites à donner</th></tr></thead>
+    <tbody>
+      {% for v in visites %}
+      <tr><td>{{ v.date.strftime("%d/%m/%Y") }}</td><td style="max-width:320px;">{{ v.constat }}</td><td style="max-width:280px;">{{ v.suites_a_donner or "—" }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--text-muted);">Aucune visite enregistrée.</p>
+  {% endif %}
+</div>
+
+<div class="form-card" style="max-width:none;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <strong style="color:var(--green-dark);">Derniers messages</strong>
+    <a href="/admin/messagerie/{{ etablissement.id }}" class="btn btn-outline btn-sm">Voir la conversation complète</a>
+  </div>
+  {% if derniers_messages %}
+  <ul style="margin:0; padding-left:20px; color:var(--text-dark); font-size:0.9rem; line-height:1.8;">
+    {% for m in derniers_messages %}
+    <li><strong>{{ "BEN" if m.is_from_ben else etablissement.nom }}</strong> — {{ m.body[:140] }}{% if m.body|length > 140 %}…{% endif %} <span style="color:var(--text-muted); font-size:0.8rem;">({{ m.created_at.strftime("%d/%m/%Y %H:%M") }})</span></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p style="color:var(--text-muted);">Aucun message échangé.</p>
+  {% endif %}
+</div>
+{% endblock %}

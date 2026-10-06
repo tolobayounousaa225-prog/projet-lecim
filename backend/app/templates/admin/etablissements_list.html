@@ -86,6 +86,7 @@
       </td>
       <td>{{ item.date_adhesion.strftime("%d/%m/%Y") if item.date_adhesion else "—" }}</td>
       <td class="actions-cell">
+        <a href="/admin/etablissements/{{ item.id }}/fiche" class="btn btn-primary btn-sm">Fiche</a>
         <a href="/admin/etablissements/{{ item.id }}/compte" class="btn btn-outline btn-sm">Espace établissement</a>
         <a href="/admin/etablissements/{{ item.id }}/attestation/pdf" class="btn btn-outline btn-sm" target="_blank">Attestation</a>
         <a href="/admin/etablissements/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
