@@ -14,6 +14,7 @@ from ..database import get_db
 from ..deps import require_finance_access_web
 from ..email_utils import send_email
 from ..finances_constants import ADHESION_MONTANT, BUDGET_CATEGORIES, COTISATION_RULES, RECETTE_CATEGORIES, cotisation_rule
+from ..pagination import paginate
 from ..security_utils import csv_safe, safe_content_disposition
 from ..reports import (
     cotisations_by_year,
@@ -430,7 +431,7 @@ def finances_rapport_comparatif_generate(
 
 # ---------- Établissements affiliés ----------
 
-def _etablissements_filtered(
+def _etablissements_query(
     db: Session, bureau_local: str | None, categorie: str | None,
     district: str | None, region: str | None,
 ):
@@ -443,7 +444,7 @@ def _etablissements_filtered(
         query = query.filter(models.Etablissement.district == district)
     if region:
         query = query.filter(models.Etablissement.region == region)
-    return query.order_by(models.Etablissement.nom).all()
+    return query.order_by(models.Etablissement.nom)
 
 
 @router.get("/etablissements")
@@ -453,11 +454,13 @@ def etablissements_list(
     categorie: str | None = None,
     district: str | None = None,
     region: str | None = None,
+    page: int = 1,
     error: str | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
-    items = _etablissements_filtered(db, bureau_local, categorie, district, region)
+    query = _etablissements_query(db, bureau_local, categorie, district, region)
+    items, total, total_pages, page = paginate(query, page)
     bureaux_locaux = [
         row[0] for row in db.query(models.Etablissement.bureau_local)
         .filter(models.Etablissement.bureau_local.isnot(None))
@@ -485,6 +488,9 @@ def etablissements_list(
         {
             "admin": user,
             "items": items,
+            "total": total,
+            "total_pages": total_pages,
+            "page": page,
             "bureaux_locaux": bureaux_locaux,
             "districts": districts,
             "regions": regions,
@@ -506,7 +512,7 @@ def etablissements_export_csv(
     import csv
     import io as _io
 
-    items = db.query(models.Etablissement).order_by(models.Etablissement.nom).all()
+    items = _etablissements_query(db, None, None, None, None).all()
     buffer = _io.StringIO()
     writer = csv.writer(buffer, delimiter=";")
     writer.writerow(["Code adhesion", "Nom", "Categorie", "District", "Region", "Commune (bureau local)", "Statut", "Date adhesion", "Telephone", "Email", "Agrement"])
@@ -535,7 +541,7 @@ def etablissements_export_xlsx(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_finance_access_web),
 ):
-    items = _etablissements_filtered(db, bureau_local, categorie, district, region)
+    items = _etablissements_query(db, bureau_local, categorie, district, region).all()
     xlsx_bytes = export_etablissements_xlsx(items)
     return Response(
         content=xlsx_bytes,

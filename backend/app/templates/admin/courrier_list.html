@@ -3,8 +3,10 @@
 {% block content %}
 {% set qs_no_type = (('q=' ~ q|urlencode) if q else '') ~ (('&date_debut=' ~ date_debut) if date_debut else '') ~ (('&date_fin=' ~ date_fin) if date_fin else '') %}
 {% set qs_full = (('type=' ~ filtre_type) if filtre_type else '') ~ (('&' if filtre_type and qs_no_type else '')) ~ qs_no_type %}
+{% set base_url = "/admin/courrier" %}
+{% set extra_qs = qs_full %}
 <div class="topbar">
-  <h1 style="margin:0">Registre du courrier</h1>
+  <h1 style="margin:0">Registre du courrier ({{ total }})</h1>
   <div style="display:flex; gap:10px;">
     <a href="/admin/courrier/export.pdf{% if qs_full %}?{{ qs_full }}{% endif %}" class="btn btn-outline">Exporter en PDF</a>
     <a href="/admin/courrier/export.csv{% if qs_full %}?{{ qs_full }}{% endif %}" class="btn btn-outline">Exporter en CSV</a>
@@ -73,6 +75,7 @@
     {% endfor %}
   </tbody>
 </table>
+{% include "admin/_pagination.html" with context %}
 {% else %}
 <div class="empty-state">{% if q or filtre_type %}Aucun courrier ne correspond à ce filtre.{% else %}Aucun courrier enregistré pour le moment.{% endif %}</div>
 {% endif %}

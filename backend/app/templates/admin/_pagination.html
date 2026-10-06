@@ -1,0 +1,11 @@
+{# Inclusion réutilisable : nécessite base_url, page, total_pages, total (et
+   optionnellement extra_qs — une chaîne de query-string déjà construite, sans le
+   "?" ni le "&" final, à insérer avant "page=") dans le contexte de l'appelant. #}
+{% if total_pages > 1 %}
+<div class="pagination">
+  {% set qs = (extra_qs ~ "&") if extra_qs else "" %}
+  <a href="{{ base_url }}?{{ qs }}page={{ page - 1 }}" class="btn btn-outline btn-sm{{ ' disabled' if page <= 1 else '' }}">&larr; Précédent</a>
+  <span class="pagination-info">Page {{ page }} / {{ total_pages }} — {{ total }} résultat{{ "s" if total > 1 else "" }}</span>
+  <a href="{{ base_url }}?{{ qs }}page={{ page + 1 }}" class="btn btn-outline btn-sm{{ ' disabled' if page >= total_pages else '' }}">Suivant &rarr;</a>
+</div>
+{% endif %}

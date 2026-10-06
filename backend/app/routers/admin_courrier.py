@@ -13,6 +13,7 @@ from .. import audit, models, storage
 from ..database import get_db
 from ..deps import require_courrier_access_web
 from ..models import COURRIER_TYPES
+from ..pagination import paginate
 from ..reports import generate_courrier_registre_pdf
 from ..security_utils import csv_safe, safe_content_disposition
 from .admin_files import ALLOWED_DOCUMENT_EXT, ALLOWED_PHOTO_EXT
@@ -70,16 +71,19 @@ def courrier_list(
     q: str | None = None,
     date_debut: str | None = None,
     date_fin: str | None = None,
+    page: int = 1,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_courrier_access_web),
 ):
     query = _apply_filters(db.query(models.Courrier), type, q, date_debut, date_fin)
-    items = query.order_by(models.Courrier.date_courrier.desc(), models.Courrier.id.desc()).all()
+    query = query.order_by(models.Courrier.date_courrier.desc(), models.Courrier.id.desc())
+    items, total, total_pages, page = paginate(query, page)
     return templates.TemplateResponse(
         request,
         "admin/courrier_list.html",
         {
-            "admin": user, "items": items, "types": COURRIER_TYPES, "filtre_type": type, "q": q or "",
+            "admin": user, "items": items, "total": total, "total_pages": total_pages, "page": page,
+            "types": COURRIER_TYPES, "filtre_type": type, "q": q or "",
             "date_debut": date_debut or "", "date_fin": date_fin or "", "active": "courrier",
         },
     )

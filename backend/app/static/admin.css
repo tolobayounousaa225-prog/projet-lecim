@@ -245,6 +245,9 @@ tr:last-child td { border-bottom: none; }
 .actions-cell form { display: inline; }
 
 .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 20px; }
+.pagination-info { font-size: 0.85rem; color: var(--text-muted); }
+.pagination a.disabled { pointer-events: none; opacity: .4; }
 .empty-state { padding: 40px; text-align: center; color: var(--text-muted); background: var(--white); border-radius: var(--radius); border: 1px dashed var(--border); }
 
 /* ---- Adaptation mobile ----

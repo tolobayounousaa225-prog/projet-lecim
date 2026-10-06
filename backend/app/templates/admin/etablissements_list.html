@@ -6,8 +6,10 @@
 {% if selected_categorie %}{% set _ = filter_qs.append('categorie=' ~ selected_categorie|urlencode) %}{% endif %}
 {% if selected_district %}{% set _ = filter_qs.append('district=' ~ selected_district|urlencode) %}{% endif %}
 {% if selected_region %}{% set _ = filter_qs.append('region=' ~ selected_region|urlencode) %}{% endif %}
+{% set base_url = "/admin/etablissements" %}
+{% set extra_qs = filter_qs|join('&') %}
 <div class="topbar">
-  <h1 style="margin:0">Établissements &amp; partenaires ({{ items|length }})</h1>
+  <h1 style="margin:0">Établissements &amp; partenaires ({{ total }})</h1>
   <div style="display:flex; gap:8px;">
     <a href="/admin/etablissements/export.xlsx{% if filter_qs %}?{{ filter_qs|join('&') }}{% endif %}" class="btn btn-outline">Exporter en Excel{% if filter_qs %} (filtré){% endif %}</a>
     <a href="/admin/etablissements/export.csv" class="btn btn-outline">Exporter en CSV</a>
@@ -95,6 +97,7 @@
     {% endfor %}
   </tbody>
 </table>
+{% include "admin/_pagination.html" with context %}
 {% else %}
 <div class="empty-state">Aucun établissement affilié pour le moment.</div>
 {% endif %}
