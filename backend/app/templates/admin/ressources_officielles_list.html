@@ -32,6 +32,7 @@
         {% else %}<span class="pill pill-muted">Brouillon</span>{% endif %}
       </td>
       <td class="actions-cell">
+        <a href="/admin/ressources-officielles/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
         <form method="post" action="/admin/ressources-officielles/{{ item.id }}/toggle">
           <button type="submit" class="btn btn-outline btn-sm">{{ "Dépublier" if item.is_published else "Publier" }}</button>
         </form>

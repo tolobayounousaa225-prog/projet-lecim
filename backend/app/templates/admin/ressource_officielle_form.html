@@ -1,19 +1,19 @@
 {% extends "admin/base.html" %}
-{% block title %}Ajouter une ressource officielle{% endblock %}
+{% block title %}{{ "Modifier" if item else "Ajouter" }} une ressource officielle{% endblock %}
 {% block content %}
-<h1>Ajouter un manuel, un programme ou un support d'enseignement islamique</h1>
+<h1>{{ "Modifier" if item else "Ajouter" }} un manuel, un programme ou un support d'enseignement islamique</h1>
 <div class="form-card">
   {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
-  <form method="post" action="/admin/ressources-officielles/new" enctype="multipart/form-data">
+  <form method="post" action="{{ '/admin/ressources-officielles/' ~ item.id ~ '/edit' if item else '/admin/ressources-officielles/new' }}" enctype="multipart/form-data">
     <div class="form-group">
       <label for="titre">Titre / nom du livre ou du programme</label>
-      <input type="text" id="titre" name="titre" required placeholder="Ex : Manuel de lecture arabe CP1">
+      <input type="text" id="titre" name="titre" required placeholder="Ex : Manuel de lecture arabe CP1" value="{{ item.titre if item else '' }}">
     </div>
     <div class="form-group">
       <label for="section">Section</label>
       <select id="section" name="section">
         {% for key, label in sections.items() %}
-        <option value="{{ key }}">{{ label }}</option>
+        <option value="{{ key }}" {{ "selected" if item and item.section == key else "" }}>{{ label }}</option>
         {% endfor %}
       </select>
     </div>
@@ -22,7 +22,7 @@
       <select id="langue" name="langue">
         <option value="">—</option>
         {% for key, label in langues.items() %}
-        <option value="{{ key }}">{{ label }}</option>
+        <option value="{{ key }}" {{ "selected" if item and item.langue == key else "" }}>{{ label }}</option>
         {% endfor %}
       </select>
     </div>
@@ -31,31 +31,33 @@
       <select id="niveau" name="niveau">
         <option value="">—</option>
         {% for key, label in niveaux.items() %}
-        <option value="{{ key }}">{{ label }}</option>
+        <option value="{{ key }}" {{ "selected" if item and item.niveau == key else "" }}>{{ label }}</option>
         {% endfor %}
       </select>
     </div>
     <div class="form-group">
       <label for="description">Description (optionnel)</label>
-      <textarea id="description" name="description"></textarea>
+      <textarea id="description" name="description">{{ item.description if item else "" }}</textarea>
     </div>
     <div class="form-group">
-      <label for="photo">Photo de couverture (obligatoire)</label>
-      <input type="file" id="photo" name="photo" required accept=".jpg,.jpeg,.png,.webp,.gif">
+      <label for="photo">Photo de couverture{{ " (laisser vide pour garder l'actuelle)" if item else " (obligatoire)" }}</label>
+      {% if item %}<p style="margin:0 0 8px;"><img src="{{ item.photo_url }}" alt="" style="width:48px; height:64px; object-fit:cover; border-radius:4px;"></p>{% endif %}
+      <input type="file" id="photo" name="photo" {{ "" if item else "required" }} accept=".jpg,.jpeg,.png,.webp,.gif">
     </div>
     <div class="form-group">
-      <label for="file">Document téléchargeable (PDF, optionnel — 15 Mo max)</label>
+      <label for="file">Document téléchargeable (PDF, optionnel — 15 Mo max){{ " — laisser vide pour garder l'actuel" if item and item.file_url else "" }}</label>
+      {% if item and item.file_url %}<p style="margin:0 0 8px;"><a href="{{ item.file_url }}" target="_blank">{{ item.original_filename }}</a></p>{% endif %}
       <input type="file" id="file" name="file" accept=".pdf,.doc,.docx,.odt">
     </div>
     <div class="form-group">
       <label for="ordre">Ordre d'affichage (les plus petits nombres apparaissent en premier)</label>
-      <input type="number" id="ordre" name="ordre" value="0">
+      <input type="number" id="ordre" name="ordre" value="{{ item.ordre if item else 0 }}">
     </div>
     <div class="form-group checkbox-row">
-      <input type="checkbox" id="is_published" name="is_published" value="true" checked>
+      <input type="checkbox" id="is_published" name="is_published" value="true" {{ "checked" if not item or item.is_published else "" }}>
       <label for="is_published" style="margin:0">Visible immédiatement sur le site</label>
     </div>
-    <button type="submit" class="btn btn-primary">Ajouter</button>
+    <button type="submit" class="btn btn-primary">{{ "Enregistrer" if item else "Ajouter" }}</button>
     <a href="/admin/ressources-officielles" class="btn btn-outline">Annuler</a>
   </form>
 </div>

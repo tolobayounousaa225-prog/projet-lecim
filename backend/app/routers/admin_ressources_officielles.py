@@ -124,6 +124,96 @@ async def ressources_officielles_create(
     return RedirectResponse(url="/admin/ressources-officielles", status_code=status.HTTP_303_SEE_OTHER)
 
 
+@router.get("/{ressource_id}/edit")
+def ressources_officielles_edit_form(
+    ressource_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_publications_access_web),
+):
+    ressource = db.get(models.RessourceOfficielle, ressource_id)
+    if not ressource:
+        return RedirectResponse(url="/admin/ressources-officielles", status_code=status.HTTP_303_SEE_OTHER)
+    return templates.TemplateResponse(
+        request,
+        "admin/ressource_officielle_form.html",
+        {
+            "admin": user,
+            "item": ressource,
+            "sections": RESSOURCE_OFFICIELLE_SECTIONS,
+            "langues": RESSOURCE_OFFICIELLE_LANGUES,
+            "niveaux": RESSOURCE_OFFICIELLE_NIVEAUX,
+            "active": "ressources_officielles",
+            "error": None,
+        },
+    )
+
+
+@router.post("/{ressource_id}/edit")
+async def ressources_officielles_edit(
+    ressource_id: int,
+    request: Request,
+    titre: str = Form(...),
+    section: str = Form(...),
+    langue: str = Form(""),
+    niveau: str = Form(""),
+    description: str = Form(""),
+    ordre: int = Form(0),
+    is_published: bool = Form(False),
+    photo: UploadFile | None = None,
+    file: UploadFile | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_publications_access_web),
+):
+    ressource = db.get(models.RessourceOfficielle, ressource_id)
+    if not ressource:
+        return RedirectResponse(url="/admin/ressources-officielles", status_code=status.HTTP_303_SEE_OTHER)
+
+    error_ctx = {
+        "admin": user,
+        "item": ressource,
+        "sections": RESSOURCE_OFFICIELLE_SECTIONS,
+        "langues": RESSOURCE_OFFICIELLE_LANGUES,
+        "niveaux": RESSOURCE_OFFICIELLE_NIVEAUX,
+        "active": "ressources_officielles",
+    }
+
+    if photo is not None and photo.filename:
+        try:
+            photo_stored_name, _ = await storage.save_upload(db, photo, RESSOURCES_OFFICIELLES_DIR, ALLOWED_PHOTO_EXT)
+        except ValueError as exc:
+            return templates.TemplateResponse(
+                request, "admin/ressource_officielle_form.html",
+                {**error_ctx, "error": str(exc)}, status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        storage.delete_stored_file(db, ressource.photo_path)
+        ressource.photo_path = f"ressources_officielles/{photo_stored_name}"
+
+    if file is not None and file.filename:
+        try:
+            file_stored_name, file_original_name = await storage.save_upload(
+                db, file, RESSOURCES_OFFICIELLES_DIR, ALLOWED_DOCUMENT_EXT
+            )
+        except ValueError as exc:
+            return templates.TemplateResponse(
+                request, "admin/ressource_officielle_form.html",
+                {**error_ctx, "error": str(exc)}, status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        storage.delete_stored_file(db, ressource.file_path)
+        ressource.file_path = f"ressources_officielles/{file_stored_name}"
+        ressource.original_filename = file_original_name
+
+    ressource.titre = titre
+    ressource.section = section if section in RESSOURCE_OFFICIELLE_SECTIONS else "manuel_scolaire"
+    ressource.langue = langue if langue in RESSOURCE_OFFICIELLE_LANGUES else None
+    ressource.niveau = niveau if niveau in RESSOURCE_OFFICIELLE_NIVEAUX else None
+    ressource.description = description or None
+    ressource.ordre = ordre
+    ressource.is_published = is_published
+    db.commit()
+    return RedirectResponse(url="/admin/ressources-officielles", status_code=status.HTTP_303_SEE_OTHER)
+
+
 @router.post("/{ressource_id}/delete")
 def ressources_officielles_delete(
     ressource_id: int,
