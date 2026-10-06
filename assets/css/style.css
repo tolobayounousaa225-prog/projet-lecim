@@ -1634,7 +1634,7 @@ section { padding: 80px 0; }
 
 /* Palier intermédiaire : la barre horizontale reste visible (pas de menu ☰)
    mais tout est resserré pour tenir sur les petits ordinateurs portables. */
-@media (max-width: 1340px) and (min-width: 1010px) {
+@media (max-width: 1460px) and (min-width: 1071px) {
   .nav { padding: 12px 16px; gap: 8px; }
   .brand-text small { display: none; }
   .brand { font-size: 0.95rem; gap: 8px; }
@@ -1644,13 +1644,12 @@ section { padding: 80px 0; }
   .nav-pill a { padding: 7px 8px; font-size: 0.74rem; }
   .dropdown-toggle { width: 20px; height: 20px; margin-inline-start: -4px; }
   .dropdown-caret { width: 8px; height: 8px; }
-  .nav-utility .lang-switch { display: none; }
   .nav-utility a { font-size: 0.74rem; }
-  .nav-cta { display: none; }
+  .nav-utility .nav-don-link { display: none; }
   .nav-search-trigger { width: 32px; height: 32px; }
 }
 
-@media (max-width: 1009px) {
+@media (max-width: 1070px) {
   .nav-links {
     position: fixed; top: 68px; left: 0; right: 0; background: var(--white);
     flex-direction: column; align-items: stretch; padding: 20px 24px; gap: 18px;
