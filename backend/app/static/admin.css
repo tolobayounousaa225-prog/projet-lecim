@@ -82,6 +82,13 @@ a { color: var(--green); text-decoration: none; }
   color: var(--white);
   padding: 26px 20px;
   flex-shrink: 0;
+  /* Collante et défilement interne propre : le contenu principal peut être bien plus
+     long que l'écran (grands tableaux...), la navigation doit rester accessible sans
+     suivre ce défilement plutôt que de disparaître vers le haut avec la page. */
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 .sidebar-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
 .sidebar-brand img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
@@ -102,9 +109,18 @@ a { color: var(--green); text-decoration: none; }
 .sidebar nav .nav-section { margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.1); }
 .sidebar nav .nav-section:first-of-type { margin-top: 10px; }
 .sidebar nav .nav-section-title {
-  display: block; padding: 0 12px 8px; font-size: 0.68rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .7px; color: rgba(255,255,255,.4);
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  padding: 0 12px 8px; font-size: 0.68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .7px; color: rgba(255,255,255,.55);
+  cursor: pointer; list-style: none; user-select: none;
 }
+.sidebar nav .nav-section-title::-webkit-details-marker { display: none; }
+.sidebar nav .nav-section-title::after {
+  content: "\25B8"; font-size: 0.7rem; color: rgba(255,255,255,.4);
+  transition: transform .15s ease; flex-shrink: 0;
+}
+.sidebar nav details[open] > .nav-section-title::after { transform: rotate(90deg); }
+.sidebar nav .nav-section-title:hover { color: var(--gold-light); }
 .sidebar .logout { margin-top: 30px; border-top: 1px solid rgba(255,255,255,.15); padding-top: 18px; }
 
 .admin-search { position: relative; margin-bottom: 18px; }
