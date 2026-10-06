@@ -191,6 +191,33 @@ async def enforce_observer_read_only(request: Request, call_next):
     return await call_next(request)
 
 
+ADMIN_SUCCESS_TOAST_EXCLUDED_PATHS = {"/admin/login", "/admin/logout"}
+
+
+@app.middleware("http")
+async def flag_admin_success_redirect(request: Request, call_next):
+    """Ajoute un paramètre `_saved=1` à l'URL de redirection qui suit une action
+    POST réussie dans l'espace admin, pour afficher une confirmation visuelle
+    côté template (bandeau dans admin/base.html) sans devoir modifier chacune
+    des ~50 routes de mutation une par une. Repose sur un pattern déjà constant
+    dans tout ce routeur : une erreur de formulaire est toujours renvoyée en
+    TemplateResponse (400), jamais via une redirection — donc toute
+    redirection qui suit un POST sur /admin signale fiablement une réussite."""
+    response = await call_next(request)
+    path = request.url.path
+    if (
+        request.method == "POST"
+        and path.startswith("/admin")
+        and path not in ADMIN_SUCCESS_TOAST_EXCLUDED_PATHS
+        and response.status_code in (301, 302, 303, 307, 308)
+        and "location" in response.headers
+    ):
+        location = response.headers["location"]
+        separator = "&" if "?" in location else "?"
+        response.headers["location"] = f"{location}{separator}_saved=1"
+    return response
+
+
 static_dir = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 

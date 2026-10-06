@@ -134,6 +134,9 @@
     </div>
   </aside>
   <main class="main">
+    {% if request.query_params.get('_saved') %}
+    <div class="admin-toast" id="admin-success-toast">✓ Action effectuée avec succès</div>
+    {% endif %}
     {% if admin.is_observer %}
     <div style="background:#fff3cd; color:#664d03; border:1px solid #ffe69c; border-radius:8px; padding:10px 16px; margin-bottom:20px; font-size:0.85rem; font-weight:600;">
       👁 Mode observateur — vous consultez cet espace en lecture seule, aucune modification n'est possible.
@@ -163,6 +166,20 @@
   sidebar.addEventListener("click", function (e) {
     if (e.target.closest("a")) close();
   });
+})();
+</script>
+<script>
+(function () {
+  var toast = document.getElementById("admin-success-toast");
+  if (toast) {
+    setTimeout(function () { toast.classList.add("hide"); }, 3000);
+  }
+  if (window.location.search.indexOf("_saved=1") !== -1 && window.history && window.history.replaceState) {
+    var url = new URL(window.location.href);
+    url.searchParams.delete("_saved");
+    var clean = url.pathname + (url.search ? url.search : "") + url.hash;
+    window.history.replaceState({}, "", clean);
+  }
 })();
 </script>
 <script>
