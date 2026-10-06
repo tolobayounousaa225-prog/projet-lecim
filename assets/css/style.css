@@ -1712,6 +1712,253 @@ section { padding: 80px 0; }
 [dir="rtl"] .breadcrumb a { margin-left: 4px; }
 [dir="rtl"] .lang-switch { direction: ltr; }
 
+/* ===== LECIM cinematic hero ===== */
+.hero.hero-cinematic {
+  position: relative;
+  width: 100%;
+  min-height: 88vh;
+  background-color: #071d2f;
+  background-image: url("../img/lecim-hero-wide.webp");
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0;
+  overflow: hidden;
+  isolation: isolate;
+}
+.hero.hero-cinematic::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(90deg,
+      rgba(3,18,31,.88) 0%,
+      rgba(3,18,31,.67) 28%,
+      rgba(3,18,31,.38) 50%,
+      rgba(3,18,31,.14) 72%,
+      rgba(3,18,31,.04) 100%),
+    linear-gradient(0deg,
+      rgba(3,18,31,.46) 0%,
+      rgba(3,18,31,.08) 48%,
+      rgba(3,18,31,.02) 100%);
+}
+/* Le ::after reste disponible pour la photo de fond modifiable par l'admin
+   (voir .hero.has-bg-image::after plus haut) — seulement masque par defaut,
+   quand aucune photo n'est configuree, pour laisser voir l'image livree
+   par defaut (background-image ci-dessus). */
+.hero.hero-cinematic::after { display: none; }
+.hero.hero-cinematic.has-bg-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  background-image: var(--hero-bg-image);
+  background-size: cover;
+  background-position: center;
+  animation: heroSlowZoom 26s ease-in-out infinite alternate;
+}
+
+.hero.hero-cinematic .hero-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: none;
+  min-height: 68vh;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 6vw;
+  gap: 0;
+}
+[dir="rtl"] .hero.hero-cinematic .hero-inner {
+  justify-content: flex-start;
+}
+
+.hero.hero-cinematic .hero-text {
+  width: min(620px, 100%);
+  padding: 34px 34px 36px;
+  border-radius: 26px;
+  background: rgba(4,24,40,.42);
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow: 0 24px 70px rgba(0,0,0,.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  text-align: right;
+}
+.hero.hero-cinematic .hero-badge {
+  background: rgba(255,255,255,.10);
+  border-color: rgba(255,255,255,.20);
+  color: #fff;
+}
+.hero.hero-cinematic h1 {
+  color: #fff;
+  font-size: clamp(2.4rem, 4.6vw, 4.2rem);
+  line-height: 1.12;
+  text-shadow: 0 3px 24px rgba(0,0,0,.36);
+}
+.hero.hero-cinematic h1 span { color: #f2b633; }
+.hero.hero-cinematic p {
+  max-width: 600px;
+  font-size: 1.08rem;
+  line-height: 1.95;
+  color: rgba(255,255,255,.92);
+}
+.hero.hero-cinematic .hero-actions { justify-content: flex-start; }
+
+.hero.hero-cinematic .hero-stats {
+  position: relative;
+  z-index: 1;
+  width: min(1200px, calc(100% - 48px));
+  margin: -28px auto 28px;
+  gap: 12px;
+}
+.hero.hero-cinematic .stat-card {
+  background: rgba(4,24,40,.52);
+  border-color: rgba(255,255,255,.14);
+  color: #fff;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.hero.hero-cinematic .stat-card strong { color: #f2b633; }
+
+@media (max-width: 900px) {
+  .hero.hero-cinematic {
+    min-height: 86vh;
+    background-position: 58% center;
+  }
+  .hero.hero-cinematic .hero-inner {
+    min-height: 62vh;
+    align-items: flex-end;
+    padding: 0 18px 28px;
+  }
+  .hero.hero-cinematic .hero-text {
+    width: 100%;
+    padding: 24px 22px 26px;
+    border-radius: 18px;
+    background: rgba(4,24,40,.56);
+  }
+  .hero.hero-cinematic h1 {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+  .hero.hero-cinematic .hero-stats {
+    width: calc(100% - 36px);
+    margin: 12px auto 18px;
+  }
+}
+@media (max-width: 560px) {
+  .hero.hero-cinematic {
+    min-height: 92vh;
+    background-position: 62% center;
+  }
+  .hero.hero-cinematic .hero-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 901px) {
+  .hero.hero-cinematic .hero-inner {
+    justify-content: flex-start !important;
+    align-items: center;
+    padding-inline: 5.5vw 4vw;
+  }
+
+  [dir="rtl"] .hero.hero-cinematic .hero-inner {
+    justify-content: flex-start !important;
+  }
+
+  .hero.hero-cinematic .hero-text {
+    width: min(860px, 54vw);
+    min-height: 260px;
+    padding: 26px 40px 30px;
+    border-radius: 20px;
+    background:
+      linear-gradient(135deg, rgba(3,18,31,.42), rgba(3,18,31,.24));
+    border: 1px solid rgba(255,255,255,.18);
+    box-shadow:
+      0 24px 64px rgba(0,0,0,.20),
+      inset 0 1px 0 rgba(255,255,255,.07);
+    backdrop-filter: blur(12px) saturate(120%);
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+  }
+
+  .hero.hero-cinematic .hero-text::before {
+    content: "";
+    display: block;
+    width: 64px;
+    height: 3px;
+    margin: 0 0 14px auto;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #f2b633, rgba(242,182,51,.35));
+  }
+
+  .hero.hero-cinematic .hero-badge {
+    padding: 7px 13px;
+    font-size: .82rem;
+    margin-bottom: 6px;
+  }
+
+  .hero.hero-cinematic h1 {
+    max-width: 760px;
+    margin: 8px 0 12px;
+    font-size: clamp(2.05rem, 3.15vw, 3.35rem);
+    line-height: 1.18;
+  }
+
+  .hero.hero-cinematic .hero-text p {
+    max-width: 760px;
+    margin-bottom: 20px;
+    font-size: 1rem;
+    line-height: 1.85;
+  }
+
+  .hero.hero-cinematic .hero-actions {
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .hero.hero-cinematic .hero-actions .btn {
+    min-width: 150px;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 1400px) {
+  .hero.hero-cinematic .hero-text {
+    width: min(900px, 52vw);
+    min-height: 270px;
+    padding: 28px 44px 32px;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero.hero-cinematic .hero-text {
+    width: 100%;
+    min-height: auto;
+    border-radius: 18px;
+    background: rgba(4,24,40,.42);
+    border-color: rgba(255,255,255,.16);
+  }
+}
+
+html[lang="fr"] .hero.hero-cinematic .hero-text {
+  text-align: left;
+}
+
+html[lang="fr"] .hero.hero-cinematic .hero-text::before {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+html[lang="fr"] .hero.hero-cinematic .hero-actions {
+  justify-content: flex-start;
+}
+
+
 /* ===== Arabic typography system ===== */
 html[lang="ar"],
 html[dir="rtl"] {
