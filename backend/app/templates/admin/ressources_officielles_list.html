@@ -13,7 +13,7 @@
 {% if items %}
 <table>
   <thead>
-    <tr><th>Photo</th><th>Titre</th><th>Section</th><th>Langue</th><th>Fichier</th><th>Visibilité</th><th>Actions</th></tr>
+    <tr><th>Photo</th><th>Titre</th><th>Section</th><th>Niveau</th><th>Langue</th><th>Fichier</th><th>Visibilité</th><th>Actions</th></tr>
   </thead>
   <tbody>
     {% for item in items %}
@@ -21,6 +21,7 @@
       <td><img src="{{ item.photo_url }}" alt="" style="width:48px; height:64px; object-fit:cover; border-radius:4px;"></td>
       <td>{{ item.titre }}</td>
       <td>{{ sections.get(item.section, item.section) }}</td>
+      <td>{{ item.niveau_label or "—" }}</td>
       <td>{{ item.langue_label or "—" }}</td>
       <td>
         {% if item.file_url %}<a href="{{ item.file_url }}" target="_blank">{{ item.original_filename }}</a>

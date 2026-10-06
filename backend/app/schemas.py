@@ -193,6 +193,8 @@ class RessourceOfficielleOut(BaseModel):
     section_label: str
     langue: str | None
     langue_label: str
+    niveau: str | None
+    niveau_label: str
     description: str | None
     photo_url: str
     file_url: str | None

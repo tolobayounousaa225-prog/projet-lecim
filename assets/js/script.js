@@ -2288,6 +2288,130 @@ var RESSOURCE_LANGUE_LABELS = {
   fr: { arabe: "Arabe", francais: "Français" },
   ar: { arabe: "العربية", francais: "الفرنسية" },
 };
+// Niveaux scolaires (CP1...Tle) : mêmes libellés en FR et en AR, ce sont des
+// désignations officielles du système ivoirien partagées par les deux filières
+// linguistiques, donc on évite d'introduire une traduction arabe non officielle.
+var RESSOURCE_NIVEAU_ORDER = ["cp1", "cp2", "ce1", "ce2", "cm1", "cm2", "6e", "5e", "4e", "3e", "2nde", "1ere", "tle"];
+var RESSOURCE_NIVEAU_LABELS = {
+  cp1: "CP1", cp2: "CP2", ce1: "CE1", ce2: "CE2", cm1: "CM1", cm2: "CM2",
+  "6e": "6ème", "5e": "5ème", "4e": "4ème", "3e": "3ème",
+  "2nde": "2nde", "1ere": "1ère", tle: "Tle",
+};
+
+function renderRessourceOfficielleCards(grid, emptyEl, docs, langueLabels, downloadLabel, emptyMessage) {
+  if (!docs.length) {
+    grid.innerHTML = "";
+    if (emptyEl) {
+      if (emptyMessage !== undefined) emptyEl.textContent = emptyMessage;
+      emptyEl.style.display = "block";
+    }
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = "none";
+  grid.innerHTML = docs
+    .map(function (item) {
+      var langueLabel = langueLabels[item.langue] || "";
+      return (
+        '<div class="ressource-officielle-card">' +
+        '<div class="ressource-officielle-photo">' +
+        '<img src="' + API_BASE + item.photo_url + '" alt="' + escapeHtml(item.titre) + '" loading="lazy">' +
+        (langueLabel ? '<span class="ressource-officielle-langue">' + escapeHtml(langueLabel) + "</span>" : "") +
+        "</div>" +
+        '<div class="ressource-officielle-body">' +
+        "<h4>" + escapeHtml(item.titre) + "</h4>" +
+        (item.description ? "<p>" + escapeHtml(item.description) + "</p>" : "") +
+        (item.file_url ? '<a href="' + API_BASE + item.file_url + '" class="ressource-officielle-download" target="_blank" rel="noopener">' + downloadLabel + "</a>" : "") +
+        "</div>" +
+        "</div>"
+      );
+    })
+    .join("");
+}
+
+function setupManuelScolaireNiveauPicker(manuelDocs, langueLabels, downloadLabel, lang) {
+  var niveauxEl = document.getElementById("ressources-manuel_scolaire-niveaux");
+  var languesEl = document.getElementById("ressources-manuel_scolaire-langues");
+  var grid = document.getElementById("ressources-manuel_scolaire-grid");
+  var emptyEl = document.getElementById("ressources-manuel_scolaire-empty");
+  if (!niveauxEl || !languesEl || !grid) return;
+
+  var choisirLabel = lang === "ar" ? "اختر اللغة لـ" : "Choisissez la langue pour";
+  var auncunNiveauMsg = lang === "ar" ? "لا يوجد كتاب منشور لهذا المستوى في هذه اللغة." : "Aucun manuel publié pour ce niveau dans cette langue.";
+  var auncunDepartMsg = lang === "ar" ? "اختر مستوى أعلاه لعرض الكتب المدرسية." : "Choisissez un niveau ci-dessus pour afficher les manuels.";
+
+  var byNiveau = {};
+  manuelDocs.forEach(function (item) {
+    var niv = item.niveau || "autre";
+    if (!byNiveau[niv]) byNiveau[niv] = [];
+    byNiveau[niv].push(item);
+  });
+
+  var levelsPresent = RESSOURCE_NIVEAU_ORDER.filter(function (niv) {
+    return byNiveau[niv] && byNiveau[niv].length;
+  });
+  if (!levelsPresent.length) {
+    niveauxEl.innerHTML = "";
+    languesEl.style.display = "none";
+    languesEl.innerHTML = "";
+    grid.innerHTML = "";
+    if (emptyEl) {
+      emptyEl.textContent = lang === "ar" ? "لا يوجد كتاب منشور حاليًا." : "Aucun manuel publié pour le moment.";
+      emptyEl.style.display = "block";
+    }
+    return;
+  }
+
+  niveauxEl.innerHTML = levelsPresent
+    .map(function (niv) {
+      return '<button type="button" class="niveau-btn" data-niveau="' + niv + '">' + escapeHtml(RESSOURCE_NIVEAU_LABELS[niv] || niv) + "</button>";
+    })
+    .join("");
+
+  if (emptyEl) {
+    emptyEl.textContent = auncunDepartMsg;
+    emptyEl.style.display = "block";
+  }
+  grid.innerHTML = "";
+
+  function showLangues(niv) {
+    var docsForNiveau = byNiveau[niv] || [];
+    var hasArabe = docsForNiveau.some(function (d) { return d.langue === "arabe"; });
+    var hasFrancais = docsForNiveau.some(function (d) { return d.langue === "francais"; });
+
+    var buttons = [];
+    if (hasFrancais) buttons.push('<button type="button" class="niveau-langue-btn" data-langue="francais">' + escapeHtml(langueLabels.francais) + "</button>");
+    if (hasArabe) buttons.push('<button type="button" class="niveau-langue-btn" data-langue="arabe">' + escapeHtml(langueLabels.arabe) + "</button>");
+
+    languesEl.innerHTML =
+      '<p class="niveau-langue-choisir">' + escapeHtml(choisirLabel) + " " + escapeHtml(RESSOURCE_NIVEAU_LABELS[niv] || niv) + "</p>" +
+      '<div class="niveau-langue-buttons">' + buttons.join("") + "</div>";
+    languesEl.style.display = "block";
+
+    languesEl.querySelectorAll(".niveau-langue-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        languesEl.querySelectorAll(".niveau-langue-btn").forEach(function (b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+        var langue = btn.getAttribute("data-langue");
+        var filtered = docsForNiveau.filter(function (d) { return d.langue === langue; });
+        renderRessourceOfficielleCards(grid, emptyEl, filtered, langueLabels, downloadLabel, auncunNiveauMsg);
+      });
+    });
+
+    grid.innerHTML = "";
+    if (emptyEl) {
+      emptyEl.textContent = auncunNiveauMsg;
+      emptyEl.style.display = "none";
+    }
+  }
+
+  niveauxEl.querySelectorAll(".niveau-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      niveauxEl.querySelectorAll(".niveau-btn").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      showLangues(btn.getAttribute("data-niveau"));
+    });
+  });
+}
 
 function loadRessourcesOfficielles() {
   var hasContainer = RESSOURCE_OFFICIELLE_SECTIONS_JS.some(function (sec) {
@@ -2312,35 +2436,16 @@ function loadRessourcesOfficielles() {
         bySection[sec].push(item);
       });
 
-      RESSOURCE_OFFICIELLE_SECTIONS_JS.forEach(function (sec) {
+      if (document.getElementById("ressources-manuel_scolaire-niveaux")) {
+        setupManuelScolaireNiveauPicker(bySection["manuel_scolaire"] || [], langueLabels, downloadLabel, lang);
+      }
+
+      ["programme_officiel", "enseignement_islamique"].forEach(function (sec) {
         var grid = document.getElementById("ressources-" + sec + "-grid");
         var emptyEl = document.getElementById("ressources-" + sec + "-empty");
         if (!grid) return;
         var docs = bySection[sec] || [];
-        if (!docs.length) {
-          grid.innerHTML = "";
-          if (emptyEl) emptyEl.style.display = "block";
-          return;
-        }
-        if (emptyEl) emptyEl.style.display = "none";
-        grid.innerHTML = docs
-          .map(function (item) {
-            var langueLabel = langueLabels[item.langue] || "";
-            return (
-              '<div class="ressource-officielle-card">' +
-              '<div class="ressource-officielle-photo">' +
-              '<img src="' + API_BASE + item.photo_url + '" alt="' + escapeHtml(item.titre) + '" loading="lazy">' +
-              (langueLabel ? '<span class="ressource-officielle-langue">' + escapeHtml(langueLabel) + "</span>" : "") +
-              "</div>" +
-              '<div class="ressource-officielle-body">' +
-              "<h4>" + escapeHtml(item.titre) + "</h4>" +
-              (item.description ? "<p>" + escapeHtml(item.description) + "</p>" : "") +
-              (item.file_url ? '<a href="' + API_BASE + item.file_url + '" class="ressource-officielle-download" target="_blank" rel="noopener">' + downloadLabel + "</a>" : "") +
-              "</div>" +
-              "</div>"
-            );
-          })
-          .join("");
+        renderRessourceOfficielleCards(grid, emptyEl, docs, langueLabels, downloadLabel);
       });
     })
     .catch(function () {});

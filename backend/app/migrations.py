@@ -436,6 +436,12 @@ def run_startup_migrations() -> None:
                     "ALTER TABLE depenses ADD COLUMN projet_id INTEGER REFERENCES projets(id) ON DELETE SET NULL"
                 ))
 
+    if inspector.has_table("ressources_officielles"):
+        columns = {c["name"] for c in inspector.get_columns("ressources_officielles")}
+        if "niveau" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE ressources_officielles ADD COLUMN niveau VARCHAR(10)"))
+
     if inspector.has_table("courriers"):
         columns = {c["name"] for c in inspector.get_columns("courriers")}
         if "statut_reponse" not in columns:

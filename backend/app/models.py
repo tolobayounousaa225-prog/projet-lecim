@@ -1479,6 +1479,25 @@ RESSOURCE_OFFICIELLE_LANGUES = {
     "francais": "Français",
 }
 
+# Niveaux scolaires (système ivoirien, calqué sur le système français) — utilisés pour
+# organiser les manuels scolaires officiels par niveau sur la page d'accueil publique
+# (clic sur un niveau -> choix de la langue -> manuels de ce niveau et cette langue).
+RESSOURCE_OFFICIELLE_NIVEAUX = {
+    "cp1": "CP1",
+    "cp2": "CP2",
+    "ce1": "CE1",
+    "ce2": "CE2",
+    "cm1": "CM1",
+    "cm2": "CM2",
+    "6e": "6ème",
+    "5e": "5ème",
+    "4e": "4ème",
+    "3e": "3ème",
+    "2nde": "2nde",
+    "1ere": "1ère",
+    "tle": "Tle",
+}
+
 
 class RessourceOfficielle(Base):
     """Manuel scolaire, programme officiel ou support d'enseignement islamique/arabe
@@ -1490,6 +1509,9 @@ class RessourceOfficielle(Base):
     titre: Mapped[str] = mapped_column(String(255), nullable=False)
     section: Mapped[str] = mapped_column(String(30), nullable=False)
     langue: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # Niveau scolaire (CP1...Tle) — surtout pertinent pour section="manuel_scolaire",
+    # laissé nullable car programme_officiel/enseignement_islamique n'en ont pas toujours besoin.
+    niveau: Mapped[str | None] = mapped_column(String(10), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     photo_path: Mapped[str] = mapped_column(String(500), nullable=False)
     file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -1508,6 +1530,10 @@ class RessourceOfficielle(Base):
     @property
     def langue_label(self) -> str:
         return RESSOURCE_OFFICIELLE_LANGUES.get(self.langue, "") if self.langue else ""
+
+    @property
+    def niveau_label(self) -> str:
+        return RESSOURCE_OFFICIELLE_NIVEAUX.get(self.niveau, "") if self.niveau else ""
 
     @property
     def photo_url(self) -> str:

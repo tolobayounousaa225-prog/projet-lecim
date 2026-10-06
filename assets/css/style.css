@@ -1340,6 +1340,33 @@ section { padding: 80px 0; }
 }
 .ressource-officielle-download:hover { background: var(--green); color: var(--white); }
 
+/* Sélecteur de niveau scolaire (manuel_scolaire) : grille de boutons CP1->Tle, puis
+   choix de la langue, avant d'afficher les manuels correspondants dans la grille
+   .ressource-officielle-grid existante. */
+.niveau-picker-grid {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px;
+}
+.niveau-btn {
+  flex: 0 0 auto; background: var(--white); border: 1.5px solid var(--border);
+  color: var(--green-dark); font-weight: 700; font-size: 0.88rem;
+  padding: 8px 18px; border-radius: 999px; cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.niveau-btn:hover { border-color: var(--green); }
+.niveau-btn.active { background: var(--green-dark); border-color: var(--green-dark); color: var(--white); }
+
+.niveau-langue-picker { margin-bottom: 18px; }
+.niveau-langue-choisir { font-size: 0.85rem; color: var(--text-muted); margin: 0 0 10px; }
+.niveau-langue-buttons { display: flex; gap: 10px; }
+.niveau-langue-btn {
+  flex: 0 0 auto; background: var(--cream); border: 1.5px solid var(--gold);
+  color: var(--green-dark); font-weight: 700; font-size: 0.85rem;
+  padding: 7px 20px; border-radius: 999px; cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.niveau-langue-btn:hover { background: var(--gold); }
+.niveau-langue-btn.active { background: var(--gold); color: var(--green-dark); }
+
 /* ===== Écoles affiliées ===== */
 .ecoles-tabs-row {
   display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: space-between;

@@ -27,6 +27,15 @@
       </select>
     </div>
     <div class="form-group">
+      <label for="niveau">Niveau scolaire (optionnel — surtout pour un manuel scolaire)</label>
+      <select id="niveau" name="niveau">
+        <option value="">—</option>
+        {% for key, label in niveaux.items() %}
+        <option value="{{ key }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
       <label for="description">Description (optionnel)</label>
       <textarea id="description" name="description"></textarea>
     </div>

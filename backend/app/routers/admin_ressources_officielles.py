@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from .. import models, storage
 from ..database import get_db
 from ..deps import require_publications_access_web
-from ..models import RESSOURCE_OFFICIELLE_LANGUES, RESSOURCE_OFFICIELLE_SECTIONS
+from ..models import RESSOURCE_OFFICIELLE_LANGUES, RESSOURCE_OFFICIELLE_NIVEAUX, RESSOURCE_OFFICIELLE_SECTIONS
 from .admin_files import ALLOWED_DOCUMENT_EXT, ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin/ressources-officielles", tags=["admin-ressources-officielles"])
@@ -54,6 +54,7 @@ def ressources_officielles_new_form(
             "admin": user,
             "sections": RESSOURCE_OFFICIELLE_SECTIONS,
             "langues": RESSOURCE_OFFICIELLE_LANGUES,
+            "niveaux": RESSOURCE_OFFICIELLE_NIVEAUX,
             "active": "ressources_officielles",
             "error": None,
         },
@@ -66,6 +67,7 @@ async def ressources_officielles_create(
     titre: str = Form(...),
     section: str = Form(...),
     langue: str = Form(""),
+    niveau: str = Form(""),
     description: str = Form(""),
     ordre: int = Form(0),
     is_published: bool = Form(False),
@@ -78,6 +80,7 @@ async def ressources_officielles_create(
         "admin": user,
         "sections": RESSOURCE_OFFICIELLE_SECTIONS,
         "langues": RESSOURCE_OFFICIELLE_LANGUES,
+        "niveaux": RESSOURCE_OFFICIELLE_NIVEAUX,
         "active": "ressources_officielles",
     }
     try:
@@ -107,6 +110,7 @@ async def ressources_officielles_create(
         titre=titre,
         section=section if section in RESSOURCE_OFFICIELLE_SECTIONS else "manuel_scolaire",
         langue=langue if langue in RESSOURCE_OFFICIELLE_LANGUES else None,
+        niveau=niveau if niveau in RESSOURCE_OFFICIELLE_NIVEAUX else None,
         description=description or None,
         photo_path=f"ressources_officielles/{photo_stored_name}",
         file_path=f"ressources_officielles/{file_stored_name}" if file_stored_name else None,
