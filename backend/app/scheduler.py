@@ -9,7 +9,7 @@ from .backup import create_backup
 from .courrier_reminders import check_overdue_courrier
 from .mandates import check_mandate_expirations
 from .newsletter import run_monthly_newsletter
-from .reminders import run_daily_reminders
+from .reminders import run_daily_reminders, run_visio_reminders
 from .taches_reminders import check_overdue_taches
 
 logger = logging.getLogger("lecim.scheduler")
@@ -29,6 +29,13 @@ def _run_reminders_job() -> None:
         run_daily_reminders()
     except Exception:
         logger.exception("Échec de l'envoi des rappels de réunions")
+
+
+def _run_visio_reminders_job() -> None:
+    try:
+        run_visio_reminders()
+    except Exception:
+        logger.exception("Échec de l'envoi des rappels programmés de visioconférence")
 
 
 def _run_mandates_job() -> None:
@@ -63,6 +70,9 @@ def start() -> None:
     scheduler.add_job(_run_backup_job, "cron", hour=2, minute=0, id="daily_backup", replace_existing=True)
     scheduler.add_job(_run_reminders_job, "cron", hour=7, minute=0, id="daily_reminders", replace_existing=True)
     scheduler.add_job(_run_mandates_job, "cron", hour=7, minute=15, id="daily_mandates", replace_existing=True)
+    scheduler.add_job(
+        _run_visio_reminders_job, "interval", minutes=10, id="visio_reminders", replace_existing=True
+    )
     scheduler.add_job(
         _run_taches_reminders_job, "cron", hour=7, minute=30, id="daily_taches_reminders", replace_existing=True
     )

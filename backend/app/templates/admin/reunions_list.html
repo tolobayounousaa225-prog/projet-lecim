@@ -14,7 +14,7 @@
   <tbody>
     {% for item in items %}
     <tr>
-      <td>{{ item.date.strftime("%d/%m/%Y") }}</td>
+      <td>{{ item.date.strftime("%d/%m/%Y") }}{% if item.heure %} à {{ item.heure.strftime("%H:%M") }}{% endif %}</td>
       <td>{{ item.title }}</td>
       <td>{{ item.lieu or "—" }}</td>
       <td>{{ item.present_count }} / {{ item.presences|length }}</td>

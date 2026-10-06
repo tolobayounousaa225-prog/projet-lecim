@@ -314,6 +314,7 @@ def reunions_new_form(
 def reunions_create(
     title: str = Form(...),
     date: datetime.date = Form(...),
+    heure: str = Form(""),
     lieu: str = Form(""),
     ordre_du_jour: str = Form(""),
     db: Session = Depends(get_db),
@@ -322,6 +323,7 @@ def reunions_create(
     reunion = models.Reunion(
         title=title,
         date=date,
+        heure=datetime.time.fromisoformat(heure) if heure else None,
         lieu=lieu or None,
         ordre_du_jour=ordre_du_jour or None,
         created_by_id=user.id,
@@ -352,6 +354,7 @@ def reunions_update(
     reunion_id: int,
     title: str = Form(...),
     date: datetime.date = Form(...),
+    heure: str = Form(""),
     lieu: str = Form(""),
     ordre_du_jour: str = Form(""),
     db: Session = Depends(get_db),
@@ -359,8 +362,14 @@ def reunions_update(
 ):
     reunion = db.get(models.Reunion, reunion_id)
     if reunion:
+        nouvelle_heure = datetime.time.fromisoformat(heure) if heure else None
+        if nouvelle_heure != reunion.heure:
+            # L'heure a changé : si le rappel programmé avait déjà été envoyé pour
+            # l'ancien horaire, on le réarme pour le nouveau.
+            reunion.visio_reminder_sent = False
         reunion.title = title
         reunion.date = date
+        reunion.heure = nouvelle_heure
         reunion.lieu = lieu or None
         reunion.ordre_du_jour = ordre_du_jour or None
         db.commit()

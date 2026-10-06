@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Boolean, DateTime, Date, Float, ForeignKey, Index, Integer, LargeBinary, String, Text, UniqueConstraint, text
+from sqlalchemy import Boolean, DateTime, Date, Float, ForeignKey, Index, Integer, LargeBinary, String, Text, Time, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -490,12 +490,17 @@ class Reunion(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    # Heure de début (optionnelle) — sert uniquement à calculer le moment d'envoi du rappel
+    # automatique de visioconférence (voir reminders.send_visio_reminder_for_reunion) ; une
+    # réunion sans heure renseignée n'a simplement pas ce rappel programmé.
+    heure: Mapped[datetime.time | None] = mapped_column(Time, nullable=True)
     lieu: Mapped[str] = mapped_column(String(255), nullable=True)
     ordre_du_jour: Mapped[str] = mapped_column(Text, nullable=True)
     created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     # NULL = réunion nationale du BEN ; renseigné = réunion locale d'une délégation.
     delegation_id: Mapped[int | None] = mapped_column(ForeignKey("delegations.id"), nullable=True)
     reminder_sent: Mapped[bool] = mapped_column(Boolean, default=False)
+    visio_reminder_sent: Mapped[bool] = mapped_column(Boolean, default=False)
     # Jeton opaque utilisé dans le QR code de pointage de présence (mode présentation) —
     # jamais l'id séquentiel de la réunion, pour ne pas laisser deviner/scanner une autre
     # réunion. Généré à la volée au premier besoin (réunions déjà existantes sans jeton).

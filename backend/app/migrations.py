@@ -447,6 +447,15 @@ def run_startup_migrations() -> None:
         if "statut_reponse" not in columns:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE courriers ADD COLUMN statut_reponse VARCHAR(20)"))
+
+    if inspector.has_table("reunions"):
+        columns = {c["name"] for c in inspector.get_columns("reunions")}
+        if "heure" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE reunions ADD COLUMN heure TIME"))
+        if "visio_reminder_sent" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE reunions ADD COLUMN visio_reminder_sent BOOLEAN DEFAULT FALSE"))
         if "delai_relance_jours" not in columns:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE courriers ADD COLUMN delai_relance_jours INTEGER DEFAULT 7"))

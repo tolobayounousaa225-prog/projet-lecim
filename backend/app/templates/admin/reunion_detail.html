@@ -5,7 +5,7 @@
   <div>
     <h1 style="margin:0">{{ reunion.title }}</h1>
     <p style="color:var(--text-muted); margin:4px 0 0;">
-      {{ reunion.date.strftime("%d/%m/%Y") }}{% if reunion.lieu %} — {{ reunion.lieu }}{% endif %}
+      {{ reunion.date.strftime("%d/%m/%Y") }}{% if reunion.heure %} à {{ reunion.heure.strftime("%H:%M") }}{% endif %}{% if reunion.lieu %} — {{ reunion.lieu }}{% endif %}
       {% if reunion.reminder_sent %}<span class="pill pill-green" style="margin-left:8px;">Rappel envoyé</span>{% endif %}
     </p>
   </div>
