@@ -447,21 +447,21 @@ def run_startup_migrations() -> None:
         if "statut_reponse" not in columns:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE courriers ADD COLUMN statut_reponse VARCHAR(20)"))
-
-    if inspector.has_table("reunions"):
-        columns = {c["name"] for c in inspector.get_columns("reunions")}
-        if "heure" not in columns:
-            with engine.begin() as conn:
-                conn.execute(text("ALTER TABLE reunions ADD COLUMN heure TIME"))
-        if "visio_reminder_sent" not in columns:
-            with engine.begin() as conn:
-                conn.execute(text("ALTER TABLE reunions ADD COLUMN visio_reminder_sent BOOLEAN DEFAULT FALSE"))
         if "delai_relance_jours" not in columns:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE courriers ADD COLUMN delai_relance_jours INTEGER DEFAULT 7"))
         if "relance_envoyee" not in columns:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE courriers ADD COLUMN relance_envoyee BOOLEAN DEFAULT FALSE"))
+
+    if inspector.has_table("reunions"):
+        reunions_columns = {c["name"] for c in inspector.get_columns("reunions")}
+        if "heure" not in reunions_columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE reunions ADD COLUMN heure TIME"))
+        if "visio_reminder_sent" not in reunions_columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE reunions ADD COLUMN visio_reminder_sent BOOLEAN DEFAULT FALSE"))
 
     Base.metadata.create_all(bind=engine)
 
