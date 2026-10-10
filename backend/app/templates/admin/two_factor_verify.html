@@ -12,14 +12,18 @@
   <div class="login-card">
     <img src="/static/img/logo.jpg" alt="Logo LECIM" class="login-logo">
     <h1>Vérification en deux étapes</h1>
-    <p class="sub">Entrez le code à 6 chiffres affiché par votre application d'authentification.</p>
+    <p class="sub">Un code de connexion vient de vous être envoyé par e-mail. Il est valable quelques minutes.</p>
     {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+    {% if message %}<div class="success-box">{{ message }}</div>{% endif %}
     <form method="post" action="/admin/2fa/verify">
       <div class="form-group">
         <label for="code">Code à 6 chiffres</label>
         <input type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autofocus>
       </div>
       <button type="submit" class="btn btn-primary" style="width:100%">Valider</button>
+    </form>
+    <form method="post" action="/admin/2fa/resend" style="margin-top:10px;">
+      <button type="submit" class="btn btn-outline" style="width:100%">Je n'ai pas reçu le code — renvoyer</button>
     </form>
   </div>
 </div>

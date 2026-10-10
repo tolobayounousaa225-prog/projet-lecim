@@ -71,16 +71,16 @@ def require_two_factor_pending(
     two_factor_pending: str | None = Cookie(default=None),
     db: Session = Depends(get_db),
 ) -> models.User:
-    """Accès aux pages d'inscription/vérification TOTP : le mot de passe a déjà
-    été vérifié (voir `create_two_factor_pending_token`), mais la session
-    complète (cookie `access_token`) n'est pas encore accordée — ce jeton
-    distinct, de très courte durée, ne peut pas servir à autre chose."""
+    """Accès à la page de vérification du code reçu par e-mail : le mot de
+    passe a déjà été vérifié (voir `create_two_factor_pending_token`), mais la
+    session complète (cookie `access_token`) n'est pas encore accordée — ce
+    jeton distinct, de très courte durée, ne peut pas servir à autre chose."""
     if not two_factor_pending:
         raise NotAuthenticatedException()
-    email = decode_two_factor_pending_token(two_factor_pending)
-    if not email:
+    decoded = decode_two_factor_pending_token(two_factor_pending)
+    if not decoded:
         raise NotAuthenticatedException()
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(models.User).filter(models.User.email == decoded["email"]).first()
     if not user:
         raise NotAuthenticatedException()
     return user

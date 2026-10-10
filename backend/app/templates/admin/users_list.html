@@ -44,11 +44,6 @@
           <button type="submit" class="btn btn-outline btn-sm">🔒 Déverrouiller</button>
         </form>
         {% endif %}
-        {% if item.totp_enabled %}
-        <form method="post" action="/admin/users/{{ item.id }}/reinitialiser-2fa" onsubmit="return confirm('Réinitialiser la double authentification de {{ item.full_name }} ? À utiliser uniquement si l\'appareil contenant son application d\'authentification est perdu.');">
-          <button type="submit" class="btn btn-outline btn-sm">Réinitialiser 2FA</button>
-        </form>
-        {% endif %}
         {% if item.id != admin.id %}
         <form method="post" action="/admin/users/{{ item.id }}/delete" onsubmit="return confirm('Révoquer l\'accès de {{ item.full_name }} ?');">
           <button type="submit" class="btn btn-danger btn-sm">Révoquer</button>

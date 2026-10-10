@@ -72,6 +72,10 @@ a { color: var(--green); text-decoration: none; }
   background: #fdeaea; color: #a12626; border: 1px solid #f3c2c2;
   border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; margin-bottom: 16px;
 }
+.success-box {
+  background: #eaf7ee; color: #1e7e42; border: 1px solid #bfe6cc;
+  border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; margin-bottom: 16px;
+}
 
 /* ---- Layout ---- */
 .admin-shell { display: flex; min-height: 100vh; }

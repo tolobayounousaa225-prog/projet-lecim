@@ -22,6 +22,7 @@ from ..deps import (
     require_login_web,
     require_news_access_web,
 )
+from ..email_utils import send_email
 from ..login_security import AccountLockedError, authenticate_user
 from ..push import send_urgent_news_push
 from ..rate_limit import rate_limiter
@@ -29,6 +30,8 @@ from ..security import (
     TWO_FACTOR_PENDING_MINUTES,
     create_access_token,
     create_two_factor_pending_token,
+    generate_otp_code,
+    hash_otp_code,
     hash_password,
     password_policy_error,
     verify_password,
@@ -131,9 +134,18 @@ def login_submit(
         # n'est pas encore accordée — la connexion n'est auditée qu'une fois la
         # double authentification elle-même passée (voir two_factor.py), pour
         # ne jamais enregistrer une "connexion" qui échoue ensuite au 2ᵉ facteur.
-        pending_token = create_two_factor_pending_token(subject=user.email)
-        next_step = "/admin/2fa/enroll" if not user.totp_enabled else "/admin/2fa/verify"
-        response = RedirectResponse(url=next_step, status_code=status.HTTP_303_SEE_OTHER)
+        code = generate_otp_code()
+        send_email(
+            user.email,
+            "LECIM — Code de vérification",
+            f"Bonjour {user.full_name},\n\n"
+            f"Voici votre code de connexion : {code}\n\n"
+            f"Il est valable {TWO_FACTOR_PENDING_MINUTES} minutes. Si vous n'êtes pas à "
+            f"l'origine de cette tentative de connexion, contactez immédiatement le "
+            f"secrétariat administratif de la LECIM et changez votre mot de passe.",
+        )
+        pending_token = create_two_factor_pending_token(subject=user.email, code_hash=hash_otp_code(code))
+        response = RedirectResponse(url="/admin/2fa/verify", status_code=status.HTTP_303_SEE_OTHER)
         response.set_cookie(
             "two_factor_pending", pending_token, httponly=True, samesite="lax",
             secure=not settings.debug,

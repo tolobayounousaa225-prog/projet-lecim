@@ -174,25 +174,6 @@ def users_update(
     return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/{user_id}/reinitialiser-2fa")
-def users_reset_two_factor(
-    user_id: int,
-    db: Session = Depends(get_db),
-    admin: models.User = Depends(require_admin_web),
-):
-    """Retire la double authentification d'un compte — seul recours si le
-    titulaire a perdu l'appareil contenant son application d'authentification.
-    Le compte redevient soumis à une nouvelle inscription 2FA dès sa prochaine
-    connexion (voir `models.User.requires_two_factor` et `two_factor.py`)."""
-    user = db.get(models.User, user_id)
-    if user:
-        user.totp_enabled = False
-        user.totp_secret = None
-        audit.log(db, admin, "update", "Compte utilisateur", user.id, f"A réinitialisé la double authentification de {user.full_name}")
-        db.commit()
-    return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
-
-
 @router.post("/{user_id}/deverrouiller")
 def users_unlock(
     user_id: int,
