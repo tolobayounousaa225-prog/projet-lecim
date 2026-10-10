@@ -31,6 +31,14 @@
       <input type="checkbox" id="is_adjoint" name="is_adjoint" value="true" {% if item and item.is_adjoint %}checked{% endif %}>
       <label for="is_adjoint" style="margin:0">Cette personne est l'adjoint(e) du poste sélectionné</label>
     </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="two_factor_enabled" name="two_factor_enabled" value="true" {% if item and item.two_factor_enabled %}checked{% endif %}>
+      <label for="two_factor_enabled" style="margin:0">Exiger un code de connexion par e-mail (double authentification)</label>
+    </div>
+    <p class="form-note" style="margin-top:-6px;">
+      Toujours activée pour un compte Administrateur ou ayant le module Finances, quel que soit cet état.
+      Cochez-la ici pour l'imposer à un autre membre également.
+    </p>
     <div class="form-group">
       <label for="access_level">Niveau d'accès</label>
       <select id="access_level" name="access_level" onchange="toggleModulesBox()">

@@ -63,17 +63,22 @@ class User(Base):
     # Verrouillage temporaire après plusieurs échecs de connexion consécutifs.
     failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+    # Active la double authentification (code par e-mail) pour un compte qui
+    # n'y est pas déjà soumis par son rôle (voir `requires_two_factor`) — un
+    # administrateur peut cocher cette case pour n'importe quel membre depuis
+    # sa fiche, sans attendre qu'il ait le rôle admin/finances.
+    two_factor_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
 
     @property
     def requires_two_factor(self) -> bool:
-        """Comptes admin et finances : un code à usage unique envoyé par
-        e-mail est exigé à chaque connexion, en plus du mot de passe (voir
-        `two_factor.py`) — pas d'état persistant à ce sujet sur le compte,
-        juste ce rôle qui déclenche systématiquement l'étape supplémentaire."""
-        return self.is_admin or self.can_manage_finances
+        """Un code à usage unique envoyé par e-mail est exigé à chaque
+        connexion, en plus du mot de passe (voir `two_factor.py`) — toujours
+        pour les comptes admin et finances, et pour tout autre compte sur
+        lequel un administrateur a explicitement activé `two_factor_enabled`."""
+        return self.is_admin or self.can_manage_finances or self.two_factor_enabled
 
     delegation: Mapped["Delegation | None"] = relationship(foreign_keys=[delegation_id])
     etablissement: Mapped["Etablissement | None"] = relationship(foreign_keys=[etablissement_id])

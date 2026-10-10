@@ -9,7 +9,7 @@
 {% if items %}
 <table>
   <thead>
-    <tr><th>Nom</th><th>Poste</th><th>E-mail</th><th>Niveau</th><th>Fonctionnalités visibles</th><th>Actions</th></tr>
+    <tr><th>Nom</th><th>Poste</th><th>E-mail</th><th>Niveau</th><th>2FA</th><th>Fonctionnalités visibles</th><th>Actions</th></tr>
   </thead>
   <tbody>
     {% for item in items %}
@@ -24,6 +24,13 @@
           <span class="pill pill-muted">👁 Observateur (lecture seule)</span>
         {% else %}
           <span class="pill pill-green">Membre du bureau</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if item.requires_two_factor %}
+          <span class="pill pill-green" title="Code de connexion par e-mail exigé">Activée</span>
+        {% else %}
+          <span class="pill pill-muted">—</span>
         {% endif %}
       </td>
       <td style="font-size:0.82rem; color:var(--text-muted);">

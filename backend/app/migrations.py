@@ -463,6 +463,12 @@ def run_startup_migrations() -> None:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE reunions ADD COLUMN visio_reminder_sent BOOLEAN DEFAULT FALSE"))
 
+    if inspector.has_table("users"):
+        users_columns = {c["name"] for c in inspector.get_columns("users")}
+        if "two_factor_enabled" not in users_columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN two_factor_enabled BOOLEAN DEFAULT FALSE"))
+
     Base.metadata.create_all(bind=engine)
 
     if inspector.has_table("etablissements"):

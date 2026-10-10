@@ -60,6 +60,7 @@ def users_create(
     access_level: str = Form("bureau"),
     poste: str = Form(""),
     is_adjoint: bool = Form(False),
+    two_factor_enabled: bool = Form(False),
     modules: list[str] = Form([]),
     db: Session = Depends(get_db),
     admin: models.User = Depends(require_admin_web),
@@ -89,6 +90,7 @@ def users_create(
         access_level=access_level if access_level in {"admin", "bureau", "observateur"} else "bureau",
         poste=poste or None,
         is_adjoint=is_adjoint,
+        two_factor_enabled=two_factor_enabled,
         allowed_modules=",".join(valid_modules),
     )
     db.add(user)
@@ -133,6 +135,7 @@ def users_update(
     access_level: str = Form("bureau"),
     poste: str = Form(""),
     is_adjoint: bool = Form(False),
+    two_factor_enabled: bool = Form(False),
     modules: list[str] = Form([]),
     db: Session = Depends(get_db),
     admin: models.User = Depends(require_admin_web),
@@ -166,6 +169,7 @@ def users_update(
         user.access_level = access_level if access_level in {"admin", "bureau", "observateur"} else "bureau"
         user.poste = poste or None
         user.is_adjoint = is_adjoint
+        user.two_factor_enabled = two_factor_enabled
         user.allowed_modules = ",".join(valid_modules)
         if password:
             user.hashed_password = hash_password(password)
