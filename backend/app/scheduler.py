@@ -7,6 +7,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from .backup import create_backup
 from .courrier_reminders import check_overdue_courrier
+from .offsite_backup import sync_latest_backup
 from .mandates import check_mandate_expirations
 from .newsletter import run_monthly_newsletter
 from .reminders import run_daily_reminders, run_visio_reminders
@@ -19,9 +20,13 @@ scheduler = BackgroundScheduler()
 
 def _run_backup_job() -> None:
     try:
-        create_backup()
+        backup_path = create_backup()
     except Exception:
         logger.exception("Échec de la sauvegarde automatique planifiée")
+        return
+    # Échec séparé et non bloquant : un problème réseau/Git sur la copie
+    # hors-site ne doit jamais faire paraître la sauvegarde locale en échec.
+    sync_latest_backup(backup_path)
 
 
 def _run_reminders_job() -> None:

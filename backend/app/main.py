@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -177,6 +178,37 @@ app.add_middleware(
 
 PORTAL_PREFIXES = ("/admin", "/delegation", "/etablissement")
 OBSERVER_EXEMPT_PATHS = {"/admin/login"}
+
+# Routes sous /api protégées par cookie de session (via le repli de
+# `get_current_user` sur le cookie en l'absence d'en-tête Authorization) —
+# donc tout aussi exposées au CSRF que les portails /admin, /delegation et
+# /etablissement, malgré leur préfixe /api.
+CSRF_PROTECTED_API_PREFIXES = ("/api/news", "/api/activities")
+CSRF_EXEMPT_PATHS = {"/admin/login"}
+
+
+@app.middleware("http")
+async def verify_origin_on_state_changing_requests(request: Request, call_next):
+    """Défense CSRF : sur une requête qui modifie des données et authentifiée
+    par cookie (SameSite=Lax protège déjà la plupart des cas, mais pas tous les
+    navigateurs/configurations), vérifie que l'en-tête Origin — quand le
+    navigateur en envoie un, ce qui est systématique pour un POST déclenché par
+    un <form> — correspond bien à ce site. Un Origin absent n'est jamais bloqué
+    ici : un vrai navigateur envoie toujours Origin sur un POST, donc son
+    absence ne correspond pas au scénario d'attaque CSRF visé, et bloquer
+    quand même casserait des clients non-navigateur légitimes (scripts d'admin)."""
+    path = request.url.path
+    is_protected_path = path.startswith(PORTAL_PREFIXES) or path.startswith(CSRF_PROTECTED_API_PREFIXES)
+    if request.method in ("POST", "PUT", "PATCH", "DELETE") and is_protected_path and path not in CSRF_EXEMPT_PATHS:
+        origin = request.headers.get("origin")
+        if origin:
+            allowed_host = urlsplit(settings.public_base_url).netloc
+            if urlsplit(origin).netloc != allowed_host:
+                return HTMLResponse(
+                    "<h1>Requête refusée</h1><p>Origine de la requête non reconnue.</p>",
+                    status_code=403,
+                )
+    return await call_next(request)
 
 
 @app.middleware("http")

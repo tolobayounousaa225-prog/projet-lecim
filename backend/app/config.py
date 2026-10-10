@@ -31,6 +31,14 @@ class Settings(BaseSettings):
     upload_dir: str = "uploads"
     max_upload_size_mb: int = 15
 
+    # Sauvegarde hors-site : chaque sauvegarde nocturne est chiffrée avec cette clé
+    # (Fernet — `cryptography.fernet.Fernet.generate_key()`) avant d'être envoyée
+    # vers le dépôt GitHub privé dédié. Vide = synchronisation hors-site désactivée
+    # (la sauvegarde locale continue normalement). Dépôt accédé via une clé de
+    # déploiement SSH dédiée (voir ~/.ssh/config sur le VPS), jamais ce dépôt-ci.
+    backup_encryption_key: str = ""
+    backup_offsite_repo_ssh_url: str = ""
+
     # Clés VAPID pour les notifications push web (actualités urgentes). Vides = la
     # fonctionnalité est simplement désactivée (aucun envoi), sans erreur.
     vapid_public_key: str = ""
