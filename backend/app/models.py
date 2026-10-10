@@ -63,9 +63,19 @@ class User(Base):
     # Verrouillage temporaire après plusieurs échecs de connexion consécutifs.
     failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+    # Double authentification (TOTP) — obligatoire pour les comptes admin et
+    # finances (voir `requires_two_factor`), facultative sinon. `totp_secret`
+    # est généré dès l'arrivée sur la page d'inscription et n'est confirmé
+    # (`totp_enabled=True`) qu'après vérification d'un premier code valide.
+    totp_secret: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    totp_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
+
+    @property
+    def requires_two_factor(self) -> bool:
+        return self.is_admin or self.can_manage_finances
 
     delegation: Mapped["Delegation | None"] = relationship(foreign_keys=[delegation_id])
     etablissement: Mapped["Etablissement | None"] = relationship(foreign_keys=[etablissement_id])

@@ -56,3 +56,28 @@ def decode_access_token(token: str) -> str | None:
         return payload.get("sub")
     except JWTError:
         return None
+
+
+TWO_FACTOR_PENDING_PURPOSE = "2fa_pending"
+TWO_FACTOR_PENDING_MINUTES = 5
+
+
+def create_two_factor_pending_token(subject: str) -> str:
+    """Jeton très courte durée prouvant que le mot de passe a déjà été vérifié,
+    en attendant la saisie du code TOTP (ou l'inscription) — distinct du jeton
+    de session normal par sa revendication `purpose`, pour qu'il ne puisse
+    jamais être accepté à la place d'un vrai jeton d'accès si on tentait de le
+    présenter comme cookie `access_token`."""
+    expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=TWO_FACTOR_PENDING_MINUTES)
+    payload = {"sub": subject, "exp": expire, "purpose": TWO_FACTOR_PENDING_PURPOSE}
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+
+
+def decode_two_factor_pending_token(token: str) -> str | None:
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    except JWTError:
+        return None
+    if payload.get("purpose") != TWO_FACTOR_PENDING_PURPOSE:
+        return None
+    return payload.get("sub")

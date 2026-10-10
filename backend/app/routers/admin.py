@@ -25,7 +25,14 @@ from ..deps import (
 from ..login_security import AccountLockedError, authenticate_user
 from ..push import send_urgent_news_push
 from ..rate_limit import rate_limiter
-from ..security import create_access_token, hash_password, password_policy_error, verify_password
+from ..security import (
+    TWO_FACTOR_PENDING_MINUTES,
+    create_access_token,
+    create_two_factor_pending_token,
+    hash_password,
+    password_policy_error,
+    verify_password,
+)
 from ..security_utils import csv_safe, safe_content_disposition
 from .. import storage
 from .admin_files import ALLOWED_PHOTO_EXT
@@ -39,6 +46,29 @@ NEWS_IMAGES_DIR = "news"
 
 
 # ---------- Auth ----------
+
+def issue_session_cookie(
+    user: models.User, request: Request, db: Session, redirect_url: str, account_portal: str
+) -> RedirectResponse:
+    """Accorde la session complète (cookie `access_token`) — appelé soit
+    directement après le mot de passe (comptes sans double authentification),
+    soit depuis `two_factor.py` une fois le second facteur validé. Centralise
+    l'audit et le cookie pour que les deux chemins restent identiques."""
+    token = create_access_token(subject=user.email)
+    audit.log(db, user, "login", "Connexion", user.id, f"{user.full_name} s'est connecté ({account_portal})")
+    record_login(db, user, request)
+    db.commit()
+    response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
+    # Le cookie ne doit jamais survivre plus longtemps que le JWT qu'il contient —
+    # sinon un utilisateur se croit connecté (cookie présent) alors que le jeton
+    # est déjà expiré côté serveur, et se fait déconnecter silencieusement.
+    response.set_cookie(
+        "access_token", token, httponly=True, samesite="lax",
+        secure=not settings.debug,
+        max_age=settings.access_token_expire_minutes * 60,
+    )
+    response.delete_cookie("two_factor_pending")
+    return response
 
 @router.get("/login")
 def login_page(request: Request):
@@ -94,21 +124,24 @@ def login_submit(
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    token = create_access_token(subject=user.email)
     redirect_url = {"delegation": "/delegation", "etablissement": "/etablissement", "ben": "/admin"}[account_portal]
-    audit.log(db, user, "login", "Connexion", user.id, f"{user.full_name} s'est connecté ({account_portal})")
-    record_login(db, user, request)
-    db.commit()
-    response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
-    # Le cookie ne doit jamais survivre plus longtemps que le JWT qu'il contient —
-    # sinon un utilisateur se croit connecté (cookie présent) alors que le jeton
-    # est déjà expiré côté serveur, et se fait déconnecter silencieusement.
-    response.set_cookie(
-        "access_token", token, httponly=True, samesite="lax",
-        secure=not settings.debug,
-        max_age=settings.access_token_expire_minutes * 60,
-    )
-    return response
+
+    if user.requires_two_factor:
+        # Mot de passe correct, mais la session complète (cookie access_token)
+        # n'est pas encore accordée — la connexion n'est auditée qu'une fois la
+        # double authentification elle-même passée (voir two_factor.py), pour
+        # ne jamais enregistrer une "connexion" qui échoue ensuite au 2ᵉ facteur.
+        pending_token = create_two_factor_pending_token(subject=user.email)
+        next_step = "/admin/2fa/enroll" if not user.totp_enabled else "/admin/2fa/verify"
+        response = RedirectResponse(url=next_step, status_code=status.HTTP_303_SEE_OTHER)
+        response.set_cookie(
+            "two_factor_pending", pending_token, httponly=True, samesite="lax",
+            secure=not settings.debug,
+            max_age=TWO_FACTOR_PENDING_MINUTES * 60,
+        )
+        return response
+
+    return issue_session_cookie(user, request, db, redirect_url, account_portal)
 
 
 @router.get("/logout")

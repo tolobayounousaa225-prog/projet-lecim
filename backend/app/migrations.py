@@ -463,6 +463,15 @@ def run_startup_migrations() -> None:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE reunions ADD COLUMN visio_reminder_sent BOOLEAN DEFAULT FALSE"))
 
+    if inspector.has_table("users"):
+        users_columns = {c["name"] for c in inspector.get_columns("users")}
+        if "totp_secret" not in users_columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN totp_secret VARCHAR(64)"))
+        if "totp_enabled" not in users_columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN totp_enabled BOOLEAN DEFAULT FALSE"))
+
     Base.metadata.create_all(bind=engine)
 
     if inspector.has_table("etablissements"):

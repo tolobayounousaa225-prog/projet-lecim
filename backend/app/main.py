@@ -112,6 +112,7 @@ from .routers import (
     sondages_express,
     stats,
     temoignages,
+    two_factor,
     verify,
     verify_attestations,
     verify_eleve,
@@ -349,6 +350,7 @@ app.include_router(push_public.router)
 app.include_router(publications.router)
 app.include_router(ressources_officielles.router)
 app.include_router(admin.router)
+app.include_router(two_factor.router)
 app.include_router(admin_audit.router)
 app.include_router(admin_backups.router)
 app.include_router(admin_users.router)

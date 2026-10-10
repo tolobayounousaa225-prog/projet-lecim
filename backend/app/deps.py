@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from . import models
 from .database import get_db
-from .security import decode_access_token
+from .security import decode_access_token, decode_two_factor_pending_token
 
 
 class NotAuthenticatedException(Exception):
@@ -64,6 +64,25 @@ def get_current_user(
     user = db.query(models.User).filter(models.User.email == email).first()
     if not user:
         raise credentials_error
+    return user
+
+
+def require_two_factor_pending(
+    two_factor_pending: str | None = Cookie(default=None),
+    db: Session = Depends(get_db),
+) -> models.User:
+    """Accès aux pages d'inscription/vérification TOTP : le mot de passe a déjà
+    été vérifié (voir `create_two_factor_pending_token`), mais la session
+    complète (cookie `access_token`) n'est pas encore accordée — ce jeton
+    distinct, de très courte durée, ne peut pas servir à autre chose."""
+    if not two_factor_pending:
+        raise NotAuthenticatedException()
+    email = decode_two_factor_pending_token(two_factor_pending)
+    if not email:
+        raise NotAuthenticatedException()
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise NotAuthenticatedException()
     return user
 
 
