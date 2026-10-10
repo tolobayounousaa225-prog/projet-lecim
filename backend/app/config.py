@@ -6,6 +6,11 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg2://lecim:lecim@localhost:5432/lecim"
 
+    # Active la documentation interactive (/docs, /redoc, /openapi.json). Désactivée
+    # par défaut : en production, elle cartographie toute la surface d'API admin
+    # (chemins, schémas de champs) pour n'importe quel visiteur non authentifié.
+    debug: bool = False
+
     secret_key: str = "changez-cette-cle-en-production"
     access_token_expire_minutes: int = 180
     algorithm: str = "HS256"

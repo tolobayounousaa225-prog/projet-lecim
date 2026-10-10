@@ -58,9 +58,19 @@ async def save_upload(db: Session, file: UploadFile | None, category: str, allow
     ext = Path(file.filename or "").suffix.lower()
     if ext not in allowed_ext:
         raise ValueError(f"Extension non autorisée : {ext}")
-    data = await file.read()
-    if len(data) > MAX_UPLOAD_BYTES:
-        raise ValueError("Fichier trop volumineux")
+    # Lu par blocs avec abandon dès que la limite est dépassée, plutôt que
+    # `await file.read()` d'un coup : sinon un fichier bien plus gros que la
+    # limite autorisée est entièrement chargé en mémoire avant d'être rejeté,
+    # ce qui permet de saturer la mémoire du serveur avant même le contrôle de taille.
+    chunks = bytearray()
+    while True:
+        chunk = await file.read(1024 * 1024)
+        if not chunk:
+            break
+        chunks.extend(chunk)
+        if len(chunks) > MAX_UPLOAD_BYTES:
+            raise ValueError("Fichier trop volumineux")
+    data = bytes(chunks)
     if not _matches_magic_bytes(data, ext):
         raise ValueError("Le contenu du fichier ne correspond pas à son extension")
     stored_name = f"{uuid.uuid4().hex}{ext}"

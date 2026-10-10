@@ -193,6 +193,8 @@ def _module_dependency_api(module_key: str):
     def _dependency(user: models.User = Depends(get_current_user)) -> models.User:
         if not user.has_module(module_key):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Accès non autorisé")
+        if user.is_observer:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Compte en lecture seule")
         return user
 
     return _dependency

@@ -31,10 +31,11 @@ def admin_search(
 
     results: list[tuple[float, schemas.SearchResultOut]] = []
 
-    if user.can_manage_membres or user.can_manage_delegations:
+    can_manage_delegations = user.is_admin or user.poste == "vp2_interieur"
+    if user.can_manage_membres or can_manage_delegations:
         membres = db.query(models.Membre).limit(CANDIDATES_CAP).all()
         for m in membres:
-            if m.delegation_id and not user.can_manage_delegations:
+            if m.delegation_id and not can_manage_delegations:
                 continue
             if m.delegation_id is None and not user.can_manage_membres:
                 continue

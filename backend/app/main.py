@@ -126,16 +126,27 @@ def _warn_if_weak_default_secrets() -> None:
     import logging
 
     logger = logging.getLogger("lecim.security")
+    weak = []
     if settings.secret_key == "changez-cette-cle-en-production":
-        logger.critical(
-            "SECURITE : SECRET_KEY a encore sa valeur par defaut. "
-            "Definissez la variable d'environnement SECRET_KEY immediatement."
-        )
+        weak.append("SECRET_KEY")
     if settings.admin_bootstrap_password == "change-moi-123":
-        logger.critical(
-            "SECURITE : ADMIN_BOOTSTRAP_PASSWORD a encore sa valeur par defaut. "
-            "Definissez la variable d'environnement ADMIN_BOOTSTRAP_PASSWORD immediatement."
-        )
+        weak.append("ADMIN_BOOTSTRAP_PASSWORD")
+    if not weak:
+        return
+    message = (
+        "SECURITE : "
+        + ", ".join(weak)
+        + " a encore sa valeur par defaut. Definissez la/les variable(s) "
+        "d'environnement correspondante(s) immediatement."
+    )
+    if settings.debug:
+        logger.critical(message)
+    else:
+        # En production (settings.debug=False), une clé/mot de passe par défaut
+        # permettrait de forger un jeton d'authentification valide pour
+        # n'importe quel compte : on refuse de démarrer plutôt que de se
+        # contenter d'un simple avertissement dans les logs.
+        raise RuntimeError(message)
 
 
 @asynccontextmanager
@@ -147,7 +158,14 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown()
 
 
-app = FastAPI(title="LECIM API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(
+    title="LECIM API",
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url="/docs" if settings.debug else None,
+    redoc_url="/redoc" if settings.debug else None,
+    openapi_url="/openapi.json" if settings.debug else None,
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -367,7 +385,10 @@ app.include_router(flash_info_public.router)
 
 @app.get("/")
 def root():
-    return {"name": "LECIM API", "docs": "/docs", "admin": "/admin"}
+    payload = {"name": "LECIM API", "admin": "/admin"}
+    if settings.debug:
+        payload["docs"] = "/docs"
+    return payload
 
 
 @app.get("/api/health")

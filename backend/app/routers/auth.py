@@ -6,12 +6,13 @@ from .. import models, schemas
 from ..database import get_db
 from ..deps import get_current_user
 from ..login_security import AccountLockedError, authenticate_user
+from ..rate_limit import rate_limiter
 from ..security import create_access_token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
-@router.post("/token", response_model=schemas.Token)
+@router.post("/token", response_model=schemas.Token, dependencies=[Depends(rate_limiter("login", 20, 600))])
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     try:
         user = authenticate_user(db, form_data.username, form_data.password)

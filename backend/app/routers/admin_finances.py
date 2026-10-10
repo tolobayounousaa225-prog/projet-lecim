@@ -589,6 +589,8 @@ def etablissement_fiche(
             "derniers_messages": derniers_messages,
             "money": money,
             "active": "etablissements",
+            "can_see_enseignants_contact": user.can_manage_enseignants,
+            "can_see_eleves_identite": user.can_manage_cartes_scolaires,
         },
     )
 

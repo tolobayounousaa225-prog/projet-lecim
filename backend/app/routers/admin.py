@@ -24,6 +24,7 @@ from ..deps import (
 )
 from ..login_security import AccountLockedError, authenticate_user
 from ..push import send_urgent_news_push
+from ..rate_limit import rate_limiter
 from ..security import create_access_token, hash_password, password_policy_error, verify_password
 from ..security_utils import csv_safe, safe_content_disposition
 from .. import storage
@@ -44,7 +45,7 @@ def login_page(request: Request):
     return templates.TemplateResponse(request, "admin/login.html", {"error": None})
 
 
-@router.post("/login")
+@router.post("/login", dependencies=[Depends(rate_limiter("login", 20, 600))])
 def login_submit(
     request: Request,
     email: str = Form(...),
@@ -104,6 +105,7 @@ def login_submit(
     # est déjà expiré côté serveur, et se fait déconnecter silencieusement.
     response.set_cookie(
         "access_token", token, httponly=True, samesite="lax",
+        secure=not settings.debug,
         max_age=settings.access_token_expire_minutes * 60,
     )
     return response
@@ -701,7 +703,8 @@ def adhesion_request_examen(
     def _int_or_none(v: str) -> int | None:
         return int(v) if v.strip().isdigit() else None
 
-    item.etat_demande = etat_demande
+    if etat_demande in models.ADHESION_ETATS:
+        item.etat_demande = etat_demande
     if cycle:
         item.cycle = cycle
     if type_enseignement:

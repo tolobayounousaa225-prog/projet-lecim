@@ -37,34 +37,40 @@ def password_reset_request_submit(
     db: Session = Depends(get_db),
 ):
     user = db.query(models.User).filter(models.User.email == email).first()
-    if user:
-        temp_password = generate_temp_password()
-        user.hashed_password = hash_password(temp_password)
-        user.failed_login_attempts = 0
-        user.locked_until = None
-        email_sent = send_email(
-            user.email,
-            "LECIM — Mot de passe temporaire",
-            f"Bonjour {user.full_name},\n\n"
-            f"Un mot de passe temporaire a été généré pour votre compte LECIM à votre demande "
-            f"(ou celle de quelqu'un connaissant votre adresse e-mail) :\n\n"
-            f"    {temp_password}\n\n"
-            f"Connectez-vous avec ce mot de passe puis changez-le immédiatement depuis votre "
-            f"espace personnel, rubrique « Changer mon mot de passe ».\n\n"
-            f"Si vous n'êtes pas à l'origine de cette demande, contactez sans tarder le "
-            f"secrétariat administratif de la LECIM.",
+    temp_password = generate_temp_password()
+    if not user:
+        # Fait un travail équivalent (hachage bcrypt, délibérément lent) même
+        # quand l'e-mail n'existe pas, pour qu'un attaquant ne puisse pas
+        # déduire de la latence de réponse quels comptes existent réellement.
+        hash_password(temp_password)
+        return templates.TemplateResponse(request, "password_reset_request.html", {"message": CONFIRMATION_MESSAGE, "error": None})
+
+    user.hashed_password = hash_password(temp_password)
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    email_sent = send_email(
+        user.email,
+        "LECIM — Mot de passe temporaire",
+        f"Bonjour {user.full_name},\n\n"
+        f"Un mot de passe temporaire a été généré pour votre compte LECIM à votre demande "
+        f"(ou celle de quelqu'un connaissant votre adresse e-mail) :\n\n"
+        f"    {temp_password}\n\n"
+        f"Connectez-vous avec ce mot de passe puis changez-le immédiatement depuis votre "
+        f"espace personnel, rubrique « Changer mon mot de passe ».\n\n"
+        f"Si vous n'êtes pas à l'origine de cette demande, contactez sans tarder le "
+        f"secrétariat administratif de la LECIM.",
+    )
+    db.add(
+        models.PasswordResetRequest(
+            user_id=user.id,
+            temp_password=temp_password,
+            email_sent=email_sent,
         )
-        db.add(
-            models.PasswordResetRequest(
-                user_id=user.id,
-                temp_password=temp_password,
-                email_sent=email_sent,
-            )
-        )
-        audit.log(
-            db, None, "update", "Mot de passe", user.id,
-            f"Mot de passe temporaire généré pour {user.full_name} ({user.email})"
-            + ("" if email_sent else " — e-mail NON envoyé (SMTP non configuré ?), voir /admin/reinitialisations"),
-        )
-        db.commit()
+    )
+    audit.log(
+        db, None, "update", "Mot de passe", user.id,
+        f"Mot de passe temporaire généré pour {user.full_name} ({user.email})"
+        + ("" if email_sent else " — e-mail NON envoyé (SMTP non configuré ?), voir /admin/reinitialisations"),
+    )
+    db.commit()
     return templates.TemplateResponse(request, "password_reset_request.html", {"message": CONFIRMATION_MESSAGE, "error": None})

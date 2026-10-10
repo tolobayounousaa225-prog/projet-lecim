@@ -27,6 +27,7 @@ from ..finances_constants import cotisation_rule
 from ..notifications import notify_cartes_scolaires_gestionnaires, notify_messagerie_gestionnaires
 from ..reports import current_annee_scolaire
 from ..security import hash_password, password_policy_error, verify_password
+from ..security_utils import safe_content_disposition
 from .admin_files import ALLOWED_PHOTO_EXT
 
 TYPES_EXAMEN = ["CEPE", "BEPC", "BAC"]
@@ -243,7 +244,9 @@ def etablissement_export_donnees(
         ],
     }
 
-    filename = f"lecim-export-{etablissement.nom.replace(' ', '_')}-{datetime.date.today().isoformat()}.json"
+    filename = safe_content_disposition(
+        f"lecim-export-{etablissement.nom.replace(' ', '_')}-{datetime.date.today().isoformat()}.json"
+    )
     return Response(
         content=json.dumps(payload, ensure_ascii=False, indent=2),
         media_type="application/json",
@@ -684,6 +687,38 @@ async def etablissement_cartes_scolaires_create(
                 },
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
+
+    doublon = (
+        db.query(models.CarteScolaire)
+        .filter(
+            models.CarteScolaire.etablissement_id == etablissement.id,
+            models.CarteScolaire.eleve_nom == eleve_nom,
+            models.CarteScolaire.classe == classe,
+            models.CarteScolaire.annee_scolaire == annee_scolaire,
+            models.CarteScolaire.status != "rejetee",
+        )
+        .first()
+    )
+    if doublon is not None:
+        items = (
+            db.query(models.CarteScolaire)
+            .filter(models.CarteScolaire.etablissement_id == etablissement.id)
+            .order_by(models.CarteScolaire.date_soumission.desc())
+            .all()
+        )
+        return templates.TemplateResponse(
+            request,
+            "etablissement/cartes_scolaires.html",
+            {
+                "user": user,
+                "etablissement": etablissement,
+                "items": items,
+                "annee_par_defaut": current_annee_scolaire(),
+                "active": "cartes_scolaires",
+                "error": f"Une demande de carte pour {eleve_nom} ({classe}, {annee_scolaire}) existe déjà.",
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     carte = models.CarteScolaire(
         etablissement_id=etablissement.id,

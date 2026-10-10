@@ -1567,11 +1567,11 @@ def export_etablissements_xlsx(items: list["models.Etablissement"]) -> bytes:
 
     for e in items:
         sheet.append([
-            e.code_adhesion or "", e.nom,
+            csv_safe(e.code_adhesion or ""), csv_safe(e.nom),
             "Partenaire" if e.categorie == "partenaire" else "Membre affilié",
-            e.district or "", e.region or "", e.bureau_local or "",
+            csv_safe(e.district or ""), csv_safe(e.region or ""), csv_safe(e.bureau_local or ""),
             "Subventionné" if e.statut == "subventionne" else "Non subventionné",
-            e.date_adhesion, e.contact_telephone or "", e.contact_email or "", e.numero_agrement or "",
+            e.date_adhesion, csv_safe(e.contact_telephone or ""), csv_safe(e.contact_email or ""), csv_safe(e.numero_agrement or ""),
         ])
 
     for row in sheet.iter_rows(min_row=2, min_col=8, max_col=8):
@@ -1610,7 +1610,7 @@ def export_membres_xlsx(items: list["models.Membre"]) -> bytes:
     statut_labels = {"expire": "Expiré", "bientot": "Expire bientôt", "en_cours": "En cours"}
     for m in items:
         sheet.append([
-            m.full_name, m.poste_label, m.phone or "", m.email or "",
+            csv_safe(m.full_name), csv_safe(m.poste_label), csv_safe(m.phone or ""), csv_safe(m.email or ""),
             m.mandat_debut, m.mandat_fin, statut_labels.get(m.mandat_status, ""),
         ])
 

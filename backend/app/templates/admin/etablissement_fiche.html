@@ -119,10 +119,10 @@
   </div>
   {% if enseignants %}
   <table>
-    <thead><tr><th>Nom</th><th>Matière</th><th>Téléphone</th></tr></thead>
+    <thead><tr><th>Nom</th><th>Matière</th>{% if can_see_enseignants_contact %}<th>Téléphone</th>{% endif %}</tr></thead>
     <tbody>
       {% for ens in enseignants %}
-      <tr><td>{{ ens.full_name }}</td><td>{{ ens.matiere or "—" }}</td><td>{{ ens.telephone or "—" }}</td></tr>
+      <tr><td>{{ ens.full_name }}</td><td>{{ ens.matiere or "—" }}</td>{% if can_see_enseignants_contact %}<td>{{ ens.telephone or "—" }}</td>{% endif %}</tr>
       {% endfor %}
     </tbody>
   </table>
@@ -135,11 +135,11 @@
   <strong style="color:var(--green-dark); display:block; margin-bottom:10px;">Cartes scolaires ({{ cartes_scolaires|length }})</strong>
   {% if cartes_scolaires %}
   <table>
-    <thead><tr><th>Élève</th><th>Classe</th><th>Année</th><th>Statut</th></tr></thead>
+    <thead><tr>{% if can_see_eleves_identite %}<th>Élève</th>{% endif %}<th>Classe</th><th>Année</th><th>Statut</th></tr></thead>
     <tbody>
       {% for cs in cartes_scolaires %}
       <tr>
-        <td>{{ cs.eleve_nom }}</td><td>{{ cs.classe }}</td><td>{{ cs.annee_scolaire }}</td>
+        {% if can_see_eleves_identite %}<td>{{ cs.eleve_nom }}</td>{% endif %}<td>{{ cs.classe }}</td><td>{{ cs.annee_scolaire }}</td>
         <td>
           {% if cs.status == "disponible" %}<span class="pill pill-green">{{ cs.status_label }}</span>
           {% elif cs.status == "rejetee" %}<span class="pill pill-red">{{ cs.status_label }}</span>

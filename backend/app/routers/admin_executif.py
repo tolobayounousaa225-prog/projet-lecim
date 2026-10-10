@@ -1,7 +1,8 @@
 import datetime
+import re
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -217,6 +218,8 @@ def executif_rapport_impact_generate(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_executif_access_web),
 ):
+    if not re.fullmatch(r"\d{4}-\d{4}", annee_scolaire):
+        raise HTTPException(status_code=400, detail="Année scolaire invalide.")
     pdf_bytes = generate_impact_report_pdf(db, annee_scolaire)
     filename = f"lecim-rapport-impact-{annee_scolaire}.pdf"
 
