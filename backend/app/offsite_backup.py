@@ -36,6 +36,10 @@ def _ensure_repo_cloned() -> None:
         ["git", "clone", settings.backup_offsite_repo_ssh_url, str(REPO_DIR)],
         check=True, capture_output=True, text=True,
     )
+    # Conteneur jetable (reconstruit à chaque déploiement) : jamais d'identité
+    # Git globale déjà configurée, nécessaire pour que `git commit` fonctionne.
+    _run_git("config", "user.email", "backups@lecim.org", cwd=REPO_DIR)
+    _run_git("config", "user.name", "LECIM Backups", cwd=REPO_DIR)
 
 
 def sync_latest_backup(backup_path: Path) -> bool:
@@ -48,7 +52,13 @@ def sync_latest_backup(backup_path: Path) -> bool:
         return False
     try:
         _ensure_repo_cloned()
-        _run_git("pull", "--ff-only", cwd=REPO_DIR)
+        try:
+            # Peut légitimement échouer (dépôt tout juste cloné et encore vide,
+            # sans aucune branche distante) : ce n'est jamais fatal puisque ce
+            # module est le seul à écrire dans ce dépôt — rien d'autre à fusionner.
+            _run_git("pull", "--ff-only", cwd=REPO_DIR)
+        except subprocess.CalledProcessError:
+            pass
 
         fernet = Fernet(settings.backup_encryption_key.encode())
         encrypted = fernet.encrypt(backup_path.read_bytes())
@@ -67,7 +77,7 @@ def sync_latest_backup(backup_path: Path) -> bool:
         )
         if result.returncode != 0 and "nothing to commit" not in result.stdout:
             raise subprocess.CalledProcessError(result.returncode, result.args, result.stdout, result.stderr)
-        _run_git("push", cwd=REPO_DIR)
+        _run_git("push", "-u", "origin", "HEAD:main", cwd=REPO_DIR)
         return True
     except Exception:
         logger.exception("Échec de la synchronisation hors-site de la sauvegarde")
