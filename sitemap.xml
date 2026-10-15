@@ -2,114 +2,114 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/index.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/index.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/index.html"/>
+<loc>https://lecim-ci.org/index.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/index.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/index.html"/>
 <changefreq>weekly</changefreq>
 <priority>1.0</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/apropos.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/apropos.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/apropos.html"/>
+<loc>https://lecim-ci.org/apropos.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/apropos.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/apropos.html"/>
 <changefreq>monthly</changefreq>
 <priority>0.8</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/services.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/services.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/services.html"/>
+<loc>https://lecim-ci.org/services.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/services.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/services.html"/>
 <changefreq>monthly</changefreq>
 <priority>0.7</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/activites.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/activites.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/activites.html"/>
+<loc>https://lecim-ci.org/activites.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/activites.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/activites.html"/>
 <changefreq>weekly</changefreq>
 <priority>0.7</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/ecoles.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ecoles.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/ecoles.html"/>
+<loc>https://lecim-ci.org/ecoles.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/ecoles.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/ecoles.html"/>
 <changefreq>weekly</changefreq>
 <priority>0.8</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/carte.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/carte.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/carte.html"/>
+<loc>https://lecim-ci.org/carte.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/carte.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/carte.html"/>
 <changefreq>monthly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/documents.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/documents.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/documents.html"/>
+<loc>https://lecim-ci.org/documents.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/documents.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/documents.html"/>
 <changefreq>monthly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/initiatives.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/initiatives.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/initiatives.html"/>
+<loc>https://lecim-ci.org/initiatives.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/initiatives.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/initiatives.html"/>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/actualites.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/actualites.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/actualites.html"/>
+<loc>https://lecim-ci.org/actualites.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/actualites.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/actualites.html"/>
 <changefreq>daily</changefreq>
 <priority>0.8</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/galerie.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/galerie.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/galerie.html"/>
+<loc>https://lecim-ci.org/galerie.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/galerie.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/galerie.html"/>
 <changefreq>monthly</changefreq>
 <priority>0.5</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/faq.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/faq.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/faq.html"/>
+<loc>https://lecim-ci.org/faq.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/faq.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/faq.html"/>
 <changefreq>monthly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/baremetre.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/baremetre.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/baremetre.html"/>
+<loc>https://lecim-ci.org/baremetre.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/baremetre.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/baremetre.html"/>
 <changefreq>yearly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/adhesion.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/adhesion.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/adhesion.html"/>
+<loc>https://lecim-ci.org/adhesion.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/adhesion.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/adhesion.html"/>
 <changefreq>monthly</changefreq>
 <priority>0.7</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/partenariat.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/partenariat.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/partenariat.html"/>
+<loc>https://lecim-ci.org/partenariat.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/partenariat.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/partenariat.html"/>
 <changefreq>monthly</changefreq>
 <priority>0.5</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/don.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/don.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/don.html"/>
+<loc>https://lecim-ci.org/don.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/don.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/don.html"/>
 <changefreq>monthly</changefreq>
 <priority>0.5</priority>
 </url>
 <url>
-<loc>https://tolobayounousaa225-prog.github.io/projet-lecim/contact.html</loc>
-<xhtml:link rel="alternate" hreflang="fr" href="https://tolobayounousaa225-prog.github.io/projet-lecim/contact.html"/>
-<xhtml:link rel="alternate" hreflang="ar" href="https://tolobayounousaa225-prog.github.io/projet-lecim/ar/contact.html"/>
+<loc>https://lecim-ci.org/contact.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/contact.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/contact.html"/>
 <changefreq>monthly</changefreq>
 <priority>0.6</priority>
 </url>

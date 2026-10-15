@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://tolobayounousaa225-prog.github.io/projet-lecim/sitemap.xml
+Sitemap: https://lecim-ci.org/sitemap.xml
