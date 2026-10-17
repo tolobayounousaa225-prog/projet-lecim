@@ -215,7 +215,7 @@ def _add_verso(pdf: FPDF, carte) -> None:
     pdf.set_text_color(130, 130, 130)
     pdf.set_font("Helvetica", "", 5)
     pdf.set_xy(5, CARD_H - 5.3)
-    pdf.cell(40, 3, "ben_jemci@gmail.com", align="L")
+    pdf.cell(40, 3, "lecimnational@gmail.com", align="L")
 
     pdf.set_fill_color(*GREEN)
     pdf.rect(corner_r, CARD_H - 1.2, CARD_W - 2 * corner_r, 1.2, style="F")
@@ -343,7 +343,7 @@ def _add_verso_eleve(pdf: FPDF, carte) -> None:
 
     pdf.set_font("Helvetica", "", 5.8)
     pdf.set_xy(4, pdf.get_y() + 2)
-    pdf.cell(CARD_W - 8, 3.2, "Contact : ben_jemci@gmail.com", align="L")
+    pdf.cell(CARD_W - 8, 3.2, "Contact : lecimnational@gmail.com", align="L")
 
     if carte.eleve_date_naissance:
         pdf.set_xy(4, pdf.get_y() + 4)

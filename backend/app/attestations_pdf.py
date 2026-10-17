@@ -103,7 +103,7 @@ def _footer_qr_and_signature(pdf: FPDF, verify_url: str, numero: str) -> None:
     pdf.set_xy(0, pdf.h - 16)
     pdf.set_font("Helvetica", "", 7.5)
     pdf.set_text_color(120, 120, 120)
-    pdf.cell(pdf.w, 4, f"Reference : {numero}  -  Contact : ben_jemci@gmail.com", align="C")
+    pdf.cell(pdf.w, 4, f"Reference : {numero}  -  Contact : lecimnational@gmail.com", align="C")
 
 
 def generate_etablissement_attestation_pdf(etablissement) -> bytes:
@@ -239,7 +239,7 @@ def _footer_signature_only(pdf: FPDF, numero: str) -> None:
     pdf.set_xy(0, pdf.h - 16)
     pdf.set_font("Helvetica", "", 7.5)
     pdf.set_text_color(120, 120, 120)
-    pdf.cell(pdf.w, 4, f"Reference : {numero}  -  Contact : ben_jemci@gmail.com", align="C")
+    pdf.cell(pdf.w, 4, f"Reference : {numero}  -  Contact : lecimnational@gmail.com", align="C")
 
 
 def generate_don_recu_pdf(don) -> bytes:
