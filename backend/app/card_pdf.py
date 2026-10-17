@@ -133,9 +133,6 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
     pdf.rect(qr_x - 0.8, qr_y - 0.8, qr_size + 1.6, qr_size + 1.6, style="F", round_corners=True, corner_radius=1)
     pdf.image(qr_img.get_image() if hasattr(qr_img, "get_image") else qr_img, x=qr_x, y=qr_y, w=qr_size, h=qr_size)
 
-    pdf.set_fill_color(255, 255, 255)
-    with pdf.local_context(fill_opacity=0.68):
-        pdf.rect(2.8, CARD_H - 9.7, 32, 7.2, style="F", round_corners=True, corner_radius=1.5)
     pdf.set_font("Helvetica", "B", 6.2)
     pdf.set_text_color(*GREEN)
     pdf.set_xy(3.5, CARD_H - 9)
