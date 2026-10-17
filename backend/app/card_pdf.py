@@ -151,60 +151,74 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
 
 
 def _add_verso(pdf: FPDF, carte) -> None:
+    """Verso volontairement sobre : fond uni cohérent avec le recto (même
+    ton crème, même vert/bleu en petites touches, pas de grands blocs de
+    couleur), une seule phrase d'information plutôt qu'un paragraphe."""
     pdf.add_page()
 
     pdf.set_fill_color(*CREAM)
     pdf.rect(0, 0, CARD_W, CARD_H, style="F")
 
-    pdf.set_fill_color(*GREEN_DARK)
-    pdf.rect(0, 0, CARD_W, 8, style="F")
-    pdf.set_text_color(255, 255, 255)
-    pdf.set_font("Helvetica", "B", 7)
-    pdf.set_xy(4, 1.5)
-    pdf.cell(CARD_W - 8, 5, "LECIM - Informations", align="L")
+    pdf.set_fill_color(*GREEN)
+    pdf.rect(0, 0, CARD_W, 1.2, style="F")
 
-    pdf.set_text_color(50, 50, 50)
-    pdf.set_font("Helvetica", "", 6)
-    pdf.set_xy(4, 11)
+    is_delegation = bool(carte.user.delegation_id)
+    qualite = "délégué(e) régional(e)" if is_delegation else "membre du Bureau Exécutif National"
+
+    pdf.set_text_color(*BADGE_BLUE)
+    pdf.set_font("Helvetica", "B", 7.5)
+    pdf.set_xy(5, 5)
+    pdf.cell(CARD_W - 10, 4, "LECIM", align="L")
+
+    pdf.set_text_color(70, 70, 70)
+    pdf.set_font("Helvetica", "", 6.3)
+    pdf.set_xy(5, 10.5)
     pdf.multi_cell(
-        CARD_W - 8,
-        3.2,
-        "Cette carte est la propriete de la LECIM et atteste de la qualite de membre "
-        "du Bureau Executif National de son titulaire. En cas de decouverte, merci de "
-        "la retourner au secretariat administratif de la LECIM.",
+        CARD_W - 10, 3.3,
+        _safe_text(
+            f"Cette carte atteste la qualité de {qualite} de son titulaire et demeure "
+            "la propriété de la LECIM. Merci de la retourner au secrétariat en cas de découverte."
+        ),
         align="L",
     )
 
-    pdf.set_font("Helvetica", "", 5.8)
-    pdf.set_xy(4, pdf.get_y() + 2)
-    pdf.cell(CARD_W - 8, 3.2, "Contact : ben_jemci@gmail.com", align="L")
-
+    y = pdf.get_y() + 2.5
     if carte.cni_numero:
-        pdf.set_xy(4, pdf.get_y() + 4)
-        pdf.cell(CARD_W - 8, 3.2, f"N. CNI : {carte.cni_numero}", align="L")
+        pdf.set_font("Helvetica", "", 5.6)
+        pdf.set_text_color(90, 90, 90)
+        pdf.set_xy(5, y)
+        pdf.cell(CARD_W - 10, 3, f"N. CNI : {carte.cni_numero}", align="L")
+        y += 3.6
 
     if carte.contact_urgence_nom:
-        pdf.set_xy(4, pdf.get_y() + 4)
         urgence = carte.contact_urgence_nom
         if carte.contact_urgence_telephone:
             urgence += f" - {carte.contact_urgence_telephone}"
-        pdf.cell(CARD_W - 8, 3.2, f"Contact d'urgence : {urgence}", align="L")
+        pdf.set_font("Helvetica", "", 5.6)
+        pdf.set_text_color(90, 90, 90)
+        pdf.set_xy(5, y)
+        pdf.cell(CARD_W - 10, 3, _safe_text(f"Urgence : {urgence}"), align="L")
 
     # Ligne de signature
-    sig_y = CARD_H - 14
-    pdf.set_draw_color(120, 120, 120)
-    pdf.line(CARD_W - 40, sig_y, CARD_W - 6, sig_y)
-    pdf.set_font("Helvetica", "", 5.5)
-    pdf.set_text_color(80, 80, 80)
-    pdf.set_xy(CARD_W - 40, sig_y + 1)
-    pdf.cell(34, 3, "Signature du President", align="C")
+    sig_y = CARD_H - 11
+    pdf.set_draw_color(180, 180, 180)
+    pdf.line(CARD_W - 36, sig_y, CARD_W - 5, sig_y)
+    pdf.set_font("Helvetica", "", 5.2)
+    pdf.set_text_color(120, 120, 120)
+    pdf.set_xy(CARD_W - 36, sig_y + 1)
+    pdf.cell(31, 3, "Signature", align="C")
 
-    pdf.set_fill_color(*GREEN_DARK)
-    pdf.rect(0, CARD_H - 3, CARD_W, 3, style="F")
-    pdf.set_text_color(255, 255, 255)
+    pdf.set_text_color(*GREEN)
+    pdf.set_font("Helvetica", "B", 5.8)
+    pdf.set_xy(5, CARD_H - 8.5)
+    pdf.cell(40, 3, f"N. {carte.numero_carte or '-'}", align="L")
+    pdf.set_text_color(130, 130, 130)
     pdf.set_font("Helvetica", "", 5)
-    pdf.set_xy(0, CARD_H - 3)
-    pdf.cell(CARD_W, 3, f"N. {carte.numero_carte or '-'}", align="C")
+    pdf.set_xy(5, CARD_H - 5.3)
+    pdf.cell(40, 3, "ben_jemci@gmail.com", align="L")
+
+    pdf.set_fill_color(*GREEN)
+    pdf.rect(0, CARD_H - 1.2, CARD_W, 1.2, style="F")
 
 
 def generate_card_pdf(carte, photo_bytes: bytes | None) -> bytes:
