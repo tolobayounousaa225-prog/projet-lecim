@@ -149,6 +149,119 @@ async def carte_mine_create(
 
 # ---------- Gestion des cartes (secrétaire administratif) ----------
 
+@router.get("/cartes/new")
+def carte_new_form(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_cartes_gestion_web),
+):
+    candidats = (
+        db.query(models.User)
+        .filter(models.User.etablissement_id.is_(None))
+        .order_by(models.User.full_name)
+        .all()
+    )
+    return templates.TemplateResponse(
+        request,
+        "admin/carte_nouvelle.html",
+        {"admin": user, "candidats": candidats, "active": "cartes", "error": None},
+    )
+
+
+@router.post("/cartes/new")
+async def carte_new_create(
+    request: Request,
+    user_id: int = Form(...),
+    full_name: str = Form(...),
+    date_naissance: str = Form(""),
+    ville: str = Form(""),
+    adresse: str = Form(""),
+    telephone: str = Form(""),
+    cni_numero: str = Form(""),
+    contact_urgence_nom: str = Form(""),
+    contact_urgence_telephone: str = Form(""),
+    email_personnel: str = Form(""),
+    photo: UploadFile | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_cartes_gestion_web),
+):
+    """Création directe d'une carte par le secrétariat (président, délégué...),
+    sans attendre que la personne la demande elle-même — contrairement à
+    `carte_mine_create`, celle-ci est immédiatement validée (le secrétariat qui
+    la crée est de facto celui qui l'aurait validée de toute façon)."""
+
+    def _form_error(message: str):
+        candidats = (
+            db.query(models.User)
+            .filter(models.User.etablissement_id.is_(None))
+            .order_by(models.User.full_name)
+            .all()
+        )
+        return templates.TemplateResponse(
+            request,
+            "admin/carte_nouvelle.html",
+            {"admin": user, "candidats": candidats, "active": "cartes", "error": message},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    target = db.get(models.User, user_id)
+    if not target:
+        return _form_error("Compte introuvable.")
+
+    existing = (
+        db.query(models.CarteMembre)
+        .filter(models.CarteMembre.user_id == target.id)
+        .order_by(models.CarteMembre.date_soumission.desc())
+        .first()
+    )
+    if existing is not None and existing.status != "rejetee":
+        return _form_error(f"{target.full_name} a déjà une carte en cours ou délivrée.")
+
+    photo_path = None
+    if photo is not None and photo.filename:
+        try:
+            stored_name, _original = await storage.save_upload(db, photo, CARTES_PHOTOS_DIR, ALLOWED_PHOTO_EXT)
+            photo_path = f"cartes_photos/{stored_name}"
+        except ValueError as exc:
+            return _form_error(str(exc))
+
+    carte = models.CarteMembre(
+        user_id=target.id,
+        full_name_snapshot=full_name,
+        photo_path=photo_path,
+        date_naissance=datetime.date.fromisoformat(date_naissance) if date_naissance else None,
+        ville=ville or None,
+        adresse=adresse or None,
+        telephone=telephone or None,
+        cni_numero=cni_numero or None,
+        contact_urgence_nom=contact_urgence_nom or None,
+        contact_urgence_telephone=contact_urgence_telephone or None,
+        email_personnel=email_personnel or None,
+        status="validee",
+        numero_carte=_next_numero_carte(db),
+        date_validation=datetime.datetime.utcnow(),
+        date_validite=_validite_dans_n_ans(datetime.date.today(), CARTE_VALIDITE_ANNEES),
+        validated_by_id=user.id,
+    )
+    db.add(carte)
+    db.flush()
+    notify(
+        db, target.id,
+        "Une carte de membre a été créée pour vous par le secrétariat — elle est prête.",
+        link="/admin/cartes/mine",
+    )
+    audit.log(
+        db, user, "create", "Carte de membre", carte.id,
+        f"A créé et validé directement la carte de {target.full_name} ({target.poste_label})",
+    )
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return _form_error("Conflit sur le numéro de carte généré — veuillez réessayer.")
+    return RedirectResponse(url=f"/admin/cartes/{carte.id}", status_code=status.HTTP_303_SEE_OTHER)
+
+
 @router.get("/cartes")
 def cartes_list(
     request: Request,

@@ -1,7 +1,10 @@
 {% extends "admin/base.html" %}
 {% block title %}Gestion des cartes de membres{% endblock %}
 {% block content %}
-<h1>Gestion des cartes de membres</h1>
+<div class="topbar">
+  <h1 style="margin:0">Gestion des cartes de membres</h1>
+  <a href="/admin/cartes/new" class="btn btn-primary">+ Créer une carte</a>
+</div>
 
 {% if items %}
 <table>

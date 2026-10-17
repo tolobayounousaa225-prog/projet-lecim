@@ -1,0 +1,68 @@
+{% extends "admin/base.html" %}
+{% block title %}Créer une carte de membre{% endblock %}
+{% block content %}
+<h1>Créer une carte de membre</h1>
+<p style="color:var(--text-muted); margin-top:-8px;"><a href="/admin/cartes">&larr; Retour à la gestion des cartes</a></p>
+
+<div class="form-card" style="max-width:560px;">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <p style="color:var(--text-muted); font-size:0.9rem; margin-top:0;">
+    Pour un président, un délégué régional ou tout autre membre — la carte est créée
+    et validée immédiatement, prête à imprimer, sans attendre une demande de sa part.
+  </p>
+  <form method="post" action="/admin/cartes/new" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="user_id">Personne concernée</label>
+      <select id="user_id" name="user_id" required onchange="document.getElementById('full_name').value = this.options[this.selectedIndex].dataset.fullName || '';">
+        <option value="">— Choisir —</option>
+        {% for c in candidats %}
+        <option value="{{ c.id }}" data-full-name="{{ c.full_name }}">{{ c.full_name }} — {{ c.poste_label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="full_name">Nom complet (tel qu'il doit apparaître sur la carte)</label>
+      <input type="text" id="full_name" name="full_name" required>
+    </div>
+    <div class="form-group">
+      <label for="photo">Photo d'identité (JPG, PNG — format portrait recommandé)</label>
+      <input type="file" id="photo" name="photo" accept=".jpg,.jpeg,.png,.webp">
+    </div>
+    <div class="form-group">
+      <label for="date_naissance">Date de naissance</label>
+      <input type="date" id="date_naissance" name="date_naissance">
+    </div>
+    <div class="form-group">
+      <label for="cni_numero">N° CNI / pièce d'identité</label>
+      <input type="text" id="cni_numero" name="cni_numero">
+    </div>
+    <div class="form-group">
+      <label for="ville">Ville / résidence</label>
+      <input type="text" id="ville" name="ville">
+    </div>
+    <div class="form-group">
+      <label for="adresse">Adresse complète (quartier, commune)</label>
+      <input type="text" id="adresse" name="adresse">
+    </div>
+    <div class="form-group">
+      <label for="telephone">Téléphone</label>
+      <input type="text" id="telephone" name="telephone">
+    </div>
+    <div class="form-group">
+      <label for="email_personnel">E-mail personnel</label>
+      <input type="email" id="email_personnel" name="email_personnel">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="contact_urgence_nom">Contact d'urgence — nom</label>
+        <input type="text" id="contact_urgence_nom" name="contact_urgence_nom">
+      </div>
+      <div class="form-group">
+        <label for="contact_urgence_telephone">Contact d'urgence — téléphone</label>
+        <input type="text" id="contact_urgence_telephone" name="contact_urgence_telephone">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Créer et valider la carte</button>
+  </form>
+</div>
+{% endblock %}
