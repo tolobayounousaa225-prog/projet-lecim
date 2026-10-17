@@ -100,9 +100,6 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
         pdf.cell(photo_d, 4, "PHOTO", align="C")
 
     info_x, info_y, info_w = 25.85, 23.5, 37.66
-    pdf.set_fill_color(255, 255, 255)
-    with pdf.local_context(fill_opacity=0.68):
-        pdf.rect(info_x - 1.5, info_y - 1.5, info_w + 3, 15.5, style="F", round_corners=True, corner_radius=2)
     pdf.set_text_color(*GREEN)
     pdf.set_font("Helvetica", "", 5.8)
     pdf.set_xy(info_x, info_y)
