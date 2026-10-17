@@ -148,12 +148,12 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
 
 
 def _add_verso(pdf: FPDF, carte) -> None:
-    """Verso volontairement sobre : fond uni cohérent avec le recto (même
-    ton crème, même vert/bleu en petites touches, pas de grands blocs de
-    couleur), une seule phrase d'information plutôt qu'un paragraphe."""
+    """Verso volontairement sobre : fond blanc (économie d'encre à
+    l'impression), petites touches de vert/bleu pour rester cohérent avec
+    le recto, une seule phrase d'information plutôt qu'un paragraphe."""
     pdf.add_page()
 
-    pdf.set_fill_color(*CREAM)
+    pdf.set_fill_color(255, 255, 255)
     pdf.rect(0, 0, CARD_W, CARD_H, style="F")
 
     pdf.set_fill_color(*GREEN)
