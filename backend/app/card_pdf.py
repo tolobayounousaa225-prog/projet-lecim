@@ -153,11 +153,14 @@ def _add_verso(pdf: FPDF, carte) -> None:
     le recto, une seule phrase d'information plutôt qu'un paragraphe."""
     pdf.add_page()
 
+    # Coins arrondis (rayon standard d'une carte CR80, 3.18 mm) pour retrouver
+    # la meme silhouette que le recto, dont l'image de fond est deja arrondie.
+    corner_r = 3.18
     pdf.set_fill_color(255, 255, 255)
-    pdf.rect(0, 0, CARD_W, CARD_H, style="F")
+    pdf.rect(0, 0, CARD_W, CARD_H, style="F", round_corners=True, corner_radius=corner_r)
 
     pdf.set_fill_color(*GREEN)
-    pdf.rect(0, 0, CARD_W, 1.2, style="F")
+    pdf.rect(corner_r, 0, CARD_W - 2 * corner_r, 1.2, style="F")
 
     is_delegation = bool(carte.user.delegation_id)
     qualite = "délégué(e) régional(e)" if is_delegation else "membre du Bureau Exécutif National"
@@ -215,7 +218,7 @@ def _add_verso(pdf: FPDF, carte) -> None:
     pdf.cell(40, 3, "ben_jemci@gmail.com", align="L")
 
     pdf.set_fill_color(*GREEN)
-    pdf.rect(0, CARD_H - 1.2, CARD_W, 1.2, style="F")
+    pdf.rect(corner_r, CARD_H - 1.2, CARD_W - 2 * corner_r, 1.2, style="F")
 
 
 def generate_card_pdf(carte, photo_bytes: bytes | None) -> bytes:
