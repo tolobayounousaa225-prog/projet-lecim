@@ -1981,7 +1981,10 @@ function loadNews() {
       return res.json();
     })
     .then(function (items) {
-      if (!items || !items.length) return;
+      if (!items || !items.length) {
+        container.innerHTML = '<p class="empty-state">Aucune actualité publiée pour le moment.</p>';
+        return;
+      }
       container.innerHTML = "";
       items.forEach(function (item, index) {
         var reverse = index % 2 === 1;
@@ -2002,7 +2005,9 @@ function loadNews() {
       });
     })
     .catch(function () {
-      // API indisponible (ex. ouverture locale du fichier) : le contenu statique reste affiché.
+      // API indisponible (ex. ouverture locale du fichier) : la grille de chargement
+      // ne doit jamais rester affichee indefiniment.
+      container.innerHTML = '<p class="empty-state">Actualités momentanément indisponibles.</p>';
     });
 }
 
@@ -2115,7 +2120,10 @@ function loadActivities() {
       return res.json();
     })
     .then(function (items) {
-      if (!items || !items.length) return;
+      if (!items || !items.length) {
+        container.innerHTML = '<p class="empty-state">Aucune activité prévue pour le moment.</p>';
+        return;
+      }
       container.innerHTML = "";
       items.forEach(function (item) {
         var isPast = item.status === "past";
@@ -2147,7 +2155,7 @@ function loadActivities() {
       });
     })
     .catch(function () {
-      // API indisponible : le contenu statique reste affiché.
+      container.innerHTML = '<p class="empty-state">Activités momentanément indisponibles.</p>';
     });
 }
 

@@ -2413,6 +2413,9 @@ body.page-fade-out { opacity: 0; transition: opacity .22s ease; }
   100% { background-position: 0 50%; }
 }
 
+/* Message "aucun contenu" generique, reutilise partout ou une section peut etre vide */
+.empty-state { text-align: center; color: var(--text-muted); margin: 20px 0; }
+
 /* Barres animées du baromètre des résultats */
 .taux-bar-track {
   width: 100%; max-width: 160px; height: 7px; border-radius: 999px;
