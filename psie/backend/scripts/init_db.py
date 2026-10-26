@@ -1,4 +1,4 @@
-"""Crée les tables, le compte administrateur initial et les 6 membres fondateurs.
+"""Applique les migrations, puis crée le compte administrateur initial et les 6 membres fondateurs.
 
 Usage:
     python -m scripts.init_db
@@ -11,8 +11,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from app import models
-from app.config import settings
-from app.database import Base, SessionLocal, engine
+from app.config import DEFAULT_ADMIN_PASSWORD, settings
+from app.database import SessionLocal
 from app.security import hash_password
 
 # Membres fondateurs (Règlement Intérieur, art. 21). Les noms complets sont à renseigner
@@ -27,8 +27,19 @@ FONDATEURS = [
 ]
 
 
-def run() -> None:
-    Base.metadata.create_all(bind=engine)
+def migrate() -> None:
+    """Applique les migrations Alembic (crée ou met à jour les tables)."""
+    from alembic import command
+    from alembic.config import Config
+
+    command.upgrade(Config(str(Path(__file__).resolve().parent.parent / "alembic.ini")), "head")
+
+
+def run(do_migrate: bool = True) -> None:
+    if settings.cookie_secure and settings.admin_bootstrap_password == DEFAULT_ADMIN_PASSWORD:
+        raise SystemExit("Refusé : changez ADMIN_BOOTSTRAP_PASSWORD avant d'initialiser une base de production.")
+    if do_migrate:
+        migrate()
     db = SessionLocal()
     try:
         _ensure_admin(db)

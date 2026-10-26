@@ -6,8 +6,10 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import models  # noqa: F401  (enregistre les tables)
-from .config import settings
-from .database import Base, engine
+from sqlalchemy import text
+
+from .config import production_problems, settings
+from .database import engine
 from .deps import NotAuthenticatedException
 from . import scheduler
 from .routers import admin, adhesions, appels, assemblees, auth, cotisations, public, sanctions
@@ -18,7 +20,10 @@ UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
+    problems = production_problems(settings)
+    if problems:
+        raise RuntimeError("Configuration de production refusée :\n- " + "\n- ".join(problems))
+    # Le schéma est créé et mis à jour par les migrations (alembic upgrade head), jamais ici.
     scheduler.start()
     yield
     scheduler.shutdown()
@@ -46,6 +51,15 @@ async def security_middleware(request: Request, call_next):
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "same-origin")
+    # Aucun JavaScript dans l'application : on interdit donc tout script, ce qui neutralise
+    # l'essentiel des attaques par injection de code même si un échappement venait à manquer.
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+        "frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'",
+    )
+    if settings.cookie_secure:
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     return response
 
 
@@ -63,6 +77,17 @@ async def http_error(request: Request, exc: HTTPException):
 
 @app.get("/health")
 def health():
+    return {"status": "ok"}
+
+
+@app.get("/health/db")
+def health_db():
+    """Vérifie aussi la base (utilisé par la supervision)."""
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception:
+        return JSONResponse({"status": "database unavailable"}, status_code=503)
     return {"status": "ok"}
 
 

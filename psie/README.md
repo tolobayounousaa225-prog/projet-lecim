@@ -6,11 +6,11 @@ puis cotisations, gouvernance et finances (voir [`../PSIE_CAHIER_DES_CHARGES.md`
 Ce dossier est un **projet autonome** (sa propre base, sa propre configuration). Il est hébergé
 temporairement dans le dépôt LECIM et pourra être déplacé tel quel dans son propre dépôt.
 
-## État : phases 1 à 5 (annuaire, cotisations, adhésion, vitrine, vie statutaire)
+## État : phases 1 à 5 réalisées, déploiement préparé
 
 | Fait | Pas encore fait |
 |---|---|
-| Connexion sécurisée (bcrypt, verrouillage après 5 échecs, cookie HttpOnly, protection CSRF) | **Migrations de base (Alembic) : à mettre en place avant la première mise en ligne** (jusqu'ici les tables sont créées au démarrage, ce qui n'ajoute pas de colonnes à une base existante) |
+| Connexion sécurisée (bcrypt, verrouillage après 5 échecs, cookie HttpOnly, protection CSRF) | Changer son mot de passe / mot de passe oublié (**à faire avant l'ouverture réelle**) |
 | **Double authentification par e-mail** (administrateur et secrétaire aux finances) |  |
 | 7 rôles alignés sur les organes des Statuts |  |
 | Annuaire des membres : fondateur / ordinaire / honneur, les 6 fondateurs créés | Finances complètes, double signature des paiements, registre des dons (phase 6) |
@@ -38,6 +38,10 @@ temporairement dans le dépôt LECIM et pourra être déplacé tel quel dans son
 | Tableau de bord : composition réelle des organes comparée aux Statuts (CA 13, DEN 13, CC 2, 2 délégués par organisation) | |
 | Cloisonnement : un représentant ne voit que sa faîtière, ses échéances et ses reçus | |
 | Journal d'audit des écritures | |
+| **Migrations Alembic** (schéma versionné, aucune table créée « à la volée ») ; un test échoue si un modèle change sans migration | |
+| **Déploiement** : image Docker non-root, composition de production (base non exposée), Caddy optionnel, sauvegardes chiffrées AES-256 avec test de restauration, [guide pas à pas](deploy/DEPLOIEMENT.md) | |
+| **Durcissement** : refus de démarrer avec une configuration dangereuse, CSP sans script, HSTS, `/health/db` | |
+| Suite de tests aussi exécutée sur **PostgreSQL** en CI | |
 | Interface et PDF en français et en arabe (droite-gauche) | |
 
 ### Qui peut faire quoi (finances)
@@ -78,13 +82,19 @@ Chaque jour à 7 h (Abidjan) : création des cotisations de l'année si le monta
 puis envoi des relances dues (une seule fois par palier et par échéance). Chaque lundi à 7 h 30 :
 résumé des retards aux secrétaires aux finances. Désactivables avec `SCHEDULER_ENABLED=false`.
 
-## Démarrage rapide (Docker)
+## Mise en ligne
+
+Voir **[deploy/DEPLOIEMENT.md](deploy/DEPLOIEMENT.md)** (serveur partagé ou dédié, HTTPS, e-mail,
+sauvegardes chiffrées, mises à jour, checklist). Les scripts `deploy/backup.sh` et `deploy/restore.sh`
+sauvegardent et restaurent la base ; `./restore.sh --test` prouve qu'une sauvegarde est exploitable.
+
+## Démarrage rapide en local (Docker)
 
 ```bash
 cd psie/backend
 cp .env.example .env          # puis changez SECRET_KEY et le mot de passe admin
-docker compose up -d --build
-docker compose exec api python -m scripts.init_db
+docker compose up -d --build  # les migrations s'appliquent au démarrage
+docker compose exec api python -m scripts.init_db   # compte administrateur + 6 fondateurs
 ```
 
 Application : http://localhost:8100 (connexion avec `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD`).
@@ -96,7 +106,7 @@ cd psie/backend
 python -m venv venv && source venv/bin/activate
 pip install -r requirements-dev.txt
 cp .env.example .env          # DATABASE_URL vers votre PostgreSQL
-python -m scripts.init_db
+python -m scripts.init_db     # applique les migrations puis crée l'administrateur et les fondateurs
 uvicorn app.main:app --reload
 ```
 
@@ -112,9 +122,21 @@ la double authentification, le verrouillage, les permissions par rôle, le clois
 faîtières, la protection CSRF, les mandats, les cotisations (génération, paiements, annulations,
 statuts), les reçus et attestations PDF, la vérification publique, les relances et le journal d'audit.
 
+## Migrations de base de données
+
+```bash
+cd psie/backend
+alembic upgrade head                                   # applique les migrations
+alembic revision --autogenerate -m "description"       # après avoir modifié un modèle
+alembic check                                          # signale un modèle sans migration
+```
+
+Ne jamais modifier une migration déjà appliquée en production : en créer une nouvelle.
+
 ## Production
 
-- `COOKIE_SECURE=true` derrière HTTPS ; `SECRET_KEY` unique et secrète.
+- `COOKIE_SECURE=true` derrière HTTPS ; `SECRET_KEY` unique et secrète. Dans ce mode, l'application
+  refuse de démarrer avec une configuration dangereuse (clé faible, SMTP absent, adresse en `http://`…).
 - `TWO_FACTOR_ENABLED=true` **avec un SMTP fonctionnel** : sans e-mail, l'administrateur et le secrétaire
   aux finances ne peuvent pas se connecter (la connexion échoue par prudence plutôt que de s'ouvrir).
 - `PUBLIC_BASE_URL` = adresse réelle du site : elle est encodée dans les QR codes imprimés.

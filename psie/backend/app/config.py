@@ -37,4 +37,27 @@ class Settings(BaseSettings):
     admin_bootstrap_name: str = "Administrateur PSIE"
 
 
+DEFAULT_SECRET_KEY = "changez-cette-cle-en-production"
+DEFAULT_ADMIN_PASSWORD = "change-moi-123"
+
+
+def production_problems(s: "Settings") -> list[str]:
+    """Réglages dangereux en production. Le mode production est détecté par COOKIE_SECURE=true
+    (site servi en HTTPS) : on refuse alors de démarrer avec les valeurs par défaut."""
+    if not s.cookie_secure:
+        return []
+    problems = []
+    if s.secret_key == DEFAULT_SECRET_KEY or len(s.secret_key) < 32:
+        problems.append("SECRET_KEY doit être une valeur secrète unique d'au moins 32 caractères")
+    if s.debug:
+        problems.append("DEBUG doit être false (il expose la documentation de l'API)")
+    if not s.two_factor_enabled:
+        problems.append("TWO_FACTOR_ENABLED doit être true")
+    if s.two_factor_enabled and not s.smtp_host:
+        problems.append("SMTP_HOST est requis : sans e-mail, la double authentification bloque la connexion")
+    if s.public_base_url.startswith("http://"):
+        problems.append("PUBLIC_BASE_URL doit commencer par https:// (elle est encodée dans les QR codes)")
+    return problems
+
+
 settings = Settings()

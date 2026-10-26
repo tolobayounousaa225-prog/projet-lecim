@@ -2,9 +2,13 @@ import os
 import tempfile
 
 # Base de test : fichier SQLite jetable, défini AVANT l'import de l'application.
-_tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
-_tmp.close()
-os.environ["DATABASE_URL"] = f"sqlite:///{_tmp.name}"
+# TEST_DATABASE_URL permet de lancer la même suite sur PostgreSQL (utilisé par la CI).
+if os.environ.get("TEST_DATABASE_URL"):
+    os.environ["DATABASE_URL"] = os.environ["TEST_DATABASE_URL"]
+else:
+    _tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+    _tmp.close()
+    os.environ["DATABASE_URL"] = f"sqlite:///{_tmp.name}"
 os.environ["SECRET_KEY"] = "cle-de-test"
 os.environ["SCHEDULER_ENABLED"] = "false"
 # La double authentification est testée à part (test_two_factor.py)

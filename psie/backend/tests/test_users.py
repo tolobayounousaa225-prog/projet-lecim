@@ -54,8 +54,8 @@ def test_toggle_account(db):
 def test_init_db_is_idempotent(db):
     from scripts import init_db
 
-    init_db.run()
-    init_db.run()
+    init_db.run(do_migrate=False)  # les tables existent déjà (créées par la fixture)
+    init_db.run(do_migrate=False)
     sigles = sorted(f.sigle for f in db.query(models.Faitiere).all())
     assert sigles == ["AL HIKMA", "CHERIFLA", "HINNEH", "IQRA", "LECIM", "OEECI"]
     assert db.query(models.User).filter_by(role="admin").count() == 1
