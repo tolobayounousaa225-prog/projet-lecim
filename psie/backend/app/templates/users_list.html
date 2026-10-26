@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_users') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav_users') }}</h1>
+<table>
+  <thead><tr><th>{{ t('full_name') }}</th><th>{{ t('email') }}</th><th>{{ t('role') }}</th><th>{{ t('organisation') }}</th><th>{{ t('g_origin') }}</th><th>{{ t('status') }}</th><th></th></tr></thead>
+  <tbody>
+  {% for u in items %}
+    <tr><td>{{ u.full_name }}</td><td>{{ u.email }}</td><td>{{ lbl('role', u.role) }}</td>
+      <td>{{ u.faitiere.sigle if u.faitiere else '—' }}</td>
+      <td>{% if u.role in ('den', 'finances') %}
+        <form method="post" action="/users/{{ u.id }}/origine" class="inline"><select name="origine_id"><option value="">—</option>
+          {% for f in faitieres %}<option value="{{ f.id }}" {% if u.faitiere_origine_id == f.id %}selected{% endif %}>{{ f.sigle }}</option>{% endfor %}</select>
+          <button class="link">{{ t('save') }}</button></form>{% else %}—{% endif %}</td>
+      <td>{{ t('active') if u.is_active else t('disabled') }}</td>
+      <td>{% if u.id != user.id %}<form method="post" action="/users/{{ u.id }}/toggle" class="inline"><button class="link">{{ t('toggle') }}</button></form>{% endif %}
+        <form method="post" action="/users/{{ u.id }}/password" class="inline"><input type="password" name="password" placeholder="{{ t('new_password') }}" required autocomplete="new-password" style="width:11em"> <button class="link">{{ t('reset_password') }}</button></form></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<section class="card">
+  <h2>{{ t('add') }}</h2>
+  <form method="post" action="/users" class="grid">
+    <label>{{ t('full_name') }}<input name="full_name" required></label>
+    <label>{{ t('email') }}<input type="email" name="email" required></label>
+    <label>{{ t('role') }}<select name="role">{% for k in roles %}<option value="{{ k }}">{{ lbl('role', k) }}</option>{% endfor %}</select></label>
+    <label>{{ t('organisation') }}<select name="faitiere_id"><option value="">—</option>{% for f in faitieres %}<option value="{{ f.id }}">{{ f.sigle }}</option>{% endfor %}</select></label>
+    <label>{{ t('g_origin') }}<select name="origine_id"><option value="">—</option>{% for f in faitieres %}<option value="{{ f.id }}">{{ f.sigle }}</option>{% endfor %}</select></label>
+    <label>{{ t('password') }}<input type="password" name="password" required autocomplete="new-password"></label>
+    <div><button class="btn">{{ t('add') }}</button></div>
+  </form>
+</section>
+{% endblock %}

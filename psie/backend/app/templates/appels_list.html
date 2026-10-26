@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_calls') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav_calls') }}</h1>
+<table>
+  <thead><tr><th>{{ t('call_title') }}</th><th>{{ t('deadline') }}</th><th>{{ t('due') }}</th><th>{{ t('paid') }}</th><th>{{ t('recovery_rate') }}</th><th>{{ t('status') }}</th></tr></thead>
+  <tbody>
+  {% for a in appels %}
+    <tr><td><a href="/appels/{{ a.id }}">{{ a.intitule }}</a></td><td>{{ a.date_limite or '—' }}</td>
+      <td>{{ fcfa(a.total_du) }}</td><td>{{ fcfa(a.total_paye) }}</td><td>{{ a.taux }} %</td>
+      <td><span class="badge {{ 'paye' if a.is_solde else 'partiel' }}">{{ t('solved') if a.is_solde else t('in_progress') }}</span></td></tr>
+  {% else %}<tr><td colspan="6" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+
+{% if user.can_write_finances %}
+<section class="card">
+  <h2>{{ t('new_call') }}</h2>
+  <p class="muted">{{ t('call_help') }}</p>
+  <form method="post" action="/appels" class="stack">
+    <div class="grid">
+      <label>{{ t('call_title') }}<input name="intitule" required></label>
+      <label>{{ t('decision_ref') }}<input name="reference_decision"></label>
+      <label>{{ t('deadline') }}<input type="date" name="date_limite"></label>
+      <label>{{ t('common_amount') }}<input type="number" name="montant_commun" min="1"></label>
+    </div>
+    <label>{{ t('call_reason') }}<textarea name="motif" rows="2"></textarea></label>
+    <table>
+      <thead><tr><th>{{ t('include') }}</th><th>{{ t('acronym') }}</th><th>{{ t('own_amount') }}</th></tr></thead>
+      <tbody>
+      {% for f in membres %}
+        <tr><td><input type="checkbox" name="inclure_{{ f.id }}" checked></td><td>{{ f.sigle }}</td>
+          <td><input type="number" name="montant_{{ f.id }}" min="1"></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

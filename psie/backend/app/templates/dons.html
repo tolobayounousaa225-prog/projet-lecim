@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ t('f_donations') }}{% endblock %}
+{% block content %}
+<h1>{{ t('f_donations') }}</h1>
+<p class="muted">{{ t('f_donations_help') }}</p>
+<section class="card">
+  <p>{{ t('f_threshold') }} : <strong>{{ fcfa(seuil) if seuil else t('f_threshold_none') }}</strong></p>
+  {% if user.can_write_finances %}
+  <form method="post" action="/dons/seuil" class="grid">
+    <label>{{ t('f_threshold') }} (FCFA)<input type="number" name="seuil" min="1" value="{{ seuil or '' }}"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>{% endif %}
+</section>
+<table>
+  <thead><tr><th>{{ t('date') }}</th><th>{{ t('f_donor') }}</th><th>{{ t('f_nature') }}</th><th>{{ t('amount') }}</th><th></th></tr></thead>
+  <tbody>
+  {% for d in items %}<tr><td>{{ d.date_don }}</td><td>{{ d.donateur_nom }}<div class="muted">{{ d.adresse }}</div></td><td>{{ d.nature_label }}{% if d.description %} — {{ d.description }}{% endif %}</td>
+    <td>{{ fcfa(d.valeur) }}</td><td>{% if d.verification_renforcee %}<span class="badge partiel">{{ t('f_enhanced') }}</span>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="5" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% if user.can_write_finances %}
+<section class="card"><h2>{{ t('add') }}</h2>
+  <form method="post" action="/dons" class="grid">
+    <label>{{ t('f_donor') }}<input name="donateur_nom" required></label>
+    <label>{{ t('f_address') }}<input name="adresse" required></label>
+    <label>{{ t('phone') }}<input name="telephone"></label>
+    <label>{{ t('f_id_type') }}<select name="piece_type"><option value="">—</option>{% for k, v in pieces.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+    <label>{{ t('f_id_number') }}<input name="piece_numero"></label>
+    <label>{{ t('f_nature') }}<select name="nature">{% for k, v in natures.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+    <label>{{ t('f_description') }}<input name="description"></label>
+    <label>{{ t('amount') }} / {{ t('f_value') }} (FCFA)<input type="number" name="valeur" min="1" required></label>
+    <label>{{ t('date') }}<input type="date" name="date_don" required></label>
+    <label>{{ t('f_funds_origin') }}<input name="origine_fonds"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form></section>
+{% endif %}
+{% endblock %}

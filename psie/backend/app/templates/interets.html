@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_interests') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav_interests') }}</h1>
+<p class="muted">{{ t('f_interest_help') }}</p>
+{% if items %}
+<table><thead><tr><th>{{ t('date') }}</th><th>{{ t('full_name') }}</th><th>{{ t('f_interest') }}</th></tr></thead><tbody>
+{% for d in items %}<tr><td>{{ d.date_declaration }}</td><td>{{ d.declarant_nom }}</td><td class="prose">{{ d.objet }}</td></tr>{% endfor %}
+</tbody></table>{% endif %}
+<section class="card"><h2>{{ t('f_declare') }}</h2>
+  <form method="post" action="/interets" class="stack">
+    <label>{{ t('f_interest') }}<textarea name="objet" rows="3" required></textarea></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form></section>
+{% endblock %}

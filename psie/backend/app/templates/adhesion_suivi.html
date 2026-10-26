@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ t('track_title') }}{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>{{ t('track_title') }}</h1>
+  <form method="post" action="/adhesion/suivi" class="stack">
+    <label>{{ t('tracking_code') }}<input name="code" required placeholder="ADH-XXXXXXXX" maxlength="20"></label>
+    <button class="btn">{{ t('track_button') }}</button>
+  </form>
+  {% if searched %}
+    {% if demande %}
+      <p><span class="badge {{ 'actif' if demande.etat == 'acceptee' else ('radie' if demande.etat == 'refusee' else 'partiel') }}">{{ t('adh_' ~ demande.etat) }}</span></p>
+    {% else %}<p class="alert">{{ t('track_unknown') }}</p>{% endif %}
+  {% endif %}
+</section>
+{% endblock %}

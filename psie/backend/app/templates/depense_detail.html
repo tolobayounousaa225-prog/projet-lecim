@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ d.libelle }}{% endblock %}
+{% block content %}
+<div class="row"><h1>{{ d.libelle }}</h1><span class="badge">{{ d.statut_label }}</span></div>
+<section class="card">
+  <dl>
+    <dt>{{ t('amount') }}</dt><dd>{{ fcfa(d.montant) }}</dd>
+    <dt>{{ t('category') }}</dt><dd>{{ d.categorie_label }}</dd>
+    <dt>{{ t('date') }}</dt><dd>{{ d.date_depense }}</dd>
+    {% if d.beneficiaire %}<dt>{{ t('f_beneficiary') }}</dt><dd>{{ d.beneficiaire }}</dd>{% endif %}
+    {% if d.ordre_mission %}<dt>{{ t('f_mission_order') }}</dt><dd>{{ d.ordre_mission }}</dd>{% endif %}
+    {% if d.derogation_ca_reference %}<dt>{{ t('f_ca_exception') }}</dt><dd>{{ d.derogation_ca_reference }}</dd>{% endif %}
+    {% if d.statut == 'payee' %}<dt>{{ t('f_paid_on') }}</dt><dd>{{ d.payee_le }} · {{ modes[d.mode_paiement] }}{% if d.reference_paiement %} · {{ d.reference_paiement }}{% endif %}</dd>{% endif %}
+    {% if d.annulee_motif %}<dt>{{ t('cancelled') }}</dt><dd>{{ d.annulee_motif }}</dd>{% endif %}
+  </dl>
+</section>
+
+<section class="card">
+  <h2>{{ t('f_signatures') }}</h2>
+  <ul>
+  {% for role in ('den', 'finances') %}
+    {% set v = d.validation_de(role) %}
+    <li>{{ lbl('role', role) }} : {% if v %}<strong>{{ v.user_nom }}</strong> ({{ v.faitiere_origine.sigle }}, {{ v.created_at.strftime('%Y-%m-%d') }}){% else %}<span class="muted">{{ t('f_pending') }}</span>{% endif %}</li>
+  {% endfor %}
+  </ul>
+  {% if d.statut == 'a_valider' and user.role in ('den', 'finances') and not d.validation_de(user.role) %}
+    <form method="post" action="/depenses/{{ d.id }}/signer"><button class="btn">{{ t('f_sign') }}</button></form>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>{{ t('f_receipts_docs') }}</h2>
+  <ul>{% for j in d.justificatifs %}<li><a href="/justificatifs/{{ j.id }}" target="_blank">{{ j.nom }}</a> <span class="muted">({{ j.taille // 1024 }} Ko)</span></li>
+  {% else %}<li class="muted">{{ t('none') }}</li>{% endfor %}</ul>
+  {% if user.can_write_finances and d.statut in ('a_valider', 'validee') %}
+  <form method="post" action="/depenses/{{ d.id }}/justificatifs" enctype="multipart/form-data" class="grid">
+    <label>{{ t('f_file') }} (PDF, PNG, JPEG, 5 Mo)<input type="file" name="fichier" accept=".pdf,.png,.jpg,.jpeg" required></label>
+    <div><button class="btn">{{ t('add') }}</button></div>
+  </form>
+  {% if d.statut == 'a_valider' and not d.derogation_ca_reference %}
+  <form method="post" action="/depenses/{{ d.id }}/derogation" class="grid">
+    <label>{{ t('f_ca_exception') }}<input name="reference" required></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+  {% endif %}
+  {% endif %}
+</section>
+
+{% if user.can_write_finances %}
+{% if d.statut == 'validee' %}
+<section class="card"><h2>{{ t('f_pay') }}</h2>
+  <form method="post" action="/depenses/{{ d.id }}/payer" class="grid">
+    <label>{{ t('date') }}<input type="date" name="date_paiement" required value="{{ today }}" max="{{ today }}"></label>
+    <label>{{ t('mode') }}<select name="mode">{% for k, v in modes.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+    <label>{{ t('reference') }}<input name="reference"></label>
+    <div><button class="btn">{{ t('f_pay') }}</button></div>
+  </form></section>
+{% endif %}
+{% if d.statut in ('a_valider', 'validee') %}
+<section class="card"><form method="post" action="/depenses/{{ d.id }}/annuler" class="grid">
+  <label>{{ t('cancel_reason') }}<input name="motif" required></label>
+  <div><button class="btn">{{ t('cancel') }}</button></div></form></section>
+{% endif %}
+{% endif %}
+<p><a href="/depenses">{{ t('back') }}</a></p>
+{% endblock %}

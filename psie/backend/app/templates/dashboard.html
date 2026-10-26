@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_dashboard') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav_dashboard') }}</h1>
+<div class="tiles">
+  <div class="tile"><div class="num">{{ actifs }}</div><div>{{ t('members_active') }}</div></div>
+  <div class="tile"><div class="num">{{ total }}</div><div>{{ t('members_total') }}</div></div>
+  {% for key in categories %}
+  <div class="tile"><div class="num">{{ par_categorie[key] }}</div><div>{{ lbl('categorie', key) }}</div></div>
+  {% endfor %}
+</div>
+
+<section class="card">
+  <h2>{{ t('g_composition') }}</h2>
+  <div class="tiles">
+  {% for c in composition %}
+    <div class="tile"><div class="num">{{ c.reel }} / {{ c.attendu }}</div><div>{{ lbl('organe', c.organe) }}</div></div>
+  {% endfor %}
+  </div>
+</section>
+{% if sit %}
+<section class="card">
+  <h2><a href="/cotisations">{{ t('nav_dues') }} {{ sit.annee }}</a></h2>
+  <div class="tiles">
+    <div class="tile"><div class="num">{{ sit.taux }} %</div><div>{{ t('recovery_rate') }}</div></div>
+    <div class="tile"><div class="num">{{ fcfa(sit.reste) }}</div><div>{{ t('remaining') }}</div></div>
+    <div class="tile"><div class="num">{{ sit.nb_retard }}</div><div>{{ t('late_count') }}</div></div>
+    <div class="tile"><div class="num">{{ sit.nb_a_jour }}</div><div>{{ t('up_to_date') }}</div></div>
+  </div>
+</section>
+{% endif %}
+<section class="card">
+  <h2>{{ t('mandates_expiring') }}</h2>
+  {% if expirent %}
+    <ul>{% for m in expirent %}<li>{{ m.full_name }} — {{ lbl('organe', m.organe) }}{% if m.faitiere %} ({{ m.faitiere.sigle }}){% endif %} · {{ m.date_fin }}</li>{% endfor %}</ul>
+  {% else %}<p class="muted">{{ t('none') }}</p>{% endif %}
+</section>
+<section class="card">
+  <h2>{{ t('mandates_expired') }}</h2>
+  {% if expires %}
+    <ul>{% for m in expires %}<li>{{ m.full_name }} — {{ lbl('organe', m.organe) }}{% if m.faitiere %} ({{ m.faitiere.sigle }}){% endif %} · {{ m.date_fin }}</li>{% endfor %}</ul>
+  {% else %}<p class="muted">{{ t('none') }}</p>{% endif %}
+</section>
+{% endblock %}

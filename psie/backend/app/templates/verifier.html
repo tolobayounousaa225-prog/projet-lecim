@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ t('verification') }}{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>{{ t('verification') }}</h1>
+  {% if kind == 'recu' %}
+    {% if p.annule %}
+      <p class="alert">{{ t('receipt_cancelled') }}</p>
+    {% else %}
+      <p><span class="badge actif">{{ t('receipt_valid') }}</span></p>
+    {% endif %}
+    <dl>
+      <dt>{{ t('receipt') }}</dt><dd>{{ p.recu_numero }}</dd>
+      <dt>{{ t('organisation') }}</dt><dd>{{ p.echeance.faitiere.sigle }}</dd>
+      <dt>{{ t('amount') }}</dt><dd>{{ fcfa(p.montant) }}</dd>
+      <dt>{{ t('date') }}</dt><dd>{{ p.date_paiement }}</dd>
+    </dl>
+  {% elif kind == 'adhesion' %}
+    <p><span class="badge actif">{{ t('cert_valid') }}</span></p>
+    <dl>
+      <dt>{{ t('organisation') }}</dt><dd>{{ faitiere.sigle }}</dd>
+      <dt>{{ t('name') }}</dt><dd>{{ faitiere.nom }}</dd>
+      <dt>{{ t('member_since') }}</dt><dd>{{ faitiere.date_adhesion or '—' }}</dd>
+    </dl>
+  {% else %}
+    {% if a_jour %}<p><span class="badge actif">{{ t('attestation_valid') }}</span></p>
+    {% else %}<p class="alert">{{ t('attestation_not_up_to_date') }}</p>{% endif %}
+    <dl>
+      <dt>{{ t('organisation') }}</dt><dd>{{ faitiere.sigle }}</dd>
+      <dt>{{ t('year') }}</dt><dd>{{ annee }}</dd>
+    </dl>
+  {% endif %}
+</section>
+{% endblock %}

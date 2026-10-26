@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ t('join_title') }}{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>{{ t('join_received') }}</h1>
+  <p>{{ t('join_code_help') }}</p>
+  <p class="code">{{ code }}</p>
+  <p><a href="/adhesion/suivi">{{ t('track_title') }}</a></p>
+</section>
+{% endblock %}

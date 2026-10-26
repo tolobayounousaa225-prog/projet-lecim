@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="{{ lang }}" dir="{{ dir }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ t('app_name') }}{% endblock %} — {{ t('app_name') }}</title>
+  <link rel="stylesheet" href="/static/psie.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">
+    <span class="brand-mark">PSIE</span>
+    <span class="brand-text">{{ t('app_full_name') }}</span>
+  </a>
+  <nav>
+    {% if user and user.is_internal %}
+      <a href="/admin">{{ t('nav_dashboard') }}</a>
+      <a href="/faitieres">{{ t('nav_members') }}</a>
+      <a href="/mandats">{{ t('nav_mandates') }}</a>
+      <a href="/adhesions">{{ t('nav_adhesions') }}</a>
+      <a href="/assemblees">{{ t('nav_assemblies') }}</a>
+      <a href="/sanctions">{{ t('nav_sanctions') }}</a>
+      {% if user.can_view_finances %}<a href="/cotisations">{{ t('nav_dues') }}</a><a href="/appels">{{ t('nav_calls') }}</a><a href="/finances">{{ t('nav_finances') }}</a>{% endif %}
+      <a href="/interets">{{ t('nav_interests') }}</a>
+      {% if user.can_manage_members %}<a href="/gestion/actualites">{{ t('nav_news_admin') }}</a>{% endif %}
+      {% if user.is_admin %}
+        <a href="/users">{{ t('nav_users') }}</a>
+        <a href="/audit">{{ t('nav_audit') }}</a>
+      {% endif %}
+    {% elif user and user.faitiere_id %}
+      <a href="/faitieres/{{ user.faitiere_id }}">{{ t('nav_my_org') }}</a>
+      <a href="/assemblees">{{ t('nav_assemblies') }}</a>
+    {% else %}
+      <a href="/">{{ t('nav_home') }}</a>
+      <a href="/apropos">{{ t('nav_about') }}</a>
+      <a href="/membres">{{ t('nav_public_members') }}</a>
+      <a href="/actualites">{{ t('nav_news') }}</a>
+      <a href="/adhesion">{{ t('nav_join') }}</a>
+    {% endif %}
+  </nav>
+  <div class="tools">
+    <a href="/lang/fr" class="lang {% if lang == 'fr' %}on{% endif %}">FR</a>
+    <a href="/lang/ar" class="lang {% if lang == 'ar' %}on{% endif %}">العربية</a>
+    {% if not user %}<a href="/login">{{ t('nav_login') }}</a>{% endif %}
+    {% if user %}
+      <span class="who">{{ user.full_name }}</span>
+      <a href="/mot-de-passe">{{ t('nav_password') }}</a>
+      <form method="post" action="/logout" class="inline"><button class="link">{{ t('logout') }}</button></form>
+    {% endif %}
+  </div>
+</header>
+<main>
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: psie
+      POSTGRES_PASSWORD: psie
+      POSTGRES_DB: psie
+    volumes:
+      - psie_db_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://psie:psie@db:5432/psie
+    depends_on:
+      - db
+    ports:
+      - "8100:8000"
+
+volumes:
+  psie_db_data:

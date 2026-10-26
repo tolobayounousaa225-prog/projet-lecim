@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_assemblies') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav_assemblies') }}</h1>
+<table>
+  <thead><tr><th>{{ t('date') }}</th><th>{{ t('g_type') }}</th><th>{{ t('g_place') }}</th><th>{{ t('status') }}</th></tr></thead>
+  <tbody>
+  {% for a in items %}
+    <tr><td><a href="/assemblees/{{ a.id }}">{{ a.date_assemblee }}</a></td><td>{{ a.type_label }}</td><td>{{ a.lieu }}</td>
+      <td><span class="badge">{{ a.statut_label }}</span></td></tr>
+  {% else %}<tr><td colspan="4" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% if user.can_manage_members %}
+<section class="card">
+  <h2>{{ t('g_new_assembly') }}</h2>
+  <form method="post" action="/assemblees" class="stack">
+    <div class="grid">
+      <label>{{ t('g_type') }}<select name="type">{% for k, v in types.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+      <label>{{ t('date') }}<input type="date" name="date_assemblee" required></label>
+      <label>{{ t('g_time') }}<input name="heure" placeholder="09:00" pattern="[0-2][0-9]:[0-5][0-9]"></label>
+      <label>{{ t('g_place') }}<input name="lieu" required></label>
+      <label>{{ t('g_vote_mode') }}<select name="mode_vote">{% for k, v in modes.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+    </div>
+    <label>{{ t('g_agenda') }}<textarea name="ordre_du_jour" rows="4" required></textarea></label>
+    <label>{{ t('g_age_request') }}<textarea name="demande_age" rows="2"></textarea></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

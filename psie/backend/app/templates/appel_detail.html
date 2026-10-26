@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ appel.intitule }}{% endblock %}
+{% block content %}
+<h1>{{ appel.intitule }}</h1>
+<div class="tiles">
+  <div class="tile"><div class="num">{{ fcfa(appel.total_du) }}</div><div>{{ t('total_due') }}</div></div>
+  <div class="tile"><div class="num">{{ fcfa(appel.total_paye) }}</div><div>{{ t('total_paid') }}</div></div>
+  <div class="tile"><div class="num">{{ appel.taux }} %</div><div>{{ t('recovery_rate') }}</div></div>
+</div>
+<section class="card">
+  <dl>
+    <dt>{{ t('deadline') }}</dt><dd>{{ appel.date_limite or '—' }}</dd>
+    <dt>{{ t('decision_ref') }}</dt><dd>{{ appel.reference_decision or '—' }}</dd>
+    {% if appel.motif %}<dt>{{ t('call_reason') }}</dt><dd>{{ appel.motif }}</dd>{% endif %}
+  </dl>
+</section>
+<table>
+  <thead><tr><th>{{ t('acronym') }}</th><th>{{ t('due') }}</th><th>{{ t('paid') }}</th><th>{{ t('balance') }}</th><th>{{ t('deadline') }}</th><th>{{ t('status') }}</th></tr></thead>
+  <tbody>
+  {% for e in appel.echeances %}
+    <tr><td><a href="/echeances/{{ e.id }}">{{ e.faitiere.sigle }}</a></td>
+      <td>{{ fcfa(e.montant_du) }}</td><td>{{ fcfa(e.montant_paye) }}</td><td>{{ fcfa(e.solde) }}</td>
+      <td>{{ e.date_limite or '—' }}</td><td><span class="badge {{ e.statut }}">{{ t('st_' ~ e.statut) }}</span></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p><a href="/appels">{{ t('back') }}</a></p>
+{% endblock %}
