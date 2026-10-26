@@ -10,7 +10,7 @@ from .config import settings
 from .database import Base, engine
 from .deps import NotAuthenticatedException
 from . import scheduler
-from .routers import admin, auth, cotisations
+from .routers import admin, appels, auth, cotisations
 from .web import BASE_DIR, render
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
@@ -69,3 +69,4 @@ def health():
 app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(cotisations.router)
+app.include_router(appels.router)

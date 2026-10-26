@@ -30,6 +30,7 @@ TWO_FACTOR_ROLES = {"admin", "finances"}
 ECHEANCE_TYPES = {
     "annuelle": "Cotisation annuelle",
     "adhesion": "Droit d'adhésion",
+    "exceptionnelle": "Cotisation exceptionnelle",
 }
 MODES_PAIEMENT = {
     "virement": "Virement",
@@ -248,10 +249,18 @@ class Echeance(Base):
     montant_du: Mapped[int] = mapped_column(Integer, nullable=False)
     date_limite: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
     reference_decision: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Renseigné pour une cotisation exceptionnelle : l'appel de fonds dont elle est issue
+    appel_id: Mapped[int | None] = mapped_column(ForeignKey("appels_exceptionnels.id"), index=True, nullable=True)
+    # Exonération : la somme n'est plus due (le motif et l'auteur sont conservés)
+    exoneree: Mapped[bool] = mapped_column(Boolean, default=False)
+    exoneration_motif: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    exoneree_par_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    exoneree_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
 
     faitiere: Mapped["Faitiere"] = relationship()
+    appel: Mapped["AppelExceptionnel | None"] = relationship(back_populates="echeances")
     paiements: Mapped[list["Paiement"]] = relationship(back_populates="echeance", order_by="Paiement.id")
 
     @property
@@ -260,7 +269,7 @@ class Echeance(Base):
 
     @property
     def solde(self) -> int:
-        return self.montant_du - self.montant_paye
+        return 0 if self.exoneree else self.montant_du - self.montant_paye
 
     @property
     def is_en_retard(self) -> bool:
@@ -268,7 +277,9 @@ class Echeance(Base):
 
     @property
     def statut(self) -> str:
-        """`paye` | `en_retard` | `partiel` | `impaye`."""
+        """`exonere` | `paye` | `en_retard` | `partiel` | `impaye`."""
+        if self.exoneree:
+            return "exonere"
         if self.solde <= 0:
             return "paye"
         if self.is_en_retard:
@@ -278,6 +289,44 @@ class Echeance(Base):
     @property
     def type_label(self) -> str:
         return ECHEANCE_TYPES.get(self.type, self.type)
+
+
+class AppelExceptionnel(Base):
+    """Appel de fonds ponctuel (cotisation exceptionnelle, Règlement Intérieur art. 14 et 35).
+    Les textes ne désignent pas l'autorité qui le décide : l'outil enregistre la référence de la
+    décision (PV, résolution) saisie par le secrétaire aux finances, sans l'imposer."""
+
+    __tablename__ = "appels_exceptionnels"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    intitule: Mapped[str] = mapped_column(String(255), nullable=False)
+    motif: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reference_decision: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    date_limite: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    echeances: Mapped[list["Echeance"]] = relationship(back_populates="appel", order_by="Echeance.id")
+
+    @property
+    def total_du(self) -> int:
+        return sum(e.montant_du for e in self.echeances if not e.exoneree)
+
+    @property
+    def total_paye(self) -> int:
+        return sum(e.montant_paye for e in self.echeances if not e.exoneree)
+
+    @property
+    def reste(self) -> int:
+        return sum(e.solde for e in self.echeances)
+
+    @property
+    def taux(self) -> int:
+        return round(100 * self.total_paye / self.total_du) if self.total_du else 0
+
+    @property
+    def is_solde(self) -> bool:
+        return self.reste <= 0
 
 
 class Paiement(Base):

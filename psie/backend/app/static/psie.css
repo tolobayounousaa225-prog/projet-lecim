@@ -49,6 +49,7 @@ th { color: var(--muted); font-weight: 600; }
 .badge.paye { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
 .badge.partiel { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
 .badge.en_retard { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
+.badge.exonere { background: color-mix(in srgb, var(--primary) 18%, transparent); color: var(--primary); }
 .badge.radie { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
 td.bientot { color: var(--warn); font-weight: 600; }
 td.expire { color: var(--danger); font-weight: 600; }

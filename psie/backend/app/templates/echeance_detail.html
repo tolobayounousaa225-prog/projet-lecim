@@ -12,6 +12,8 @@
     <dt>{{ t('balance') }}</dt><dd>{{ fcfa(e.solde) }}</dd>
     <dt>{{ t('deadline') }}</dt><dd>{{ e.date_limite or '—' }}</dd>
     {% if e.reference_decision %}<dt>{{ t('decision_ref') }}</dt><dd>{{ e.reference_decision }}</dd>{% endif %}
+    {% if e.appel %}<dt>{{ t('nav_calls') }}</dt><dd><a href="/appels/{{ e.appel_id }}">{{ e.appel.intitule }}</a></dd>{% endif %}
+    {% if e.exoneree %}<dt>{{ t('exempted_reason') }}</dt><dd>{{ e.exoneration_motif }}</dd>{% endif %}
   </dl>
 </section>
 
@@ -47,6 +49,29 @@
     <label>{{ t('reference') }}<input name="reference"></label>
     <div><button class="btn">{{ t('save') }}</button></div>
   </form>
+</section>
+{% endif %}
+{% if user.can_write_finances %}
+<section class="card">
+  <h2>{{ t('actions') }}</h2>
+  {% if e.exoneree %}
+    <form method="post" action="/echeances/{{ e.id }}/retablir" class="inline"><button class="btn">{{ t('restore') }}</button></form>
+  {% else %}
+  <form method="post" action="/echeances/{{ e.id }}/exonerer" class="grid">
+    <label>{{ t('reason') }}<input name="motif" required></label>
+    <div><button class="btn">{{ t('exempt') }}</button></div>
+  </form>
+  <form method="post" action="/echeances/{{ e.id }}/reporter" class="grid">
+    <label>{{ t('new_deadline') }}<input type="date" name="nouvelle_date" required></label>
+    <label>{{ t('reason') }}<input name="motif" required></label>
+    <div><button class="btn">{{ t('postpone') }}</button></div>
+  </form>
+  <form method="post" action="/echeances/{{ e.id }}/montant" class="grid">
+    <label>{{ t('amount') }} (FCFA)<input type="number" name="montant" min="1" required value="{{ e.montant_du }}"></label>
+    <label>{{ t('reason') }}<input name="motif" required></label>
+    <div><button class="btn">{{ t('fix_amount') }}</button></div>
+  </form>
+  {% endif %}
 </section>
 {% endif %}
 <p><a href="/faitieres/{{ e.faitiere_id }}">{{ t('back') }}</a></p>

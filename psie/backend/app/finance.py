@@ -88,6 +88,86 @@ def create_adhesion_echeance(db: Session, user, faitiere: models.Faitiere, monta
     return e
 
 
+# ---------- Appels exceptionnels ----------
+
+def create_appel(db: Session, user, intitule: str, motif: str | None, reference: str | None,
+                 date_limite, lignes: list[tuple[models.Faitiere, int]]) -> models.AppelExceptionnel:
+    """Crée l'appel et une échéance par faîtière concernée. `lignes` = (faîtière, montant).
+    Les montants peuvent différer d'une faîtière à l'autre ; aucune formule n'est imposée."""
+    if not intitule.strip():
+        raise HTTPException(status_code=400, detail="L'intitulé est obligatoire")
+    if not lignes:
+        raise HTTPException(status_code=400, detail="Sélectionnez au moins une faîtière")
+    seen = set()
+    for faitiere, montant in lignes:
+        if montant <= 0:
+            raise HTTPException(status_code=400, detail=f"Montant invalide pour {faitiere.sigle}")
+        if faitiere.id in seen:
+            raise HTTPException(status_code=400, detail="Faîtière en double")
+        seen.add(faitiere.id)
+    appel = models.AppelExceptionnel(
+        intitule=intitule.strip(), motif=motif, reference_decision=reference, date_limite=date_limite,
+        created_by_id=user.id if user else None,
+    )
+    db.add(appel)
+    db.flush()
+    for faitiere, montant in lignes:
+        db.add(models.Echeance(
+            faitiere_id=faitiere.id, type="exceptionnelle", annee=datetime.date.today().year,
+            libelle=appel.intitule[:255], montant_du=montant, date_limite=date_limite,
+            reference_decision=reference, appel_id=appel.id, created_by_id=user.id if user else None,
+        ))
+    db.flush()
+    total = sum(m for _, m in lignes)
+    log_action(db, user, "creation", "appel", appel.id,
+               f"{appel.intitule}: {len(lignes)} faîtière(s), {fcfa(total)} — décision: {reference or 'non précisée'}")
+    return appel
+
+
+def exonerer_echeance(db: Session, user, e: models.Echeance, motif: str) -> None:
+    if e.exoneree:
+        raise HTTPException(status_code=409, detail="Déjà exonérée")
+    if not motif.strip():
+        raise HTTPException(status_code=400, detail="Le motif de l'exonération est obligatoire")
+    e.exoneree, e.exoneration_motif = True, motif.strip()[:500]
+    e.exoneree_par_id, e.exoneree_at = user.id, datetime.datetime.utcnow()
+    log_action(db, user, "exoneration", "echeance", e.id, f"{e.faitiere.sigle} / {e.libelle}: {e.exoneration_motif}")
+
+
+def retablir_echeance(db: Session, user, e: models.Echeance) -> None:
+    if not e.exoneree:
+        raise HTTPException(status_code=409, detail="Cette échéance n'est pas exonérée")
+    e.exoneree, e.exoneration_motif, e.exoneree_par_id, e.exoneree_at = False, None, None, None
+    log_action(db, user, "retablissement", "echeance", e.id, f"{e.faitiere.sigle} / {e.libelle}")
+
+
+def reporter_echeance(db: Session, user, e: models.Echeance, nouvelle_date: datetime.date, motif: str) -> None:
+    if not motif.strip():
+        raise HTTPException(status_code=400, detail="Le motif du report est obligatoire")
+    if e.date_limite and nouvelle_date <= e.date_limite:
+        raise HTTPException(status_code=400, detail="La nouvelle date doit être postérieure à la date limite actuelle")
+    ancienne = e.date_limite
+    e.date_limite = nouvelle_date
+    # Les paliers de relance recommencent à partir de la nouvelle date
+    db.query(models.RelanceLog).filter_by(echeance_id=e.id).delete()
+    log_action(db, user, "report", "echeance", e.id,
+               f"{e.faitiere.sigle} / {e.libelle}: {ancienne} -> {nouvelle_date} ({motif.strip()[:300]})")
+
+
+def corriger_montant(db: Session, user, e: models.Echeance, montant: int, motif: str) -> None:
+    """Corrige le montant d'une échéance (jamais en dessous de ce qui est déjà payé)."""
+    if not motif.strip():
+        raise HTTPException(status_code=400, detail="Le motif de la correction est obligatoire")
+    if montant <= 0:
+        raise HTTPException(status_code=400, detail="Le montant doit être positif")
+    if montant < e.montant_paye:
+        raise HTTPException(status_code=400, detail=f"Le montant ne peut pas être inférieur aux paiements déjà reçus ({fcfa(e.montant_paye)})")
+    ancien = e.montant_du
+    e.montant_du = montant
+    log_action(db, user, "correction", "echeance", e.id,
+               f"{e.faitiere.sigle} / {e.libelle}: {ancien} -> {montant} ({motif.strip()[:300]})")
+
+
 # ---------- Paiements ----------
 
 def _next_recu_numero(db: Session, year: int) -> str:
@@ -155,17 +235,17 @@ def situation(db: Session, annee: int) -> dict:
         .order_by(models.Faitiere.sigle)
         .all()
     )
-    du = sum(e.montant_du for e in rows)
-    paye = sum(e.montant_paye for e in rows)
+    du = sum(e.montant_du for e in rows if not e.exoneree)
+    paye = sum(e.montant_paye for e in rows if not e.exoneree)
     return {
         "annee": annee,
         "rows": rows,
         "total_du": du,
         "total_paye": paye,
-        "reste": du - paye,
+        "reste": sum(e.solde for e in rows),
         "taux": round(100 * paye / du) if du else 0,
         "nb_retard": sum(1 for e in rows if e.statut == "en_retard"),
-        "nb_a_jour": sum(1 for e in rows if e.statut == "paye"),
+        "nb_a_jour": sum(1 for e in rows if e.statut in ("paye", "exonere")),
     }
 
 
