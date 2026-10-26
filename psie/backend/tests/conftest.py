@@ -44,10 +44,10 @@ def db():
         session.close()
 
 
-def make_user(db, email, role, faitiere_id=None, name=None):
+def make_user(db, email, role, faitiere_id=None, name=None, origine_id=None):
     user = models.User(
         email=email, full_name=name or email, role=role,
-        hashed_password=hash_password(PASSWORD), faitiere_id=faitiere_id,
+        hashed_password=hash_password(PASSWORD), faitiere_id=faitiere_id, faitiere_origine_id=origine_id,
     )
     db.add(user)
     db.commit()

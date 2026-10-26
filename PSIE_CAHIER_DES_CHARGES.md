@@ -351,7 +351,7 @@ Ce que le système fait seul, sans intervention humaine :
 | **7 — Commissions et régions** | CNECI, CNVSP, 41 délégations régionales, liste des manuels homologués | Pilotage pédagogique et territorial |
 | **8 — Paiement mobile money** *(option)* | Agrégateur, rapprochement automatique | Probablement abandonnée |
 
-> **Avancement** : phases 1 à 5 réalisées dans [`psie/`](psie/) (annuaire, mandats, cotisations annuelles et exceptionnelles, paiements, reçus, attestations et certificats PDF bilingues, relances, double authentification, adhésion en ligne, vitrine bilingue, assemblées, votes, sanctions). Détail dans [`psie/README.md`](psie/README.md).
+> **Avancement** : phases 1 à 6 réalisées dans [`psie/`](psie/) (annuaire, mandats, cotisations annuelles et exceptionnelles, paiements, reçus, attestations et certificats PDF bilingues, relances, double authentification, adhésion en ligne, vitrine bilingue, assemblées, votes, sanctions, finances complètes avec double signature). Détail dans [`psie/README.md`](psie/README.md).
 
 Chaque phase est livrable seule. La **phase 2** est le premier moment où la PSIE tire une vraie
 valeur de l'outil.

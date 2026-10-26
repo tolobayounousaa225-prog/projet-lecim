@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, LargeBinary, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -89,7 +89,7 @@ class Faitiere(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
 
     mandats: Mapped[list["Mandat"]] = relationship(back_populates="faitiere", order_by="Mandat.organe")
-    users: Mapped[list["User"]] = relationship(back_populates="faitiere")
+    users: Mapped[list["User"]] = relationship(back_populates="faitiere", foreign_keys="User.faitiere_id")
     sanctions: Mapped[list["Sanction"]] = relationship(back_populates="faitiere", order_by="Sanction.id")
 
     @property
@@ -162,11 +162,15 @@ class User(Base):
     # Renseigné pour un représentant de faîtière : il ne voit que les données de cette faîtière.
     faitiere_id: Mapped[int | None] = mapped_column(ForeignKey("faitieres.id"), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Organisation qui a proposé cette personne (DEN, secrétaire aux finances) : sert à vérifier
+    # que les deux signataires d'un paiement ne viennent pas de la même organisation (Statuts art. 38).
+    faitiere_origine_id: Mapped[int | None] = mapped_column(ForeignKey("faitieres.id"), nullable=True)
     failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
 
-    faitiere: Mapped["Faitiere | None"] = relationship(back_populates="users")
+    faitiere: Mapped["Faitiere | None"] = relationship(back_populates="users", foreign_keys=[faitiere_id])
+    faitiere_origine: Mapped["Faitiere | None"] = relationship(foreign_keys=[faitiere_origine_id])
 
     @property
     def role_label(self) -> str:
@@ -624,3 +628,229 @@ class Sanction(Base):
     @property
     def is_active(self) -> bool:
         return self.levee_le is None
+
+
+# ---------- Finances : dépenses, recettes, dons, budget, contrôle ----------
+
+DEPENSE_CATEGORIES = {
+    "fonctionnement": "Fonctionnement",
+    "mission": "Frais de mission",
+    "formation": "Formation",
+    "communication": "Communication",
+    "equipement": "Équipement",
+    "autre": "Autre",
+}
+DEPENSE_STATUTS = {
+    "a_valider": "À valider",
+    "validee": "Validée (à payer)",
+    "payee": "Payée",
+    "annulee": "Annulée",
+}
+# Signatures requises sur un paiement : le DEN et le secrétaire aux finances (ou son adjoint)
+SIGNATAIRE_ROLES = ("den", "finances")
+RECETTE_CATEGORIES = {"subvention": "Subvention", "autre": "Autre recette"}
+DON_NATURES = {"numeraire": "Numéraire", "nature": "En nature"}
+PIECE_TYPES = {"cni": "Carte nationale d'identité", "passeport": "Passeport", "autre": "Autre pièce",
+               "organisation": "Organisation (n° d'enregistrement)"}
+BUDGET_SENS = {"recette": "Recettes", "depense": "Dépenses"}
+# Catégories de recettes d'un budget (les dépenses reprennent DEPENSE_CATEGORIES)
+BUDGET_RECETTE_CATEGORIES = {
+    "cotisations": "Cotisations (annuelles, exceptionnelles, adhésion)",
+    "dons": "Dons et legs",
+    "subvention": "Subventions",
+    "autre": "Autres recettes",
+}
+JUSTIFICATIF_TYPES = {"application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg"}
+JUSTIFICATIF_MAX_BYTES = 5 * 1024 * 1024
+
+
+class Depense(Base):
+    """Dépense de la PSIE. Elle n'est payable qu'après les deux signatures (DEN et secrétaire aux
+    finances, issus d'organisations différentes). Jamais supprimée : une erreur s'annule avec motif."""
+
+    __tablename__ = "depenses"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    libelle: Mapped[str] = mapped_column(String(255), nullable=False)
+    categorie: Mapped[str] = mapped_column(String(20), nullable=False)
+    montant: Mapped[int] = mapped_column(Integer, nullable=False)
+    date_depense: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    beneficiaire: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    ordre_mission: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    statut: Mapped[str] = mapped_column(String(12), default="a_valider")
+    # Dépense non conforme (pièce manquante) : décision motivée du CA (Statuts art. 39.2)
+    derogation_ca_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    payee_le: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    mode_paiement: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    reference_paiement: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    annulee_motif: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    validations: Mapped[list["ValidationDepense"]] = relationship(
+        back_populates="depense", order_by="ValidationDepense.id", cascade="all, delete-orphan")
+    justificatifs: Mapped[list["Justificatif"]] = relationship(
+        back_populates="depense", order_by="Justificatif.id", cascade="all, delete-orphan")
+
+    @property
+    def categorie_label(self) -> str:
+        return DEPENSE_CATEGORIES.get(self.categorie, self.categorie)
+
+    @property
+    def statut_label(self) -> str:
+        return DEPENSE_STATUTS.get(self.statut, self.statut)
+
+    def validation_de(self, role: str) -> "ValidationDepense | None":
+        return next((v for v in self.validations if v.role == role), None)
+
+    @property
+    def roles_manquants(self) -> list[str]:
+        return [r for r in SIGNATAIRE_ROLES if not self.validation_de(r)]
+
+
+class ValidationDepense(Base):
+    """Une des deux signatures d'une dépense."""
+
+    __tablename__ = "validations_depenses"
+    __table_args__ = (UniqueConstraint("depense_id", "role", name="uq_validation_depense_role"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    depense_id: Mapped[int] = mapped_column(ForeignKey("depenses.id"), index=True, nullable=False)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    user_nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(30), nullable=False)
+    faitiere_origine_id: Mapped[int] = mapped_column(ForeignKey("faitieres.id"), nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    depense: Mapped["Depense"] = relationship(back_populates="validations")
+    faitiere_origine: Mapped["Faitiere"] = relationship()
+
+
+class Justificatif(Base):
+    """Pièce justificative, stockée dans la base (donc couverte par les sauvegardes). Le type est
+    déterminé par le contenu du fichier, jamais par ce qu'annonce le navigateur."""
+
+    __tablename__ = "justificatifs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    depense_id: Mapped[int] = mapped_column(ForeignKey("depenses.id"), index=True, nullable=False)
+    nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    taille: Mapped[int] = mapped_column(Integer, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    contenu: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    ajoute_par_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    depense: Mapped["Depense"] = relationship(back_populates="justificatifs")
+
+
+class Recette(Base):
+    """Recette hors cotisations et dons : subventions et autres ressources."""
+
+    __tablename__ = "recettes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    categorie: Mapped[str] = mapped_column(String(20), nullable=False)
+    libelle: Mapped[str] = mapped_column(String(255), nullable=False)
+    source: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    montant: Mapped[int] = mapped_column(Integer, nullable=False)
+    date_recette: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    @property
+    def categorie_label(self) -> str:
+        return RECETTE_CATEGORIES.get(self.categorie, self.categorie)
+
+
+class Don(Base):
+    """Registre spécial des dons et libéralités (Statuts art. 39.3, RI art. 40)."""
+
+    __tablename__ = "dons"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    donateur_nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    adresse: Mapped[str] = mapped_column(String(255), nullable=False)
+    telephone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    piece_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    piece_numero: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    nature: Mapped[str] = mapped_column(String(10), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    valeur: Mapped[int] = mapped_column(Integer, nullable=False)
+    date_don: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    origine_fonds: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    verification_renforcee: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    @property
+    def nature_label(self) -> str:
+        return DON_NATURES.get(self.nature, self.nature)
+
+
+class Parametre(Base):
+    """Réglage modifiable depuis l'application (ex. seuil des dons à vérification renforcée)."""
+
+    __tablename__ = "parametres"
+
+    cle: Mapped[str] = mapped_column(String(50), primary_key=True)
+    valeur: Mapped[str] = mapped_column(String(255), nullable=False)
+    updated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+class BudgetAnnee(Base):
+    """Budget annuel : élaboré par la DEN, validé par l'AGA (Statuts art. 13.1)."""
+
+    __tablename__ = "budgets"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    annee: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)
+    statut: Mapped[str] = mapped_column(String(10), default="projet")  # projet | valide
+    reference_validation: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    lignes: Mapped[list["BudgetLigne"]] = relationship(
+        back_populates="budget", order_by="BudgetLigne.id", cascade="all, delete-orphan")
+
+
+class BudgetLigne(Base):
+    __tablename__ = "budget_lignes"
+    __table_args__ = (UniqueConstraint("budget_id", "sens", "categorie", name="uq_budget_ligne"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    budget_id: Mapped[int] = mapped_column(ForeignKey("budgets.id"), index=True, nullable=False)
+    sens: Mapped[str] = mapped_column(String(10), nullable=False)
+    categorie: Mapped[str] = mapped_column(String(20), nullable=False)
+    montant_prevu: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    budget: Mapped["BudgetAnnee"] = relationship(back_populates="lignes")
+
+
+class RapportCC(Base):
+    """Rapport écrit d'un commissaire aux comptes, adressé à la DEN et au CA (Statuts art. 29)."""
+
+    __tablename__ = "rapports_cc"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    annee: Mapped[int] = mapped_column(Integer, nullable=False)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    texte: Mapped[str] = mapped_column(Text, nullable=False)
+    auteur_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    auteur_nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+class DeclarationInteret(Base):
+    """Déclaration d'un intérêt personnel par un membre d'un organe (Statuts art. 39.2, RI art. 41)."""
+
+    __tablename__ = "declarations_interet"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    declarant_nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    objet: Mapped[str] = mapped_column(Text, nullable=False)
+    date_declaration: Mapped[datetime.date] = mapped_column(Date, default=datetime.date.today)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)

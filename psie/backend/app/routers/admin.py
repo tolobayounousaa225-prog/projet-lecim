@@ -225,7 +225,7 @@ def users_list(request: Request, user: models.User = Depends(require_admin), db:
 @router.post("/users")
 def user_create(
     email: str = Form(...), full_name: str = Form(...), role: str = Form(...), password: str = Form(...),
-    faitiere_id: str = Form(""),
+    faitiere_id: str = Form(""), origine_id: str = Form(""),
     user: models.User = Depends(require_admin), db: Session = Depends(get_db),
 ):
     if role not in models.ROLES:
@@ -238,9 +238,13 @@ def user_create(
         raise HTTPException(status_code=400, detail="Un représentant de faîtière doit être rattaché à une faîtière")
     if role != "faitiere":
         fid = None
+    oid = int(origine_id) if origine_id.strip().isdigit() else None
+    if oid is not None and not db.get(models.Faitiere, oid):
+        raise HTTPException(status_code=400, detail="Organisation d'origine inconnue")
     new_user = models.User(
         email=email.strip().lower(), full_name=full_name.strip(), role=role,
         hashed_password=hash_password(password), faitiere_id=fid,
+        faitiere_origine_id=oid if role in models.SIGNATAIRE_ROLES else None,
     )
     db.add(new_user)
     try:
@@ -287,5 +291,23 @@ def user_reset_password(user_id: int, password: str = Form(...), user: models.Us
     target.hashed_password = hash_password(password)
     target.failed_login_attempts, target.locked_until = 0, None
     log_action(db, user, "reinitialisation_mdp", "user", target.id, target.email)
+    db.commit()
+    return _redirect("/users")
+
+
+@router.post("/users/{user_id}/origine")
+def user_set_origin(user_id: int, origine_id: str = Form(""), user: models.User = Depends(require_admin),
+                    db: Session = Depends(get_db)):
+    """Organisation qui a proposé le DEN ou le secrétaire aux finances (contrôle de la double signature)."""
+    target = db.get(models.User, user_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="Compte introuvable")
+    if target.role not in models.SIGNATAIRE_ROLES:
+        raise HTTPException(status_code=400, detail="Seuls le DEN et le secrétaire aux finances ont une organisation d'origine")
+    oid = int(origine_id) if origine_id.strip().isdigit() else None
+    if oid is not None and not db.get(models.Faitiere, oid):
+        raise HTTPException(status_code=400, detail="Organisation inconnue")
+    target.faitiere_origine_id = oid
+    log_action(db, user, "origine", "user", target.id, f"{target.email} -> {oid}")
     db.commit()
     return _redirect("/users")

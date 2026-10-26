@@ -101,7 +101,7 @@ Vérifiez ensuite : `https://VOTRE-DOMAINE/health` doit répondre `{"status":"ok
 1. Ouvrir `https://VOTRE-DOMAINE/login` avec `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD`.
 2. Un code à 6 chiffres arrive par e-mail : le saisir. **Si rien n'arrive**, vérifier le SMTP
    (`docker compose logs api | tail -50`).
-3. Créer les comptes du DEN, du secrétaire aux finances, etc. dans « Comptes ».
+3. Créer les comptes du DEN, du secrétaire aux finances, etc. dans « Comptes ». **Pour le DEN et le secrétaire aux finances, choisir leur organisation d'origine** (celle qui les a proposés) : sans elle, ils ne pourront pas signer de dépense, et la plateforme refuse que les deux signataires viennent de la même organisation.
 4. Compléter les fiches des 6 fondateurs (nom complet, e-mail, téléphone), saisir les mandats.
 
 5. **Chaque personne change son mot de passe** à sa première connexion (menu « Mot de passe »).
@@ -166,6 +166,8 @@ La base PostgreSQL n'a **aucun port publié** : elle n'est joignable que par l'a
 - [ ] Mot de passe administrateur par défaut changé (menu « Mot de passe »)
 - [ ] Les 6 fondateurs complétés, mandats saisis, comptes du DEN et du secrétaire aux finances créés
 - [ ] Montant de la cotisation de l'année saisi
+- [ ] DEN et secrétaire aux finances créés **avec leur organisation d'origine** (organisations différentes) ; une dépense de test signée, payée puis annulée côté test
+- [ ] Seuil de vérification renforcée des dons défini par le secrétaire aux finances
 - [ ] Une sauvegarde faite **et** restaurée en test ; phrase secrète copiée hors du serveur
 - [ ] Copie hors serveur configurée ; tâche cron en place
 - [ ] Traductions arabes relues ; logo en place

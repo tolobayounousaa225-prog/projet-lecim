@@ -20,7 +20,8 @@
       <a href="/adhesions">{{ t('nav_adhesions') }}</a>
       <a href="/assemblees">{{ t('nav_assemblies') }}</a>
       <a href="/sanctions">{{ t('nav_sanctions') }}</a>
-      {% if user.can_view_finances %}<a href="/cotisations">{{ t('nav_dues') }}</a><a href="/appels">{{ t('nav_calls') }}</a>{% endif %}
+      {% if user.can_view_finances %}<a href="/cotisations">{{ t('nav_dues') }}</a><a href="/appels">{{ t('nav_calls') }}</a><a href="/finances">{{ t('nav_finances') }}</a>{% endif %}
+      <a href="/interets">{{ t('nav_interests') }}</a>
       {% if user.can_manage_members %}<a href="/gestion/actualites">{{ t('nav_news_admin') }}</a>{% endif %}
       {% if user.is_admin %}
         <a href="/users">{{ t('nav_users') }}</a>

@@ -260,3 +260,37 @@ def sanction_pdf(s: models.Sanction) -> bytes:
     pdf.cell(90, 6, "Le Directeur Exécutif National")
     pdf.cell(90, 6, "المدير التنفيذي الوطني", align="R")
     return bytes(pdf.output())
+
+
+def etat_financier_pdf(e: dict) -> bytes:
+    from .finance import fcfa
+
+    pdf = _body_page("ÉTAT FINANCIER", "الحالة المالية")
+    _row(pdf, "Période", e["periode_label"][:34], "الفترة")
+    _row(pdf, "Exercice", str(e["annee"]), "السنة")
+    _row(pdf, "Du", f"{e['debut']:%d/%m/%Y}", "من")
+    _row(pdf, "Au", f"{e['fin']:%d/%m/%Y}", "إلى")
+    pdf.ln(3)
+    _line(pdf, "RECETTES encaissées / الإيرادات", bold=True, size=11)
+    for k, v in e["recettes"].items():
+        _line(pdf, f"{k} : {fcfa(v)}", h=5)
+    _line(pdf, f"Total recettes : {fcfa(e['total_recettes'])}", bold=True)
+    pdf.ln(2)
+    _line(pdf, "DÉPENSES payées / النفقات", bold=True, size=11)
+    for k, v in e["depenses"].items():
+        _line(pdf, f"{k} : {fcfa(v)}", h=5)
+    _line(pdf, f"Total dépenses : {fcfa(e['total_depenses'])}", bold=True)
+    pdf.ln(2)
+    _line(pdf, f"SOLDE de la période : {fcfa(e['solde'])}", bold=True, size=12)
+    _line(pdf, f"Dépenses engagées non payées : {fcfa(e['engagements_non_payes'])}", h=5)
+    _line(pdf, f"Dons en nature (valeur estimée, hors caisse) : {fcfa(e['dons_en_nature'])}", h=5)
+    if e["comparaison"]:
+        pdf.ln(2)
+        _line(pdf, "BUDGET : prévu / réalisé / écart", bold=True, size=11)
+        for c in e["comparaison"]:
+            sens = "Recettes" if c["sens"] == "recette" else "Dépenses"
+            _line(pdf, f"{sens} — {c['categorie']} : {fcfa(c['prevu'])} / {fcfa(c['reel'])} / {fcfa(c['ecart'])}", h=5)
+    pdf.ln(3)
+    _line(pdf, "Comptabilité de caisse : les recettes sont comptées à l'encaissement et les dépenses au paiement. "
+               "Document à mettre à disposition du CA et des commissaires aux comptes au moins 15 jours avant l'AG.", h=5)
+    return bytes(pdf.output())

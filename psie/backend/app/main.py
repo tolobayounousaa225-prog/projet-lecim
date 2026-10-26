@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -12,7 +13,7 @@ from .config import production_problems, settings
 from .database import engine
 from .deps import NotAuthenticatedException
 from . import scheduler
-from .routers import admin, adhesions, appels, assemblees, auth, cotisations, public, sanctions
+from .routers import admin, adhesions, appels, assemblees, auth, compta, cotisations, public, sanctions
 from .web import BASE_DIR, render
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
@@ -75,6 +76,16 @@ async def http_error(request: Request, exc: HTTPException):
     return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
 
 
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
+    """Champ obligatoire manquant ou de mauvais format : message lisible plutôt que du JSON brut."""
+    fields = sorted({str(e["loc"][-1]) for e in exc.errors() if e.get("loc")})
+    message = "Champ(s) manquant(s) ou invalide(s) : " + ", ".join(fields) if fields else "Requête invalide"
+    if "text/html" in request.headers.get("accept", ""):
+        return render(request, "error.html", status_code=422, message=message)
+    return JSONResponse({"detail": message}, status_code=422)
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -96,6 +107,7 @@ app.include_router(admin.router)
 app.include_router(cotisations.router)
 app.include_router(appels.router)
 app.include_router(adhesions.router)
+app.include_router(compta.router)
 app.include_router(assemblees.router)
 app.include_router(sanctions.router)
 app.include_router(public.router)

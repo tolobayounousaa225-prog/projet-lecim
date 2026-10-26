@@ -6,16 +6,15 @@ puis cotisations, gouvernance et finances (voir [`../PSIE_CAHIER_DES_CHARGES.md`
 Ce dossier est un **projet autonome** (sa propre base, sa propre configuration). Il est hébergé
 temporairement dans le dépôt LECIM et pourra être déplacé tel quel dans son propre dépôt.
 
-## État : phases 1 à 5 réalisées, déploiement préparé
+## État : phases 1 à 6 réalisées, déploiement préparé
 
 | Fait | Pas encore fait |
 |---|---|
 | Connexion sécurisée (bcrypt, verrouillage après 5 échecs, cookie HttpOnly, protection CSRF) | « Mot de passe oublié » automatique par e-mail (l'administrateur peut réinitialiser un mot de passe) |
 | **Double authentification par e-mail** (administrateur et secrétaire aux finances) |  |
 | 7 rôles alignés sur les organes des Statuts |  |
-| Annuaire des membres : fondateur / ordinaire / honneur, les 6 fondateurs créés | Finances complètes, double signature des paiements, registre des dons (phase 6) |
-| Mandats par organe, durée de 3 ans, alertes d'échéance | Commissions et 41 délégations régionales (phase 7) |
-| **Cotisation annuelle** : montant par année, création automatique des échéances, statuts à jour / partiel / en retard / impayé |  |
+| Annuaire des membres : fondateur / ordinaire / honneur, les 6 fondateurs créés | Commissions techniques (CNECI, CNVSP) et 41 délégations régionales (phase 7) |
+| Mandats par organe, durée de 3 ans, alertes d'échéance | **Cotisation annuelle** : montant par année, création automatique des échéances, statuts à jour / partiel / en retard / impayé |  |
 | **Paiements** partiels ou échelonnés, annulation avec motif (jamais de suppression), **reçus PDF numérotés** (PSIE-REC-AAAA-0001) | Relecture des traductions arabes |
 | **Attestation de cotisation à jour** (PDF), **vérification publique par QR code** | |
 | **Relances automatiques** par e-mail (J-30, J-7, jour J, puis chaque semaine) et résumé du lundi au secrétaire aux finances | |
@@ -38,6 +37,13 @@ temporairement dans le dépôt LECIM et pourra être déplacé tel quel dans son
 | Tableau de bord : composition réelle des organes comparée aux Statuts (CA 13, DEN 13, CC 2, 2 délégués par organisation) | |
 | Cloisonnement : un représentant ne voit que sa faîtière, ses échéances et ses reçus | |
 | Journal d'audit des écritures | |
+| **Dépenses à double signature** : une dépense n'est payable qu'après la signature du DEN **et** du secrétaire aux finances, qui doivent venir d'**organisations différentes** (Statuts art. 38) ; jamais supprimée, annulable avant paiement avec motif | |
+| **Justificatifs** (PDF, PNG, JPEG, 5 Mo) stockés dans la base donc sauvegardés ; type vérifié d'après le contenu du fichier ; une dépense sans pièce exige la décision motivée du CA (art. 39.2) ; frais de mission : ordre de mission obligatoire | |
+| **Registre spécial des dons** (identité complète, date, nature, valeur) ; **vérification renforcée** (pièce d'identité et origine des fonds obligatoires) au-delà d'un seuil que le secrétaire aux finances définit dans son espace | |
+| Subventions et autres recettes ; **budget annuel** (DEN et secrétaire aux finances) validé par l'AGA avec référence, puis figé | |
+| **États financiers** (exercice, 1er ou 2e semestre) en PDF et CSV, avec comparaison au budget ; dépenses engagées non payées et dons en nature séparés de la caisse | |
+| **Commissaires aux comptes** : lecture de toutes les écritures et pièces, rapports écrits visibles du DEN, du CA et du secrétaire aux finances | |
+| **Déclarations de conflit d'intérêts** des membres des organes | |
 | Changement de mot de passe (le mauvais mot de passe actuel compte comme un échec de connexion) ; réinitialisation par l'administrateur | |
 | **Migrations Alembic** (schéma versionné, aucune table créée « à la volée ») ; un test échoue si un modèle change sans migration | |
 | **Déploiement** : image Docker non-root, composition de production (base non exposée), Caddy optionnel, sauvegardes chiffrées AES-256 avec test de restauration, [guide pas à pas](deploy/DEPLOIEMENT.md) | |
@@ -53,6 +59,18 @@ temporairement dans le dépôt LECIM et pourra être déplacé tel quel dans son
 | DEN, administrateur du CA, commissaire aux comptes | Lecture seule |
 | Représentant de faîtière | Sa faîtière uniquement : échéances, reçus, attestation, certificat d'adhésion |
 | Administrateur de la plate-forme | Aucun accès aux finances (rôle technique) |
+
+#### Dépenses, dons, budget
+
+| Action | Qui |
+|---|---|
+| Créer une dépense, joindre une pièce, payer, annuler ; enregistrer dons et recettes ; fixer le seuil des dons | Secrétaire aux finances |
+| Signer une dépense | DEN et secrétaire aux finances (organisations d'origine différentes) |
+| Élaborer le budget, saisir la référence de validation de l'AGA | DEN et secrétaire aux finances |
+| Lire dépenses, pièces, dons, budget, états | DEN, administrateur du CA, commissaire aux comptes, secrétaire aux finances |
+| Rédiger un rapport de contrôle | Commissaire aux comptes |
+
+L'**organisation d'origine** du DEN et du secrétaire aux finances est saisie par l'administrateur (page « Comptes ») : sans elle, la signature est refusée.
 
 ### Adhésions (qui fait quoi)
 
