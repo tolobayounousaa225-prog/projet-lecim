@@ -1,0 +1,64 @@
+import os
+import tempfile
+
+# Base de test : fichier SQLite jetable, défini AVANT l'import de l'application.
+_tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+_tmp.close()
+os.environ["DATABASE_URL"] = f"sqlite:///{_tmp.name}"
+os.environ["SECRET_KEY"] = "cle-de-test"
+
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+
+from app import models  # noqa: E402
+from app.database import Base, SessionLocal, engine  # noqa: E402
+from app.main import app  # noqa: E402
+from app.security import hash_password  # noqa: E402
+
+PASSWORD = "Motdepasse1"
+
+
+@pytest.fixture(autouse=True)
+def clean_db():
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
+@pytest.fixture
+def db():
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+def make_user(db, email, role, faitiere_id=None, name=None):
+    user = models.User(
+        email=email, full_name=name or email, role=role,
+        hashed_password=hash_password(PASSWORD), faitiere_id=faitiere_id,
+    )
+    db.add(user)
+    db.commit()
+    return user
+
+
+def make_faitiere(db, sigle, categorie="fondateur"):
+    f = models.Faitiere(sigle=sigle, nom=f"Faîtière {sigle}", categorie=categorie)
+    db.add(f)
+    db.commit()
+    return f
+
+
+def client_for(email):
+    """Client connecté (cookie de session posé par le vrai formulaire de connexion)."""
+    client = TestClient(app, follow_redirects=False)
+    response = client.post("/login", data={"email": email, "password": PASSWORD})
+    assert response.status_code == 303, response.text
+    return client
+
+
+@pytest.fixture
+def anon():
+    return TestClient(app, follow_redirects=False)

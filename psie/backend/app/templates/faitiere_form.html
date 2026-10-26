@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ item.sigle if item else t('new_member') }}{% endblock %}
+{% block content %}
+<h1>{{ item.sigle if item else t('new_member') }}</h1>
+<form method="post" class="card stack" action="{{ '/faitieres/%d/edit' % item.id if item else '/faitieres/new' }}">
+  <label>{{ t('name') }}<input name="nom" required value="{{ item.nom if item else '' }}"></label>
+  <label>{{ t('acronym') }}<input name="sigle" required value="{{ item.sigle if item else '' }}"></label>
+  <label>{{ t('category') }}
+    <select name="categorie">{% for k in categories %}<option value="{{ k }}" {% if item and item.categorie == k %}selected{% endif %}>{{ lbl('categorie', k) }}</option>{% endfor %}</select>
+  </label>
+  <label>{{ t('status') }}
+    <select name="statut">{% for k in statuts %}<option value="{{ k }}" {% if item and item.statut == k %}selected{% endif %}>{{ lbl('statut', k) }}</option>{% endfor %}</select>
+  </label>
+  <label>{{ t('created_on') }}<input type="date" name="date_creation" value="{{ item.date_creation or '' if item else '' }}"></label>
+  <label>{{ t('joined_on') }}<input type="date" name="date_adhesion" value="{{ item.date_adhesion or '' if item else '' }}"></label>
+  <label>{{ t('legal_status') }}<input name="statut_juridique" value="{{ item.statut_juridique or '' if item else '' }}"></label>
+  <label>{{ t('seat') }}<input name="siege" value="{{ item.siege or '' if item else '' }}"></label>
+  <label>{{ t('email') }}<input type="email" name="email" value="{{ item.email or '' if item else '' }}"></label>
+  <label>{{ t('phone') }}<input name="telephone" value="{{ item.telephone or '' if item else '' }}"></label>
+  <label>{{ t('notes') }}<textarea name="notes" rows="3">{{ item.notes or '' if item else '' }}</textarea></label>
+  <div class="row"><button class="btn">{{ t('save') }}</button><a href="{{ '/faitieres/%d' % item.id if item else '/faitieres' }}">{{ t('back') }}</a></div>
+</form>
+{% endblock %}

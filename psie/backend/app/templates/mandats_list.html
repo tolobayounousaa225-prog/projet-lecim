@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_mandates') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav_mandates') }}</h1>
+<table>
+  <thead><tr><th>{{ t('full_name') }}</th><th>{{ t('organ') }}</th><th>{{ t('function') }}</th><th>{{ t('organisation') }}</th><th>{{ t('end_date') }}</th></tr></thead>
+  <tbody>
+  {% for m in items %}
+    <tr><td>{{ m.full_name }}</td><td>{{ lbl('organe', m.organe) }}</td><td>{{ m.fonction or '—' }}</td>
+      <td>{% if m.faitiere %}<a href="/faitieres/{{ m.faitiere.id }}">{{ m.faitiere.sigle }}</a>{% else %}—{% endif %}</td>
+      <td class="{{ m.echeance or '' }}">{{ m.date_fin or '—' }}</td></tr>
+  {% else %}<tr><td colspan="5" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+
+{% if user.can_manage_members %}
+<section class="card">
+  <h2>{{ t('add') }}</h2>
+  <form method="post" action="/mandats" class="grid">
+    <label>{{ t('full_name') }}<input name="full_name" required></label>
+    <label>{{ t('organ') }}<select name="organe">{% for k in organes %}<option value="{{ k }}">{{ lbl('organe', k) }}</option>{% endfor %}</select></label>
+    <label>{{ t('function') }}<input name="fonction"></label>
+    <label>{{ t('organisation') }}<select name="faitiere_id"><option value="">{{ t('none_organisation') }}</option>{% for f in faitieres %}<option value="{{ f.id }}">{{ f.sigle }}</option>{% endfor %}</select></label>
+    <label>{{ t('start_date') }}<input type="date" name="date_debut"></label>
+    <label>{{ t('end_date') }}<input type="date" name="date_fin"></label>
+    <label>{{ t('email') }}<input type="email" name="email"></label>
+    <label>{{ t('phone') }}<input name="telephone"></label>
+    <div><button class="btn">{{ t('add') }}</button></div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,8 +1,9 @@
-# PSIE — Cahier des charges et architecture (version 2.0 — aligné sur les Statuts et le Règlement Intérieur)
+# PSIE — Cahier des charges et architecture (version 2.1 — limité à ce que disent les textes)
 
-> **Statut : cadrage en cours de validation.** Rien n'est encore développé. La version 2.0
+> **Statut : cadrage en cours de validation.** Rien n'est encore développé. La version 2.1
 > intègre les **Statuts** et le **Règlement Intérieur** de la PSIE (section 9 : ce qu'ils
-> imposent à l'outil et les écarts à lever). Il reste des points marqués **[À VALIDER]**.
+> imposent à l'outil). **Principe retenu : l'outil applique ce que disent les textes ; tout le
+> reste est paramétrable et décidé par les organes dans leur espace.**
 >
 > PSIE = *Plateforme des Structures Islamiques d'Éducation*, organisation de la société civile
 > (Ordonnance n° 2024-368 du 12 juin 2024). Elle regroupe les **faîtières** des structures
@@ -95,8 +96,6 @@ Les rôles s'appuient sur le modèle déjà éprouvé de la LECIM : `access_leve
   `honneur` (personnes physiques ou morales, reconnues par l'AG). Seuls fondateurs et ordinaires
   sont des « membres actifs » qui cotisent et votent.
 - Statut : `actif` | `suspendu` | `radié` | `démissionnaire`.
-- **Poids économique** : coefficient fixé **par décision du DEN** (pas de formule), enregistré
-  avec date, référence de la décision et historique.
 - **Représentants** : 2 délégués AG par organisation ; pour les fondateurs, 2 administrateurs CA.
   Chaque désignation (courrier signé et cacheté en cas de remplacement, art. 22) est conservée.
 - Le **registre des membres** exigé par la loi (RI art. 39) est produit automatiquement.
@@ -124,11 +123,11 @@ en prend connaissance, art. 13) → **certificat d'adhésion PDF à QR code**.
 ### 4.4 Cotisations exceptionnelles
 Prévues par le RI (art. 14 et 35) « en fonction des besoins du moment », sans autorité de
 décision nommée dans les textes.
-- **Décidée par le DEN** ✅ (décision de cadrage). Pour sécuriser la décision, l'outil enregistre
-  la référence du PV/décision, et permet de joindre l'**avis du CA** (non bloquant). [À VALIDER]
-- **Montant différencié selon le poids économique** ✅ : le trésorier saisit une enveloppe
-  globale ; le système propose une répartition au prorata des coefficients, ajustable faîtière
-  par faîtière avant validation. Modes « montant égal » et « montant libre » possibles.
+- **L'autorité de décision n'est pas imposée par l'outil** : les textes n'en nomment aucune. Le
+  responsable financier crée l'appel et saisit la **référence de la décision** (PV, résolution)
+  et, s'il y en a un, l'avis du CA. L'outil ne bloque rien sur ce point.
+- **Montant par faîtière librement saisi** : un montant identique pour toutes (par défaut) ou
+  un montant propre à chaque faîtière. Aucune formule ni coefficient imposé.
 - Échéances générées automatiquement ; même mécanique de paiement, reçu et relance.
 - **Exonération ou report** d'une faîtière, avec motif et trace d'audit.
 
@@ -155,11 +154,9 @@ décision nommée dans les textes.
 - **Régime disciplinaire** (RI art. 15) : avertissement → blâme → suspension → radiation.
   Les trois premières sont prononcées par la DEN après avis favorable du CA, notifiées par écrit ;
   l'AGA en est informée. L'outil gère le dossier, les avis et la notification PDF.
-- **Participation à l'AG en cas d'impayé** ✅ (décision de cadrage : interdiction, appréciée
-  par le DEN). *Cette règle précise n'apparaît pas dans les textes fournis* (voir section 9).
-  Fonctionnement retenu : l'outil **signale** les faîtières en retard à la convocation et à
-  l'émargement et **bloque par défaut** ; le DEN peut accorder une **dérogation** motivée,
-  tracée. À défaut, la voie textuelle est la suspension (sanction disciplinaire).
+- **Impayés** : l'outil **affiche** la situation de cotisation de chaque faîtière (à jour, partiel,
+  en retard) à la convocation et à l'émargement, à titre d'information. Il ne bloque ni la
+  participation ni le vote : toute mesure relève du régime disciplinaire ci-dessus.
 - Visioconférence : le Jitsi de la LECIM peut être réutilisé si besoin.
 
 ### 4.7 Finances de la PSIE
@@ -226,7 +223,6 @@ erDiagram
     DEMANDE_ADHESION ||--o| FAITIERE : "devient"
     DEMANDE_ADHESION ||--o{ AVIS_CA : "reçoit"
     FAITIERE ||--o{ SANCTION : "peut recevoir"
-    FAITIERE ||--o{ DEROGATION : "peut bénéficier"
     ORGANE ||--o{ MANDAT : "compte"
     ORDRE_PAIEMENT ||--o{ VALIDATION : "exige 2"
     DON ||--o| RECU : "peut produire"
@@ -241,10 +237,6 @@ Points clés :
   saisi par). Le solde et le statut de l'échéance sont **calculés** à partir des paiements,
   jamais saisis à la main.
 - **`BAREME_COTISATION`** : (année, montant unique) — modifiable sans redéploiement.
-- **`FAITIERE.poids_economique`** : coefficient servant à proposer la répartition d'un appel
-  exceptionnel ; chaque modification est historisée (audit).
-- **`PRESENCE_AG`** porte un indicateur `autorisee` calculé : faux si la faîtière a une échéance
-  en retard ou une suspension, sauf **`DEROGATION`** accordée (motif, date, décideur).
 - **`MANDAT`** : personne, organe (CA, DEN, CC, commission, délégation), fonction, faîtière
   d'origine, début, fin (3 ans) : alimente les alertes d'échéance.
 - **`SANCTION`** : type (avertissement, blâme, suspension, radiation), motif, avis du CA, date de
@@ -354,7 +346,7 @@ Ce que le système fait seul, sans intervention humaine :
 | **2 — Cotisations annuelles** | Barème, échéances auto, paiements, reçus PDF, attestations, relances, tableau de bord trésorier | **Cœur du besoin** : suivi des cotisations |
 | **3 — Cotisations exceptionnelles** | Appels de fonds, répartition, exonérations/reports, relances | Gestion des cas d'exception |
 | **4 — Adhésion + vitrine** | Demande d'adhésion en ligne, certificat à QR code, site vitrine, actualités | Image publique + nouvelles adhésions |
-| **5 — Gouvernance** | Mandats, AG/CA, convocation, quorum, résolutions, votes, sanctions, dérogations, PV, courrier | Vie statutaire dématérialisée |
+| **5 — Gouvernance** | Mandats, AG/CA, convocation, quorum, résolutions, votes, sanctions, PV, courrier | Vie statutaire dématérialisée |
 | **6 — Finances complètes + rapports** | Recettes/dépenses, double validation des paiements, accès Commissaires aux comptes, registre des dons, frais de mission, états financiers | Redevabilité financière et conformité |
 | **7 — Commissions et régions** | CNECI, CNVSP, 41 délégations régionales, liste des manuels homologués | Pilotage pédagogique et territorial |
 | **8 — Paiement mobile money** *(option)* | Agrégateur, rapprochement automatique | Probablement abandonnée |
@@ -369,23 +361,20 @@ valeur de l'outil.
 J'ai lu les deux documents en entier. L'outil applique les **Statuts**, qui prévalent sur le RI
 (RI art. 2). Voici les points à lever avant de figer le développement.
 
-### 9.1 Écarts entre les textes ou avec vos décisions
+### 9.1 Écarts entre les textes
+Quelques incohérences existent entre les deux documents (dates d'adoption, articles 24 à 27
+absents des Statuts, vocabulaire « ordinaires / adhérents », etc.). **Décision : elles n'ont pas
+d'impact sur la plateforme et sont ignorées.** En cas de conflit, l'outil suit les Statuts.
 
-| # | Constat | Proposition |
-|---|---|---|
-| 1 | **Dates divergentes** : Statuts « adoptés en AGE du 3 mai 2026 » mais « fait à Bouaké le 24 avril 2026 » ; le RI parle de « Statuts révisés du 26 avril 2026 » et sa date d'adoption est vide | Confirmer la date d'adoption et le texte en vigueur |
-| 2 | **Articles 24 à 27 absents** des Statuts (on passe de l'art. 23 à l'art. 28) | Les retrouver : ils peuvent contenir des règles utiles (ex. cotisations, sanctions) |
-| 3 | **Vocabulaire** : Statuts = membres « fondateurs / ordinaires » ; RI = « fondateurs / adhérents » | Utiliser les termes des Statuts |
-| 4 | **Signatures** : Statuts = DEN + « DEN adjoint en charge des finances » ; RI = DEN + secrétaire aux finances « ou son adjoint » | Appliquer les Statuts, ou accepter les deux |
-| 5 | **Décision au CA** : Statuts = majorité des présents ; RI = consensus puis majorité | Majorité des présents (Statuts) |
-| 6 | **Présidence du CA** : Statuts = proposée par l'une des 3 organisations d'origine ; RI = tournante selon un tableau ; l'art. 21 des Statuts contient « *À renseigner le cycle de rotation* » | Fournir le cycle de rotation |
-| 7 | **Montant de la cotisation** : RI = « [À COMPLÉTER PAR L'AG] » ; fixée par l'AGO (art. 13.2) | La résolution d'AG qui fixe 500 000 FCFA doit être référencée |
-| 8 | **Droit d'adhésion** : prévu (art. 8.1) mais **aucun montant** dans les textes | Quel montant ? |
-| 9 | **Cotisation exceptionnelle** : aucune autorité de décision nommée ; **pas de pondération** par poids économique dans les textes | Vos décisions (DEN, poids économique) sont gérées par l'outil et tracées ; à faire valider par une résolution |
-| 10 | **Interdiction de participer à l'AG en cas d'impayé** : absente des textes. Le seul lien explicite est l'éligibilité au CA (art. 20) et le régime disciplinaire (RI art. 15) | Régler par résolution, ou passer par la « suspension » |
-| 11 | **Composition et quorum de l'AG** : l'AG inclut CA, CC, DEN, organisations et personnes ressources (art. 11), avec 2 délégués par organisation (RI art. 16). Le quorum de 2/3 porte sur « ses membres » sans préciser le décompte | Définir qui compte pour le quorum et **qui vote** (par délégué ou par organisation ?) |
-| 12 | **Délai de transmission des états financiers** : 15 jours avant l'AG (Statuts) et 31 mars (RI) | Appliquer les deux rappels |
-| 13 | **Répartition des délégations** : HINNEH et HIKMAH ne figurent pas encore dans le tableau de répartition des 41 délégations | À mettre à jour (art. 33) |
+### 9.1 bis Points laissés ouverts et paramétrables
+| Point | Traitement dans l'outil |
+|---|---|
+| Montant du droit d'adhésion | Paramètre saisi par le bureau, modifiable |
+| Autorité qui décide une cotisation exceptionnelle | Non imposée ; la référence de la décision est saisie |
+| Décompte du quorum et mode de vote (délégué ou organisation) | Traité en phase 5 ; paramétrable |
+| Seuil légal des dons à vérification renforcée | Paramètre saisi par le responsable financier dans son espace |
+| Interdiction de participer à l'AG en cas d'impayé | **Abandonnée** (hors textes) ; information seulement |
+| Poids économique, pondération des appels | **Abandonnés** (hors textes) |
 
 ### 9.2 Ce que l'outil applique tel quel
 Quorum 2/3, dissolution 4/5, convocation à 15 jours, 13 administrateurs (2 par fondateur),
@@ -403,24 +392,22 @@ signature, DEN et trésoriers de faîtières différentes, registre des dons, co
 | 1 | Architecture | Projet et base séparés, démarrés à partir du code LECIM |
 | 2 | Membres | 6 faîtières fondatrices (OEECI, LECIM, IQRA, CHERIFLA, AL HIKMA, HINNEH) ; catégories fondateur / ordinaire / honneur |
 | 3 | Cotisation annuelle | **500 000 FCFA** par faîtière et par an, montant unique, année civile ; plus un droit d'adhésion |
-| 4 | Cotisation exceptionnelle | Décidée par le DEN ; montant selon le poids économique de chaque faîtière |
-| 5 | Poids économique | Fixé par décision du DEN |
-| 6 | Impayé | Interdiction de participer à l'AG, appréciée par le DEN (alerte + dérogation) |
+| 4 | Cotisation exceptionnelle | Prévue par le Règlement Intérieur ; autorité et montants non imposés par l'outil (décision référencée) |
+| 5 | Impayés | Information seulement ; pas de blocage à l'AG |
+| 6 | Écarts entre les textes | Ignorés ; en cas de conflit, les Statuts prévalent |
 | 7 | Trésorier | Le secrétaire en charge des finances (et son adjoint) |
 | 8 | Langues | Français et arabe |
 | 9 | Hébergement | VPS Contabo existant, pile séparée (alternative : Hostinger) |
 | 10 | Identité visuelle | Le logo de la PSIE existe |
 | 11 | Textes | Statuts et Règlement Intérieur reçus et intégrés |
+| 12 | Démarrage | Phase 1 lancée ; le logo, les utilisateurs et le domaine viendront plus tard |
 
-### Points encore ouverts
-
-1. **Les écarts de la section 9.1** (en priorité 1, 2, 8, 10, 11).
-2. **Droit d'adhésion** : montant.
-3. **Seuil réglementaire des dons** pour la vérification renforcée.
-4. **Nom de domaine** (piste : `psie-ci.org`) et **vérification du VPS Contabo**.
-5. **Fichiers** : logo de la PSIE en haute définition.
-6. **Arabe** : qui valide les traductions ?
-7. **Utilisateurs** : noms du DEN et du secrétaire aux finances (et adjoint), pour créer les comptes.
+### Points laissés pour plus tard
+1. Droit d'adhésion, seuil des dons, règles de vote : paramétrables, décidés par les organes.
+2. Logo de la PSIE : un logo provisoire (texte) est utilisé en attendant.
+3. Noms du DEN, du secrétaire aux finances et de son adjoint : comptes créés à leur arrivée.
+4. Nom de domaine et vérification du VPS Contabo : avant la mise en ligne.
+5. Validation des traductions arabes : avant la mise en ligne.
 
 > Les montants et règles de la LECIM (7 500 / 20 000 FCFA, 12 000 FCFA, etc.) sont rappelés
 > **uniquement comme référence** : rien ne dit qu'ils s'appliquent à la PSIE.

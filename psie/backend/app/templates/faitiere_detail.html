@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ item.sigle }}{% endblock %}
+{% block content %}
+<div class="row">
+  <h1>{{ item.sigle }} <small>{{ item.nom }}</small></h1>
+  {% if user.can_manage_members %}<a class="btn" href="/faitieres/{{ item.id }}/edit">{{ t('edit') }}</a>{% endif %}
+</div>
+<section class="card">
+  <dl>
+    <dt>{{ t('category') }}</dt><dd>{{ lbl('categorie', item.categorie) }}</dd>
+    <dt>{{ t('status') }}</dt><dd><span class="badge {{ item.statut }}">{{ lbl('statut', item.statut) }}</span></dd>
+    <dt>{{ t('created_on') }}</dt><dd>{{ item.date_creation or '—' }}</dd>
+    <dt>{{ t('joined_on') }}</dt><dd>{{ item.date_adhesion or '—' }}</dd>
+    <dt>{{ t('legal_status') }}</dt><dd>{{ item.statut_juridique or '—' }}</dd>
+    <dt>{{ t('seat') }}</dt><dd>{{ item.siege or '—' }}</dd>
+    <dt>{{ t('email') }}</dt><dd>{{ item.email or '—' }}</dd>
+    <dt>{{ t('phone') }}</dt><dd>{{ item.telephone or '—' }}</dd>
+    {% if item.notes %}<dt>{{ t('notes') }}</dt><dd>{{ item.notes }}</dd>{% endif %}
+  </dl>
+</section>
+
+<section class="card">
+  <h2>{{ t('mandates_of') }}</h2>
+  <table>
+    <thead><tr><th>{{ t('full_name') }}</th><th>{{ t('organ') }}</th><th>{{ t('function') }}</th><th>{{ t('start_date') }}</th><th>{{ t('end_date') }}</th>{% if user.can_manage_members %}<th></th>{% endif %}</tr></thead>
+    <tbody>
+    {% for m in item.mandats %}
+      <tr>
+        <td>{{ m.full_name }}</td><td>{{ lbl('organe', m.organe) }}</td><td>{{ m.fonction or '—' }}</td>
+        <td>{{ m.date_debut or '—' }}</td>
+        <td class="{{ m.echeance or '' }}">{{ m.date_fin or '—' }}</td>
+        {% if user.can_manage_members %}
+        <td><form method="post" action="/mandats/{{ m.id }}/delete" class="inline">
+          <input type="hidden" name="next" value="/faitieres/{{ item.id }}"><button class="link danger">{{ t('delete') }}</button></form></td>
+        {% endif %}
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="muted">{{ t('none') }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  {% if user.can_manage_members %}
+  <form method="post" action="/mandats" class="grid">
+    <input type="hidden" name="faitiere_id" value="{{ item.id }}">
+    <input type="hidden" name="next" value="/faitieres/{{ item.id }}">
+    <label>{{ t('full_name') }}<input name="full_name" required></label>
+    <label>{{ t('organ') }}<select name="organe">{% for k in organes %}<option value="{{ k }}">{{ lbl('organe', k) }}</option>{% endfor %}</select></label>
+    <label>{{ t('function') }}<input name="fonction"></label>
+    <label>{{ t('start_date') }}<input type="date" name="date_debut"></label>
+    <label>{{ t('end_date') }}<input type="date" name="date_fin"></label>
+    <label>{{ t('email') }}<input type="email" name="email"></label>
+    <label>{{ t('phone') }}<input name="telephone"></label>
+    <div><button class="btn">{{ t('add') }}</button></div>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}
