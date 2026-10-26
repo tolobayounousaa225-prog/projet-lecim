@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_news_admin') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav_news_admin') }}</h1>
+{% if not item %}
+<table>
+  <thead><tr><th>{{ t('date') }}</th><th>{{ t('call_title') }}</th><th>{{ t('status') }}</th><th></th></tr></thead>
+  <tbody>
+  {% for n in items %}
+    <tr><td>{{ n.date_publication }}</td><td>{{ n.titre_fr or n.titre_ar }}</td><td>{{ t('active') if n.publie else t('disabled') }}</td>
+      <td><a href="/gestion/actualites/{{ n.id }}/edit">{{ t('edit') }}</a>
+        <form method="post" action="/gestion/actualites/{{ n.id }}/delete" class="inline"><button class="link danger">{{ t('delete') }}</button></form></td></tr>
+  {% else %}<tr><td colspan="4" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endif %}
+<section class="card">
+  <h2>{{ t('edit') if item else t('add') }}</h2>
+  <form method="post" action="{{ '/gestion/actualites/%d/edit' % item.id if item else '/gestion/actualites' }}" class="stack">
+    <label>Titre (FR)<input name="titre_fr" value="{{ item.titre_fr or '' if item else '' }}"></label>
+    <label>Contenu (FR)<textarea name="contenu_fr" rows="4">{{ item.contenu_fr or '' if item else '' }}</textarea></label>
+    <label>العنوان (AR)<input name="titre_ar" dir="rtl" value="{{ item.titre_ar or '' if item else '' }}"></label>
+    <label>المحتوى (AR)<textarea name="contenu_ar" dir="rtl" rows="4">{{ item.contenu_ar or '' if item else '' }}</textarea></label>
+    <label>{{ t('date') }}<input type="date" name="date_publication" value="{{ item.date_publication if item else '' }}"></label>
+    <label class="check"><input type="checkbox" name="publie" {% if item and item.publie %}checked{% endif %}> {{ t('active') }}</label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+</section>
+{% endblock %}

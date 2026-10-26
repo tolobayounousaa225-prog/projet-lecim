@@ -1,0 +1,101 @@
+"""Textes de la vitrine, tirés des Statuts de la PSIE (art. 5 à 8). Les traductions arabes
+sont une première version à faire relire avant mise en ligne."""
+
+PUBLIC_TEXTS: dict[str, dict[str, str]] = {
+    "nav_home": {"fr": "Accueil", "ar": "الرئيسية"},
+    "nav_about": {"fr": "À propos", "ar": "من نحن"},
+    "nav_public_members": {"fr": "Nos membres", "ar": "أعضاؤنا"},
+    "nav_news": {"fr": "Actualités", "ar": "الأخبار"},
+    "nav_join": {"fr": "Adhérer", "ar": "الانخراط"},
+    "nav_login": {"fr": "Connexion", "ar": "الدخول"},
+    "nav_my_space": {"fr": "Mon espace", "ar": "فضائي"},
+    "home_tagline": {
+        "fr": "Coordonner et représenter les structures islamiques d'éducation de Côte d'Ivoire",
+        "ar": "تنسيق وتمثيل الهياكل الإسلامية للتعليم في كوت ديفوار",
+    },
+    "home_intro": {
+        "fr": "La PSIE est une fédération qui coordonne et représente les organisations nationales islamiques d'éducation dans leurs relations avec l'État de Côte d'Ivoire et les partenaires techniques et financiers de l'éducation, en vue de la promotion d'un enseignement islamique structuré, moderne et conforme aux valeurs républicaines.",
+        "ar": "المنصة اتحاد يهدف إلى تنسيق وتمثيل المنظمات الوطنية للتعليم الإسلامي في علاقاتها مع دولة كوت ديفوار والشركاء التقنيين والماليين في مجال التعليم، من أجل ترقية تعليم إسلامي منظم وعصري ومتوافق مع القيم الجمهورية.",
+    },
+    "join_cta": {"fr": "Demander l'adhésion", "ar": "طلب الانخراط"},
+    "missions_title": {"fr": "Nos missions", "ar": "مهامنا"},
+    "mission_1": {
+        "fr": "Être l'interface et l'interlocuteur crédible des organisations islamiques d'éducation auprès de l'État et des partenaires techniques et financiers.",
+        "ar": "أن تكون الواجهة ومحاورا موثوقا للمنظمات الإسلامية للتعليم لدى الدولة والشركاء التقنيين والماليين.",
+    },
+    "mission_2": {
+        "fr": "Conduire avec l'État les processus d'intégration et de renforcement de capacité des structures islamiques d'éducation.",
+        "ar": "قيادة مسارات الإدماج وبناء القدرات للهياكل الإسلامية للتعليم بالتعاون مع الدولة.",
+    },
+    "mission_3": {
+        "fr": "Promouvoir la qualité de l'éducation islamique par le respect de normes et le renforcement des ressources humaines.",
+        "ar": "ترقية جودة التعليم الإسلامي باحترام المعايير وتعزيز الموارد البشرية.",
+    },
+    "mission_4": {
+        "fr": "Être un acteur social de cohésion, de paix et de développement.",
+        "ar": "أن تكون فاعلا اجتماعيا للتماسك والسلم والتنمية.",
+    },
+    "mission_5": {
+        "fr": "Défendre les intérêts de ses membres dans les limites fixées par les lois et les statuts.",
+        "ar": "الدفاع عن مصالح أعضائها في حدود ما تقرره القوانين والنظام الأساسي.",
+    },
+    "principles_title": {"fr": "Nos principes", "ar": "مبادئنا"},
+    "principles_list": {
+        "fr": "Respect des valeurs islamiques et républicaines · Égalité · Transparence · Bonne gouvernance · Redevabilité · Collégialité",
+        "ar": "احترام القيم الإسلامية والجمهورية · المساواة · الشفافية · الحوكمة الرشيدة · المساءلة · العمل الجماعي",
+    },
+    "organs_title": {"fr": "Nos organes", "ar": "هيئاتنا"},
+    "organs_list": {
+        "fr": "Assemblée Générale · Conseil d'Administration · Commissariat aux Comptes · Direction Exécutive Nationale",
+        "ar": "الجمعية العامة · مجلس الإدارة · مفوضية الحسابات · المديرية التنفيذية الوطنية",
+    },
+    "contact_title": {"fr": "Contact", "ar": "اتصل بنا"},
+    "contact_address": {
+        "fr": "Siège : mosquée AL FATH, Avenue 8, Rue 15, Treichville, Abidjan",
+        "ar": "المقر: مسجد الفتح، الشارع 8، الزقاق 15، تريشفيل، أبيدجان",
+    },
+    "contact_phones": {"fr": "Tél. : +225 07 07 83 63 73 / +225 07 07 80 54 54", "ar": "الهاتف: \u2066+225 07 07 83 63 73\u2069 / \u2066+225 07 07 80 54 54\u2069"},
+    "members_public_title": {"fr": "Nos membres", "ar": "أعضاؤنا"},
+    "members_public_help": {
+        "fr": "Les organisations membres de la PSIE.",
+        "ar": "المنظمات الأعضاء في المنصة.",
+    },
+    "news_title": {"fr": "Actualités", "ar": "الأخبار"},
+    "news_none": {"fr": "Aucune actualité pour le moment.", "ar": "لا توجد أخبار حاليا."},
+    "read_more": {"fr": "Lire", "ar": "قراءة"},
+    "join_title": {"fr": "Demande d'adhésion", "ar": "طلب الانخراط"},
+    "join_conditions": {
+        "fr": "Peuvent adhérer les organisations islamiques d'éducation légalement constituées qui approuvent les statuts, s'acquittent du droit d'adhésion, s'engagent à payer régulièrement leurs cotisations et satisfont aux formalités d'adhésion. La demande est examinée par la Direction Exécutive Nationale, soumise à l'avis écrit du Conseil d'Administration, puis décidée par l'Assemblée Générale.",
+        "ar": "يمكن للمنظمات الإسلامية للتعليم المؤسسة قانونا أن تنخرط إذا وافقت على النظام الأساسي وسددت رسم الانخراط والتزمت بدفع اشتراكاتها بانتظام واستوفت إجراءات الانخراط. تدرس المديرية التنفيذية الوطنية الطلب ويعرض على مجلس الإدارة لإبداء رأيه كتابة ثم تبت فيه الجمعية العامة.",
+    },
+    "f_org_name": {"fr": "Nom de l'organisation", "ar": "اسم المنظمة"},
+    "f_rep_name": {"fr": "Nom du représentant légal", "ar": "اسم الممثل القانوني"},
+    "f_rep_function": {"fr": "Fonction du représentant", "ar": "وظيفة الممثل"},
+    "f_nb_structures": {"fr": "Nombre de structures affiliées", "ar": "عدد الهياكل المنتسبة"},
+    "f_message": {"fr": "Message (facultatif)", "ar": "رسالة (اختياري)"},
+    "f_accept_statutes": {"fr": "Nous approuvons les statuts de la PSIE.", "ar": "نوافق على النظام الأساسي للمنصة."},
+    "f_accept_dues": {
+        "fr": "Nous nous engageons à payer le droit d'adhésion et nos cotisations régulièrement.",
+        "ar": "نلتزم بدفع رسم الانخراط والاشتراكات بانتظام.",
+    },
+    "f_submit": {"fr": "Envoyer la demande", "ar": "إرسال الطلب"},
+    "join_received": {"fr": "Votre demande a bien été reçue.", "ar": "تم استلام طلبكم."},
+    "join_code_help": {
+        "fr": "Conservez ce code de suivi : il vous permet de connaître l'avancement de votre demande.",
+        "ar": "احتفظوا برمز المتابعة هذا: يتيح لكم معرفة مستجدات طلبكم.",
+    },
+    "tracking_code": {"fr": "Code de suivi", "ar": "رمز المتابعة"},
+    "track_title": {"fr": "Suivre ma demande", "ar": "متابعة طلبي"},
+    "track_button": {"fr": "Consulter", "ar": "اطلاع"},
+    "track_unknown": {"fr": "Code de suivi inconnu.", "ar": "رمز المتابعة غير معروف."},
+    "join_too_many": {"fr": "Trop de demandes depuis cette adresse. Réessayez plus tard.", "ar": "طلبات كثيرة من هذا العنوان. أعيدوا المحاولة لاحقا."},
+    "adh_nouvelle": {"fr": "Demande reçue", "ar": "تم استلام الطلب"},
+    "adh_en_examen": {"fr": "En cours d'examen", "ar": "قيد الدراسة"},
+    "adh_acceptee": {"fr": "Adhésion acceptée", "ar": "تم قبول الانخراط"},
+    "adh_refusee": {"fr": "Demande refusée", "ar": "تم رفض الطلب"},
+    "certificate": {"fr": "Certificat d'adhésion", "ar": "شهادة الانخراط"},
+    "cert_valid": {"fr": "Certificat d'adhésion authentique", "ar": "شهادة انخراط صحيحة"},
+    "member_since": {"fr": "Membre depuis le", "ar": "عضو منذ"},
+    "nav_adhesions": {"fr": "Adhésions", "ar": "طلبات الانخراط"},
+    "nav_news_admin": {"fr": "Actualités (gestion)", "ar": "إدارة الأخبار"},
+}

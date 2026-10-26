@@ -4,6 +4,8 @@ Les traductions arabes sont une première version à faire relire par un locuteu
 avant mise en ligne. Une clé absente retombe sur le français, puis sur la clé elle-même.
 """
 
+from .public_texts import PUBLIC_TEXTS
+
 SUPPORTED_LANGS = ("fr", "ar")
 DEFAULT_LANG = "fr"
 
@@ -138,6 +140,9 @@ TEXTS: dict[str, dict[str, str]] = {
     "st_en_retard": {"fr": "En retard", "ar": "متأخر"},
     "st_impaye": {"fr": "Impayé", "ar": "غير مسدد"},
 }
+
+
+TEXTS.update(PUBLIC_TEXTS)
 
 
 def translate(key: str, lang: str) -> str:

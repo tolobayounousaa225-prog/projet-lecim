@@ -56,3 +56,13 @@ td.expire { color: var(--danger); font-weight: 600; }
 dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
 dt { color: var(--muted); } dd { margin: 0; }
 @media (max-width: 600px) { table { display: block; overflow-x: auto; } dl { grid-template-columns: 1fr; } }
+
+.hero { padding: 24px 0 8px; }
+.hero h1 { font-size: 30px; margin-bottom: 4px; }
+.lead { font-size: 18px; color: var(--primary); font-weight: 600; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.hp { position: absolute; left: -9999px; height: 0; overflow: hidden; }
+label.check { flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 15px; }
+label.check input { width: auto; }
+.code { font-size: 28px; font-weight: 700; letter-spacing: 2px; color: var(--primary); direction: ltr; text-align: center; }
+.prose { white-space: pre-wrap; }

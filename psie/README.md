@@ -6,12 +6,12 @@ puis cotisations, gouvernance et finances (voir [`../PSIE_CAHIER_DES_CHARGES.md`
 Ce dossier est un **projet autonome** (sa propre base, sa propre configuration). Il est hébergé
 temporairement dans le dépôt LECIM et pourra être déplacé tel quel dans son propre dépôt.
 
-## État : phases 1 à 3 (annuaire, cotisations annuelles et exceptionnelles)
+## État : phases 1 à 4 (annuaire, cotisations, adhésion en ligne, vitrine)
 
 | Fait | Pas encore fait |
 |---|---|
 | Connexion sécurisée (bcrypt, verrouillage après 5 échecs, cookie HttpOnly, protection CSRF) | **Migrations de base (Alembic) : à mettre en place avant la première mise en ligne** (jusqu'ici les tables sont créées au démarrage, ce qui n'ajoute pas de colonnes à une base existante) |
-| **Double authentification par e-mail** (administrateur et secrétaire aux finances) | Demande d'adhésion en ligne et vitrine (phase 4) |
+| **Double authentification par e-mail** (administrateur et secrétaire aux finances) |  |
 | 7 rôles alignés sur les organes des Statuts | Assemblées, votes, sanctions (phase 5) |
 | Annuaire des membres : fondateur / ordinaire / honneur, les 6 fondateurs créés | Finances complètes, double signature des paiements, registre des dons (phase 6) |
 | Mandats par organe, durée de 3 ans, alertes d'échéance | Commissions et 41 délégations régionales (phase 7) |
@@ -24,6 +24,11 @@ temporairement dans le dépôt LECIM et pourra être déplacé tel quel dans son
 | **Appels de cotisation exceptionnelle** : intitulé, motif, référence de la décision, date limite ; montant commun ou propre à chaque faîtière | |
 | **Exonération** (motif obligatoire, rétablissable), **report** de date limite (relances relancées), **correction de montant** (jamais sous les paiements reçus) | |
 | Mêmes paiements, reçus PDF et relances que pour la cotisation annuelle | |
+| **Vitrine publique bilingue** : accueil, à propos (missions, principes, organes tirés des Statuts), membres actifs, actualités | |
+| **Demande d'adhésion en ligne** (code de suivi, anti-spam : limite par adresse IP et champ piège), suivi public limité à l'état de la demande | |
+| **Circuit d'adhésion des Statuts** : examen par la DEN, avis écrit du CA, décision de l'AG avec référence ; acceptation impossible sans avis favorable | |
+| Acceptation : le membre (ordinaire, actif) est créé, son droit d'adhésion à payer est créé si un montant est saisi, **certificat d'adhésion PDF** à QR code vérifiable publiquement | |
+| Gestion des actualités FR/AR (brouillon ou publié, texte brut échappé) | |
 | Cloisonnement : un représentant ne voit que sa faîtière, ses échéances et ses reçus | |
 | Journal d'audit des écritures | |
 | Interface et PDF en français et en arabe (droite-gauche) | |
@@ -34,8 +39,20 @@ temporairement dans le dépôt LECIM et pourra être déplacé tel quel dans son
 |---|---|
 | Secrétaire chargé des finances (ou adjoint) | Lecture et écriture (montant, paiements, annulations, appels, exonérations, reports) |
 | DEN, administrateur du CA, commissaire aux comptes | Lecture seule |
-| Représentant de faîtière | Sa faîtière uniquement : échéances, reçus, attestation |
+| Représentant de faîtière | Sa faîtière uniquement : échéances, reçus, attestation, certificat d'adhésion |
 | Administrateur de la plate-forme | Aucun accès aux finances (rôle technique) |
+
+### Adhésions (qui fait quoi)
+
+| Étape | Qui |
+|---|---|
+| Dépôt de la demande | Public (formulaire en ligne) |
+| Prise en charge, décision de l'AG | Administrateur, DEN, secrétaire de la DEN |
+| Avis écrit du CA | Administrateur du CA (ou, en son nom, DEN / secrétaire) |
+| Lecture des demandes | Tous les organes de la PSIE |
+
+Après une acceptation, le secrétaire aux finances crée les cotisations de l'année depuis la page
+Cotisations : le nouveau membre y est inclus. Aucun prorata n'est appliqué (les textes n'en prévoient pas).
 
 ### Tâches automatiques
 
@@ -83,5 +100,6 @@ statuts), les reçus et attestations PDF, la vérification publique, les relance
 - `TWO_FACTOR_ENABLED=true` **avec un SMTP fonctionnel** : sans e-mail, l'administrateur et le secrétaire
   aux finances ne peuvent pas se connecter (la connexion échoue par prudence plutôt que de s'ouvrir).
 - `PUBLIC_BASE_URL` = adresse réelle du site : elle est encodée dans les QR codes imprimés.
-- Un seul processus serveur (un seul worker) : le planificateur tourne dans l'application.
+- Un seul processus serveur (un seul worker) : le planificateur et la limitation de débit tournent dans l'application.
+- `NOTIFY_EMAIL` (facultatif) : adresse prévenue à chaque nouvelle demande d'adhésion.
 - Changer le mot de passe administrateur après la première connexion.

@@ -75,7 +75,8 @@ def _row(pdf: FPDF, fr: str, value: str, ar: str) -> None:
     pdf.set_text_color(0, 0, 0)
 
 
-def _footer(pdf: FPDF, verify_url: str, note_fr: str, note_ar: str) -> None:
+def _footer(pdf: FPDF, verify_url: str, note_fr: str, note_ar: str,
+            signer: tuple[str, str] = ("Le Secrétaire chargé des finances", "الأمين المكلف بالشؤون المالية")) -> None:
     y = 205
     pdf.image(_qr_png(verify_url), x=15, y=y, w=34)
     pdf.set_xy(54, y + 4)
@@ -87,8 +88,8 @@ def _footer(pdf: FPDF, verify_url: str, note_fr: str, note_ar: str) -> None:
     pdf.set_text_color(0, 0, 0)
     pdf.set_xy(15, 255)
     pdf.set_font("dv", "", 10)
-    pdf.cell(90, 6, "Le Secrétaire chargé des finances")
-    pdf.cell(90, 6, "الأمين المكلف بالشؤون المالية", align="R")
+    pdf.cell(90, 6, signer[0])
+    pdf.cell(90, 6, signer[1], align="R")
 
 
 def receipt_pdf(paiement: models.Paiement) -> bytes:
@@ -137,4 +138,24 @@ def attestation_pdf(faitiere: models.Faitiere, annee: int, echeance: models.Eche
     pdf.multi_cell(180, 6, f"تشهد المنصة بأن {faitiere.sigle} قد سددت اشتراكها السنوي لسنة {annee}.", align="R")
     _footer(pdf, verify_url, "Scannez pour vérifier cette attestation (situation à la date de lecture).",
             "امسح الرمز للتحقق من هذه الشهادة.")
+    return bytes(pdf.output())
+
+
+def membership_certificate_pdf(demande: models.DemandeAdhesion, verify_url: str) -> bytes:
+    f = demande.faitiere
+    pdf = _new_pdf()
+    _header(pdf, "CERTIFICAT D'ADHÉSION", "شهادة انخراط")
+    _row(pdf, "Organisation", f.sigle, "المنظمة")
+    _row(pdf, "Dénomination", f.nom[:34], "التسمية")
+    _row(pdf, "Qualité", "Membre ordinaire", "صفة: عضو عادي")
+    _row(pdf, "Adhésion le", f"{f.date_adhesion:%d/%m/%Y}" if f.date_adhesion else "—", "تاريخ الانخراط")
+    _row(pdf, "Décision de l'AG", (demande.decision_reference or "—")[:34], "قرار الجمعية العامة")
+    _row(pdf, "Dossier", demande.code, "رقم الملف")
+    pdf.set_xy(15, 140)
+    pdf.set_font("dv", "", 10)
+    pdf.multi_cell(180, 6, f"La PSIE certifie que {f.sigle} est membre de la Plateforme des Structures Islamiques d'Éducation.")
+    pdf.set_x(15)
+    pdf.multi_cell(180, 6, f"تشهد المنصة بأن {f.sigle} عضو في منصة الهياكل الإسلامية للتعليم.", align="R")
+    _footer(pdf, verify_url, "Scannez pour vérifier l'authenticité de ce certificat.",
+            "امسح الرمز للتحقق من صحة هذه الشهادة.", signer=("Le Directeur Exécutif National", "المدير التنفيذي الوطني"))
     return bytes(pdf.output())

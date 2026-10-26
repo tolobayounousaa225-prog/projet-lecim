@@ -23,8 +23,11 @@ PASSWORD = "Motdepasse1"
 
 @pytest.fixture(autouse=True)
 def clean_db():
+    from app import rate_limit
+
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
+    rate_limit.reset()
     yield
 
 

@@ -25,11 +25,6 @@ def home_for(user: models.User) -> str:
     return "/admin" if user.is_internal else "/portail"
 
 
-@router.get("/")
-def index():
-    return RedirectResponse("/login", status_code=303)
-
-
 @router.get("/login")
 def login_page(request: Request):
     return render(request, "login.html")

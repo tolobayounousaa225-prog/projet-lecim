@@ -42,3 +42,17 @@ def require_admin(user: models.User = Depends(get_current_user)) -> models.User:
     if not user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Réservé à l'administrateur")
     return user
+
+
+def get_optional_user(
+    access_token: str | None = Cookie(default=None),
+    db: Session = Depends(get_db),
+) -> models.User | None:
+    """Utilisateur connecté s'il y en a un (pages publiques qui adaptent leur menu)."""
+    if not access_token:
+        return None
+    email = decode_access_token(access_token)
+    if not email:
+        return None
+    user = db.query(models.User).filter(models.User.email == email).first()
+    return user if user and user.is_active else None

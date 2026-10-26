@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from: str = "no-reply@psie.local"
 
+    # Adresse prévenue à chaque nouvelle demande d'adhésion (facultatif)
+    notify_email: str = ""
+
     # Tâches planifiées (génération des cotisations de l'année, relances, résumé hebdomadaire)
     scheduler_enabled: bool = True
 

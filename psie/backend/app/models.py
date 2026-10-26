@@ -23,6 +23,9 @@ MEMBER_MANAGER_ROLES = {"admin", "den", "secretaire"}
 # commissaires aux comptes lisent. L'administrateur technique n'a pas accès aux finances.
 FINANCE_WRITE_ROLES = {"finances"}
 FINANCE_READ_ROLES = {"finances", "den", "administrateur_ca", "commissaire"}
+# Adhésion : examen et décision par la DEN ; l'avis écrit du CA (Statuts art. 18) peut être
+# enregistré par un administrateur ou, en son nom, par la DEN et le secrétariat.
+ADHESION_AVIS_ROLES = {"administrateur_ca", "den", "secretaire"}
 # Rôles soumis à la double authentification par e-mail
 TWO_FACTOR_ROLES = {"admin", "finances"}
 
@@ -367,3 +370,83 @@ class RelanceLog(Base):
     echeance_id: Mapped[int] = mapped_column(ForeignKey("echeances.id"), nullable=False)
     kind: Mapped[str] = mapped_column(String(10), nullable=False)
     sent_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+# ---------- Adhésion et vitrine ----------
+
+ADHESION_ETATS = {
+    "nouvelle": "Demande reçue",
+    "en_examen": "En cours d'examen",
+    "acceptee": "Adhésion acceptée",
+    "refusee": "Demande refusée",
+}
+
+
+class DemandeAdhesion(Base):
+    """Demande d'adhésion déposée en ligne par une organisation. Circuit des Statuts :
+    examen par la DEN -> avis écrit du CA (art. 18) -> décision de l'AG (art. 13). L'outil
+    enregistre la référence de la décision d'AG ; une acceptation exige un avis favorable du CA."""
+
+    __tablename__ = "demandes_adhesion"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    # --- renseigné par le demandeur ---
+    nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    sigle: Mapped[str] = mapped_column(String(50), nullable=False)
+    representant_nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    representant_fonction: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    telephone: Mapped[str] = mapped_column(String(50), nullable=False)
+    siege: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    statut_juridique: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    date_creation: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    nb_structures: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    accepte_statuts: Mapped[bool] = mapped_column(Boolean, default=False)
+    accepte_cotisations: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+    # --- instruction ---
+    etat: Mapped[str] = mapped_column(String(20), default="nouvelle")
+    notes_examen: Mapped[str | None] = mapped_column(Text, nullable=True)
+    avis_ca: Mapped[str | None] = mapped_column(String(20), nullable=True)  # favorable | defavorable
+    avis_ca_motif: Mapped[str | None] = mapped_column(Text, nullable=True)
+    avis_ca_par_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    avis_ca_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+    decision_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)  # résolution d'AG
+    decision_date: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    decision_motif: Mapped[str | None] = mapped_column(Text, nullable=True)
+    decide_par_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    faitiere_id: Mapped[int | None] = mapped_column(ForeignKey("faitieres.id"), nullable=True)
+    cert_token: Mapped[str | None] = mapped_column(String(40), unique=True, nullable=True)
+
+    faitiere: Mapped["Faitiere | None"] = relationship()
+
+    @property
+    def is_open(self) -> bool:
+        return self.etat in ("nouvelle", "en_examen")
+
+
+class Actualite(Base):
+    """Actualité publiée sur la vitrine, en français et/ou en arabe (texte brut)."""
+
+    __tablename__ = "actualites"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    titre_fr: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    titre_ar: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    contenu_fr: Mapped[str | None] = mapped_column(Text, nullable=True)
+    contenu_ar: Mapped[str | None] = mapped_column(Text, nullable=True)
+    publie: Mapped[bool] = mapped_column(Boolean, default=False)
+    date_publication: Mapped[datetime.date] = mapped_column(Date, default=datetime.date.today)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    def titre(self, lang: str) -> str:
+        """Titre dans la langue demandée, à défaut dans l'autre."""
+        first, second = (self.titre_ar, self.titre_fr) if lang == "ar" else (self.titre_fr, self.titre_ar)
+        return first or second or ""
+
+    def contenu(self, lang: str) -> str:
+        first, second = (self.contenu_ar, self.contenu_fr) if lang == "ar" else (self.contenu_fr, self.contenu_ar)
+        return first or second or ""

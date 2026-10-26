@@ -15,6 +15,13 @@
       <dt>{{ t('amount') }}</dt><dd>{{ fcfa(p.montant) }}</dd>
       <dt>{{ t('date') }}</dt><dd>{{ p.date_paiement }}</dd>
     </dl>
+  {% elif kind == 'adhesion' %}
+    <p><span class="badge actif">{{ t('cert_valid') }}</span></p>
+    <dl>
+      <dt>{{ t('organisation') }}</dt><dd>{{ faitiere.sigle }}</dd>
+      <dt>{{ t('name') }}</dt><dd>{{ faitiere.nom }}</dd>
+      <dt>{{ t('member_since') }}</dt><dd>{{ faitiere.date_adhesion or '—' }}</dd>
+    </dl>
   {% else %}
     {% if a_jour %}<p><span class="badge actif">{{ t('attestation_valid') }}</span></p>
     {% else %}<p class="alert">{{ t('attestation_not_up_to_date') }}</p>{% endif %}
