@@ -272,3 +272,20 @@ def user_toggle(user_id: int, user: models.User = Depends(require_admin), db: Se
 def audit_list(request: Request, user: models.User = Depends(require_admin), db: Session = Depends(get_db)):
     items = db.query(models.AuditLog).order_by(models.AuditLog.id.desc()).limit(300).all()
     return render(request, "audit_list.html", user, items=items)
+
+
+@router.post("/users/{user_id}/password")
+def user_reset_password(user_id: int, password: str = Form(...), user: models.User = Depends(require_admin),
+                        db: Session = Depends(get_db)):
+    """Réinitialisation par l'administrateur (mot de passe oublié) : débloque aussi le compte."""
+    target = db.get(models.User, user_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="Compte introuvable")
+    error = password_policy_error(password)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+    target.hashed_password = hash_password(password)
+    target.failed_login_attempts, target.locked_until = 0, None
+    log_action(db, user, "reinitialisation_mdp", "user", target.id, target.email)
+    db.commit()
+    return _redirect("/users")

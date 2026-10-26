@@ -74,13 +74,42 @@ jobs:
   docker:
     name: docker
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: psie/deploy
     steps:
       - uses: actions/checkout@v4
-      - name: Construire l'image de l'application
-        run: docker build -t psie-api psie/backend
       - name: Valider la composition de production (les deux modes)
-        working-directory: psie/deploy
         run: |
           cp .env.example .env
           docker compose --env-file .env config > /dev/null
           docker compose --env-file .env --profile caddy config > /dev/null
+      - name: Démarrer la pile de production avec des valeurs de test
+        run: |
+          sed -i \
+            -e 's/^COOKIE_SECURE=.*/COOKIE_SECURE=false/' \
+            -e 's/^TWO_FACTOR_ENABLED=.*/TWO_FACTOR_ENABLED=false/' \
+            -e 's/^SECRET_KEY=.*/SECRET_KEY=ci-secret-key/' \
+            -e 's/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=ci-password-123/' \
+            -e 's#^PUBLIC_BASE_URL=.*#PUBLIC_BASE_URL=http://localhost:8100#' .env
+          docker compose --env-file .env up -d --build
+          for i in $(seq 1 40); do curl -sf http://127.0.0.1:8100/health/db && break; sleep 3; done
+          curl -sf http://127.0.0.1:8100/health/db
+      - name: Initialiser la base (migrations puis amorçage)
+        run: docker compose exec -T api python -m scripts.init_db
+      - name: Les pages publiques répondent
+        run: |
+          curl -sf http://127.0.0.1:8100/ > /dev/null
+          curl -sf http://127.0.0.1:8100/login > /dev/null
+          curl -sf http://127.0.0.1:8100/membres | grep -q LECIM
+      - name: Sauvegarde chiffrée puis restauration de test (vrais scripts, via Docker)
+        run: |
+          echo "phrase-secrete-de-test" > backup.pass
+          ./backup.sh
+          ./restore.sh --test backups/*.enc
+      - name: Journaux de l'application (si échec)
+        if: failure()
+        run: docker compose logs --tail=80 api db
+      - name: Nettoyer
+        if: always()
+        run: docker compose down -v

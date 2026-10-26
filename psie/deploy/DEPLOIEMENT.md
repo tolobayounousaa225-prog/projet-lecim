@@ -104,9 +104,9 @@ Vérifiez ensuite : `https://VOTRE-DOMAINE/health` doit répondre `{"status":"ok
 3. Créer les comptes du DEN, du secrétaire aux finances, etc. dans « Comptes ».
 4. Compléter les fiches des 6 fondateurs (nom complet, e-mail, téléphone), saisir les mandats.
 
-> **Limite actuelle** : il n'existe pas encore de page « changer mon mot de passe » ni de
-> « mot de passe oublié ». Choisissez des mots de passe définitifs à la création des comptes ; en
-> cas d'oubli, l'administrateur doit recréer le compte. C'est la prochaine amélioration à faire.
+5. **Chaque personne change son mot de passe** à sa première connexion (menu « Mot de passe »).
+   Mot de passe oublié : l'administrateur en définit un nouveau dans « Comptes » (cela débloque aussi
+   un compte verrouillé). Il n'existe pas encore de lien « mot de passe oublié » automatique par e-mail.
 
 ## 6. Sauvegardes (à mettre en place le premier jour)
 
@@ -163,7 +163,7 @@ La base PostgreSQL n'a **aucun port publié** : elle n'est joignable que par l'a
 
 - [ ] `https://VOTRE-DOMAINE/health/db` répond `ok`, le cadenas HTTPS est valide
 - [ ] Connexion de l'administrateur avec code reçu par e-mail
-- [ ] Mot de passe administrateur par défaut changé (compte recréé avec un mot de passe fort)
+- [ ] Mot de passe administrateur par défaut changé (menu « Mot de passe »)
 - [ ] Les 6 fondateurs complétés, mandats saisis, comptes du DEN et du secrétaire aux finances créés
 - [ ] Montant de la cotisation de l'année saisi
 - [ ] Une sauvegarde faite **et** restaurée en test ; phrase secrète copiée hors du serveur

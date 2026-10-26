@@ -143,4 +143,13 @@ PUBLIC_TEXTS: dict[str, dict[str, str]] = {
     'g_lift': {"fr": 'Lever la suspension', "ar": 'رفع التعليق'},
     'g_notified': {"fr": 'notifiée', "ar": 'مبلغة'},
     'g_mark_notified': {"fr": 'Marquer notifiée', "ar": 'تسجيل التبليغ'},
+    'nav_password': {"fr": 'Mot de passe', "ar": 'كلمة المرور'},
+    'current_password': {"fr": 'Mot de passe actuel', "ar": 'كلمة المرور الحالية'},
+    'new_password': {"fr": 'Nouveau mot de passe', "ar": 'كلمة المرور الجديدة'},
+    'confirm_password': {"fr": 'Confirmer le nouveau mot de passe', "ar": 'تأكيد كلمة المرور الجديدة'},
+    'password_changed': {"fr": 'Mot de passe modifié.', "ar": 'تم تغيير كلمة المرور.'},
+    'password_wrong': {"fr": 'Le mot de passe actuel est incorrect.', "ar": 'كلمة المرور الحالية غير صحيحة.'},
+    'password_mismatch': {"fr": 'Les deux nouveaux mots de passe sont différents.', "ar": 'كلمتا المرور الجديدتان غير متطابقتين.'},
+    'password_same': {"fr": "Le nouveau mot de passe doit être différent de l'ancien.", "ar": 'يجب أن تختلف كلمة المرور الجديدة عن القديمة.'},
+    'reset_password': {"fr": 'Réinitialiser', "ar": 'إعادة تعيين'},
 }

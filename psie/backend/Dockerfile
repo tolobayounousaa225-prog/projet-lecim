@@ -20,4 +20,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
 # Les migrations s'appliquent avant chaque démarrage (idempotent), puis le serveur démarre.
 # Un seul processus (pas de --workers) : le planificateur et la limitation de débit tournent dedans.
 # --proxy-headers : le conteneur n'est joignable que derrière le reverse proxy HTTPS.
-CMD sh -c "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'"
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'"]

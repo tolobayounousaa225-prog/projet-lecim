@@ -9,7 +9,8 @@
     <tr><td>{{ u.full_name }}</td><td>{{ u.email }}</td><td>{{ lbl('role', u.role) }}</td>
       <td>{{ u.faitiere.sigle if u.faitiere else '—' }}</td>
       <td>{{ t('active') if u.is_active else t('disabled') }}</td>
-      <td>{% if u.id != user.id %}<form method="post" action="/users/{{ u.id }}/toggle" class="inline"><button class="link">{{ t('toggle') }}</button></form>{% endif %}</td></tr>
+      <td>{% if u.id != user.id %}<form method="post" action="/users/{{ u.id }}/toggle" class="inline"><button class="link">{{ t('toggle') }}</button></form>{% endif %}
+        <form method="post" action="/users/{{ u.id }}/password" class="inline"><input type="password" name="password" placeholder="{{ t('new_password') }}" required autocomplete="new-password" style="width:11em"> <button class="link">{{ t('reset_password') }}</button></form></td></tr>
   {% endfor %}
   </tbody>
 </table>

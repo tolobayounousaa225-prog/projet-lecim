@@ -1,4 +1,4 @@
-# Production PSIE. À lancer depuis ce dossier :  docker compose --env-file .env up -d --build
+# Production PSIE (fichier détecté automatiquement par Docker). À lancer depuis ce dossier :  docker compose --env-file .env up -d --build
 # Deux modes (voir DEPLOIEMENT.md) :
 #  - serveur partagé avec un reverse proxy déjà en place : on ne lance PAS le profil « caddy »
 #    et on branche le proxy existant sur 127.0.0.1:${PSIE_PORT} ;

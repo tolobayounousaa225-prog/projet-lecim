@@ -43,6 +43,7 @@
     {% if not user %}<a href="/login">{{ t('nav_login') }}</a>{% endif %}
     {% if user %}
       <span class="who">{{ user.full_name }}</span>
+      <a href="/mot-de-passe">{{ t('nav_password') }}</a>
       <form method="post" action="/logout" class="inline"><button class="link">{{ t('logout') }}</button></form>
     {% endif %}
   </div>

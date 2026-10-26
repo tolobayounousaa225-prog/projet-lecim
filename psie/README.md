@@ -10,7 +10,7 @@ temporairement dans le dépôt LECIM et pourra être déplacé tel quel dans son
 
 | Fait | Pas encore fait |
 |---|---|
-| Connexion sécurisée (bcrypt, verrouillage après 5 échecs, cookie HttpOnly, protection CSRF) | Changer son mot de passe / mot de passe oublié (**à faire avant l'ouverture réelle**) |
+| Connexion sécurisée (bcrypt, verrouillage après 5 échecs, cookie HttpOnly, protection CSRF) | « Mot de passe oublié » automatique par e-mail (l'administrateur peut réinitialiser un mot de passe) |
 | **Double authentification par e-mail** (administrateur et secrétaire aux finances) |  |
 | 7 rôles alignés sur les organes des Statuts |  |
 | Annuaire des membres : fondateur / ordinaire / honneur, les 6 fondateurs créés | Finances complètes, double signature des paiements, registre des dons (phase 6) |
@@ -38,6 +38,7 @@ temporairement dans le dépôt LECIM et pourra être déplacé tel quel dans son
 | Tableau de bord : composition réelle des organes comparée aux Statuts (CA 13, DEN 13, CC 2, 2 délégués par organisation) | |
 | Cloisonnement : un représentant ne voit que sa faîtière, ses échéances et ses reçus | |
 | Journal d'audit des écritures | |
+| Changement de mot de passe (le mauvais mot de passe actuel compte comme un échec de connexion) ; réinitialisation par l'administrateur | |
 | **Migrations Alembic** (schéma versionné, aucune table créée « à la volée ») ; un test échoue si un modèle change sans migration | |
 | **Déploiement** : image Docker non-root, composition de production (base non exposée), Caddy optionnel, sauvegardes chiffrées AES-256 avec test de restauration, [guide pas à pas](deploy/DEPLOIEMENT.md) | |
 | **Durcissement** : refus de démarrer avec une configuration dangereuse, CSP sans script, HSTS, `/health/db` | |

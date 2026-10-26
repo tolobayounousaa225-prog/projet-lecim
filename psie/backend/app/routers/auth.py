@@ -13,7 +13,7 @@ from ..emailing import send_email
 from ..i18n import SUPPORTED_LANGS
 from ..login_security import AccountLockedError, authenticate_user, register_failure
 from ..security import (
-    create_access_token, create_two_factor_token, decode_two_factor_token,
+    create_access_token, hash_password, password_policy_error, verify_password, create_two_factor_token, decode_two_factor_token,
     generate_otp_code, hash_otp_code,
 )
 from ..web import render
@@ -127,3 +127,41 @@ def portail(request: Request, user: models.User = Depends(get_current_user)):
     if not user.faitiere_id:
         return render(request, "portail_vide.html", user)
     return RedirectResponse(f"/faitieres/{user.faitiere_id}", status_code=303)
+
+
+# ---------- Changement de mot de passe ----------
+
+@router.get("/mot-de-passe")
+def password_page(request: Request, user: models.User = Depends(get_current_user)):
+    return render(request, "password.html", user)
+
+
+@router.post("/mot-de-passe")
+def password_change(request: Request, current: str = Form(...), new: str = Form(...), confirm: str = Form(...),
+                    user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    def fail(error: str, status_code: int = 400):
+        return render(request, "password.html", user, status_code=status_code, error=error)
+
+    try:
+        register_failure(db, user, check_only=True)
+    except AccountLockedError:
+        return fail("login_locked", 429)
+    if not verify_password(current, user.hashed_password):
+        # Un mauvais mot de passe actuel compte comme un échec de connexion (même verrouillage)
+        try:
+            register_failure(db, user)
+        except AccountLockedError:
+            return fail("login_locked", 429)
+        return fail("password_wrong", 401)
+    if new != confirm:
+        return fail("password_mismatch")
+    policy = password_policy_error(new)
+    if policy:
+        return render(request, "password.html", user, status_code=400, error_text=policy)
+    if verify_password(new, user.hashed_password):
+        return fail("password_same")
+    user.hashed_password = hash_password(new)
+    user.failed_login_attempts = 0
+    log_action(db, user, "changement_mdp", "user", user.id)
+    db.commit()
+    return render(request, "password.html", user, done=True)
