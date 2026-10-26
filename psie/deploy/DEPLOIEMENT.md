@@ -8,7 +8,7 @@
 ## 0. Architecture retenue
 
 ```
-Site vitrine (dépôt « psie-site »)  →  GitHub Pages, gratuit
+Site vitrine (dépôt « PSIE »)  →  GitHub Pages, gratuit
 Application (ce dépôt, dossier psie/) →  serveur Hostinger (VPS)
 ```
 
@@ -80,7 +80,8 @@ Réglages importants du fichier `.env` pour Hostinger (mode B) :
 |---|---|
 | `DOMAIN` | le nom de domaine du **serveur** (ex. `app.psie-ci.org`) ou, en attendant, `IP-AVEC-TIRETS.sslip.io` |
 | `PUBLIC_BASE_URL` | `https://` + la même adresse |
-| `VITRINE_URL`, `VITRINE_ORIGINS` | l'adresse du site GitHub, **dès qu'il est en ligne** (ex. `https://tolobayounousaa225-prog.github.io` ; le chemin n'est pas accepté dans `VITRINE_ORIGINS`) |
+| `VITRINE_URL` | `https://tolobayounousaa225-prog.github.io/PSIE/` (**majuscules à respecter**), puis le domaine du site quand il existe |
+| `VITRINE_ORIGINS` | `https://tolobayounousaa225-prog.github.io` (**sans chemin**) |
 
 Démarrage :
 
@@ -185,7 +186,7 @@ La base PostgreSQL n'a **aucun port publié** : elle n'est joignable que par l'a
 ## 9. Checklist avant d'ouvrir au public
 
 - [ ] `https://VOTRE-DOMAINE/health/db` répond `ok`, le cadenas HTTPS est valide
-- [ ] Le site vitrine (dépôt `psie-site`) est en ligne, ses boutons « Adhérer » et « Connexion » mènent à l'application, et les membres et actualités s'affichent
+- [ ] Le site vitrine (dépôt `PSIE`) est en ligne, ses boutons « Adhérer » et « Connexion » mènent à l'application, et les membres et actualités s'affichent
 - [ ] `VITRINE_URL` et `VITRINE_ORIGINS` renseignés ; la racine de l'application renvoie bien vers le site
 - [ ] Vrai nom de domaine en place (`PUBLIC_BASE_URL`) **avant** d'imprimer le moindre reçu ou certificat
 - [ ] Connexion de l'administrateur avec code reçu par e-mail

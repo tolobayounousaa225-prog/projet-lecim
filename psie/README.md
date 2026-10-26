@@ -103,7 +103,7 @@ résumé des retards aux secrétaires aux finances. Désactivables avec `SCHEDUL
 
 ## Vitrine publique
 
-Le site public est un **dépôt séparé** (`psie-site`, publié sur GitHub Pages). L'application n'expose pour lui qu'une
+Le site public est un **dépôt séparé** (`PSIE`, publié sur GitHub Pages à l'adresse https://tolobayounousaa225-prog.github.io/PSIE/). L'application n'expose pour lui qu'une
 source de données en lecture seule (`/api/public/vitrine.json` : sigles, noms et catégories des membres actifs,
 actualités publiées), accessible uniquement depuis l'adresse déclarée dans `VITRINE_ORIGINS`, sans cookie. Tant que
 `VITRINE_URL` est vide, l'application sert elle-même ses pages publiques.
