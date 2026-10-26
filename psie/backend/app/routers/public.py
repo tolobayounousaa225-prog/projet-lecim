@@ -2,6 +2,7 @@
 
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from .. import adhesion, models
@@ -20,7 +21,27 @@ track_limit = rate_limiter("adhesion-track", 30, 600)
 
 @router.get("/")
 def home(request: Request, user: models.User | None = Depends(get_optional_user)):
+    if settings.vitrine_url:  # la vitrine vit sur GitHub Pages : on y renvoie les visiteurs
+        return RedirectResponse(settings.vitrine_url, status_code=302)
     return render(request, "home.html", user)
+
+
+@router.get("/api/public/vitrine.json")
+def vitrine_data(db: Session = Depends(get_db)):
+    """Données publiques lues par le site vitrine : membres actifs et actualités publiées.
+    Volontairement sobre : aucune coordonnée, aucun identifiant interne sensible."""
+    members = [
+        {"sigle": f.sigle, "nom": f.nom, "categorie": f.categorie}
+        for f in db.query(models.Faitiere).order_by(models.Faitiere.categorie, models.Faitiere.sigle)
+        if f.is_membre_actif or (f.categorie == "honneur" and f.statut == "actif")
+    ]
+    news = [
+        {"id": n.id, "date": n.date_publication.isoformat(), "titre": {"fr": n.titre_fr, "ar": n.titre_ar},
+         "contenu": {"fr": n.contenu_fr, "ar": n.contenu_ar}}
+        for n in db.query(models.Actualite).filter_by(publie=True)
+        .order_by(models.Actualite.date_publication.desc(), models.Actualite.id.desc()).limit(50)
+    ]
+    return JSONResponse({"membres": members, "actualites": news}, headers={"Cache-Control": "public, max-age=300"})
 
 
 @router.get("/apropos")

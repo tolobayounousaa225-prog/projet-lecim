@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from . import models  # noqa: F401  (enregistre les tables)
 from sqlalchemy import text
 
-from .config import production_problems, settings
+from .config import production_problems, settings, vitrine_origin_list
 from .database import engine
 from .deps import NotAuthenticatedException
 from . import scheduler
@@ -37,6 +37,13 @@ app = FastAPI(
     redoc_url=None,
     openapi_url="/openapi.json" if settings.debug else None,
 )
+# Le site vitrine (autre domaine) peut lire les données publiques : GET seulement, jamais de cookies
+# ni d'identifiants, uniquement depuis les origines configurées.
+if vitrine_origin_list(settings):
+    from fastapi.middleware.cors import CORSMiddleware
+
+    app.add_middleware(CORSMiddleware, allow_origins=vitrine_origin_list(settings), allow_methods=["GET", "HEAD"],
+                       allow_headers=[], allow_credentials=False, max_age=3600)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 

@@ -5,38 +5,53 @@
 > Docker est validée par la CI mais n'a jamais tourné sur la machine cible. Suivez les étapes une
 > à une et gardez la checklist de la dernière section.
 
-## 0. Ce qu'il faut avant de commencer
+## 0. Architecture retenue
+
+```
+Site vitrine (dépôt « psie-site »)  →  GitHub Pages, gratuit
+Application (ce dépôt, dossier psie/) →  serveur Hostinger (VPS)
+```
+
+Le site public est un dépôt à part (voir son README). L'application, elle, porte la connexion, la
+demande d'adhésion, le suivi, les QR codes et tout l'espace interne.
+
+## 1. Ce qu'il faut avant de commencer
 
 | Élément | Pourquoi | Statut |
 |---|---|---|
-| Accès SSH au serveur (Contabo) | installer et lancer | à vérifier |
-| Un **nom de domaine** pour la PSIE (ex. `psie-ci.org`) avec un enregistrement DNS `A` vers l'IP du serveur | HTTPS et QR codes | à choisir |
+| Un **VPS Hostinger** (pas l'hébergement web mutualisé : il ne sait pas faire tourner Docker) sous Ubuntu 24.04 ; si Hostinger propose un modèle « Ubuntu avec Docker », le choisir | héberger l'application | à commander |
+| Accès SSH au serveur | installer et lancer | à vérifier |
 | Un **serveur e-mail (SMTP)** | code de connexion (double authentification), relances, convocations | à obtenir |
+| Un **nom de domaine** | HTTPS propre et QR codes définitifs | **plus tard** (voir ci-dessous) |
 | Les noms du DEN et du secrétaire aux finances | créer leurs comptes | à fournir |
 | Le logo de la PSIE | identité visuelle | à fournir |
 
-## 1. Vérifier le serveur (5 minutes)
+### En attendant le nom de domaine
+Caddy sait obtenir un certificat HTTPS pour une adresse de type `IP-AVEC-DES-TIRETS.sslip.io`
+(ex. pour l'IP `203.0.113.7` : `203-0-113-7.sslip.io`). Mettre cette adresse dans `DOMAIN` et
+`PUBLIC_BASE_URL` permet de tester **tout de suite**, avec un vrai cadenas.
 
-Connectez-vous en SSH puis lancez ces commandes et **gardez les résultats** :
+> **N'imprimez aucun reçu, attestation ou certificat à QR code avant d'avoir le vrai nom de domaine.**
+> Le QR code contient l'adresse de l'application : s'il pointe vers une adresse provisoire, les documents
+> déjà imprimés cesseront d'être vérifiables le jour où l'adresse change.
+
+## 2. Préparer le serveur Hostinger
+
+Hostinger est un serveur **dédié à la PSIE** : on utilise donc le **mode B** (Caddy inclus, il obtient
+tout seul le certificat HTTPS).
 
 ```bash
-free -h                          # mémoire : il faut au moins 1 Go de libre une fois la LECIM démarrée
-df -h /                          # disque : au moins 5 Go libres
-docker --version && docker compose version
-docker ps --format 'table {{.Names}}\t{{.Ports}}'    # qui occupe déjà les ports 80 et 443 ?
+# 1re connexion (en root, avec l'adresse IP fournie par Hostinger)
+adduser psie && usermod -aG sudo psie        # créer un utilisateur normal, puis se reconnecter avec lui
+sudo apt update && sudo apt -y upgrade
+sudo ufw allow OpenSSH && sudo ufw allow 80,443/tcp && sudo ufw enable
+docker --version || curl -fsSL https://get.docker.com | sudo sh   # installer Docker s'il est absent
+sudo usermod -aG docker psie                 # puis se déconnecter / reconnecter
+free -h && df -h /                           # vérifier la mémoire et le disque
 ```
 
-Si la mémoire libre est inférieure à 1 Go, ou si le disque est presque plein, **ne partagez pas le
-serveur avec la LECIM** : prenez un petit serveur dédié (Hostinger ou autre) et utilisez le mode B.
-
-## 2. Choisir le mode
-
-- **Mode A : serveur partagé avec la LECIM (recommandé si la place le permet).** Un reverse proxy
-  (Caddy) occupe déjà les ports 80 et 443 : la PSIE n'en lance pas un second, on ajoute simplement
-  un site à celui qui existe. La base, les fichiers, la configuration et les sauvegardes de la PSIE
-  restent **totalement séparés** de ceux de la LECIM.
-- **Mode B : serveur dédié.** On lance aussi Caddy avec la PSIE (`--profile caddy`), qui obtient
-  tout seul le certificat HTTPS.
+Si le serveur est **partagé avec la LECIM** (ou un autre site qui occupe déjà les ports 80 et 443),
+utiliser plutôt le mode A décrit à la section 4.
 
 ## 3. Installation
 
@@ -59,11 +74,19 @@ L'application **refuse de démarrer** (avec un message clair) si `COOKIE_SECURE=
 configuration est dangereuse : clé secrète faible, double authentification sans SMTP, adresse publique
 en `http://`, etc.
 
+Réglages importants du fichier `.env` pour Hostinger (mode B) :
+
+| Variable | Valeur |
+|---|---|
+| `DOMAIN` | le nom de domaine du **serveur** (ex. `app.psie-ci.org`) ou, en attendant, `IP-AVEC-TIRETS.sslip.io` |
+| `PUBLIC_BASE_URL` | `https://` + la même adresse |
+| `VITRINE_URL`, `VITRINE_ORIGINS` | l'adresse du site GitHub, **dès qu'il est en ligne** (ex. `https://tolobayounousaa225-prog.github.io` ; le chemin n'est pas accepté dans `VITRINE_ORIGINS`) |
+
 Démarrage :
 
 ```bash
-docker compose --env-file .env up -d --build                   # mode A
-# ou, mode B :  docker compose --env-file .env --profile caddy up -d --build
+docker compose --env-file .env --profile caddy up -d --build   # mode B (Hostinger) : Caddy obtient le certificat HTTPS
+# mode A (serveur déjà équipé d'un reverse proxy) : docker compose --env-file .env up -d --build
 docker compose ps                                              # api et db doivent être « healthy »
 docker compose exec api python -m scripts.init_db              # crée le compte administrateur et les 6 fondateurs
 curl -s http://127.0.0.1:8100/health/db                        # doit afficher {"status":"ok"}
@@ -71,7 +94,7 @@ curl -s http://127.0.0.1:8100/health/db                        # doit afficher {
 
 Les migrations de base de données sont appliquées **automatiquement** à chaque démarrage.
 
-## 4. Brancher le reverse proxy (mode A uniquement)
+## 4. Brancher un reverse proxy existant (mode A uniquement, pas pour Hostinger)
 
 La PSIE écoute sur `127.0.0.1:8100` du serveur. Il faut dire au Caddy existant d'y envoyer le
 trafic du nouveau domaine. Regardez d'abord comment il tourne :
@@ -162,6 +185,9 @@ La base PostgreSQL n'a **aucun port publié** : elle n'est joignable que par l'a
 ## 9. Checklist avant d'ouvrir au public
 
 - [ ] `https://VOTRE-DOMAINE/health/db` répond `ok`, le cadenas HTTPS est valide
+- [ ] Le site vitrine (dépôt `psie-site`) est en ligne, ses boutons « Adhérer » et « Connexion » mènent à l'application, et les membres et actualités s'affichent
+- [ ] `VITRINE_URL` et `VITRINE_ORIGINS` renseignés ; la racine de l'application renvoie bien vers le site
+- [ ] Vrai nom de domaine en place (`PUBLIC_BASE_URL`) **avant** d'imprimer le moindre reçu ou certificat
 - [ ] Connexion de l'administrateur avec code reçu par e-mail
 - [ ] Mot de passe administrateur par défaut changé (menu « Mot de passe »)
 - [ ] Les 6 fondateurs complétés, mandats saisis, comptes du DEN et du secrétaire aux finances créés

@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     # Adresse prévenue à chaque nouvelle demande d'adhésion (facultatif)
     notify_email: str = ""
 
+    # Vitrine hébergée ailleurs (GitHub Pages) : adresse du site, et origines autorisées à lire les
+    # données publiques (liste séparée par des virgules). Vide = vitrine servie par l'application.
+    vitrine_url: str = ""
+    vitrine_origins: str = ""
+
     # Tâches planifiées (génération des cotisations de l'année, relances, résumé hebdomadaire)
     scheduler_enabled: bool = True
 
@@ -55,9 +60,16 @@ def production_problems(s: "Settings") -> list[str]:
         problems.append("TWO_FACTOR_ENABLED doit être true")
     if s.two_factor_enabled and not s.smtp_host:
         problems.append("SMTP_HOST est requis : sans e-mail, la double authentification bloque la connexion")
+    for origin in [o for o in (s.vitrine_origins.split(",") + [s.vitrine_url]) if o.strip()]:
+        if not origin.strip().startswith("https://"):
+            problems.append(f"VITRINE_URL et VITRINE_ORIGINS doivent commencer par https:// (reçu : {origin.strip()})")
     if s.public_base_url.startswith("http://"):
         problems.append("PUBLIC_BASE_URL doit commencer par https:// (elle est encodée dans les QR codes)")
     return problems
+
+
+def vitrine_origin_list(s: "Settings") -> list[str]:
+    return [o.strip().rstrip("/") for o in s.vitrine_origins.split(",") if o.strip()]
 
 
 settings = Settings()
