@@ -6,6 +6,9 @@ _tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
 _tmp.close()
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp.name}"
 os.environ["SECRET_KEY"] = "cle-de-test"
+os.environ["SCHEDULER_ENABLED"] = "false"
+# La double authentification est testée à part (test_two_factor.py)
+os.environ["TWO_FACTOR_ENABLED"] = "false"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

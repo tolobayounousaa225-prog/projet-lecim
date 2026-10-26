@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ e.libelle }}{% endblock %}
+{% block content %}
+<div class="row">
+  <h1>{{ e.libelle }} <small>{{ e.faitiere.sigle }}</small></h1>
+  <span class="badge {{ e.statut }}">{{ t('st_' ~ e.statut) }}</span>
+</div>
+<section class="card">
+  <dl>
+    <dt>{{ t('due') }}</dt><dd>{{ fcfa(e.montant_du) }}</dd>
+    <dt>{{ t('paid') }}</dt><dd>{{ fcfa(e.montant_paye) }}</dd>
+    <dt>{{ t('balance') }}</dt><dd>{{ fcfa(e.solde) }}</dd>
+    <dt>{{ t('deadline') }}</dt><dd>{{ e.date_limite or '—' }}</dd>
+    {% if e.reference_decision %}<dt>{{ t('decision_ref') }}</dt><dd>{{ e.reference_decision }}</dd>{% endif %}
+  </dl>
+</section>
+
+<h2>{{ t('payments') }}</h2>
+<table>
+  <thead><tr><th>{{ t('receipt') }}</th><th>{{ t('date') }}</th><th>{{ t('amount') }}</th><th>{{ t('mode') }}</th><th>{{ t('reference') }}</th><th></th></tr></thead>
+  <tbody>
+  {% for p in e.paiements %}
+    <tr>
+      <td>{% if p.annule %}<s>{{ p.recu_numero }}</s> <span class="badge radie">{{ t('cancelled') }}</span>{% else %}{{ p.recu_numero }}{% endif %}</td>
+      <td>{{ p.date_paiement }}</td><td>{{ fcfa(p.montant) }}</td><td>{{ p.mode_label }}</td><td>{{ p.reference or '—' }}</td>
+      <td>
+        <a href="/paiements/{{ p.id }}/recu.pdf" target="_blank">PDF</a>
+        {% if p.annule %}<div class="muted">{{ p.annule_motif }}</div>
+        {% elif user.can_write_finances %}
+        <form method="post" action="/paiements/{{ p.id }}/annuler" class="inline">
+          <input name="motif" placeholder="{{ t('cancel_reason') }}" required>
+          <button class="link danger">{{ t('cancel') }}</button></form>
+        {% endif %}
+      </td>
+    </tr>
+  {% else %}<tr><td colspan="6" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+
+{% if user.can_write_finances and e.solde > 0 %}
+<section class="card">
+  <h2>{{ t('record_payment') }}</h2>
+  <form method="post" action="/echeances/{{ e.id }}/paiements" class="grid">
+    <label>{{ t('amount') }} (FCFA)<input type="number" name="montant" min="1" max="{{ e.solde }}" required value="{{ e.solde }}"></label>
+    <label>{{ t('date') }}<input type="date" name="date_paiement" required value="{{ today }}" max="{{ today }}"></label>
+    <label>{{ t('mode') }}<select name="mode">{% for k, v in modes.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+    <label>{{ t('reference') }}<input name="reference"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+</section>
+{% endif %}
+<p><a href="/faitieres/{{ e.faitiere_id }}">{{ t('back') }}</a></p>
+{% endblock %}

@@ -6,18 +6,39 @@ puis cotisations, gouvernance et finances (voir [`../PSIE_CAHIER_DES_CHARGES.md`
 Ce dossier est un **projet autonome** (sa propre base, sa propre configuration). Il est hébergé
 temporairement dans le dépôt LECIM et pourra être déplacé tel quel dans son propre dépôt.
 
-## État : phase 1 (socle + annuaire)
+## État : phases 1 et 2 (annuaire + cotisations annuelles)
 
 | Fait | Pas encore fait |
 |---|---|
-| Connexion sécurisée (bcrypt, verrouillage après 5 échecs, cookie HttpOnly, protection CSRF) | Double authentification par e-mail (phase 2, avec les finances) |
-| 7 rôles alignés sur les organes des Statuts | Cotisations, paiements, reçus (phase 2) |
-| Annuaire des membres : fondateur / ordinaire / honneur | Appels exceptionnels (phase 3) |
-| Les 6 fondateurs créés automatiquement | Assemblées, votes, sanctions (phase 5) |
-| Mandats par organe, durée de 3 ans par défaut, alertes d'échéance | Finances, registre des dons (phase 6) |
-| Cloisonnement : un représentant ne voit que sa faîtière | Migrations de base (Alembic) |
+| Connexion sécurisée (bcrypt, verrouillage après 5 échecs, cookie HttpOnly, protection CSRF) | Appels de cotisation exceptionnelle (phase 3) |
+| **Double authentification par e-mail** (administrateur et secrétaire aux finances) | Demande d'adhésion en ligne et vitrine (phase 4) |
+| 7 rôles alignés sur les organes des Statuts | Assemblées, votes, sanctions (phase 5) |
+| Annuaire des membres : fondateur / ordinaire / honneur, les 6 fondateurs créés | Finances complètes, double signature des paiements, registre des dons (phase 6) |
+| Mandats par organe, durée de 3 ans, alertes d'échéance | Commissions et 41 délégations régionales (phase 7) |
+| **Cotisation annuelle** : montant par année, création automatique des échéances, statuts à jour / partiel / en retard / impayé | Migrations de base (Alembic) |
+| **Paiements** partiels ou échelonnés, annulation avec motif (jamais de suppression), **reçus PDF numérotés** (PSIE-REC-AAAA-0001) | Relecture des traductions arabes |
+| **Attestation de cotisation à jour** (PDF), **vérification publique par QR code** | |
+| **Relances automatiques** par e-mail (J-30, J-7, jour J, puis chaque semaine) et résumé du lundi au secrétaire aux finances | |
+| Situation par année, taux de recouvrement, export CSV | |
+| Droit d'adhésion (montant saisi par le secrétaire aux finances) | |
+| Cloisonnement : un représentant ne voit que sa faîtière, ses échéances et ses reçus | |
 | Journal d'audit des écritures | |
-| Interface française et arabe (droite-gauche) | Relecture des traductions arabes |
+| Interface et PDF en français et en arabe (droite-gauche) | |
+
+### Qui peut faire quoi (finances)
+
+| Rôle | Cotisations |
+|---|---|
+| Secrétaire chargé des finances (ou adjoint) | Lecture et écriture (montant, paiements, annulations) |
+| DEN, administrateur du CA, commissaire aux comptes | Lecture seule |
+| Représentant de faîtière | Sa faîtière uniquement : échéances, reçus, attestation |
+| Administrateur de la plate-forme | Aucun accès aux finances (rôle technique) |
+
+### Tâches automatiques
+
+Chaque jour à 7 h (Abidjan) : création des cotisations de l'année si le montant est défini,
+puis envoi des relances dues (une seule fois par palier et par échéance). Chaque lundi à 7 h 30 :
+résumé des retards aux secrétaires aux finances. Désactivables avec `SCHEDULER_ENABLED=false`.
 
 ## Démarrage rapide (Docker)
 
@@ -48,11 +69,16 @@ cd psie/backend
 python -m pytest -q
 ```
 
-Les tests utilisent une base SQLite jetable : aucun PostgreSQL requis. Ils couvrent la connexion,
-le verrouillage, les permissions par rôle, le cloisonnement entre faîtières, la protection CSRF,
-les mandats, le journal d'audit et la bascule français/arabe.
+Les tests utilisent une base SQLite jetable : aucun PostgreSQL requis. Ils couvrent la connexion et
+la double authentification, le verrouillage, les permissions par rôle, le cloisonnement entre
+faîtières, la protection CSRF, les mandats, les cotisations (génération, paiements, annulations,
+statuts), les reçus et attestations PDF, la vérification publique, les relances et le journal d'audit.
 
 ## Production
 
 - `COOKIE_SECURE=true` derrière HTTPS ; `SECRET_KEY` unique et secrète.
+- `TWO_FACTOR_ENABLED=true` **avec un SMTP fonctionnel** : sans e-mail, l'administrateur et le secrétaire
+  aux finances ne peuvent pas se connecter (la connexion échoue par prudence plutôt que de s'ouvrir).
+- `PUBLIC_BASE_URL` = adresse réelle du site : elle est encodée dans les QR codes imprimés.
+- Un seul processus serveur (un seul worker) : le planificateur tourne dans l'application.
 - Changer le mot de passe administrateur après la première connexion.

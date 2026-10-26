@@ -9,3 +9,8 @@ bcrypt==5.0.0
 python-multipart==0.0.32
 Jinja2==3.1.6
 email-validator==2.3.0
+fpdf2==2.8.7
+uharfbuzz==0.57.0
+qrcode==8.2
+pillow==12.3.0
+APScheduler==3.11.3

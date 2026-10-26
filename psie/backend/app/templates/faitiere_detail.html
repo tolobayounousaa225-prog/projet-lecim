@@ -19,6 +19,22 @@
   </dl>
 </section>
 
+{% if show_dues %}
+<section class="card">
+  <h2>{{ t('nav_dues') }}</h2>
+  <table>
+    <thead><tr><th>{{ t('name') }}</th><th>{{ t('due') }}</th><th>{{ t('paid') }}</th><th>{{ t('deadline') }}</th><th>{{ t('status') }}</th><th></th></tr></thead>
+    <tbody>
+    {% for e in echeances %}
+      <tr><td><a href="/echeances/{{ e.id }}">{{ e.libelle }}</a></td><td>{{ fcfa(e.montant_du) }}</td><td>{{ fcfa(e.montant_paye) }}</td>
+        <td>{{ e.date_limite or '—' }}</td><td><span class="badge {{ e.statut }}">{{ t('st_' ~ e.statut) }}</span></td>
+        <td>{% if e.type == 'annuelle' and e.solde <= 0 %}<a href="/faitieres/{{ item.id }}/attestation.pdf?annee={{ e.annee }}" target="_blank">{{ t('attestation') }}</a>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="6" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
 <section class="card">
   <h2>{{ t('mandates_of') }}</h2>
   <table>

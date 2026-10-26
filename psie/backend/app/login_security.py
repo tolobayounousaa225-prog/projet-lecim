@@ -40,3 +40,22 @@ def authenticate_user(db: Session, email: str, password: str) -> "models.User | 
     user.failed_login_attempts = 0
     user.locked_until = None
     return user
+
+
+def register_failure(db: Session, user: "models.User", check_only: bool = False) -> None:
+    """Comptabilise un échec (mauvais code de double authentification) avec le même
+    verrouillage que le mot de passe. Avec `check_only`, vérifie seulement que le compte
+    n'est pas verrouillé. Lève AccountLockedError si le compte est (devenu) verrouillé."""
+    now = datetime.datetime.utcnow()
+    if user.locked_until and user.locked_until > now:
+        minutes_left = max(1, int((user.locked_until - now).total_seconds() // 60) + 1)
+        raise AccountLockedError(minutes_left)
+    if check_only:
+        return
+    user.failed_login_attempts += 1
+    if user.failed_login_attempts >= MAX_FAILED_LOGIN_ATTEMPTS:
+        user.locked_until = now + datetime.timedelta(minutes=LOCKOUT_MINUTES)
+        user.failed_login_attempts = 0
+        db.commit()
+        raise AccountLockedError(LOCKOUT_MINUTES)
+    db.commit()

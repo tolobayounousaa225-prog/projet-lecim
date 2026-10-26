@@ -13,6 +13,22 @@ class Settings(BaseSettings):
     # True en production (HTTPS) : le cookie de session n'est envoye que sur HTTPS.
     cookie_secure: bool = False
 
+    # URL publique de l'application : encodée dans les QR codes des reçus et attestations.
+    public_base_url: str = "http://localhost:8100"
+
+    # Double authentification par e-mail (admin et finances). À activer en production ;
+    # nécessite un serveur SMTP configuré.
+    two_factor_enabled: bool = True
+
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = "no-reply@psie.local"
+
+    # Tâches planifiées (génération des cotisations de l'année, relances, résumé hebdomadaire)
+    scheduler_enabled: bool = True
+
     admin_bootstrap_email: str = "admin@psie.local"
     admin_bootstrap_password: str = "change-moi-123"
     admin_bootstrap_name: str = "Administrateur PSIE"

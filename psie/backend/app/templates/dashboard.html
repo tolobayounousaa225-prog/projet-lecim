@@ -10,6 +10,17 @@
   {% endfor %}
 </div>
 
+{% if sit %}
+<section class="card">
+  <h2><a href="/cotisations">{{ t('nav_dues') }} {{ sit.annee }}</a></h2>
+  <div class="tiles">
+    <div class="tile"><div class="num">{{ sit.taux }} %</div><div>{{ t('recovery_rate') }}</div></div>
+    <div class="tile"><div class="num">{{ fcfa(sit.reste) }}</div><div>{{ t('remaining') }}</div></div>
+    <div class="tile"><div class="num">{{ sit.nb_retard }}</div><div>{{ t('late_count') }}</div></div>
+    <div class="tile"><div class="num">{{ sit.nb_a_jour }}</div><div>{{ t('up_to_date') }}</div></div>
+  </div>
+</section>
+{% endif %}
 <section class="card">
   <h2>{{ t('mandates_expiring') }}</h2>
   {% if expirent %}

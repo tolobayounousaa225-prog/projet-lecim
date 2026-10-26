@@ -5,7 +5,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import finance, models
 from ..audit import log_action
 from ..database import get_db
 from ..deps import get_current_user, require_admin, require_internal, require_member_manager
@@ -25,6 +25,7 @@ def _redirect(url: str) -> RedirectResponse:
 def dashboard(request: Request, user: models.User = Depends(require_internal), db: Session = Depends(get_db)):
     faitieres = db.query(models.Faitiere).all()
     mandats = db.query(models.Mandat).all()
+    sit = finance.situation(db, datetime.date.today().year) if user.can_view_finances else None
     return render(
         request,
         "dashboard.html",
@@ -34,6 +35,8 @@ def dashboard(request: Request, user: models.User = Depends(require_internal), d
         par_categorie={k: sum(1 for f in faitieres if f.categorie == k) for k in models.CATEGORIES},
         expirent=[m for m in mandats if m.echeance == "bientot"],
         expires=[m for m in mandats if m.echeance == "expire"],
+        sit=sit,
+        fcfa=finance.fcfa,
     )
 
 
@@ -102,7 +105,14 @@ def _get_faitiere_for(user: models.User, faitiere_id: int, db: Session) -> model
 def faitiere_detail(faitiere_id: int, request: Request, user: models.User = Depends(get_current_user),
                     db: Session = Depends(get_db)):
     item = _get_faitiere_for(user, faitiere_id, db)
-    return render(request, "faitiere_detail.html", user, item=item)
+    # Cotisations visibles par les organes de finances/contrôle et par la faîtière elle-même
+    show_dues = user.can_view_finances or not user.is_internal
+    echeances = (
+        db.query(models.Echeance).filter_by(faitiere_id=item.id).order_by(models.Echeance.annee.desc()).all()
+        if show_dues else []
+    )
+    return render(request, "faitiere_detail.html", user, item=item, show_dues=show_dues,
+                  echeances=echeances, fcfa=finance.fcfa)
 
 
 @router.get("/faitieres/{faitiere_id}/edit")

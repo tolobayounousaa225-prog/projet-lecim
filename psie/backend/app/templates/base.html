@@ -17,6 +17,7 @@
       <a href="/admin">{{ t('nav_dashboard') }}</a>
       <a href="/faitieres">{{ t('nav_members') }}</a>
       <a href="/mandats">{{ t('nav_mandates') }}</a>
+      {% if user.can_view_finances %}<a href="/cotisations">{{ t('nav_dues') }}</a>{% endif %}
       {% if user.is_admin %}
         <a href="/users">{{ t('nav_users') }}</a>
         <a href="/audit">{{ t('nav_audit') }}</a>

@@ -9,7 +9,8 @@ from . import models  # noqa: F401  (enregistre les tables)
 from .config import settings
 from .database import Base, engine
 from .deps import NotAuthenticatedException
-from .routers import admin, auth
+from . import scheduler
+from .routers import admin, auth, cotisations
 from .web import BASE_DIR, render
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
@@ -18,7 +19,9 @@ UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    scheduler.start()
     yield
+    scheduler.shutdown()
 
 
 app = FastAPI(
@@ -65,3 +68,4 @@ def health():
 
 app.include_router(auth.router)
 app.include_router(admin.router)
+app.include_router(cotisations.router)
