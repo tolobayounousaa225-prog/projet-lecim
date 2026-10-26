@@ -6,13 +6,13 @@ puis cotisations, gouvernance et finances (voir [`../PSIE_CAHIER_DES_CHARGES.md`
 Ce dossier est un **projet autonome** (sa propre base, sa propre configuration). Il est hébergé
 temporairement dans le dépôt LECIM et pourra être déplacé tel quel dans son propre dépôt.
 
-## État : phases 1 à 4 (annuaire, cotisations, adhésion en ligne, vitrine)
+## État : phases 1 à 5 (annuaire, cotisations, adhésion, vitrine, vie statutaire)
 
 | Fait | Pas encore fait |
 |---|---|
 | Connexion sécurisée (bcrypt, verrouillage après 5 échecs, cookie HttpOnly, protection CSRF) | **Migrations de base (Alembic) : à mettre en place avant la première mise en ligne** (jusqu'ici les tables sont créées au démarrage, ce qui n'ajoute pas de colonnes à une base existante) |
 | **Double authentification par e-mail** (administrateur et secrétaire aux finances) |  |
-| 7 rôles alignés sur les organes des Statuts | Assemblées, votes, sanctions (phase 5) |
+| 7 rôles alignés sur les organes des Statuts |  |
 | Annuaire des membres : fondateur / ordinaire / honneur, les 6 fondateurs créés | Finances complètes, double signature des paiements, registre des dons (phase 6) |
 | Mandats par organe, durée de 3 ans, alertes d'échéance | Commissions et 41 délégations régionales (phase 7) |
 | **Cotisation annuelle** : montant par année, création automatique des échéances, statuts à jour / partiel / en retard / impayé |  |
@@ -29,6 +29,13 @@ temporairement dans le dépôt LECIM et pourra être déplacé tel quel dans son
 | **Circuit d'adhésion des Statuts** : examen par la DEN, avis écrit du CA, décision de l'AG avec référence ; acceptation impossible sans avis favorable | |
 | Acceptation : le membre (ordinaire, actif) est créé, son droit d'adhésion à payer est créé si un montant est saisi, **certificat d'adhésion PDF** à QR code vérifiable publiquement | |
 | Gestion des actualités FR/AR (brouillon ou publié, texte brut échappé) | |
+| **Assemblées générales** (AGA, AGO, AGE) : convocation par e-mail et PDF, **15 jours minimum** et **avis favorable du CA** sur l'ordre du jour pour l'AGA et l'AGO (pas pour l'AGE, qui exige l'indication de la demande conjointe) | |
+| **Séance** : liste d'émargement générée (délégués des organisations actives, CA, DEN, CC en cours de mandat), **quorum des 2/3** calculé en direct, impayés affichés **à titre d'information seulement** | |
+| **Résolutions et scrutins** : consensus ou **majorité des voix des présents** ; **dissolution à 4/5** réservée à l'AGE ; aucune délibération sans quorum ; scrutin clos = voix figées | |
+| Mode de vote **paramétrable par assemblée** (une voix par organisation, ou par délégué présent) : les textes ne le tranchent pas | |
+| Clôture avec président et deux assesseurs, **procès-verbal PDF** (émargement, quorum, résolutions et résultats) | |
+| **Sanctions** (avertissement, blâme, suspension, radiation) avec référence de l'avis du CA ou de la résolution d'AG, notification PDF, levée d'une suspension ; une organisation suspendue ou radiée ne siège plus, ne cotise plus et disparaît de la vitrine | |
+| Tableau de bord : composition réelle des organes comparée aux Statuts (CA 13, DEN 13, CC 2, 2 délégués par organisation) | |
 | Cloisonnement : un représentant ne voit que sa faîtière, ses échéances et ses reçus | |
 | Journal d'audit des écritures | |
 | Interface et PDF en français et en arabe (droite-gauche) | |
@@ -50,6 +57,17 @@ temporairement dans le dépôt LECIM et pourra être déplacé tel quel dans son
 | Prise en charge, décision de l'AG | Administrateur, DEN, secrétaire de la DEN |
 | Avis écrit du CA | Administrateur du CA (ou, en son nom, DEN / secrétaire) |
 | Lecture des demandes | Tous les organes de la PSIE |
+
+### Vie statutaire (qui fait quoi)
+
+| Action | Qui |
+|---|---|
+| Créer, convoquer, ouvrir la séance, émarger, saisir les votes, clôturer, prononcer une sanction | Administrateur, DEN, secrétaire de la DEN |
+| Avis du CA sur l'ordre du jour | Administrateur du CA (ou, en son nom, DEN / secrétaire) |
+| Consulter | Tous les organes de la PSIE |
+| Voir la convocation | Représentants de faîtière (assemblées convoquées uniquement) |
+
+Les votes sont saisis par le bureau de séance à partir du scrutin constaté : le vote électronique des délégués n'est pas prévu à ce stade.
 
 Après une acceptation, le secrétaire aux finances crée les cotisations de l'année depuis la page
 Cotisations : le nouveau membre y est inclus. Aucun prorata n'est appliqué (les textes n'en prévoient pas).

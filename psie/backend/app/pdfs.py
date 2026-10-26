@@ -159,3 +159,104 @@ def membership_certificate_pdf(demande: models.DemandeAdhesion, verify_url: str)
     _footer(pdf, verify_url, "Scannez pour vérifier l'authenticité de ce certificat.",
             "امسح الرمز للتحقق من صحة هذه الشهادة.", signer=("Le Directeur Exécutif National", "المدير التنفيذي الوطني"))
     return bytes(pdf.output())
+
+
+def _body_page(title_fr: str, title_ar: str) -> FPDF:
+    """Document de plusieurs pages (procès-verbal) : en-tête puis saut de page automatique."""
+    pdf = _new_pdf()
+    _header(pdf, title_fr, title_ar)
+    pdf.set_auto_page_break(True, margin=20)
+    return pdf
+
+
+def _line(pdf: FPDF, text: str, bold: bool = False, size: int = 10, h: int = 6) -> None:
+    pdf.set_x(15)
+    pdf.set_font("dv", "B" if bold else "", size)
+    pdf.multi_cell(180, h, text, new_x="LMARGIN", new_y="NEXT")
+
+
+def convocation_pdf(a: models.Assemblee) -> bytes:
+    pdf = _body_page("CONVOCATION", "استدعاء")
+    _row(pdf, "Assemblée", a.type_label[:36], "الجمعية")
+    _row(pdf, "Date", f"{a.date_assemblee:%d/%m/%Y}", "التاريخ")
+    _row(pdf, "Heure", a.heure or "—", "الساعة")
+    _row(pdf, "Lieu", a.lieu[:34], "المكان")
+    pdf.ln(4)
+    _line(pdf, "Ordre du jour / جدول الأعمال", bold=True, size=11)
+    _line(pdf, a.ordre_du_jour)
+    pdf.ln(6)
+    _line(pdf, "La présente convocation est établie par écrit conformément aux Statuts de la PSIE (art. 14).")
+    pdf.set_y(-35)
+    pdf.set_x(15)
+    pdf.set_font("dv", "", 10)
+    pdf.cell(90, 6, "Le Directeur Exécutif National")
+    pdf.cell(90, 6, "المدير التنفيذي الوطني", align="R")
+    return bytes(pdf.output())
+
+
+def minutes_pdf(a: models.Assemblee, voting: dict) -> bytes:
+    pdf = _body_page("PROCÈS-VERBAL D'ASSEMBLÉE GÉNÉRALE", "محضر الجمعية العامة")
+    _row(pdf, "Assemblée", a.type_label[:36], "الجمعية")
+    _row(pdf, "Date", f"{a.date_assemblee:%d/%m/%Y}", "التاريخ")
+    _row(pdf, "Lieu", a.lieu[:34], "المكان")
+    _row(pdf, "Président de séance", (a.president_nom or "—")[:30], "رئيس الجلسة")
+    _row(pdf, "Assesseurs", f"{a.assesseur1_nom or '—'} ; {a.assesseur2_nom or '—'}"[:40], "المقرران")
+    unit = "organisation(s)" if a.mode_vote == "organisation" else "délégué(s)"
+    _row(pdf, f"Quorum ({unit})", f"{voting['presents']} / {voting['base']}", "النصاب")
+    _row(pdf, "Quorum des 2/3", "ATTEINT" if voting["quorum"] else "NON ATTEINT", "نصاب الثلثين")
+    pdf.ln(4)
+    _line(pdf, "Ordre du jour", bold=True, size=11)
+    _line(pdf, a.ordre_du_jour)
+    pdf.ln(3)
+    _line(pdf, "Émargement", bold=True, size=11)
+    for p in a.presences:
+        org = f" — {p.faitiere.sigle}" if p.faitiere else ""
+        _line(pdf, f"[{'X' if p.present else ' '}] {p.nom} ({p.organe}{org})", h=5)
+    pdf.ln(3)
+    _line(pdf, "Résolutions", bold=True, size=11)
+    if not a.resolutions:
+        _line(pdf, "Aucune résolution.")
+    for r in a.resolutions:
+        res = "ADOPTÉE" if r.adoptee else ("REJETÉE" if r.adoptee is False else "NON TRANCHÉE")
+        _line(pdf, f"Résolution n°{r.numero} — {r.intitule}", bold=True)
+        if r.texte:
+            _line(pdf, r.texte)
+        if r.statut == "close":
+            how = "par consensus" if r.mode_adoption == "consensus" else (
+                f"au vote : {r.pour} pour, {r.contre} contre, {r.abstention} abstention(s) sur {r.presents} présent(s)"
+                + (" (majorité des 4/5 requise)" if r.regle == "dissolution" else ""))
+            _line(pdf, f"{res} {how}.")
+        else:
+            _line(pdf, res + ".")
+        pdf.ln(1)
+    pdf.ln(8)
+    pdf.set_x(15)
+    pdf.set_font("dv", "", 10)
+    pdf.cell(60, 6, "Le Président de séance", align="C")
+    pdf.cell(60, 6, "L'Assesseur 1", align="C")
+    pdf.cell(60, 6, "L'Assesseur 2", align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_x(15)
+    pdf.set_font("dv", "B", 9)
+    pdf.cell(60, 6, a.president_nom or "", align="C")
+    pdf.cell(60, 6, a.assesseur1_nom or "", align="C")
+    pdf.cell(60, 6, a.assesseur2_nom or "", align="C")
+    return bytes(pdf.output())
+
+
+def sanction_pdf(s: models.Sanction) -> bytes:
+    pdf = _body_page("NOTIFICATION DE SANCTION", "إشعار بعقوبة")
+    _row(pdf, "Organisation", s.faitiere.sigle, "المنظمة")
+    _row(pdf, "Sanction", s.type_label, "العقوبة")
+    _row(pdf, "Date de la décision", f"{s.date_decision:%d/%m/%Y}", "تاريخ القرار")
+    _row(pdf, "Référence", s.reference[:34], "المرجع")
+    pdf.ln(4)
+    _line(pdf, "Motif", bold=True, size=11)
+    _line(pdf, s.motif)
+    pdf.ln(6)
+    _line(pdf, "Conformément au Règlement Intérieur de la PSIE (art. 15), la présente sanction est notifiée par écrit à l'organisation concernée.")
+    pdf.set_y(-35)
+    pdf.set_x(15)
+    pdf.set_font("dv", "", 10)
+    pdf.cell(90, 6, "Le Directeur Exécutif National")
+    pdf.cell(90, 6, "المدير التنفيذي الوطني", align="R")
+    return bytes(pdf.output())

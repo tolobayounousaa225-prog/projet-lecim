@@ -10,6 +10,14 @@
   {% endfor %}
 </div>
 
+<section class="card">
+  <h2>{{ t('g_composition') }}</h2>
+  <div class="tiles">
+  {% for c in composition %}
+    <div class="tile"><div class="num">{{ c.reel }} / {{ c.attendu }}</div><div>{{ lbl('organe', c.organe) }}</div></div>
+  {% endfor %}
+  </div>
+</section>
 {% if sit %}
 <section class="card">
   <h2><a href="/cotisations">{{ t('nav_dues') }} {{ sit.annee }}</a></h2>

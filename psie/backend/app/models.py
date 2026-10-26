@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, String, Text, text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -90,6 +90,7 @@ class Faitiere(Base):
 
     mandats: Mapped[list["Mandat"]] = relationship(back_populates="faitiere", order_by="Mandat.organe")
     users: Mapped[list["User"]] = relationship(back_populates="faitiere")
+    sanctions: Mapped[list["Sanction"]] = relationship(back_populates="faitiere", order_by="Sanction.id")
 
     @property
     def categorie_label(self) -> str:
@@ -98,6 +99,10 @@ class Faitiere(Base):
     @property
     def statut_label(self) -> str:
         return STATUTS_MEMBRE.get(self.statut, self.statut)
+
+    @property
+    def sanctions_actives(self) -> list["Sanction"]:
+        return [x for x in self.sanctions if x.is_active]
 
     @property
     def categorie_label_pdf(self) -> tuple[str, str]:
@@ -450,3 +455,172 @@ class Actualite(Base):
     def contenu(self, lang: str) -> str:
         first, second = (self.contenu_ar, self.contenu_fr) if lang == "ar" else (self.contenu_fr, self.contenu_ar)
         return first or second or ""
+
+
+# ---------- Vie statutaire : assemblées, résolutions, votes, sanctions ----------
+
+ASSEMBLEE_TYPES = {
+    "AGA": "Assemblée Générale Annuelle",
+    "AGO": "Assemblée Générale Ordinaire",
+    "AGE": "Assemblée Générale Extraordinaire",
+}
+ASSEMBLEE_STATUTS = {
+    "preparation": "En préparation",
+    "convoquee": "Convoquée",
+    "en_seance": "En séance",
+    "close": "Clôturée",
+}
+# Statuts art. 14.1 : AGA et AGO sont convoquées au moins 15 jours à l'avance
+CONVOCATION_DELAI_JOURS = 15
+VOTE_MODES = {
+    "organisation": "Une voix par organisation membre",
+    "delegue": "Une voix par délégué présent",
+}
+VOTE_CHOIX = {"pour": "Pour", "contre": "Contre", "abstention": "Abstention"}
+
+SANCTION_TYPES = {
+    "avertissement": "Avertissement",
+    "blame": "Blâme",
+    "suspension": "Suspension",
+    "radiation": "Radiation",
+}
+# Effet d'une sanction sur le statut du membre
+SANCTION_EFFETS = {"suspension": "suspendu", "radiation": "radie"}
+# Organes dont la composition est contrôlée (nombre de membres prévu par les Statuts)
+COMPOSITION_ATTENDUE = {"CA": 13, "DEN": 13, "CC": 2}
+
+
+class Assemblee(Base):
+    __tablename__ = "assemblees"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    type: Mapped[str] = mapped_column(String(5), nullable=False)
+    date_assemblee: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    heure: Mapped[str | None] = mapped_column(String(5), nullable=True)
+    lieu: Mapped[str] = mapped_column(String(255), nullable=False)
+    ordre_du_jour: Mapped[str] = mapped_column(Text, nullable=False)
+    # Qui vote : paramètre de chaque assemblée (les textes ne le tranchent pas)
+    mode_vote: Mapped[str] = mapped_column(String(20), default="organisation")
+    # AGE : demande conjointe de deux organes, ou des 2/3 des membres (Statuts art. 14.2)
+    demande_age: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Avis favorable du CA sur l'ordre du jour, exigé sauf pour une AGE (Statuts art. 18)
+    avis_ca_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    avis_ca_par_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    avis_ca_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+    statut: Mapped[str] = mapped_column(String(20), default="preparation")
+    convocation_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+    convocation_envoyes: Mapped[int] = mapped_column(Integer, default=0)
+    president_nom: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    assesseur1_nom: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    assesseur2_nom: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+    closed_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+
+    presences: Mapped[list["PresenceAG"]] = relationship(back_populates="assemblee", order_by="PresenceAG.id")
+    resolutions: Mapped[list["Resolution"]] = relationship(back_populates="assemblee", order_by="Resolution.numero")
+
+    @property
+    def type_label(self) -> str:
+        return ASSEMBLEE_TYPES.get(self.type, self.type)
+
+    @property
+    def statut_label(self) -> str:
+        return ASSEMBLEE_STATUTS.get(self.statut, self.statut)
+
+    @property
+    def requires_ca_opinion(self) -> bool:
+        return self.type != "AGE"
+
+
+class PresenceAG(Base):
+    """Une personne attendue à l'assemblée (délégué d'une organisation, membre du CA, de la
+    DEN ou du CC), avec sa présence constatée à l'émargement."""
+
+    __tablename__ = "presences_ag"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    assemblee_id: Mapped[int] = mapped_column(ForeignKey("assemblees.id"), index=True, nullable=False)
+    mandat_id: Mapped[int | None] = mapped_column(ForeignKey("mandats.id", ondelete="SET NULL"), nullable=True)
+    nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    organe: Mapped[str] = mapped_column(String(10), nullable=False)
+    faitiere_id: Mapped[int | None] = mapped_column(ForeignKey("faitieres.id"), nullable=True)
+    present: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    assemblee: Mapped["Assemblee"] = relationship(back_populates="presences")
+    faitiere: Mapped["Faitiere | None"] = relationship()
+
+    @property
+    def is_delegue(self) -> bool:
+        return self.organe == "AG" and self.faitiere_id is not None
+
+
+class Resolution(Base):
+    __tablename__ = "resolutions"
+    __table_args__ = (UniqueConstraint("assemblee_id", "numero", name="uq_resolution_numero"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    assemblee_id: Mapped[int] = mapped_column(ForeignKey("assemblees.id"), index=True, nullable=False)
+    numero: Mapped[int] = mapped_column(Integer, nullable=False)
+    intitule: Mapped[str] = mapped_column(String(255), nullable=False)
+    texte: Mapped[str | None] = mapped_column(Text, nullable=True)
+    regle: Mapped[str] = mapped_column(String(15), default="majorite")  # majorite | dissolution (4/5)
+    statut: Mapped[str] = mapped_column(String(10), default="ouverte")  # ouverte | close
+    mode_adoption: Mapped[str | None] = mapped_column(String(10), nullable=True)  # consensus | vote
+    pour: Mapped[int] = mapped_column(Integer, default=0)
+    contre: Mapped[int] = mapped_column(Integer, default=0)
+    abstention: Mapped[int] = mapped_column(Integer, default=0)
+    presents: Mapped[int] = mapped_column(Integer, default=0)
+    base: Mapped[int] = mapped_column(Integer, default=0)
+    adoptee: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    closed_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+
+    assemblee: Mapped["Assemblee"] = relationship(back_populates="resolutions")
+    votes: Mapped[list["Vote"]] = relationship(
+        back_populates="resolution", order_by="Vote.id", cascade="all, delete-orphan")
+
+
+class Vote(Base):
+    """Voix d'une unité de vote (organisation ou délégué selon le mode), saisie par le bureau
+    de séance à partir du scrutin constaté."""
+
+    __tablename__ = "votes"
+    __table_args__ = (UniqueConstraint("resolution_id", "unite", name="uq_vote_unite"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    resolution_id: Mapped[int] = mapped_column(ForeignKey("resolutions.id"), index=True, nullable=False)
+    unite: Mapped[str] = mapped_column(String(20), nullable=False)  # "o:<faitiere_id>" ou "d:<presence_id>"
+    libelle: Mapped[str] = mapped_column(String(255), nullable=False)
+    choix: Mapped[str] = mapped_column(String(12), nullable=False)
+
+    resolution: Mapped["Resolution"] = relationship(back_populates="votes")
+
+
+class Sanction(Base):
+    """Sanction disciplinaire contre une organisation membre (Règlement Intérieur art. 15)."""
+
+    __tablename__ = "sanctions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    faitiere_id: Mapped[int] = mapped_column(ForeignKey("faitieres.id"), index=True, nullable=False)
+    type: Mapped[str] = mapped_column(String(15), nullable=False)
+    motif: Mapped[str] = mapped_column(Text, nullable=False)
+    # Avertissement, blâme, suspension : décidés par la DEN après avis favorable du CA (référence
+    # de l'avis écrit). Radiation : décision de l'AG (référence de la résolution).
+    reference: Mapped[str] = mapped_column(String(255), nullable=False)
+    date_decision: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    notifiee_le: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    levee_le: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    levee_motif: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    decide_par_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    faitiere: Mapped["Faitiere"] = relationship(back_populates="sanctions")
+
+    @property
+    def type_label(self) -> str:
+        return SANCTION_TYPES.get(self.type, self.type)
+
+    @property
+    def is_active(self) -> bool:
+        return self.levee_le is None

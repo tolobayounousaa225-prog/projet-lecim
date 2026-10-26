@@ -18,6 +18,8 @@
       <a href="/faitieres">{{ t('nav_members') }}</a>
       <a href="/mandats">{{ t('nav_mandates') }}</a>
       <a href="/adhesions">{{ t('nav_adhesions') }}</a>
+      <a href="/assemblees">{{ t('nav_assemblies') }}</a>
+      <a href="/sanctions">{{ t('nav_sanctions') }}</a>
       {% if user.can_view_finances %}<a href="/cotisations">{{ t('nav_dues') }}</a><a href="/appels">{{ t('nav_calls') }}</a>{% endif %}
       {% if user.can_manage_members %}<a href="/gestion/actualites">{{ t('nav_news_admin') }}</a>{% endif %}
       {% if user.is_admin %}
@@ -26,6 +28,7 @@
       {% endif %}
     {% elif user and user.faitiere_id %}
       <a href="/faitieres/{{ user.faitiere_id }}">{{ t('nav_my_org') }}</a>
+      <a href="/assemblees">{{ t('nav_assemblies') }}</a>
     {% else %}
       <a href="/">{{ t('nav_home') }}</a>
       <a href="/apropos">{{ t('nav_about') }}</a>

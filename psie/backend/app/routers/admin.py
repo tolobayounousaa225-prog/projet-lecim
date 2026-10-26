@@ -5,7 +5,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .. import finance, models
+from .. import finance, gouvernance, models
 from ..audit import log_action
 from ..database import get_db
 from ..deps import get_current_user, require_admin, require_internal, require_member_manager
@@ -37,6 +37,7 @@ def dashboard(request: Request, user: models.User = Depends(require_internal), d
         expires=[m for m in mandats if m.echeance == "expire"],
         sit=sit,
         fcfa=finance.fcfa,
+        composition=gouvernance.composition_organes(db),
     )
 
 
