@@ -1,8 +1,8 @@
-# PSIE — Cahier des charges et architecture (version 0.1, à valider)
+# PSIE — Cahier des charges et architecture (version 1.0 — décisions de cadrage intégrées)
 
-> **Statut : proposition de travail.** Rien n'est encore développé. Ce document sert de base de
-> discussion : on le corrige ensemble, on tranche les points marqués **[À VALIDER]**, puis on
-> démarre le développement par phases.
+> **Statut : cadrage en cours de validation.** Rien n'est encore développé. La version 1.0
+> intègre les premières décisions (section 9). Il reste des points marqués **[À VALIDER]**,
+> à trancher notamment avec les statuts de la PSIE (à fournir).
 >
 > PSIE = *Plate-forme des Structures Islamiques de l'Éducation*. Elle regroupe les **faîtières**
 > (fédérations / ligues / associations nationales) des structures islamiques d'éducation. La
@@ -55,7 +55,7 @@ du code de la LECIM, et non ajouter la PSIE dans la base LECIM.**
 On part sur **B**, et on pourra extraire un socle commun plus tard si les deux projets durent.
 La PSIE aura sa propre base PostgreSQL, son propre `.env`, son domaine, ses sauvegardes.
 
-**[À VALIDER]** Option B retenue ?
+**✅ Décidé : option B retenue** (projet séparé).
 
 ---
 
@@ -81,7 +81,12 @@ Les rôles s'appuient sur le modèle déjà éprouvé de la LECIM : `access_leve
 
 ### 4.1 Annuaire des faîtières
 - Fiche : nom, sigle, date de création, statut juridique, siège, contacts, logo, représentants légaux.
+- **Volume : environ 6 faîtières.** Le volume est petit : on privilégie la simplicité et la
+  fiabilité plutôt que la performance ou l'import de masse.
 - **Catégorie** : `fondateur` | `adhérent` | `observateur` **[À VALIDER : quelles catégories exactement ?]**.
+- **Poids économique** : coefficient propre à chaque faîtière (champ `poids_economique`),
+  utilisé pour proposer la répartition des appels exceptionnels (voir 4.4). Défini et modifié
+  par le bureau exécutif, avec historique.
 - Statut : `active` | `suspendue` | `radiée`.
 - Informations de couverture (indicatives) : nombre de structures affiliées, régions, effectifs
   d'élèves — saisis ou mis à jour chaque année par la faîtière elle-même via son portail.
@@ -90,13 +95,14 @@ Les rôles s'appuient sur le modèle déjà éprouvé de la LECIM : `access_leve
 ### 4.2 Adhésion
 Circuit repris de la LECIM : demande en ligne (code de suivi) → examen par le bureau → validation
 → **certificat d'adhésion PDF avec QR code** vérifiable publiquement.
-- Droit d'adhésion unique **[À VALIDER : montant ?]**.
+- **Droit d'adhésion unique** versé à l'entrée : ✅ confirmé. **[À VALIDER : montant]**.
 - Les faîtières fondatrices (dont la LECIM) sont créées directement, marquées `fondateur`.
 
 ### 4.3 Cotisations annuelles
-- **Barème paramétrable** (table `bareme_cotisation`) plutôt que codé en dur comme dans la LECIM :
-  montant par catégorie et par année, modifiable sans toucher au code.
-  **[À VALIDER : montant unique ou barème selon la taille/catégorie de la faîtière ?]**
+- **Montant unique pour toutes les faîtières** : ✅ décidé. **[À VALIDER : montant et période
+  (année civile ou scolaire)]**.
+- Le montant reste **paramétrable par année** (table `bareme_cotisation`) plutôt que codé en
+  dur comme dans la LECIM : modifiable sans toucher au code.
 - À chaque ouverture d'année : génération **automatique** d'une échéance par faîtière active.
 - Paiements partiels et échelonnés, plusieurs versements par échéance.
 - Statut calculé : `à jour` | `partiel` | `en retard` | `impayé`.
@@ -105,9 +111,13 @@ Circuit repris de la LECIM : demande en ligne (code de suivi) → examen par le 
 
 ### 4.4 Cotisations exceptionnelles (nouveauté)
 Une cotisation exceptionnelle est un **appel de fonds** décidé par une instance (AG ou bureau).
-- Création d'un **Appel** : intitulé, motif, décision à l'origine (référence PV), date limite.
-- Mode de répartition : **montant égal pour toutes** | **montant par catégorie** | **montant libre par faîtière**.
-  **[À VALIDER : quels modes sont réellement utilisés ?]**
+- **Décidée par le bureau exécutif** : ✅ décidé. L'appel enregistre la décision d'origine
+  (référence du PV du bureau).
+- Création d'un **Appel** : intitulé, motif, décision à l'origine, date limite.
+- **Montant différencié selon le poids économique de chaque faîtière** : ✅ décidé. Le
+  trésorier saisit une enveloppe globale ; le système **propose** une répartition au prorata
+  des coefficients `poids_economique`, que le bureau peut ajuster faîtière par faîtière avant
+  validation. Les modes « montant égal pour toutes » et « montant libre » restent possibles.
 - Génération automatique des échéances pour toutes les faîtières concernées (ou une sélection).
 - Même mécanique de paiement / reçu / relance que la cotisation annuelle.
 - Possibilité d'**exonérer** ou de **reporter** une faîtière (avec motif et trace d'audit).
@@ -122,8 +132,12 @@ Une cotisation exceptionnelle est un **appel de fonds** décidé par une instanc
 - Réunions du bureau, commissions : convocation, présence, PV (repris de la LECIM).
 - **Assemblée Générale** : convocation envoyée aux représentants, émargement (présentiel ou
   en ligne), **calcul du quorum**, résolutions, votes enregistrés.
-- Règle de vote : 1 faîtière = 1 voix **[À VALIDER]**. Option : droit de vote suspendu si
-  cotisation annuelle non à jour **[À VALIDER : prévu par les statuts ?]**.
+- **Sanction en cas d'impayé : interdiction de participer à l'Assemblée** : ✅ décidé.
+  Le système bloque automatiquement l'émargement et l'accès au scrutin d'une faîtière en
+  situation d'impayé, et l'indique sur la convocation. **[À VALIDER : la sanction vaut-elle
+  pour la cotisation annuelle seule ou aussi pour les appels exceptionnels ? Après quel délai
+  de retard ? Y a-t-il une procédure de régularisation sur place ?]**
+- Règle de vote : 1 faîtière = 1 voix **[À VALIDER]**.
 - Visioconférence : le Jitsi auto-hébergé de la LECIM peut être réutilisé.
 
 ### 4.7 Finances de la PSIE
@@ -176,7 +190,11 @@ Points clés :
 - **`PAIEMENT`** : plusieurs par échéance (montant, date, mode, référence, justificatif,
   saisi par). Le solde et le statut de l'échéance sont **calculés** à partir des paiements,
   jamais saisis à la main.
-- **`BAREME_COTISATION`** : (année, catégorie, montant) — modifiable sans redéploiement.
+- **`BAREME_COTISATION`** : (année, montant unique) — modifiable sans redéploiement.
+- **`FAITIERE.poids_economique`** : coefficient servant à proposer la répartition d'un appel
+  exceptionnel ; chaque modification est historisée (audit).
+- **`PRESENCE_AG`** porte un indicateur `autorisee` calculé : faux si la faîtière a une échéance
+  en retard soumise à la sanction.
 - **`APPEL_EXCEPTIONNEL`** : motif, décision d'origine, mode de répartition, date limite, statut.
 - Les montants sont stockés en **entiers (FCFA)**, comme dans la LECIM, pas de décimales.
 - Aucune suppression physique des écritures financières : annulation par contre-écriture
@@ -265,23 +283,38 @@ valeur de l'outil.
 
 ---
 
-## 9. Points à valider ensemble
+## 9. Décisions et points restants
 
-Réponses souhaitées, même approximatives, pour figer la version 1 :
+### Décisions prises
 
-1. **Projet séparé (option B)** : d'accord ?
-2. **Faîtières membres** : combien environ aujourd'hui ? Quelles catégories (fondateur / adhérent / autres) ?
-3. **Cotisation annuelle** : montant unique ou barème ? Quels montants ? Quelle période (année civile ou année scolaire) ?
-4. **Droit d'adhésion** unique : existe-t-il pour la PSIE, et pour quel montant ?
-5. **Cotisation exceptionnelle** : qui la décide (AG, bureau) ? Montant égal pour tous ou variable ?
-6. **Sanctions en cas d'impayé** : suspension du droit de vote ? du statut de membre ? après combien de temps ?
-7. **Assemblée Générale** : 1 faîtière = 1 voix ? Combien de représentants par faîtière ? Quorum fixé par les statuts ?
-8. **Qui utilise l'outil au quotidien** côté PSIE (qui est trésorier, qui est secrétariat) ?
-9. **Paiements** : virement, espèces, mobile money ? Faut-il le paiement en ligne à terme ?
-10. **Langues** : français seul, ou français + arabe (la LECIM a déjà un dossier `ar/`) ?
-11. **Nom de domaine** et **hébergement** : un domaine pour la PSIE existe-t-il déjà ? Même VPS que la LECIM ?
-12. **Identité visuelle** : logo et charte graphique de la PSIE disponibles ?
-13. **Statuts de la PSIE** : peux-tu me les fournir pour que je cale les règles (quorum, vote, sanctions, cotisations) sur le texte réel plutôt que sur des hypothèses ?
+| # | Sujet | Décision |
+|---|---|---|
+| 1 | Architecture | Projet et base séparés, démarrés à partir du code LECIM |
+| 2 | Volume | Environ 6 faîtières |
+| 3 | Cotisation annuelle | Montant unique pour toutes les faîtières, plus un droit d'adhésion |
+| 4 | Cotisation exceptionnelle | Décidée par le bureau exécutif ; montant variable selon le poids économique de chaque faîtière |
+| 5 | Sanction d'impayé | Interdiction de participer à l'Assemblée |
+| 6 | Statuts de la PSIE | À fournir (documents en attente) |
+
+### Points encore ouverts
+
+1. **Montants** : cotisation annuelle, droit d'adhésion. Période : année civile ou scolaire ?
+2. **Catégories de faîtières** : fondateur / adhérent / observateur, ou autre ?
+3. **Poids économique** : sur quelle base est-il fixé (chiffre d'affaires, nombre d'élèves, nombre de structures, décision du bureau) ? Fixé une fois ou révisé chaque année ?
+4. **Sanction** : s'applique-t-elle aux appels exceptionnels aussi ? Après quel délai ? Procédure de régularisation ?
+5. **Assemblée Générale** : 1 faîtière = 1 voix ? Combien de représentants par faîtière ? Quorum ?
+6. **Utilisateurs PSIE** : qui sera trésorier, secrétariat, administrateur de la plate-forme ?
+7. **Paiements** : virement, espèces, mobile money ? Avec 6 faîtières, le paiement en ligne (phase 7) est probablement inutile : on garde l'enregistrement manuel avec justificatif.
+8. **Langues** : français seul, ou français + arabe ?
+9. **Domaine et hébergement** : un domaine existe-t-il ? Même VPS que la LECIM ?
+10. **Identité visuelle** : logo et charte graphique de la PSIE.
+11. **Statuts de la PSIE** : à transmettre ; je recalerai alors quorum, vote, sanctions et cotisations sur le texte réel.
+
+### Ajustements de la feuille de route liés au faible volume (6 faîtières)
+
+- Phase 1 : saisie manuelle des faîtières (l'import Excel devient optionnel).
+- Phase 7 (paiement mobile money) : probablement abandonnée, à confirmer.
+- Priorité maintenue : la phase 2 (cotisations annuelles) puis la phase 3 (appels exceptionnels avec répartition par poids économique), puis la phase 5 pour le blocage automatique à l'Assemblée.
 
 > Les montants et règles de la LECIM (7 500 / 20 000 FCFA, 12 000 FCFA, etc.) sont rappelés
 > **uniquement comme référence** : rien ne dit qu'ils s'appliquent à la PSIE.
