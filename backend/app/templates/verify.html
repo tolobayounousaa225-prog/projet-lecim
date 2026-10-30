@@ -45,6 +45,11 @@
 
   .not-found { padding: 30px 24px 34px; color: #58707f; font-size: 0.92rem; }
   .footer-note { padding: 14px; font-size: 0.72rem; color: #97a9b9; background: var(--cream); }
+  .confidential-tag {
+    display: inline-flex; align-items: center; gap: 6px; margin: 2px 0 14px;
+    padding: 4px 10px; border-radius: 999px; background: #fdf1e0; color: #8a5a10;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em;
+  }
 </style>
 </head>
 <body>
@@ -66,6 +71,19 @@
       <div><dt>N° de carte</dt><dd>{{ carte.numero_carte }}</dd></div>
       {% if carte.date_validite %}<div><dt>Valable jusqu'au</dt><dd>{{ carte.date_validite.strftime("%d/%m/%Y") }}</dd></div>{% endif %}
     </dl>
+
+    {% if show_confidential %}
+    <p class="confidential-tag">🔒 Informations confidentielles — visibles uniquement par le personnel LECIM connecté</p>
+    <dl>
+      {% if carte.date_naissance %}<div><dt>Né(e) le</dt><dd>{{ carte.date_naissance.strftime("%d/%m/%Y") }}</dd></div>{% endif %}
+      {% if carte.cni_numero %}<div><dt>N° CNI</dt><dd>{{ carte.cni_numero }}</dd></div>{% endif %}
+      {% if carte.telephone %}<div><dt>Téléphone</dt><dd>{{ carte.telephone }}</dd></div>{% endif %}
+      {% if carte.contact_urgence_nom %}<div><dt>Contact d'urgence</dt><dd>{{ carte.contact_urgence_nom }}{% if carte.contact_urgence_telephone %} — {{ carte.contact_urgence_telephone }}{% endif %}</dd></div>{% endif %}
+      {% if carte.ville %}<div><dt>Ville</dt><dd>{{ carte.ville }}</dd></div>{% endif %}
+      {% if carte.adresse %}<div><dt>Adresse</dt><dd>{{ carte.adresse }}</dd></div>{% endif %}
+      {% if carte.email_personnel %}<div><dt>E-mail personnel</dt><dd>{{ carte.email_personnel }}</dd></div>{% endif %}
+    </dl>
+    {% endif %}
   </div>
 
   {% elif result == "expiree" %}
@@ -80,6 +98,19 @@
       <div><dt>N° de carte</dt><dd>{{ carte.numero_carte }}</dd></div>
       <div><dt>Expirée depuis le</dt><dd>{{ carte.date_validite.strftime("%d/%m/%Y") }}</dd></div>
     </dl>
+
+    {% if show_confidential %}
+    <p class="confidential-tag">🔒 Informations confidentielles — visibles uniquement par le personnel LECIM connecté</p>
+    <dl>
+      {% if carte.date_naissance %}<div><dt>Né(e) le</dt><dd>{{ carte.date_naissance.strftime("%d/%m/%Y") }}</dd></div>{% endif %}
+      {% if carte.cni_numero %}<div><dt>N° CNI</dt><dd>{{ carte.cni_numero }}</dd></div>{% endif %}
+      {% if carte.telephone %}<div><dt>Téléphone</dt><dd>{{ carte.telephone }}</dd></div>{% endif %}
+      {% if carte.contact_urgence_nom %}<div><dt>Contact d'urgence</dt><dd>{{ carte.contact_urgence_nom }}{% if carte.contact_urgence_telephone %} — {{ carte.contact_urgence_telephone }}{% endif %}</dd></div>{% endif %}
+      {% if carte.ville %}<div><dt>Ville</dt><dd>{{ carte.ville }}</dd></div>{% endif %}
+      {% if carte.adresse %}<div><dt>Adresse</dt><dd>{{ carte.adresse }}</dd></div>{% endif %}
+      {% if carte.email_personnel %}<div><dt>E-mail personnel</dt><dd>{{ carte.email_personnel }}</dd></div>{% endif %}
+    </dl>
+    {% endif %}
   </div>
 
   {% else %}

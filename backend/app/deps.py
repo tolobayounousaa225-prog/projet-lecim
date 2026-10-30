@@ -195,6 +195,28 @@ def require_admin_web(
     return user
 
 
+def get_optional_cartes_gestion_user(
+    access_token: str | None = Cookie(default=None),
+    db: Session = Depends(get_db),
+) -> models.User | None:
+    """Variante non-bloquante de require_cartes_gestion_web pour une page PUBLIQUE
+    (vérification de carte au scan du QR) : ne lève jamais d'erreur. Si le visiteur
+    a par ailleurs une session admin valide avec accès au module cartes_gestion dans
+    son navigateur, la page peut lui montrer des champs supplémentaires ; sinon elle
+    reste strictement identique à ce que voit le grand public."""
+    if not access_token:
+        return None
+    email = decode_access_token(access_token)
+    if not email:
+        return None
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user or user.is_delegation_account or user.is_etablissement_account:
+        return None
+    if not user.has_module("cartes_gestion"):
+        return None
+    return user
+
+
 def _module_dependency_web(module_key: str):
     """Fabrique une dépendance cookie-based exigeant l'accès au module donné."""
 
