@@ -179,22 +179,10 @@ def _add_verso(pdf: FPDF, carte) -> None:
         align="L",
     )
 
-    y = pdf.get_y() + 2.5
-    if carte.cni_numero:
-        pdf.set_font("Helvetica", "", 5.6)
-        pdf.set_text_color(90, 90, 90)
-        pdf.set_xy(5, y)
-        pdf.cell(CARD_W - 10, 3, f"N. CNI : {carte.cni_numero}", align="L")
-        y += 3.6
-
-    if carte.contact_urgence_nom:
-        urgence = carte.contact_urgence_nom
-        if carte.contact_urgence_telephone:
-            urgence += f" - {carte.contact_urgence_telephone}"
-        pdf.set_font("Helvetica", "", 5.6)
-        pdf.set_text_color(90, 90, 90)
-        pdf.set_xy(5, y)
-        pdf.cell(CARD_W - 10, 3, _safe_text(f"Urgence : {urgence}"), align="L")
+    # Volontairement rien d'autre d'identifiant ici (ni N. CNI, ni contact
+    # d'urgence, ni numero de carte) : le verso doit rester un texte generique,
+    # identique sur toutes les cartes. Les informations propres au titulaire
+    # (nom, fonction, numero, QR) restent uniquement au recto.
 
     # Ligne de signature
     sig_y = CARD_H - 11
@@ -205,13 +193,9 @@ def _add_verso(pdf: FPDF, carte) -> None:
     pdf.set_xy(CARD_W - 36, sig_y + 1)
     pdf.cell(31, 3, "Signature", align="C")
 
-    pdf.set_text_color(*GREEN)
-    pdf.set_font("Helvetica", "B", 5.8)
-    pdf.set_xy(5, CARD_H - 8.5)
-    pdf.cell(40, 3, f"N. {carte.numero_carte or '-'}", align="L")
     pdf.set_text_color(130, 130, 130)
-    pdf.set_font("Helvetica", "", 5)
-    pdf.set_xy(5, CARD_H - 5.3)
+    pdf.set_font("Helvetica", "", 5.3)
+    pdf.set_xy(5, CARD_H - 7)
     pdf.cell(40, 3, "lecimnational@gmail.com", align="L")
 
     pdf.set_fill_color(*GREEN)
