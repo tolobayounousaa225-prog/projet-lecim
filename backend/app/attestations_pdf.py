@@ -278,38 +278,83 @@ def generate_don_recu_pdf(don) -> bytes:
 
 def generate_diplome_pdf(diplome) -> bytes:
     """Diplôme individuel généré en lot (publipostage) à partir d'un import Excel
-    du chargé d'examen. Visuel sobre volontairement provisoire : à remplacer par
-    le modèle officiel une fois fourni, comme pour le visuel des cartes membres."""
-    pdf = FPDF(orientation="P", unit="mm", format="A4")
+    du chargé d'examen. Format paysage (plus adapté à un diplôme qu'un A4 portrait).
+    Visuel sobre volontairement provisoire : à remplacer par le modèle officiel une
+    fois fourni, comme pour le visuel des cartes membres. Layout dédié (pas de
+    réutilisation de _body_paragraph/_kv_line/_footer_qr_and_signature au-delà de
+    l'en-tête) car ces helpers sont calibrés pour la hauteur d'un A4 portrait et
+    se chevaucheraient avec le bas de page, bien plus proche en paysage."""
+    pdf = FPDF(orientation="L", unit="mm", format="A4")
     pdf.set_auto_page_break(auto=False)
     _header(pdf, "DIPLOME")
 
-    _body_paragraph(
-        pdf,
-        "La Ligue des Etablissements Confessionnels et Madrassas en Cote d'Ivoire (LECIM) "
-        "atteste par la presente que la personne ci-dessous designee a ete declaree "
-        "admise a l'examen mentionne, et lui delivre en consequence le present diplome.",
-    )
+    left_x, left_w = 20, 150
+    right_x = 185
+    right_w = pdf.w - 20 - right_x
 
-    pdf.ln(2)
-    _kv_line(pdf, "Nom complet :", diplome.nom_complet)
-    _kv_line(pdf, "Etablissement :", diplome.etablissement_nom)
-    _kv_line(pdf, "Examen :", diplome.type_examen)
+    body_y = pdf.get_y()
+    pdf.set_xy(left_x, body_y)
+    pdf.set_font("Helvetica", "", 11)
+    pdf.set_text_color(30, 30, 30)
+    pdf.multi_cell(
+        left_w, 6.5,
+        pdf_safe(
+            "La LECIM atteste par la presente que la personne ci-dessous designee a "
+            "ete declaree admise a l'examen mentionne, et lui delivre en consequence "
+            "le present diplome."
+        ),
+        align="J",
+    )
+    pdf.ln(4)
+
+    def kv(label: str, value: str) -> None:
+        pdf.set_x(left_x)
+        pdf.set_font("Helvetica", "B", 10.5)
+        pdf.set_text_color(*GREEN_DARK)
+        pdf.cell(42, 7, pdf_safe(label))
+        pdf.set_font("Helvetica", "", 10.5)
+        pdf.set_text_color(40, 40, 40)
+        pdf.cell(0, 7, pdf_safe(value), new_x="LMARGIN", new_y="NEXT")
+
+    kv("Nom complet :", diplome.nom_complet)
+    if diplome.date_naissance:
+        kv("Ne(e) le :", diplome.date_naissance.strftime("%d/%m/%Y"))
+    kv("Etablissement :", diplome.etablissement_nom)
+    kv("Examen :", diplome.type_examen)
     if diplome.mention:
-        _kv_line(pdf, "Mention / Resultat :", diplome.mention)
-    _kv_line(pdf, "Annee scolaire :", diplome.annee_scolaire)
-    _kv_line(pdf, "Delivre le :", diplome.date_delivrance.strftime("%d/%m/%Y"))
-    _kv_line(pdf, "Reference :", diplome.numero_diplome)
+        kv("Mention / Resultat :", diplome.mention)
+    kv("Annee scolaire :", diplome.annee_scolaire)
+    kv("Delivre le :", diplome.date_delivrance.strftime("%d/%m/%Y"))
+    kv("Reference :", diplome.numero_diplome)
 
-    pdf.ln(6)
-    _body_paragraph(
-        pdf,
-        "Ce diplome est delivre pour servir et valoir ce que de droit, et peut etre "
-        "verifie a tout moment via le code QR ci-dessous ou le lien de verification publique.",
-    )
-
+    # Colonne droite : QR de verification, aligne avec le debut du texte.
     verify_url = f"{settings.public_base_url}/verify-diplome/{diplome.numero_diplome}"
-    _footer_qr_and_signature(pdf, verify_url, diplome.numero_diplome)
+    qr_img = qrcode.make(verify_url, border=1)
+    qr_size = 32.0
+    qr_x = right_x + (right_w - qr_size) / 2
+    qr_y = body_y + 4
+    pdf.image(qr_img.get_image() if hasattr(qr_img, "get_image") else qr_img, x=qr_x, y=qr_y, w=qr_size, h=qr_size)
+    pdf.set_xy(right_x, qr_y + qr_size + 3)
+    pdf.set_font("Helvetica", "", 7.5)
+    pdf.set_text_color(110, 110, 110)
+    pdf.cell(right_w, 4, "Scanner pour verifier", align="C")
+
+    # Bas de page : date et signature (pleine largeur, sous les deux colonnes).
+    sig_y = pdf.h - 45
+    pdf.set_xy(left_x, sig_y)
+    pdf.set_font("Helvetica", "", 10.5)
+    pdf.set_text_color(40, 40, 40)
+    pdf.cell(90, 6, f"Fait a Abidjan, le {datetime.date.today().strftime('%d/%m/%Y')}", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_xy(left_x, sig_y + 8)
+    pdf.set_font("Helvetica", "B", 10.5)
+    pdf.cell(90, 6, "Le President de la LECIM", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_draw_color(150, 150, 150)
+    pdf.line(left_x, sig_y + 24, left_x + 75, sig_y + 24)
+
+    pdf.set_xy(0, pdf.h - 16)
+    pdf.set_font("Helvetica", "", 7.5)
+    pdf.set_text_color(120, 120, 120)
+    pdf.cell(pdf.w, 4, f"Reference : {diplome.numero_diplome}  -  Contact : lecimnational@gmail.com", align="C")
 
     return bytes(pdf.output())
 

@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initGalleryLightbox();
   initAdhesionFormProgress();
   initContactForm();
+  initDiplomeVerifForm();
   initAdhesionForm();
   initPartenariatForm();
   initDonForm();
@@ -1608,6 +1609,93 @@ function initContactForm() {
           btn.textContent = original;
           btn.disabled = false;
         }, 3500);
+      });
+  });
+}
+
+function initDiplomeVerifForm() {
+  var form = document.getElementById("diplome-verif-form");
+  if (!form) return;
+
+  var tabs = document.querySelectorAll(".diplome-verif-tab");
+  var fields = document.querySelectorAll("[data-mode-field]");
+  var resultBox = document.getElementById("diplome-verif-result");
+  var mode = "numero";
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      mode = tab.dataset.mode;
+      tabs.forEach(function (t) { t.classList.toggle("active", t === tab); });
+      fields.forEach(function (f) {
+        f.style.display = f.dataset.modeField === mode ? "" : "none";
+      });
+      resultBox.innerHTML = "";
+    });
+  });
+
+  function renderResults(results) {
+    if (!results.length) {
+      resultBox.innerHTML =
+        '<div class="diplome-verif-badge diplome-verif-badge-ko">✗ Aucun diplôme ne correspond à ces informations.</div>' +
+        '<p class="diplome-verif-hint">Vérifiez l\'orthographe exacte, ou contactez le secrétariat de la LECIM si vous pensez qu\'il s\'agit d\'une erreur.</p>';
+      return;
+    }
+    var html = results.map(function (d) {
+      return (
+        '<div class="diplome-verif-badge diplome-verif-badge-ok">✓ Diplôme authentique</div>' +
+        '<div class="diplome-verif-details">' +
+        '<h3>' + escapeHtml(d.nom_complet) + "</h3>" +
+        (d.age != null ? '<p class="diplome-verif-sub">' + d.age + " ans</p>" : "") +
+        "<dl>" +
+        '<div><dt>Établissement</dt><dd>' + escapeHtml(d.etablissement_nom) + "</dd></div>" +
+        '<div><dt>Examen</dt><dd>' + escapeHtml(d.type_examen) + "</dd></div>" +
+        (d.mention ? '<div><dt>Mention / Résultat</dt><dd>' + escapeHtml(d.mention) + "</dd></div>" : "") +
+        '<div><dt>Année scolaire</dt><dd>' + escapeHtml(d.annee_scolaire) + "</dd></div>" +
+        '<div><dt>Délivré le</dt><dd>' + escapeHtml(d.date_delivrance) + "</dd></div>" +
+        '<div><dt>Référence</dt><dd>' + escapeHtml(d.numero_diplome) + "</dd></div>" +
+        "</dl></div>"
+      );
+    }).join('<hr class="diplome-verif-sep">');
+    resultBox.innerHTML = html;
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var btn = form.querySelector("button[type=submit]");
+    var original = btn.textContent;
+    var params = new URLSearchParams();
+
+    if (mode === "numero") {
+      var numero = valueOf(form, "#dv-numero");
+      if (!numero) return;
+      params.set("numero", numero);
+    } else {
+      var nom = valueOf(form, "#dv-nom");
+      var naissance = valueOf(form, "#dv-naissance");
+      if (!nom || !naissance) return;
+      params.set("nom_complet", nom);
+      params.set("date_naissance", naissance);
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Vérification…";
+    resultBox.innerHTML = "";
+
+    fetch(API_BASE + "/api/diplomes/verifier?" + params.toString())
+      .then(function (res) {
+        if (!res.ok) throw new Error("Erreur de vérification");
+        return res.json();
+      })
+      .then(function (data) {
+        renderResults(data.results || []);
+      })
+      .catch(function () {
+        resultBox.innerHTML =
+          '<div class="diplome-verif-badge diplome-verif-badge-ko">✗ Vérification momentanément indisponible, merci de réessayer.</div>';
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.textContent = original;
       });
   });
 }

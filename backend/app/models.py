@@ -913,6 +913,10 @@ class Diplome(Base):
     mention: Mapped[str | None] = mapped_column(String(120), nullable=True)
     annee_scolaire: Mapped[str] = mapped_column(String(20), nullable=False)
     date_delivrance: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    # Nullable au niveau base (migration sans heurt sur une table déjà créée),
+    # mais exigée par l'import Excel (REQUIRED_FIELDS côté admin_diplomes.py) :
+    # c'est la clé de la vérification publique par nom + date de naissance.
+    date_naissance: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
 
     # Regroupe tous les diplômes générés lors d'un même import, pour permettre de
     # retélécharger le lot complet (ZIP) plus tard sans tout régénérer.

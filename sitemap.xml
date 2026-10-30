@@ -86,6 +86,13 @@
 <priority>0.6</priority>
 </url>
 <url>
+<loc>https://lecim-ci.org/verification-diplome.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/verification-diplome.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/verification-diplome.html"/>
+<changefreq>yearly</changefreq>
+<priority>0.5</priority>
+</url>
+<url>
 <loc>https://lecim-ci.org/adhesion.html</loc>
 <xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/adhesion.html"/>
 <xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/adhesion.html"/>

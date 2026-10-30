@@ -2,10 +2,12 @@
 ouverte au scan du QR code — même philosophie que /verify et /verify-eleve : aucune
 authentification requise, aucune donnée personnelle sensible exposée."""
 
+import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import models
@@ -76,3 +78,63 @@ def verify_diplome(numero_diplome: str, request: Request, db: Session = Depends(
         "verify_diplome.html",
         {"diplome": diplome, "found": diplome is not None},
     )
+
+
+def _age(date_naissance: datetime.date | None) -> int | None:
+    if not date_naissance:
+        return None
+    today = datetime.date.today()
+    years = today.year - date_naissance.year
+    if (today.month, today.day) < (date_naissance.month, date_naissance.day):
+        years -= 1
+    return years
+
+
+def _diplome_out(d: "models.Diplome") -> dict:
+    return {
+        "numero_diplome": d.numero_diplome,
+        "nom_complet": d.nom_complet,
+        "etablissement_nom": d.etablissement_nom,
+        "type_examen": d.type_examen,
+        "mention": d.mention,
+        "annee_scolaire": d.annee_scolaire,
+        "date_delivrance": d.date_delivrance.isoformat(),
+        "age": _age(d.date_naissance),
+    }
+
+
+@router.get("/api/diplomes/verifier")
+def verifier_diplome(
+    numero: str | None = None,
+    nom_complet: str | None = None,
+    date_naissance: str | None = None,
+    db: Session = Depends(get_db),
+):
+    """Recherche publique côté site vitrine — un visiteur peut vérifier un diplôme
+    soit par son numéro, soit par le nom complet ET la date de naissance exacts du
+    titulaire (les deux ensemble : jamais le nom seul, qui transformerait cette
+    route en annuaire public consultable par simple essai-erreur sur des noms)."""
+    results: list[models.Diplome] = []
+
+    numero = (numero or "").strip()
+    if numero:
+        diplome = db.query(models.Diplome).filter(models.Diplome.numero_diplome == numero).first()
+        if diplome:
+            results = [diplome]
+    elif nom_complet and date_naissance:
+        try:
+            parsed_naissance = datetime.datetime.strptime(date_naissance.strip(), "%Y-%m-%d").date()
+        except ValueError:
+            parsed_naissance = None
+        nom_clean = nom_complet.strip()
+        if parsed_naissance and nom_clean:
+            results = (
+                db.query(models.Diplome)
+                .filter(
+                    func.lower(func.trim(models.Diplome.nom_complet)) == nom_clean.lower(),
+                    models.Diplome.date_naissance == parsed_naissance,
+                )
+                .all()
+            )
+
+    return {"results": [_diplome_out(d) for d in results]}

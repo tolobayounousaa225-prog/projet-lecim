@@ -469,6 +469,12 @@ def run_startup_migrations() -> None:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE users ADD COLUMN two_factor_enabled BOOLEAN DEFAULT FALSE"))
 
+    if inspector.has_table("diplomes"):
+        diplomes_columns = {c["name"] for c in inspector.get_columns("diplomes")}
+        if "date_naissance" not in diplomes_columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE diplomes ADD COLUMN date_naissance DATE"))
+
     Base.metadata.create_all(bind=engine)
 
     if inspector.has_table("etablissements"):

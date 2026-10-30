@@ -39,13 +39,17 @@ COLUMN_ALIASES = {
     "mention / resultat": "mention",
     "mention/resultat": "mention",
     "annee scolaire": "annee_scolaire",
+    "date de naissance": "date_naissance",
+    "ne(e) le": "date_naissance",
+    "date naissance": "date_naissance",
 }
-REQUIRED_FIELDS = ["nom_complet", "etablissement_nom", "type_examen", "annee_scolaire"]
+REQUIRED_FIELDS = ["nom_complet", "etablissement_nom", "type_examen", "annee_scolaire", "date_naissance"]
 FIELD_LABELS = {
     "nom_complet": "Nom complet",
     "etablissement_nom": "Établissement",
     "type_examen": "Type d'examen",
     "annee_scolaire": "Année scolaire",
+    "date_naissance": "Date de naissance",
 }
 
 
@@ -56,6 +60,27 @@ def _normalize_header(value) -> str:
     for a, b in (("é", "e"), ("è", "e"), ("ê", "e"), ("à", "a"), ("ô", "o"), ("î", "i"), ("ç", "c")):
         text = text.replace(a, b)
     return text
+
+
+def _parse_date_cell(value) -> datetime.date | None:
+    """La cellule peut arriver déjà typée (Excel formate la colonne en date) ou
+    sous forme de texte (DD/MM/YYYY le plus courant en saisie manuelle, ou
+    YYYY-MM-DD) — on tente les deux avant d'abandonner."""
+    if value is None:
+        return None
+    if isinstance(value, datetime.datetime):
+        return value.date()
+    if isinstance(value, datetime.date):
+        return value
+    text = str(value).strip()
+    if not text:
+        return None
+    for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%d/%m/%y"):
+        try:
+            return datetime.datetime.strptime(text, fmt).date()
+        except ValueError:
+            continue
+    return None
 
 
 def _next_numero_diplome(db: Session) -> str:
@@ -113,7 +138,7 @@ def diplomes_modele_xlsx(
     sheet = wb.active
     sheet.title = "Admis"
 
-    headers = ["Nom complet", "Établissement", "Type d'examen", "Mention / Résultat", "Année scolaire"]
+    headers = ["Nom complet", "Établissement", "Type d'examen", "Mention / Résultat", "Année scolaire", "Date de naissance"]
     sheet.append(headers)
     header_fill = PatternFill(start_color="0B3D2E", end_color="0B3D2E", fill_type="solid")
     header_font = Font(color="FFFFFF", bold=True)
@@ -121,12 +146,13 @@ def diplomes_modele_xlsx(
         sheet.cell(row=1, column=col).fill = header_fill
         sheet.cell(row=1, column=col).font = header_font
 
-    sheet.append(["Fatou KONE", "Madrassa Al Houda", "CEPE", "Admis(e)", "2025-2026"])
+    sheet.append(["Fatou KONE", "Madrassa Al Houda", "CEPE", "Admis(e)", "2025-2026", "12/06/2015"])
     example_font = Font(italic=True, color="888888")
     for cell in sheet[2]:
         cell.font = example_font
+    sheet.cell(row=2, column=6).number_format = "DD/MM/YYYY"
 
-    widths = [28, 30, 20, 20, 16]
+    widths = [28, 30, 20, 20, 16, 18]
     for i, w in enumerate(widths, start=1):
         sheet.column_dimensions[chr(64 + i)].width = w
 
@@ -210,10 +236,13 @@ async def diplomes_importer_process(
         values = {}
         for field, idx in column_index.items():
             cell = row[idx] if idx < len(row) else None
-            values[field] = str(cell).strip() if cell is not None else ""
+            if field == "date_naissance":
+                values[field] = _parse_date_cell(cell)
+            else:
+                values[field] = str(cell).strip() if cell is not None else ""
         row_missing = [FIELD_LABELS[f] for f in REQUIRED_FIELDS if not values.get(f)]
         if row_missing:
-            row_errors.append(f"Ligne {row_number} : champ(s) manquant(s) — {', '.join(row_missing)}.")
+            row_errors.append(f"Ligne {row_number} : champ(s) manquant(s) ou illisible(s) — {', '.join(row_missing)}.")
             continue
         candidates.append(values)
 
@@ -232,6 +261,7 @@ async def diplomes_importer_process(
             type_examen=values["type_examen"],
             mention=values.get("mention") or None,
             annee_scolaire=values["annee_scolaire"],
+            date_naissance=values["date_naissance"],
             date_delivrance=date_livr,
             import_batch=import_batch,
             generated_by_id=user.id,
