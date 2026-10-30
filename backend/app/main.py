@@ -35,6 +35,7 @@ from .routers import (
     admin_conseil_administration,
     admin_courrier,
     admin_delegations,
+    admin_diplomes,
     admin_dons,
     admin_effectifs,
     admin_enseignants,
@@ -372,6 +373,7 @@ app.include_router(verify_eleve.router)
 app.include_router(verify_attestations.router)
 app.include_router(admin_calendar.router)
 app.include_router(admin_delegations.router)
+app.include_router(admin_diplomes.router)
 app.include_router(admin_dons.router)
 app.include_router(admin_executif.router)
 app.include_router(admin_enseignants.router)

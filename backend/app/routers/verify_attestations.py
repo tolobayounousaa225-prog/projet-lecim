@@ -66,3 +66,13 @@ def verify_rapport(code: str, request: Request, db: Session = Depends(get_db)):
         "verify_rapport.html",
         {"rapport": rapport, "found": rapport is not None},
     )
+
+
+@router.get("/verify-diplome/{numero_diplome}")
+def verify_diplome(numero_diplome: str, request: Request, db: Session = Depends(get_db)):
+    diplome = db.query(models.Diplome).filter(models.Diplome.numero_diplome == numero_diplome).first()
+    return templates.TemplateResponse(
+        request,
+        "verify_diplome.html",
+        {"diplome": diplome, "found": diplome is not None},
+    )

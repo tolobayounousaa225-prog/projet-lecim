@@ -224,6 +224,10 @@ class User(Base):
         return self.has_module("cartes_scolaires")
 
     @property
+    def can_manage_diplomes(self) -> bool:
+        return self.has_module("diplomes")
+
+    @property
     def can_manage_messagerie(self) -> bool:
         return self.has_module("messagerie")
 
@@ -888,6 +892,37 @@ class ResultatExamen(Base):
     @property
     def etablissement_nom(self) -> str:
         return self.etablissement.nom
+
+
+class Diplome(Base):
+    """Diplôme généré pour un candidat admis à un examen, en lot, à partir d'un
+    import Excel par le chargé d'examen (publipostage). L'établissement est stocké
+    en texte libre (pas de clé étrangère) : les noms saisis dans un fichier Excel
+    externe ne correspondent pas forcément exactement à un Etablissement en base,
+    et un candidat admis n'est pas nécessairement rattaché à un établissement
+    membre de la LECIM."""
+
+    __tablename__ = "diplomes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    numero_diplome: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
+
+    nom_complet: Mapped[str] = mapped_column(String(255), nullable=False)
+    etablissement_nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    type_examen: Mapped[str] = mapped_column(String(120), nullable=False)
+    mention: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    annee_scolaire: Mapped[str] = mapped_column(String(20), nullable=False)
+    date_delivrance: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+
+    # Regroupe tous les diplômes générés lors d'un même import, pour permettre de
+    # retélécharger le lot complet (ZIP) plus tard sans tout régénérer.
+    import_batch: Mapped[str] = mapped_column(String(40), index=True, nullable=False)
+    generated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    generated_by: Mapped["User | None"] = relationship()
 
 
 class Effectif(Base):

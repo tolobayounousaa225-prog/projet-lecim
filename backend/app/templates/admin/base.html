@@ -57,13 +57,14 @@
       </details>
       {% endif %}
 
-      {% set ecoles_membres_actives = ['etablissements', 'enseignants', 'resultats_examens', 'effectifs', 'cartes_scolaires', 'demandes_etablissements', 'messagerie', 'visites'] %}
-      {% if admin.can_manage_enseignants or admin.can_manage_resultats_examens or admin.can_manage_effectifs or admin.can_manage_cartes_scolaires or admin.can_manage_finances or admin.can_manage_messagerie or admin.can_manage_visites %}
+      {% set ecoles_membres_actives = ['etablissements', 'enseignants', 'resultats_examens', 'diplomes', 'effectifs', 'cartes_scolaires', 'demandes_etablissements', 'messagerie', 'visites'] %}
+      {% if admin.can_manage_enseignants or admin.can_manage_resultats_examens or admin.can_manage_diplomes or admin.can_manage_effectifs or admin.can_manage_cartes_scolaires or admin.can_manage_finances or admin.can_manage_messagerie or admin.can_manage_visites %}
       <details class="nav-section" {{ "open" if active in ecoles_membres_actives else "" }}>
         <summary class="nav-section-title">Écoles membres</summary>
         {% if admin.can_manage_finances %}<a href="/admin/etablissements" class="{{ 'active' if active == 'etablissements' else '' }}">Établissements &amp; partenaires</a>{% endif %}
         {% if admin.can_manage_enseignants %}<a href="/admin/enseignants" class="{{ 'active' if active == 'enseignants' else '' }}">Répertoire des enseignants</a>{% endif %}
         {% if admin.can_manage_resultats_examens %}<a href="/admin/resultats-examens" class="{{ 'active' if active == 'resultats_examens' else '' }}">Résultats aux examens</a>{% endif %}
+        {% if admin.can_manage_diplomes %}<a href="/admin/diplomes" class="{{ 'active' if active == 'diplomes' else '' }}">Impression des diplômes</a>{% endif %}
         {% if admin.can_manage_effectifs %}<a href="/admin/effectifs" class="{{ 'active' if active == 'effectifs' else '' }}">Effectifs des élèves</a>{% endif %}
         {% if admin.can_manage_cartes_scolaires %}<a href="/admin/cartes-scolaires" class="{{ 'active' if active == 'cartes_scolaires' else '' }}">Cartes scolaires{% if pending.cartes_scolaires %}<span class="nav-badge">{{ pending.cartes_scolaires }}</span>{% endif %}</a>{% endif %}
         {% if admin.can_manage_finances %}<a href="/admin/demandes-etablissements" class="{{ 'active' if active == 'demandes_etablissements' else '' }}">Demandes des établissements{% if pending.demandes_etablissements %}<span class="nav-badge">{{ pending.demandes_etablissements }}</span>{% endif %}</a>{% endif %}

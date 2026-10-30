@@ -179,6 +179,7 @@ MODULES: dict[str, str] = {
     "sondages": "Gestion des sondages et votes électroniques (création, dépouillement)",
     "effectifs": "Effectifs des élèves des écoles membres (primaire/secondaire)",
     "cartes_scolaires": "Cartes scolaires des élèves (validation, impression)",
+    "diplomes": "Impression des diplômes (import Excel des admis, génération en lot)",
     "messagerie": "Messagerie avec les établissements membres",
     "adhesion_examen": "Examen et validation des demandes d'adhésion",
     "courrier": "Registre du courrier (arrivée / départ)",

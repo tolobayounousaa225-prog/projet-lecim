@@ -1,0 +1,40 @@
+{% extends "admin/base.html" %}
+{% block title %}Importer des diplômes{% endblock %}
+{% block content %}
+<h1>Importer des diplômes</h1>
+<p style="color:var(--text-muted); margin-top:-8px;"><a href="/admin/diplomes">&larr; Retour à la liste des diplômes</a></p>
+
+<div class="form-card" style="max-width:600px;">
+  {% if errors %}
+  <div class="error-box">
+    <strong>Import impossible :</strong>
+    <ul style="margin:6px 0 0; padding-inline-start:20px;">
+      {% for message in errors %}<li>{{ message }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <p style="color:var(--text-muted); font-size:0.9rem; margin-top:0;">
+    1. Téléchargez le modèle Excel, remplissez une ligne par candidat admis (sans renommer
+    les colonnes). 2. Importez le fichier rempli ci-dessous : un diplôme PDF est généré
+    automatiquement pour chaque ligne, et tous les diplômes sont téléchargés en un seul
+    fichier ZIP, prêts à imprimer.
+  </p>
+
+  <p>
+    <a href="/admin/diplomes/modele.xlsx" class="btn btn-outline">Télécharger le modèle Excel</a>
+  </p>
+
+  <form method="post" action="/admin/diplomes/importer" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="fichier">Fichier Excel rempli (.xlsx)</label>
+      <input type="file" id="fichier" name="fichier" accept=".xlsx" required>
+    </div>
+    <div class="form-group">
+      <label for="date_delivrance">Date de délivrance (identique pour tout le lot)</label>
+      <input type="date" id="date_delivrance" name="date_delivrance" required value="{{ today }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Générer les diplômes (ZIP)</button>
+  </form>
+</div>
+{% endblock %}

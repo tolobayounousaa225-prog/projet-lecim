@@ -1,0 +1,45 @@
+{% extends "admin/base.html" %}
+{% block title %}Diplômes{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Impression des diplômes</h1>
+  <a href="/admin/diplomes/importer" class="btn btn-primary">+ Importer un fichier Excel</a>
+</div>
+<p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">
+  Chaque import génère un lot de diplômes (un PDF par candidat admis). Vous pouvez
+  retélécharger un lot complet en ZIP, ou un diplôme individuel, à tout moment.
+</p>
+
+{% if batches %}
+{% for batch_id, items in batches.items() %}
+<div class="form-card" style="margin-bottom:20px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+    <div>
+      <strong>{{ items[0].type_examen }} — {{ items[0].annee_scolaire }}</strong>
+      <div style="color:var(--text-muted); font-size:0.85rem;">
+        {{ items|length }} diplôme(s) — importé le {{ items[0].created_at.strftime("%d/%m/%Y à %H:%M") }}
+        {% if items[0].generated_by %}par {{ items[0].generated_by.full_name }}{% endif %}
+      </div>
+    </div>
+    <a href="/admin/diplomes/lot/{{ batch_id }}.zip" class="btn btn-outline btn-sm">Télécharger le lot (ZIP)</a>
+  </div>
+  <table>
+    <thead><tr><th>Nom complet</th><th>Établissement</th><th>Mention / Résultat</th><th>Référence</th><th></th></tr></thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.nom_complet }}</td>
+        <td>{{ item.etablissement_nom }}</td>
+        <td>{{ item.mention or "—" }}</td>
+        <td style="font-size:0.82rem; color:var(--text-muted);">{{ item.numero_diplome }}</td>
+        <td class="actions-cell"><a href="/admin/diplomes/{{ item.id }}/pdf" class="btn btn-outline btn-sm">PDF</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endfor %}
+{% else %}
+<div class="empty-state">Aucun diplôme généré pour le moment. Commencez par importer un fichier Excel des admis.</div>
+{% endif %}
+{% endblock %}

@@ -276,6 +276,44 @@ def generate_don_recu_pdf(don) -> bytes:
     return bytes(pdf.output())
 
 
+def generate_diplome_pdf(diplome) -> bytes:
+    """Diplôme individuel généré en lot (publipostage) à partir d'un import Excel
+    du chargé d'examen. Visuel sobre volontairement provisoire : à remplacer par
+    le modèle officiel une fois fourni, comme pour le visuel des cartes membres."""
+    pdf = FPDF(orientation="P", unit="mm", format="A4")
+    pdf.set_auto_page_break(auto=False)
+    _header(pdf, "DIPLOME")
+
+    _body_paragraph(
+        pdf,
+        "La Ligue des Etablissements Confessionnels et Madrassas en Cote d'Ivoire (LECIM) "
+        "atteste par la presente que la personne ci-dessous designee a ete declaree "
+        "admise a l'examen mentionne, et lui delivre en consequence le present diplome.",
+    )
+
+    pdf.ln(2)
+    _kv_line(pdf, "Nom complet :", diplome.nom_complet)
+    _kv_line(pdf, "Etablissement :", diplome.etablissement_nom)
+    _kv_line(pdf, "Examen :", diplome.type_examen)
+    if diplome.mention:
+        _kv_line(pdf, "Mention / Resultat :", diplome.mention)
+    _kv_line(pdf, "Annee scolaire :", diplome.annee_scolaire)
+    _kv_line(pdf, "Delivre le :", diplome.date_delivrance.strftime("%d/%m/%Y"))
+    _kv_line(pdf, "Reference :", diplome.numero_diplome)
+
+    pdf.ln(6)
+    _body_paragraph(
+        pdf,
+        "Ce diplome est delivre pour servir et valoir ce que de droit, et peut etre "
+        "verifie a tout moment via le code QR ci-dessous ou le lien de verification publique.",
+    )
+
+    verify_url = f"{settings.public_base_url}/verify-diplome/{diplome.numero_diplome}"
+    _footer_qr_and_signature(pdf, verify_url, diplome.numero_diplome)
+
+    return bytes(pdf.output())
+
+
 def generate_adhesion_certificat_pdf(demande) -> bytes:
     pdf = FPDF(orientation="P", unit="mm", format="A4")
     pdf.set_auto_page_break(auto=False)
