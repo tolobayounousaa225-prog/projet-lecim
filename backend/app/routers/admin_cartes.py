@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import audit, models, storage
-from ..card_pdf import generate_card_pdf
+from ..card_pdf import generate_card_pdf, generate_card_pdf_recto, generate_card_pdf_verso
 from ..database import get_db
 from ..deps import require_cartes_gestion_web, require_login_web
 from ..notifications import notify, notify_cartes_gestionnaires
@@ -416,6 +416,43 @@ def carte_pdf(
     stored_photo = storage.get_stored_file(db, carte.photo_path)
     pdf_bytes = generate_card_pdf(carte, stored_photo.data if stored_photo else None)
     filename = f"carte_{carte.numero_carte or carte.id}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/cartes/{carte_id}/pdf/recto")
+def carte_pdf_recto(
+    carte_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_cartes_gestion_web),
+):
+    carte = db.get(models.CarteMembre, carte_id)
+    if not carte or carte.status not in {"validee", "imprimee", "disponible"}:
+        return RedirectResponse(url="/admin/cartes", status_code=status.HTTP_303_SEE_OTHER)
+    stored_photo = storage.get_stored_file(db, carte.photo_path)
+    pdf_bytes = generate_card_pdf_recto(carte, stored_photo.data if stored_photo else None)
+    filename = f"carte_{carte.numero_carte or carte.id}_recto.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/cartes/{carte_id}/pdf/verso")
+def carte_pdf_verso(
+    carte_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_cartes_gestion_web),
+):
+    carte = db.get(models.CarteMembre, carte_id)
+    if not carte or carte.status not in {"validee", "imprimee", "disponible"}:
+        return RedirectResponse(url="/admin/cartes", status_code=status.HTTP_303_SEE_OTHER)
+    pdf_bytes = generate_card_pdf_verso(carte)
+    filename = f"carte_{carte.numero_carte or carte.id}_verso.pdf"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",

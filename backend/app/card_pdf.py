@@ -228,6 +228,23 @@ def generate_card_pdf(carte, photo_bytes: bytes | None) -> bytes:
     return bytes(pdf.output())
 
 
+def generate_card_pdf_recto(carte, photo_bytes: bytes | None) -> bytes:
+    """Fichier d'un seul feuillet (recto uniquement) : certaines imprimantes de
+    cartes ne savent pas imprimer recto/verso à partir d'un PDF à deux pages,
+    il faut donc deux fichiers séparés pour les deux passages d'impression."""
+    pdf = FPDF(orientation="L", unit="mm", format=(CARD_H, CARD_W))
+    pdf.set_auto_page_break(auto=False)
+    _add_recto(pdf, carte, photo_bytes)
+    return bytes(pdf.output())
+
+
+def generate_card_pdf_verso(carte) -> bytes:
+    pdf = FPDF(orientation="L", unit="mm", format=(CARD_H, CARD_W))
+    pdf.set_auto_page_break(auto=False)
+    _add_verso(pdf, carte)
+    return bytes(pdf.output())
+
+
 def _add_recto_eleve(pdf: FPDF, carte, photo_bytes: bytes | None, ecole_logo_bytes: bytes | None) -> None:
     pdf.add_page()
 
@@ -369,4 +386,18 @@ def generate_student_card_pdf(carte, photo_bytes: bytes | None, ecole_logo_bytes
     _add_recto_eleve(pdf, carte, photo_bytes, ecole_logo_bytes)
     _add_verso_eleve(pdf, carte)
 
+    return bytes(pdf.output())
+
+
+def generate_student_card_pdf_recto(carte, photo_bytes: bytes | None, ecole_logo_bytes: bytes | None) -> bytes:
+    pdf = FPDF(orientation="L", unit="mm", format=(CARD_H, CARD_W))
+    pdf.set_auto_page_break(auto=False)
+    _add_recto_eleve(pdf, carte, photo_bytes, ecole_logo_bytes)
+    return bytes(pdf.output())
+
+
+def generate_student_card_pdf_verso(carte) -> bytes:
+    pdf = FPDF(orientation="L", unit="mm", format=(CARD_H, CARD_W))
+    pdf.set_auto_page_break(auto=False)
+    _add_verso_eleve(pdf, carte)
     return bytes(pdf.output())

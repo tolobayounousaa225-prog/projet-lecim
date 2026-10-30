@@ -59,7 +59,8 @@
       </td>
       <td>
         {% if item.status in ("validee", "imprimee", "disponible") %}
-        <a href="/etablissement/cartes-scolaires/{{ item.id }}/pdf" class="btn btn-outline btn-sm">PDF</a>
+        <a href="/etablissement/cartes-scolaires/{{ item.id }}/pdf/recto" class="btn btn-outline btn-sm">Recto</a>
+        <a href="/etablissement/cartes-scolaires/{{ item.id }}/pdf/verso" class="btn btn-outline btn-sm">Verso</a>
         {% endif %}
       </td>
     </tr>

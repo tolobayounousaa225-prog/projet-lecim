@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from .. import audit, models, storage
-from ..card_pdf import generate_student_card_pdf
+from ..card_pdf import generate_student_card_pdf, generate_student_card_pdf_recto, generate_student_card_pdf_verso
 from ..database import get_db
 from ..deps import require_cartes_scolaires_access_web
 from ..notifications import notify
@@ -200,6 +200,48 @@ def carte_scolaire_pdf(
         stored_logo.data if stored_logo else None,
     )
     filename = f"carte_scolaire_{carte.matricule or carte.id}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/{carte_id}/pdf/recto")
+def carte_scolaire_pdf_recto(
+    carte_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_cartes_scolaires_access_web),
+):
+    carte = db.get(models.CarteScolaire, carte_id)
+    if not carte or carte.status not in {"validee", "imprimee", "disponible"}:
+        return RedirectResponse(url="/admin/cartes-scolaires", status_code=status.HTTP_303_SEE_OTHER)
+    stored_photo = storage.get_stored_file(db, carte.photo_path)
+    stored_logo = storage.get_stored_file(db, carte.etablissement.logo_path)
+    pdf_bytes = generate_student_card_pdf_recto(
+        carte,
+        stored_photo.data if stored_photo else None,
+        stored_logo.data if stored_logo else None,
+    )
+    filename = f"carte_scolaire_{carte.matricule or carte.id}_recto.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/{carte_id}/pdf/verso")
+def carte_scolaire_pdf_verso(
+    carte_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_cartes_scolaires_access_web),
+):
+    carte = db.get(models.CarteScolaire, carte_id)
+    if not carte or carte.status not in {"validee", "imprimee", "disponible"}:
+        return RedirectResponse(url="/admin/cartes-scolaires", status_code=status.HTTP_303_SEE_OTHER)
+    pdf_bytes = generate_student_card_pdf_verso(carte)
+    filename = f"carte_scolaire_{carte.matricule or carte.id}_verso.pdf"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",

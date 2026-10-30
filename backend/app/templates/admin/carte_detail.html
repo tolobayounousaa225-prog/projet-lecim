@@ -33,7 +33,9 @@
 
   <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:20px;">
     {% if carte.status in ["validee", "imprimee", "disponible"] %}
-    <a href="/admin/cartes/{{ carte.id }}/pdf" class="btn btn-gold" target="_blank">Télécharger le PDF de la carte</a>
+    <a href="/admin/cartes/{{ carte.id }}/pdf" class="btn btn-outline" target="_blank">Aperçu PDF (recto + verso)</a>
+    <a href="/admin/cartes/{{ carte.id }}/pdf/recto" class="btn btn-gold" target="_blank">Imprimer le recto</a>
+    <a href="/admin/cartes/{{ carte.id }}/pdf/verso" class="btn btn-gold" target="_blank">Imprimer le verso</a>
     {% endif %}
 
     {% if carte.status == "soumise" %}
