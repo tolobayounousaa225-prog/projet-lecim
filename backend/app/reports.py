@@ -1083,6 +1083,178 @@ def generate_delegation_report_pdf(
     return bytes(pdf.output())
 
 
+# Seuils (en jours) utilisés pour signaler une délégation inactive — mêmes
+# valeurs que celles de la liste admin des délégations (admin_delegations.py),
+# dupliquées ici plutôt qu'importées pour éviter un import circulaire
+# (admin_delegations.py importe déjà ce module).
+_DELEGATION_INACTIVITE_SEUIL_ALERTE = 120
+_DELEGATION_INACTIVITE_SEUIL_SURVEILLANCE = 60
+
+
+def delegations_national_bilan(
+    db: Session, date_debut: datetime.date, date_fin: datetime.date, annee_scolaire: str
+) -> dict:
+    """Bilan consolidé de toutes les délégations régionales, regroupé par région —
+    vue d'ensemble pour le chargé des délégations (administrateur ou 2e Vice-Président
+    chargé de l'Intérieur), sans avoir à ouvrir le rapport de chaque délégation une
+    par une. Même logique financière que generate_delegation_report_pdf (par
+    délégation), simplement agrégée."""
+    delegations = db.query(models.Delegation).order_by(models.Delegation.region, models.Delegation.nom).all()
+
+    dernieres_reunions = dict(
+        db.query(models.Reunion.delegation_id, func.max(models.Reunion.date))
+        .filter(models.Reunion.delegation_id.isnot(None))
+        .group_by(models.Reunion.delegation_id)
+        .all()
+    )
+    reunions_counts = dict(
+        db.query(models.Reunion.delegation_id, func.count(models.Reunion.id))
+        .filter(
+            models.Reunion.delegation_id.isnot(None),
+            models.Reunion.date >= date_debut,
+            models.Reunion.date <= date_fin,
+        )
+        .group_by(models.Reunion.delegation_id)
+        .all()
+    )
+    membres_counts = dict(
+        db.query(models.Membre.delegation_id, func.count(models.Membre.id))
+        .filter(models.Membre.delegation_id.isnot(None))
+        .group_by(models.Membre.delegation_id)
+        .all()
+    )
+    etablissements_counts = dict(
+        db.query(models.Etablissement.delegation_id, func.count(models.Etablissement.id))
+        .filter(models.Etablissement.delegation_id.isnot(None))
+        .group_by(models.Etablissement.delegation_id)
+        .all()
+    )
+
+    today = datetime.date.today()
+    regions: dict[str, dict] = {}
+    national = {"delegations": 0, "etablissements": 0, "membres": 0, "reunions": 0, "total_entrees": 0}
+
+    for d in delegations:
+        finances = _period_data_delegation(db, date_debut, date_fin, d.id)
+        derniere = dernieres_reunions.get(d.id)
+        jours = (today - derniere).days if derniere else None
+        if jours is None or jours > _DELEGATION_INACTIVITE_SEUIL_ALERTE:
+            niveau = "alerte"
+        elif jours > _DELEGATION_INACTIVITE_SEUIL_SURVEILLANCE:
+            niveau = "surveillance"
+        else:
+            niveau = "actif"
+
+        ligne = {
+            "delegation": d,
+            "etablissements": etablissements_counts.get(d.id, 0),
+            "membres": membres_counts.get(d.id, 0),
+            "reunions": reunions_counts.get(d.id, 0),
+            "derniere_reunion": derniere,
+            "jours_inactivite": jours,
+            "niveau": niveau,
+            "total_entrees": finances["total_entrees"],
+        }
+
+        region_key = d.region or "Région non précisée"
+        region = regions.setdefault(
+            region_key,
+            {"nom": region_key, "delegations": [], "etablissements": 0, "membres": 0, "reunions": 0, "total_entrees": 0},
+        )
+        region["delegations"].append(ligne)
+        region["etablissements"] += ligne["etablissements"]
+        region["membres"] += ligne["membres"]
+        region["reunions"] += ligne["reunions"]
+        region["total_entrees"] += ligne["total_entrees"]
+
+        national["delegations"] += 1
+        national["etablissements"] += ligne["etablissements"]
+        national["membres"] += ligne["membres"]
+        national["reunions"] += ligne["reunions"]
+        national["total_entrees"] += ligne["total_entrees"]
+
+    return {
+        "regions": [regions[k] for k in sorted(regions)],
+        "national": national,
+        "annee_scolaire": annee_scolaire,
+        "date_debut": date_debut,
+        "date_fin": date_fin,
+    }
+
+
+def generate_delegations_national_report_pdf(db: Session, bilan: dict, user: "models.User") -> bytes:
+    """Export PDF du bilan consolidé produit par delegations_national_bilan() —
+    une région par section, avec un tableau détaillant chaque délégation."""
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=18)
+    pdf.add_page()
+    _add_logo(pdf)
+
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_text_color(11, 61, 46)
+    pdf.cell(0, 10, "LECIM - Bilan national des délégations régionales", new_x="LMARGIN", new_y="NEXT")
+
+    pdf.set_font("Helvetica", "", 11)
+    pdf.set_text_color(80, 80, 80)
+    pdf.cell(0, 7, f"Année scolaire {bilan['annee_scolaire']}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(
+        0, 7,
+        f"Période du {bilan['date_debut'].strftime('%d/%m/%Y')} au {bilan['date_fin'].strftime('%d/%m/%Y')} "
+        f"- Généré le {datetime.date.today().strftime('%d/%m/%Y')} par {pdf_safe(user.full_name)}",
+        new_x="LMARGIN", new_y="NEXT",
+    )
+    pdf.ln(4)
+
+    def section_title(text: str) -> None:
+        pdf.set_font("Helvetica", "B", 13)
+        pdf.set_text_color(11, 61, 46)
+        pdf.cell(0, 9, text, new_x="LMARGIN", new_y="NEXT")
+        pdf.set_text_color(30, 30, 30)
+
+    def kv_row(label: str, value: str, bold: bool = False) -> None:
+        pdf.set_font("Helvetica", "B" if bold else "", 11)
+        pdf.cell(100, 7, label)
+        pdf.cell(0, 7, value, new_x="LMARGIN", new_y="NEXT")
+
+    national = bilan["national"]
+    section_title("Vue d'ensemble nationale")
+    kv_row("Délégations régionales", str(national["delegations"]))
+    kv_row("Établissements affiliés (toutes délégations)", str(national["etablissements"]))
+    kv_row("Membres des comités locaux", str(national["membres"]))
+    kv_row("Réunions locales tenues sur la période", str(national["reunions"]))
+    kv_row("Total des entrées rattachées aux délégations", money(national["total_entrees"]), bold=True)
+    pdf.set_font("Helvetica", "I", 9)
+    pdf.set_text_color(130, 130, 130)
+    pdf.cell(0, 6, "(hors recettes, ventes de livres et dépenses, qui sont des écritures nationales)", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(30, 30, 30)
+    pdf.ln(6)
+
+    for region in bilan["regions"]:
+        section_title(f"Région : {pdf_safe(region['nom'])}")
+        pdf.set_font("Helvetica", "", 10)
+        pdf.cell(
+            0, 6,
+            f"{len(region['delegations'])} délégation(s) - {region['etablissements']} établissement(s) - "
+            f"{region['membres']} membre(s) - {region['reunions']} réunion(s) - {money(region['total_entrees'])}",
+            new_x="LMARGIN", new_y="NEXT",
+        )
+        pdf.ln(2)
+        with pdf.table(col_widths=(55, 30, 25, 25, 35), text_align=("LEFT", "RIGHT", "RIGHT", "RIGHT", "RIGHT")) as table:
+            row = table.row()
+            for h in ("Délégation", "Établ.", "Membres", "Réunions", "Entrées"):
+                row.cell(h, style=FontFace(emphasis="BOLD"))
+            for ligne in region["delegations"]:
+                row = table.row()
+                row.cell(pdf_safe(ligne["delegation"].nom))
+                row.cell(str(ligne["etablissements"]))
+                row.cell(str(ligne["membres"]))
+                row.cell(str(ligne["reunions"]))
+                row.cell(money(ligne["total_entrees"]))
+        pdf.ln(6)
+
+    return bytes(pdf.output())
+
+
 def generate_impact_report_pdf(db: Session, annee_scolaire: str) -> bytes:
     """Rapport d'impact grand public — chiffres clés de l'année scolaire, sans le
     détail comptable ligne par ligne du rapport interne (generate_annual_report_pdf) :

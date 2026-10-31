@@ -1,0 +1,79 @@
+{% extends "admin/base.html" %}
+{% block title %}Bilan national des délégations{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1 style="margin:0">Bilan national des délégations régionales</h1>
+    <p style="color:var(--text-muted); margin:4px 0 0;">
+      Année scolaire {{ bilan.annee_scolaire }} — période du {{ bilan.date_debut.strftime("%d/%m/%Y") }} au {{ bilan.date_fin.strftime("%d/%m/%Y") }}
+    </p>
+  </div>
+  <div style="display:flex; gap:10px;">
+    <a href="/admin/delegations/bilan-national.pdf?annee_scolaire={{ bilan.annee_scolaire }}" class="btn btn-outline">Télécharger en PDF</a>
+    <a href="/admin/delegations" class="btn btn-outline">&larr; Retour aux délégations</a>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:14px; margin-bottom:30px;">
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ bilan.national.delegations }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Délégations régionales</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ bilan.national.etablissements }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Établissements affiliés</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ bilan.national.membres }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Membres des comités locaux</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ bilan.national.reunions }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Réunions locales (période)</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ "{:,}".format(bilan.national.total_entrees).replace(",", " ") }} FCFA</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Entrées rattachées aux délégations</div>
+  </div>
+</div>
+
+{% if bilan.regions %}
+{% for region in bilan.regions %}
+<div class="form-card" style="max-width:none; margin-bottom:20px;">
+  <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+    <strong style="color:var(--green-dark); font-size:1.05rem;">{{ region.nom }}</strong>
+    <span style="color:var(--text-muted); font-size:0.85rem;">
+      {{ region.delegations|length }} délégation(s) — {{ region.etablissements }} étab. — {{ region.membres }} membre(s) —
+      {{ region.reunions }} réunion(s) — {{ "{:,}".format(region.total_entrees).replace(",", " ") }} FCFA
+    </span>
+  </div>
+  <table>
+    <thead><tr><th>Délégation</th><th>Établ.</th><th>Membres</th><th>Réunions</th><th>Entrées</th><th>Dernière réunion</th><th></th></tr></thead>
+    <tbody>
+      {% for ligne in region.delegations %}
+      <tr>
+        <td>{{ ligne.delegation.nom }}</td>
+        <td>{{ ligne.etablissements }}</td>
+        <td>{{ ligne.membres }}</td>
+        <td>{{ ligne.reunions }}</td>
+        <td>{{ "{:,}".format(ligne.total_entrees).replace(",", " ") }} FCFA</td>
+        <td>
+          {% if ligne.derniere_reunion %}
+          <span class="pill {{ 'pill-red' if ligne.niveau == 'alerte' else ('pill-gold' if ligne.niveau == 'surveillance' else 'pill-green') }}">
+            {{ ligne.derniere_reunion.strftime("%d/%m/%Y") }} ({{ ligne.jours_inactivite }} j)
+          </span>
+          {% else %}
+          <span class="pill pill-red">Aucune réunion</span>
+          {% endif %}
+        </td>
+        <td class="actions-cell"><a href="/admin/delegations/{{ ligne.delegation.id }}" class="btn btn-outline btn-sm">Ouvrir</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endfor %}
+{% else %}
+<div class="empty-state">Aucune délégation régionale enregistrée.</div>
+{% endif %}
+{% endblock %}

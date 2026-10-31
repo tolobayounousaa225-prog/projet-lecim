@@ -13,7 +13,12 @@ from .. import audit, models
 from ..database import get_db
 from ..deps import require_delegation_management_web
 from ..postes import DELEGATION_MODULES
-from ..reports import current_annee_scolaire, generate_delegation_report_pdf
+from ..reports import (
+    current_annee_scolaire,
+    delegations_national_bilan,
+    generate_delegation_report_pdf,
+    generate_delegations_national_report_pdf,
+)
 from ..security import hash_password, password_policy_error
 from ..security_utils import safe_content_disposition
 
@@ -61,6 +66,46 @@ def delegations_list(
         request,
         "admin/delegations_list.html",
         {"admin": user, "items": items, "activite": activite, "active": "delegations", "error": error},
+    )
+
+
+def _bilan_period(annee_scolaire: str | None) -> tuple[str, datetime.date, datetime.date]:
+    annee = annee_scolaire or current_annee_scolaire()
+    today = datetime.date.today()
+    debut_annee = datetime.date(today.year if today.month >= 9 else today.year - 1, 9, 1)
+    return annee, debut_annee, today
+
+
+@router.get("/bilan-national")
+def delegations_bilan_national(
+    request: Request,
+    annee_scolaire: str | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_management_web),
+):
+    annee, debut, fin = _bilan_period(annee_scolaire)
+    bilan = delegations_national_bilan(db, debut, fin, annee)
+    return templates.TemplateResponse(
+        request,
+        "admin/delegations_bilan_national.html",
+        {"admin": user, "bilan": bilan, "active": "delegations"},
+    )
+
+
+@router.get("/bilan-national.pdf")
+def delegations_bilan_national_pdf(
+    annee_scolaire: str | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_management_web),
+):
+    annee, debut, fin = _bilan_period(annee_scolaire)
+    bilan = delegations_national_bilan(db, debut, fin, annee)
+    pdf_bytes = generate_delegations_national_report_pdf(db, bilan, user)
+    filename = safe_content_disposition("bilan-national-delegations.pdf")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
