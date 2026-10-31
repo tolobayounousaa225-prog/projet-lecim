@@ -90,6 +90,53 @@ def _fix_users_titulaire_uniqueness() -> None:
     logger.info("Index unique partiel posé sur users (un seul titulaire par établissement).")
 
 
+def _fix_users_delegation_titulaire_uniqueness() -> None:
+    """Même logique que _fix_users_titulaire_uniqueness(), côté délégations : au
+    plus un compte titulaire par délégation (tous les comptes délégation existants
+    avant cette migration démarrent titulaires par défaut — ne rétrograder que les
+    doublons éventuels, le plus ancien compte restant titulaire)."""
+    from . import models
+
+    inspector = inspect(engine)
+    if not inspector.has_table("users"):
+        return
+    existing_indexes = {idx["name"] for idx in inspector.get_indexes("users")}
+    if "uq_user_delegation_titulaire" in existing_indexes:
+        return
+
+    db = SessionLocal()
+    try:
+        delegation_ids = [
+            row[0]
+            for row in db.query(models.User.delegation_id)
+            .filter(models.User.delegation_id.isnot(None), models.User.is_delegation_titulaire.is_(True))
+            .distinct()
+            .all()
+        ]
+        changed = False
+        for delegation_id in delegation_ids:
+            titulaires = (
+                db.query(models.User)
+                .filter(models.User.delegation_id == delegation_id, models.User.is_delegation_titulaire.is_(True))
+                .order_by(models.User.created_at)
+                .all()
+            )
+            for extra in titulaires[1:]:
+                extra.is_delegation_titulaire = False
+                changed = True
+        if changed:
+            db.commit()
+    finally:
+        db.close()
+
+    with engine.begin() as conn:
+        conn.execute(text(
+            "CREATE UNIQUE INDEX uq_user_delegation_titulaire ON users (delegation_id) "
+            "WHERE is_delegation_titulaire = true AND delegation_id IS NOT NULL"
+        ))
+    logger.info("Index unique partiel posé sur users (un seul titulaire par délégation).")
+
+
 def _fix_sondages_express_uniqueness() -> None:
     """S'assure qu'au plus un sondage express est actif à la fois (désactive tous
     les sondages actifs sauf le plus récent si plusieurs le sont déjà, séquelle
@@ -468,6 +515,9 @@ def run_startup_migrations() -> None:
         if "two_factor_enabled" not in users_columns:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE users ADD COLUMN two_factor_enabled BOOLEAN DEFAULT FALSE"))
+        if "is_delegation_titulaire" not in users_columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_delegation_titulaire BOOLEAN DEFAULT TRUE"))
 
     if inspector.has_table("diplomes"):
         diplomes_columns = {c["name"] for c in inspector.get_columns("diplomes")}
@@ -494,6 +544,7 @@ def run_startup_migrations() -> None:
     _add_unique_constraint_if_safe("cartes_scolaires", ["matricule"], "cartes_scolaires_matricule_key")
     _fix_sondages_express_uniqueness()
     _fix_users_titulaire_uniqueness()
+    _fix_users_delegation_titulaire_uniqueness()
 
     # Index sur les colonnes de clé étrangère les plus filtrées (rapports
     # pluriannuels, portail établissement) — absents par défaut sur une table déjà

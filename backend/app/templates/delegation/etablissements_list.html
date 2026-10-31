@@ -1,0 +1,31 @@
+{% extends "delegation/base.html" %}
+{% block title %}Établissements de la région{% endblock %}
+{% block content %}
+<h1 style="margin-bottom:4px;">Établissements de la région</h1>
+<p style="color:var(--text-muted); margin-top:0;">Consultation en lecture seule — la gestion des établissements reste centralisée au Bureau Exécutif National.</p>
+
+{% if items %}
+<table style="margin-top:20px;">
+  <thead><tr><th>Nom</th><th>Commune</th><th>Statut</th><th>Agrément</th><th></th></tr></thead>
+  <tbody>
+    {% for e in items %}
+    <tr>
+      <td>{{ e.nom }}</td>
+      <td>{{ e.bureau_local or "—" }}</td>
+      <td>{{ e.statut_label }}</td>
+      <td>
+        {% if e.statut_agrement == "agree" %}<span class="pill pill-green">Agréé</span>
+        {% elif e.statut_agrement == "expire" %}<span class="pill pill-red">Expiré</span>
+        {% else %}<span class="pill pill-gold">En cours</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/delegation/etablissements/{{ e.id }}" class="btn btn-outline btn-sm">Voir</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun établissement rattaché à cette délégation pour le moment.</div>
+{% endif %}
+{% endblock %}

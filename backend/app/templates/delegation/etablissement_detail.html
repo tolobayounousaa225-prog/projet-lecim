@@ -1,0 +1,38 @@
+{% extends "delegation/base.html" %}
+{% block title %}{{ etablissement.nom }}{% endblock %}
+{% block content %}
+<p style="margin-top:0;"><a href="/delegation/etablissements">&larr; Retour à la liste</a></p>
+<h1 style="margin-bottom:4px;">{{ etablissement.nom }}</h1>
+<p style="color:var(--text-muted); margin-top:0;">{{ etablissement.statut_label }}</p>
+
+<div class="form-card" style="max-width:560px;">
+  <dl style="margin:0; font-size:0.9rem;">
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">Commune / bureau local</dt><dd style="margin:0; font-weight:600;">{{ etablissement.bureau_local or "—" }}</dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">District / région</dt><dd style="margin:0; font-weight:600;">{{ etablissement.district or "—" }}{% if etablissement.region %} / {{ etablissement.region }}{% endif %}</dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">Directeur/directrice</dt><dd style="margin:0; font-weight:600;">{{ etablissement.directeur_nom or "—" }}</dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">Téléphone</dt><dd style="margin:0; font-weight:600;">{{ etablissement.contact_telephone or "—" }}</dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">E-mail</dt><dd style="margin:0; font-weight:600;">{{ etablissement.contact_email or "—" }}</dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">Niveaux d'enseignement</dt><dd style="margin:0; font-weight:600;">
+        {{ {"primaire": "Primaire", "secondaire": "Secondaire", "les_deux": "Primaire et secondaire"}.get(etablissement.type_enseignement, etablissement.type_enseignement) }}
+      </dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">N° d'agrément</dt><dd style="margin:0; font-weight:600;">{{ etablissement.numero_agrement or "—" }}</dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0;">
+      <dt style="color:var(--text-muted);">Membre depuis le</dt><dd style="margin:0; font-weight:600;">{{ etablissement.date_adhesion.strftime("%d/%m/%Y") if etablissement.date_adhesion else "—" }}</dd>
+    </div>
+  </dl>
+</div>
+{% endblock %}

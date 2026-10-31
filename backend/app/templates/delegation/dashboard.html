@@ -4,19 +4,56 @@
 <h1 style="margin-bottom:4px;">Bienvenue, {{ user.full_name }}</h1>
 <p style="color:var(--text-muted); margin-top:0;">{{ delegation.nom }}{% if delegation.region %} — {{ delegation.region }}{% endif %}{% if user.role_local %} · {{ user.role_local }}{% endif %}</p>
 
+{% if alerte_inactivite %}
+<div class="error-box" style="margin:16px 0;">
+  Aucune réunion locale depuis {{ jours_sans_reunion }} jour(s). Pensez à en planifier une prochainement.
+</div>
+{% endif %}
+
+{% if unread_messages %}
+<div class="error-box" style="margin:16px 0; background:var(--cream); border-color:var(--green); color:var(--green-dark);">
+  📩 {{ unread_messages }} message(s) non lu(s) du BEN national — <a href="/delegation/messagerie">voir la messagerie</a>.
+</div>
+{% endif %}
+
 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:14px; margin:24px 0;">
-  <a href="/delegation/reunions" class="form-card" style="max-width:none; text-align:center; text-decoration:none;">
+  <div class="form-card" style="max-width:none; text-align:center;">
     <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ counts.reunions }}</div>
     <div style="color:var(--text-muted); font-size:0.85rem;">Réunions locales</div>
-  </a>
-  <a href="/delegation/membres" class="form-card" style="max-width:none; text-align:center; text-decoration:none;">
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
     <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ counts.membres }}</div>
     <div style="color:var(--text-muted); font-size:0.85rem;">Membres du comité local</div>
-  </a>
-  <a href="/delegation/cotisations" class="form-card" style="max-width:none; text-align:center; text-decoration:none;">
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
     <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ counts.etablissements }}</div>
     <div style="color:var(--text-muted); font-size:0.85rem;">Établissements rattachés</div>
-  </a>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.6rem; font-weight:700; color:var(--green-dark);">{{ taux_presence ~ "%" if taux_presence is not none else "—" }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Taux de présence aux réunions</div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:14px; margin:0 0 24px;">
+  <div class="form-card" style="max-width:none;">
+    <strong style="color:var(--green-dark); display:block; margin-bottom:6px;">Dernière réunion</strong>
+    {% if derniere_reunion %}
+    <a href="/delegation/reunions/{{ derniere_reunion.id }}">{{ derniere_reunion.title }}</a>
+    <div style="color:var(--text-muted); font-size:0.85rem;">{{ derniere_reunion.date.strftime("%d/%m/%Y") }}</div>
+    {% else %}
+    <span style="color:var(--text-muted);">Aucune réunion enregistrée</span>
+    {% endif %}
+  </div>
+  <div class="form-card" style="max-width:none;">
+    <strong style="color:var(--green-dark); display:block; margin-bottom:6px;">Prochaine réunion</strong>
+    {% if prochaine_reunion %}
+    <a href="/delegation/reunions/{{ prochaine_reunion.id }}">{{ prochaine_reunion.title }}</a>
+    <div style="color:var(--text-muted); font-size:0.85rem;">{{ prochaine_reunion.date.strftime("%d/%m/%Y") }}</div>
+    {% else %}
+    <span style="color:var(--text-muted);">Aucune réunion à venir planifiée</span>
+    {% endif %}
+  </div>
 </div>
 
 <div class="empty-state">

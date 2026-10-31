@@ -1,0 +1,45 @@
+{% extends "delegation/base.html" %}
+{% block title %}Documents partagés{% endblock %}
+{% block content %}
+<h1 style="margin-bottom:4px;">Documents partagés de la délégation</h1>
+<p style="color:var(--text-muted); margin-top:0;">Procès-verbaux et ressources propres à votre délégation — visibles uniquement par vos comptes d'accès.</p>
+
+{% if error %}<div class="error-box" style="margin:16px 0;">{{ error }}</div>{% endif %}
+
+{% if items %}
+<table style="margin:20px 0;">
+  <thead><tr><th>Titre</th><th>Ajouté le</th><th></th></tr></thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.title }}</td>
+      <td>{{ item.created_at.strftime("%d/%m/%Y") }}</td>
+      <td class="actions-cell">
+        <a href="/delegation/documents/{{ item.id }}/file" class="btn btn-outline btn-sm">Télécharger</a>
+        <form method="post" action="/delegation/documents/{{ item.id }}/delete" onsubmit="return confirm('Supprimer ce document ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state" style="margin:20px 0;">Aucun document partagé pour le moment.</div>
+{% endif %}
+
+<div class="form-card" style="max-width:480px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:14px;">Ajouter un document</strong>
+  <form method="post" action="/delegation/documents/new" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="title">Titre</label>
+      <input type="text" id="title" name="title" required>
+    </div>
+    <div class="form-group">
+      <label for="file">Fichier (PDF, Word...)</label>
+      <input type="file" id="file" name="file" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Ajouter</button>
+  </form>
+</div>
+{% endblock %}

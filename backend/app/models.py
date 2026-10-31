@@ -36,6 +36,10 @@ class User(Base):
             "uq_user_etablissement_titulaire", "etablissement_id", unique=True,
             postgresql_where=text("is_etablissement_titulaire = true AND etablissement_id IS NOT NULL"),
         ),
+        Index(
+            "uq_user_delegation_titulaire", "delegation_id", unique=True,
+            postgresql_where=text("is_delegation_titulaire = true AND delegation_id IS NOT NULL"),
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -60,6 +64,10 @@ class User(Base):
     # directeur/directrice) a accès à tout son espace ; un compte secrétaire n'a
     # accès qu'aux rubriques explicitement cochées par l'administrateur (allowed_modules).
     is_etablissement_titulaire: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Même principe côté délégation régionale : le titulaire (créé en premier,
+    # en général le président local) a accès à tout l'espace délégation ; un
+    # compte secrétaire n'a accès qu'aux rubriques cochées (allowed_modules).
+    is_delegation_titulaire: Mapped[bool] = mapped_column(Boolean, default=True)
     # Verrouillage temporaire après plusieurs échecs de connexion consécutifs.
     failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
@@ -122,6 +130,12 @@ class User(Base):
         if not self.is_etablissement_account:
             return False
         return self.is_etablissement_titulaire or key in self.allowed_modules_list
+
+    def has_delegation_module(self, key: str) -> bool:
+        """Même principe que has_etab_module(), côté délégation régionale."""
+        if not self.is_delegation_account:
+            return False
+        return self.is_delegation_titulaire or key in self.allowed_modules_list
 
     @property
     def can_manage_reunions(self) -> bool:
@@ -275,18 +289,35 @@ class User(Base):
                 .filter(MessageEtablissement.is_from_ben.is_(False), MessageEtablissement.is_read_by_ben.is_(False))
                 .count()
             )
+        if self.can_manage_delegations:
+            counts["messagerie_delegations"] = (
+                db.query(MessageDelegation)
+                .filter(MessageDelegation.is_from_ben.is_(False), MessageDelegation.is_read_by_ben.is_(False))
+                .count()
+            )
         return {k: v for k, v in counts.items() if v}
 
     @property
     def unread_messages_count(self) -> int:
-        """Pour un compte établissement : nombre de messages du BEN pas encore lus
-        — pour un badge dans la barre latérale de son espace personnel."""
+        """Pour un compte établissement ou délégation : nombre de messages du BEN
+        pas encore lus — pour un badge dans la barre latérale de son espace
+        personnel."""
         from sqlalchemy.orm import object_session
 
-        if not self.is_etablissement_account:
-            return 0
         db = object_session(self)
         if db is None:
+            return 0
+        if self.is_delegation_account:
+            return (
+                db.query(MessageDelegation)
+                .filter(
+                    MessageDelegation.delegation_id == self.delegation_id,
+                    MessageDelegation.is_from_ben.is_(True),
+                    MessageDelegation.is_read_by_delegation.is_(False),
+                )
+                .count()
+            )
+        if not self.is_etablissement_account:
             return 0
         return (
             db.query(MessageEtablissement)
@@ -1006,6 +1037,50 @@ class MessageEtablissement(Base):
 
     etablissement: Mapped["Etablissement"] = relationship()
     sender: Mapped["User | None"] = relationship()
+
+
+class MessageDelegation(Base):
+    """Message d'un fil de discussion continu entre le BEN national et une
+    délégation régionale — même principe que MessageEtablissement, mais un seul
+    fil par délégation (pas par établissement) puisque l'autre interlocuteur est
+    toujours le BEN national."""
+
+    __tablename__ = "messages_delegations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    delegation_id: Mapped[int] = mapped_column(ForeignKey("delegations.id"), nullable=False)
+    sender_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    is_from_ben: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    is_read_by_ben: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_read_by_delegation: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    delegation: Mapped["Delegation"] = relationship()
+    sender: Mapped["User | None"] = relationship()
+
+
+class DocumentDelegation(Base):
+    """Petite bibliothèque de documents (PV, ressources) propre à une délégation
+    régionale — distincte de Document (BEN national), déposée et consultée
+    uniquement par les comptes de cette délégation."""
+
+    __tablename__ = "documents_delegations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    delegation_id: Mapped[int] = mapped_column(ForeignKey("delegations.id"), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    file_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    delegation: Mapped["Delegation"] = relationship()
+    uploaded_by: Mapped["User | None"] = relationship()
 
 
 class Adhesion(Base):

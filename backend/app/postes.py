@@ -224,6 +224,21 @@ ETAB_MODULES: dict[str, str] = {
 }
 
 
+# ---------- Rubriques de l'espace délégation régionale ----------
+# Même principe que ETAB_MODULES : le titulaire (président local) a accès à tout,
+# un compte secrétaire n'a accès qu'aux rubriques explicitement cochées.
+DELEGATION_MODULES: dict[str, str] = {
+    "reunions": "Réunions locales",
+    "membres": "Comité local",
+    "cotisations": "Cotisations des établissements (lecture seule)",
+    "annonces": "Annonces vers les établissements",
+    "etablissements": "Établissements de la région",
+    "rapport": "Rapport d'activité (export PDF)",
+    "documents": "Documents partagés de la délégation",
+    "messagerie": "Messagerie avec le BEN national",
+}
+
+
 def default_modules_for_poste(key: str | None) -> list[str]:
     return DEFAULT_MODULES_BY_POSTE.get(key, [])
 

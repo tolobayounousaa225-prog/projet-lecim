@@ -1,17 +1,31 @@
 import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from .. import audit, models
+from .. import audit, models, storage
 from ..database import get_db
-from ..deps import require_delegation_login_web
+from ..deps import (
+    require_delegation_annonces_web,
+    require_delegation_cotisations_web,
+    require_delegation_documents_web,
+    require_delegation_etablissements_web,
+    require_delegation_login_web,
+    require_delegation_membres_web,
+    require_delegation_messagerie_web,
+    require_delegation_rapport_web,
+    require_delegation_reunions_web,
+)
 from ..finances_constants import cotisation_rule
+from ..notifications import notify
 from ..reminders import send_reminder_for_reunion
 from ..security import hash_password, password_policy_error, verify_password
+from ..security_utils import safe_content_disposition
+
+DOCUMENTS_DELEGATION_DIR = "documents_delegations"
 
 router = APIRouter(tags=["delegation-portal"])
 
@@ -49,10 +63,50 @@ def delegation_dashboard(
         .filter(models.Etablissement.delegation_id == delegation_id)
         .count(),
     }
+
+    reunions = (
+        db.query(models.Reunion)
+        .filter(models.Reunion.delegation_id == delegation_id)
+        .order_by(models.Reunion.date.desc())
+        .all()
+    )
+    total_presences = 0
+    total_presents = 0
+    for r in reunions:
+        total_presences += len(r.presences)
+        total_presents += sum(1 for p in r.presences if p.present)
+    taux_presence = round((total_presents / total_presences) * 100, 1) if total_presences else None
+
+    derniere_reunion = reunions[0] if reunions else None
+    prochaine_reunion = (
+        db.query(models.Reunion)
+        .filter(models.Reunion.delegation_id == delegation_id, models.Reunion.date >= datetime.date.today())
+        .order_by(models.Reunion.date)
+        .first()
+    )
+
+    jours_sans_reunion = (
+        (datetime.date.today() - derniere_reunion.date).days if derniere_reunion else None
+    )
+    alerte_inactivite = jours_sans_reunion is not None and jours_sans_reunion > 90
+
+    unread_messages = user.unread_messages_count
+
     return templates.TemplateResponse(
         request,
         "delegation/dashboard.html",
-        {"user": user, "delegation": user.delegation, "counts": counts, "active": "dashboard"},
+        {
+            "user": user,
+            "delegation": user.delegation,
+            "counts": counts,
+            "taux_presence": taux_presence,
+            "derniere_reunion": derniere_reunion,
+            "prochaine_reunion": prochaine_reunion,
+            "jours_sans_reunion": jours_sans_reunion,
+            "alerte_inactivite": alerte_inactivite,
+            "unread_messages": unread_messages,
+            "active": "dashboard",
+        },
     )
 
 
@@ -114,7 +168,7 @@ def delegation_change_password_submit(
 def delegation_reunions_list(
     request: Request,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_reunions_web),
 ):
     items = (
         db.query(models.Reunion)
@@ -132,7 +186,7 @@ def delegation_reunions_list(
 @router.get("/delegation/reunions/new")
 def delegation_reunions_new_form(
     request: Request,
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_reunions_web),
 ):
     return templates.TemplateResponse(
         request,
@@ -148,7 +202,7 @@ def delegation_reunions_create(
     lieu: str = Form(""),
     ordre_du_jour: str = Form(""),
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_reunions_web),
 ):
     reunion = models.Reunion(
         title=title,
@@ -176,7 +230,7 @@ def delegation_reunion_detail(
     reunion_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_reunions_web),
 ):
     reunion = _get_scoped_reunion(db, user, reunion_id)
     if not reunion:
@@ -207,7 +261,7 @@ def delegation_reunion_detail(
 def delegation_reunion_rappel(
     reunion_id: int,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_reunions_web),
 ):
     reunion = _get_scoped_reunion(db, user, reunion_id)
     if reunion:
@@ -220,7 +274,7 @@ async def delegation_reunion_presence_save(
     reunion_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_reunions_web),
 ):
     reunion = _get_scoped_reunion(db, user, reunion_id)
     if not reunion:
@@ -237,7 +291,7 @@ async def delegation_reunion_presence_save(
 def delegation_reunion_delete(
     reunion_id: int,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_reunions_web),
 ):
     reunion = _get_scoped_reunion(db, user, reunion_id)
     if reunion:
@@ -252,7 +306,7 @@ def delegation_reunion_delete(
 def delegation_membres_list(
     request: Request,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_membres_web),
 ):
     items = (
         db.query(models.Membre)
@@ -270,7 +324,7 @@ def delegation_membres_list(
 @router.get("/delegation/membres/new")
 def delegation_membres_new_form(
     request: Request,
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_membres_web),
 ):
     return templates.TemplateResponse(
         request,
@@ -286,7 +340,7 @@ def delegation_membres_create(
     phone: str = Form(""),
     email: str = Form(""),
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_membres_web),
 ):
     membre = models.Membre(
         full_name=full_name,
@@ -304,7 +358,7 @@ def delegation_membres_create(
 def delegation_membres_delete(
     membre_id: int,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_membres_web),
 ):
     membre = db.get(models.Membre, membre_id)
     if membre and membre.delegation_id == user.delegation_id:
@@ -319,7 +373,7 @@ def delegation_membres_delete(
 def delegation_cotisations(
     request: Request,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_cotisations_web),
 ):
     etablissements = (
         db.query(models.Etablissement)
@@ -362,7 +416,7 @@ def delegation_cotisations(
 def delegation_annonces_list(
     request: Request,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_annonces_web),
 ):
     items = (
         db.query(models.AnnonceDelegation)
@@ -382,7 +436,7 @@ def delegation_annonces_create(
     titre: str = Form(...),
     message: str = Form(...),
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_annonces_web),
 ):
     annonce = models.AnnonceDelegation(
         delegation_id=user.delegation_id,
@@ -399,10 +453,216 @@ def delegation_annonces_create(
 def delegation_annonces_delete(
     annonce_id: int,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_delegation_login_web),
+    user: models.User = Depends(require_delegation_annonces_web),
 ):
     annonce = db.get(models.AnnonceDelegation, annonce_id)
     if annonce and annonce.delegation_id == user.delegation_id:
         db.delete(annonce)
         db.commit()
     return RedirectResponse(url="/delegation/annonces", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# ---------- Établissements de la région (lecture seule) ----------
+
+@router.get("/delegation/etablissements")
+def delegation_etablissements_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_etablissements_web),
+):
+    items = (
+        db.query(models.Etablissement)
+        .filter(models.Etablissement.delegation_id == user.delegation_id)
+        .order_by(models.Etablissement.nom)
+        .all()
+    )
+    return templates.TemplateResponse(
+        request,
+        "delegation/etablissements_list.html",
+        {"user": user, "delegation": user.delegation, "items": items, "active": "etablissements"},
+    )
+
+
+@router.get("/delegation/etablissements/{etablissement_id}")
+def delegation_etablissement_detail(
+    etablissement_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_etablissements_web),
+):
+    etablissement = db.get(models.Etablissement, etablissement_id)
+    if not etablissement or etablissement.delegation_id != user.delegation_id:
+        return RedirectResponse(url="/delegation/etablissements", status_code=status.HTTP_303_SEE_OTHER)
+    return templates.TemplateResponse(
+        request,
+        "delegation/etablissement_detail.html",
+        {"user": user, "delegation": user.delegation, "etablissement": etablissement, "active": "etablissements"},
+    )
+
+
+# ---------- Rapport d'activité de la délégation (PDF, en libre-service) ----------
+
+@router.get("/delegation/rapport.pdf")
+def delegation_rapport_pdf(
+    annee_scolaire: str | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_rapport_web),
+):
+    from ..reports import current_annee_scolaire, generate_delegation_report_pdf
+
+    delegation = user.delegation
+    if not delegation:
+        return RedirectResponse(url="/delegation", status_code=status.HTTP_303_SEE_OTHER)
+    annee = annee_scolaire or current_annee_scolaire()
+    today = datetime.date.today()
+    debut_annee = datetime.date(today.year if today.month >= 9 else today.year - 1, 9, 1)
+    pdf_bytes = generate_delegation_report_pdf(db, delegation, annee, debut_annee, today, user)
+    filename = safe_content_disposition(f"rapport-delegation-{delegation.nom}.pdf".replace(" ", "-"))
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ---------- Documents partagés de la délégation ----------
+
+@router.get("/delegation/documents")
+def delegation_documents_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_documents_web),
+):
+    items = (
+        db.query(models.DocumentDelegation)
+        .filter(models.DocumentDelegation.delegation_id == user.delegation_id)
+        .order_by(models.DocumentDelegation.created_at.desc())
+        .all()
+    )
+    return templates.TemplateResponse(
+        request,
+        "delegation/documents_list.html",
+        {"user": user, "delegation": user.delegation, "items": items, "active": "documents", "error": None},
+    )
+
+
+@router.post("/delegation/documents/new")
+async def delegation_documents_create(
+    request: Request,
+    title: str = Form(...),
+    file: UploadFile = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_documents_web),
+):
+    try:
+        stored_name, original_name = await storage.save_upload(
+            db, file, DOCUMENTS_DELEGATION_DIR, storage.ALLOWED_DOCUMENT_EXT
+        )
+    except ValueError as exc:
+        items = (
+            db.query(models.DocumentDelegation)
+            .filter(models.DocumentDelegation.delegation_id == user.delegation_id)
+            .order_by(models.DocumentDelegation.created_at.desc())
+            .all()
+        )
+        return templates.TemplateResponse(
+            request,
+            "delegation/documents_list.html",
+            {"user": user, "delegation": user.delegation, "items": items, "active": "documents", "error": str(exc)},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    document = models.DocumentDelegation(
+        delegation_id=user.delegation_id,
+        title=title,
+        file_path=f"{DOCUMENTS_DELEGATION_DIR}/{stored_name}",
+        original_filename=original_name,
+        uploaded_by_id=user.id,
+    )
+    db.add(document)
+    db.commit()
+    return RedirectResponse(url="/delegation/documents", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.get("/delegation/documents/{document_id}/file")
+def delegation_documents_file(
+    document_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_documents_web),
+):
+    document = db.get(models.DocumentDelegation, document_id)
+    if not document or document.delegation_id != user.delegation_id:
+        return RedirectResponse(url="/delegation/documents", status_code=status.HTTP_303_SEE_OTHER)
+    stored = storage.get_stored_file(db, document.file_path)
+    if not stored:
+        return RedirectResponse(url="/delegation/documents", status_code=status.HTTP_303_SEE_OTHER)
+    return Response(
+        content=stored.data,
+        media_type=stored.content_type,
+        headers={"Content-Disposition": f'attachment; filename="{safe_content_disposition(document.original_filename)}"'},
+    )
+
+
+@router.post("/delegation/documents/{document_id}/delete")
+def delegation_documents_delete(
+    document_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_documents_web),
+):
+    document = db.get(models.DocumentDelegation, document_id)
+    if document and document.delegation_id == user.delegation_id:
+        storage.delete_stored_file(db, document.file_path)
+        db.delete(document)
+        db.commit()
+    return RedirectResponse(url="/delegation/documents", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# ---------- Messagerie avec le BEN national ----------
+
+@router.get("/delegation/messagerie")
+def delegation_messagerie_thread(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_messagerie_web),
+):
+    messages = (
+        db.query(models.MessageDelegation)
+        .filter(models.MessageDelegation.delegation_id == user.delegation_id)
+        .order_by(models.MessageDelegation.created_at)
+        .all()
+    )
+    unread = [m for m in messages if m.is_from_ben and not m.is_read_by_delegation]
+    for m in unread:
+        m.is_read_by_delegation = True
+    if unread:
+        db.commit()
+    return templates.TemplateResponse(
+        request,
+        "delegation/messagerie.html",
+        {"user": user, "delegation": user.delegation, "messages": messages, "active": "messagerie"},
+    )
+
+
+@router.post("/delegation/messagerie/new")
+def delegation_messagerie_reply(
+    body: str = Form(...),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_messagerie_web),
+):
+    delegation = user.delegation
+    message = models.MessageDelegation(
+        delegation_id=user.delegation_id,
+        sender_id=user.id,
+        is_from_ben=False,
+        body=body,
+    )
+    db.add(message)
+    db.flush()
+    if delegation:
+        destinataires = [
+            u for u in db.query(models.User).filter(models.User.delegation_id.is_(None), models.User.etablissement_id.is_(None))
+            if u.can_manage_delegations
+        ]
+        for dest in destinataires:
+            notify(db, dest.id, f"Nouveau message de la délégation {delegation.nom}.", link="/admin/messagerie-delegations")
+    db.commit()
+    return RedirectResponse(url="/delegation/messagerie", status_code=status.HTTP_303_SEE_OTHER)

@@ -186,6 +186,29 @@ require_etab_messagerie_web = _etab_module_dependency_web("messagerie")
 require_etab_ressources_web = _etab_module_dependency_web("ressources")
 
 
+def _delegation_module_dependency_web(module_key: str):
+    """Fabrique une dépendance exigeant l'accès à une rubrique de l'espace
+    délégation (titulaire : accès total ; secrétaire : uniquement les rubriques
+    accordées) — même principe que _etab_module_dependency_web."""
+
+    def _dependency(user: models.User = Depends(require_delegation_login_web)) -> models.User:
+        if not user.has_delegation_module(module_key):
+            raise NotAuthorizedException()
+        return user
+
+    return _dependency
+
+
+require_delegation_reunions_web = _delegation_module_dependency_web("reunions")
+require_delegation_membres_web = _delegation_module_dependency_web("membres")
+require_delegation_cotisations_web = _delegation_module_dependency_web("cotisations")
+require_delegation_annonces_web = _delegation_module_dependency_web("annonces")
+require_delegation_etablissements_web = _delegation_module_dependency_web("etablissements")
+require_delegation_rapport_web = _delegation_module_dependency_web("rapport")
+require_delegation_documents_web = _delegation_module_dependency_web("documents")
+require_delegation_messagerie_web = _delegation_module_dependency_web("messagerie")
+
+
 def require_admin_web(
     user: models.User = Depends(require_login_web),
 ) -> models.User:

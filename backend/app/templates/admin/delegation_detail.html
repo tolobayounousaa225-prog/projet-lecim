@@ -30,13 +30,24 @@
 <h2 style="font-size:1.1rem; color:var(--green-dark); margin-bottom:14px;">Comptes d'accès de la délégation</h2>
 {% if comptes %}
 <table style="margin-bottom:20px;">
-  <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle local</th><th>Actions</th></tr></thead>
+  <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle local</th><th>Type de compte</th><th>Rubriques accordées</th><th>Actions</th></tr></thead>
   <tbody>
     {% for c in comptes %}
     <tr>
       <td>{{ c.full_name }}</td>
       <td>{{ c.email }}</td>
       <td>{{ c.role_local or "—" }}</td>
+      <td>
+        {% if c.is_delegation_titulaire %}<span class="pill pill-green">Titulaire — accès complet</span>
+        {% else %}<span class="pill pill-muted">Secrétaire</span>{% endif %}
+      </td>
+      <td>
+        {% if c.is_delegation_titulaire %}—
+        {% else %}
+          {% for key in c.allowed_modules_list %}<span class="pill pill-muted" style="margin:2px;">{{ delegation_modules.get(key, key) }}</span>{% endfor %}
+          {% if not c.allowed_modules_list %}<span style="color:var(--text-muted);">Aucune</span>{% endif %}
+        {% endif %}
+      </td>
       <td class="actions-cell">
         <form method="post" action="/admin/delegations/{{ delegation.id }}/users/{{ c.id }}/delete" onsubmit="return confirm('Révoquer l\'accès de {{ c.full_name }} ?');">
           <button type="submit" class="btn btn-danger btn-sm">Révoquer</button>
@@ -52,8 +63,10 @@
 
 {% if error %}<div class="error-box" style="margin-bottom:16px;">{{ error }}</div>{% endif %}
 
-<div class="form-card" style="max-width:520px;">
-  <strong style="color:var(--green-dark); display:block; margin-bottom:14px;">Créer un accès pour cette délégation</strong>
+<div class="form-card" style="max-width:560px;">
+  <strong style="color:var(--green-dark); display:block; margin-bottom:14px;">
+    {% if titulaire_existe %}Créer un compte secrétaire{% else %}Créer l'accès pour cette délégation{% endif %}
+  </strong>
   <form method="post" action="/admin/delegations/{{ delegation.id }}/users/new">
     <div class="form-group">
       <label for="full_name">Nom complet</label>
@@ -72,7 +85,28 @@
       <label for="role_local">Rôle au sein du comité local</label>
       <input type="text" id="role_local" name="role_local" placeholder="Ex. Secrétaire de la délégation">
     </div>
-    <button type="submit" class="btn btn-primary">Créer l'accès</button>
+    {% if not titulaire_existe %}
+    <div class="form-group">
+      <label for="role">Type de compte</label>
+      <select id="role" name="role" onchange="document.getElementById('modules-box').style.display = this.value === 'secretaire' ? 'block' : 'none';">
+        <option value="titulaire">Titulaire — accès complet à l'espace délégation</option>
+        <option value="secretaire">Secrétaire — accès limité aux rubriques choisies</option>
+      </select>
+    </div>
+    {% else %}
+    <input type="hidden" name="role" value="secretaire">
+    <p style="color:var(--text-muted); font-size:0.85rem;">Un titulaire existe déjà pour cette délégation : ce nouveau compte sera un compte secrétaire à accès limité.</p>
+    {% endif %}
+    <div class="form-group" id="modules-box" style="{{ 'display:none;' if not titulaire_existe else '' }}">
+      <label>Rubriques accordées à ce secrétaire</label>
+      {% for key, label in delegation_modules.items() %}
+      <div class="checkbox-row">
+        <input type="checkbox" id="mod_{{ key }}" name="modules" value="{{ key }}">
+        <label for="mod_{{ key }}" style="margin:0; font-weight:normal;">{{ label }}</label>
+      </div>
+      {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-primary" style="margin-top:10px;">Créer l'accès</button>
   </form>
 </div>
 

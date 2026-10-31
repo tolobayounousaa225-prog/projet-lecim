@@ -17,10 +17,14 @@
     <span class="tag">{{ delegation.nom }}</span>
     <nav>
       <a href="/delegation" class="{{ 'active' if active == 'dashboard' else '' }}">Tableau de bord</a>
-      <a href="/delegation/reunions" class="{{ 'active' if active == 'reunions' else '' }}">Réunions locales</a>
-      <a href="/delegation/membres" class="{{ 'active' if active == 'membres' else '' }}">Comité local</a>
-      <a href="/delegation/cotisations" class="{{ 'active' if active == 'cotisations' else '' }}">Cotisations (lecture seule)</a>
-      <a href="/delegation/annonces" class="{{ 'active' if active == 'annonces' else '' }}">Annonces</a>
+      {% if user.has_delegation_module("reunions") %}<a href="/delegation/reunions" class="{{ 'active' if active == 'reunions' else '' }}">Réunions locales</a>{% endif %}
+      {% if user.has_delegation_module("membres") %}<a href="/delegation/membres" class="{{ 'active' if active == 'membres' else '' }}">Comité local</a>{% endif %}
+      {% if user.has_delegation_module("etablissements") %}<a href="/delegation/etablissements" class="{{ 'active' if active == 'etablissements' else '' }}">Établissements de la région</a>{% endif %}
+      {% if user.has_delegation_module("cotisations") %}<a href="/delegation/cotisations" class="{{ 'active' if active == 'cotisations' else '' }}">Cotisations (lecture seule)</a>{% endif %}
+      {% if user.has_delegation_module("documents") %}<a href="/delegation/documents" class="{{ 'active' if active == 'documents' else '' }}">Documents partagés</a>{% endif %}
+      {% if user.has_delegation_module("messagerie") %}<a href="/delegation/messagerie" class="{{ 'active' if active == 'messagerie' else '' }}">Messagerie BEN{% if user.unread_messages_count %}<span class="nav-badge">{{ user.unread_messages_count }}</span>{% endif %}</a>{% endif %}
+      {% if user.has_delegation_module("annonces") %}<a href="/delegation/annonces" class="{{ 'active' if active == 'annonces' else '' }}">Annonces</a>{% endif %}
+      {% if user.has_delegation_module("rapport") %}<a href="/delegation/rapport.pdf" class="{{ 'active' if active == 'rapport' else '' }}">Rapport d'activité (PDF)</a>{% endif %}
       <a href="/delegation/mon-compte/mot-de-passe" class="{{ 'active' if active == 'mon_compte' else '' }}">Changer mon mot de passe</a>
     </nav>
     <div class="logout">

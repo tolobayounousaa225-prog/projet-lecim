@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from .. import audit, models
 from ..database import get_db
 from ..deps import require_delegation_management_web
+from ..postes import DELEGATION_MODULES
 from ..reports import current_annee_scolaire, generate_delegation_report_pdf
 from ..security import hash_password, password_policy_error
 from ..security_utils import safe_content_disposition
@@ -188,6 +189,8 @@ def delegation_detail(
             "etablissements": etablissements,
             "reunions_count": reunions_count,
             "membres_count": membres_count,
+            "delegation_modules": DELEGATION_MODULES,
+            "titulaire_existe": any(c.is_delegation_titulaire for c in comptes),
             "active": "delegations",
             "error": error,
         },
@@ -217,13 +220,14 @@ def delegation_rapport_pdf(
 
 
 @router.post("/{delegation_id}/users/new")
-def delegation_user_create(
+async def delegation_user_create(
     delegation_id: int,
     request: Request,
     full_name: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
     role_local: str = Form(""),
+    role: str = Form("titulaire"),
     db: Session = Depends(get_db),
     user: models.User = Depends(require_delegation_management_web),
 ):
@@ -231,14 +235,24 @@ def delegation_user_create(
     if not delegation:
         return RedirectResponse(url="/admin/delegations", status_code=status.HTTP_303_SEE_OTHER)
 
+    form = await request.form()
+    modules = [m for m in form.getlist("modules") if m in DELEGATION_MODULES]
+
+    comptes = db.query(models.User).filter(models.User.delegation_id == delegation_id).all()
+    titulaire_existe = any(c.is_delegation_titulaire for c in comptes)
+
     existing = db.query(models.User).filter(models.User.email == email).first()
     password_error = password_policy_error(password)
-    if existing or password_error:
-        comptes = db.query(models.User).filter(models.User.delegation_id == delegation_id).all()
+    if existing or password_error or (role == "titulaire" and titulaire_existe):
         etablissements = (
             db.query(models.Etablissement)
             .filter(models.Etablissement.delegation_id == delegation_id)
             .all()
+        )
+        error = (
+            "Un compte existe déjà avec cet e-mail." if existing
+            else password_error if password_error
+            else "Un compte titulaire existe déjà pour cette délégation — créez un compte secrétaire à la place."
         )
         return templates.TemplateResponse(
             request,
@@ -254,12 +268,15 @@ def delegation_user_create(
                 "membres_count": db.query(models.Membre)
                 .filter(models.Membre.delegation_id == delegation_id)
                 .count(),
+                "delegation_modules": DELEGATION_MODULES,
+                "titulaire_existe": titulaire_existe,
                 "active": "delegations",
-                "error": "Un compte existe déjà avec cet e-mail." if existing else password_error,
+                "error": error,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
+    is_titulaire = role == "titulaire"
     delegation_user = models.User(
         full_name=full_name,
         email=email,
@@ -267,20 +284,23 @@ def delegation_user_create(
         access_level="bureau",
         delegation_id=delegation_id,
         role_local=role_local or None,
+        is_delegation_titulaire=is_titulaire,
+        allowed_modules="" if is_titulaire else ",".join(modules),
     )
     db.add(delegation_user)
     try:
         db.flush()
     except IntegrityError:
-        # Course avec une autre création concurrente utilisant le même e-mail —
-        # la contrainte unique a bloqué la seconde requête plutôt que de laisser
-        # un doublon.
+        # Course avec une autre création concurrente (même e-mail, ou même
+        # délégation pour deux titulaires à la fois) — l'index/la contrainte
+        # unique a bloqué la seconde requête plutôt que de laisser un doublon.
         db.rollback()
         return RedirectResponse(
-            url=f"/admin/delegations/{delegation_id}?error={quote('Conflit détecté (e-mail déjà pris entre-temps) — veuillez réessayer.')}",
+            url=f"/admin/delegations/{delegation_id}?error={quote('Conflit détecté (e-mail ou titulaire déjà pris entre-temps) — veuillez réessayer.')}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
-    audit.log(db, user, "create", "Compte délégation", delegation_user.id, f"A créé le compte {delegation_user.full_name} pour la délégation {delegation.nom}")
+    role_label = "titulaire" if is_titulaire else "secrétaire"
+    audit.log(db, user, "create", "Compte délégation", delegation_user.id, f"A créé un compte {role_label} ({delegation_user.full_name}) pour la délégation {delegation.nom}")
     db.commit()
     return RedirectResponse(url=f"/admin/delegations/{delegation_id}", status_code=status.HTTP_303_SEE_OTHER)
 

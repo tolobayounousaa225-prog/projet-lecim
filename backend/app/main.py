@@ -50,6 +50,7 @@ from .routers import (
     admin_historique,
     admin_historique_postes,
     admin_messagerie,
+    admin_messagerie_delegations,
     admin_newsletter,
     admin_objectifs_principes_moyens,
     admin_partenaires,
@@ -407,6 +408,7 @@ app.include_router(delegation_portal.router)
 app.include_router(delegations_public.router)
 app.include_router(admin_etablissement_portail.router)
 app.include_router(admin_messagerie.router)
+app.include_router(admin_messagerie_delegations.router)
 app.include_router(admin_connexions.router)
 app.include_router(admin_password_resets.router)
 app.include_router(etablissement_portal.router)
