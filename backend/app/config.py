@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     # déploiement SSH dédiée (voir ~/.ssh/config sur le VPS), jamais ce dépôt-ci.
     backup_encryption_key: str = ""
     backup_offsite_repo_ssh_url: str = ""
+    # Troisième canal de redondance, en plus du disque local et du dépôt Git
+    # hors-site ci-dessus : envoie la sauvegarde nocturne (chiffrée avec la même
+    # clé) par e-mail à cette adresse. Vide = désactivé. Nécessite backup_encryption_key
+    # (jamais envoyée en clair par e-mail, canal moins maîtrisé qu'un dépôt Git privé).
+    backup_email_to: str = ""
 
     # Clés VAPID pour les notifications push web (actualités urgentes). Vides = la
     # fonctionnalité est simplement désactivée (aucun envoi), sans erreur.

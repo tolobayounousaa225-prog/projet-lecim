@@ -5,6 +5,12 @@
   <div>
     <h1 style="margin:0">Sauvegardes de la base de données</h1>
     <p style="color:var(--text-muted); margin:4px 0 0;">Une sauvegarde automatique est effectuée chaque nuit à 2h. Les 30 plus récentes sont conservées.</p>
+    <p style="margin:6px 0 0; font-size:0.85rem;">
+      Copie hors-site (dépôt Git chiffré) :
+      {% if offsite_configured %}<span class="pill pill-green">Active</span>{% else %}<span class="pill pill-muted">Non configurée</span>{% endif %}
+      &nbsp;·&nbsp; Envoi par e-mail :
+      {% if email_configured %}<span class="pill pill-green">Active</span>{% else %}<span class="pill pill-muted">Non configuré</span>{% endif %}
+    </p>
   </div>
   <form method="post" action="/admin/backups/new">
     <button type="submit" class="btn btn-primary">Sauvegarder maintenant</button>

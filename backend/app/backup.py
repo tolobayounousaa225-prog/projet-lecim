@@ -12,11 +12,14 @@ import base64
 import datetime
 import decimal
 import json
+import logging
 import shutil
 from pathlib import Path
 
 from .config import settings
 from .database import Base, engine
+
+logger = logging.getLogger("lecim.backup")
 
 # Marqueur distinguant une valeur binaire encodée en base64 (fichiers uploadés
 # stockés dans StoredFile.data) d'une chaîne de texte normale, pour pouvoir la
@@ -92,6 +95,53 @@ def create_backup() -> Path:
 
     _cleanup_old_backups()
     return destination
+
+
+def email_latest_backup(backup_path: Path) -> bool:
+    """Troisième canal de redondance, en plus du disque local et de la copie
+    hors-site Git (offsite_backup.sync_latest_backup) : envoie la sauvegarde,
+    chiffrée avec la même clé, par e-mail. Retourne False sans lever
+    d'exception si la fonctionnalité n'est pas configurée ou échoue — une
+    sauvegarde locale/Git réussie ne doit jamais être considérée en échec à
+    cause d'un problème SMTP distinct."""
+    if not settings.backup_email_to or not settings.backup_encryption_key:
+        return False
+    try:
+        from cryptography.fernet import Fernet
+
+        from .email_utils import send_email_with_attachment
+
+        fernet = Fernet(settings.backup_encryption_key.encode())
+        encrypted = fernet.encrypt(backup_path.read_bytes())
+
+        # Les pièces jointes volumineuses sont souvent rejetées ou échouent
+        # silencieusement selon le serveur SMTP/la boîte de réception — mieux
+        # vaut ne pas envoyer du tout qu'un envoi qui échoue systématiquement.
+        max_bytes = 20 * 1024 * 1024
+        if len(encrypted) > max_bytes:
+            logger.warning(
+                "Sauvegarde non envoyée par e-mail : %.1f Mo chiffrés, au-delà de la limite de %d Mo.",
+                len(encrypted) / 1024 / 1024, max_bytes // (1024 * 1024),
+            )
+            return False
+
+        return send_email_with_attachment(
+            to=settings.backup_email_to,
+            subject=f"Sauvegarde LECIM — {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            body=(
+                "Sauvegarde automatique nocturne de la base de données LECIM, en pièce "
+                "jointe, chiffrée avec la même clé que la copie hors-site habituelle "
+                "(BACKUP_ENCRYPTION_KEY) — voir offsite_backup.decrypt_backup() pour la "
+                "déchiffrer en cas de besoin."
+            ),
+            attachment_bytes=encrypted,
+            attachment_filename=f"{backup_path.name}.enc",
+            maintype="application",
+            subtype="octet-stream",
+        )
+    except Exception:
+        logger.exception("Échec de l'envoi de la sauvegarde par e-mail")
+        return False
 
 
 def _cleanup_old_backups(keep: int = RETENTION_COUNT) -> None:

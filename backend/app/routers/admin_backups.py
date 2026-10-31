@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from .. import audit, backup, models
+from ..config import settings
 from ..database import get_db
 from ..deps import require_admin_web
 
@@ -25,7 +26,14 @@ def backups_list(
     return templates.TemplateResponse(
         request,
         "admin/backups_list.html",
-        {"admin": admin, "active": "backups", "items": backup.list_backups(), "error": error},
+        {
+            "admin": admin,
+            "active": "backups",
+            "items": backup.list_backups(),
+            "error": error,
+            "offsite_configured": bool(settings.backup_encryption_key and settings.backup_offsite_repo_ssh_url),
+            "email_configured": bool(settings.backup_encryption_key and settings.backup_email_to),
+        },
     )
 
 

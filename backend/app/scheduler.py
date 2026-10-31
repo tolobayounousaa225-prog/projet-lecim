@@ -5,7 +5,7 @@ import logging
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from .backup import create_backup
+from .backup import create_backup, email_latest_backup
 from .courrier_reminders import check_overdue_courrier
 from .offsite_backup import sync_latest_backup
 from .mandates import check_mandate_expirations
@@ -24,9 +24,11 @@ def _run_backup_job() -> None:
     except Exception:
         logger.exception("Échec de la sauvegarde automatique planifiée")
         return
-    # Échec séparé et non bloquant : un problème réseau/Git sur la copie
-    # hors-site ne doit jamais faire paraître la sauvegarde locale en échec.
+    # Échecs séparés et non bloquants : un problème réseau/Git sur la copie
+    # hors-site, ou un problème SMTP sur l'envoi par e-mail, ne doit jamais
+    # faire paraître la sauvegarde locale en échec.
     sync_latest_backup(backup_path)
+    email_latest_backup(backup_path)
 
 
 def _run_reminders_job() -> None:

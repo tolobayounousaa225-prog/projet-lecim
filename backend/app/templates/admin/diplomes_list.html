@@ -3,7 +3,10 @@
 {% block content %}
 <div class="topbar">
   <h1 style="margin:0">Impression des diplômes</h1>
-  <a href="/admin/diplomes/importer" class="btn btn-primary">+ Importer un fichier Excel</a>
+  <div style="display:flex; gap:8px;">
+    <a href="/admin/diplomes/statistiques" class="btn btn-outline">Statistiques</a>
+    <a href="/admin/diplomes/importer" class="btn btn-primary">+ Importer un fichier Excel</a>
+  </div>
 </div>
 <p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">
   Chaque import génère un lot de diplômes (un PDF par candidat admis). Vous pouvez

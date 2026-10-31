@@ -14,6 +14,18 @@
   </div>
   {% endif %}
 
+  {% if warnings %}
+  <div class="error-box" style="background:#fdf1e0; border-color:#e0a52c; color:#8a5a10;">
+    <strong>Doublons potentiels détectés :</strong>
+    <ul style="margin:6px 0 0; padding-inline-start:20px;">
+      {% for message in warnings %}<li>{{ message }}</li>{% endfor %}
+    </ul>
+    <p style="margin:10px 0 0; font-size:0.85rem;">
+      Si c'est volontaire (ex. réimpression), cochez la case ci-dessous et réimportez le même fichier.
+    </p>
+  </div>
+  {% endif %}
+
   <p style="color:var(--text-muted); font-size:0.9rem; margin-top:0;">
     1. Téléchargez le modèle Excel, remplissez une ligne par candidat admis — y compris
     la date de naissance, qui permet au titulaire de vérifier son diplôme en ligne
@@ -35,6 +47,12 @@
       <label for="date_delivrance">Date de délivrance (identique pour tout le lot)</label>
       <input type="date" id="date_delivrance" name="date_delivrance" required value="{{ today }}">
     </div>
+    {% if warnings %}
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="confirmer_doublons" name="confirmer_doublons" value="true">
+      <label for="confirmer_doublons" style="margin:0; font-weight:normal;">Je confirme vouloir générer ces diplômes malgré les doublons détectés.</label>
+    </div>
+    {% endif %}
     <button type="submit" class="btn btn-primary">Générer les diplômes (ZIP)</button>
   </form>
 </div>

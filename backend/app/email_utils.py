@@ -26,7 +26,13 @@ def send_email(to: str, subject: str, body: str) -> bool:
 
 
 def send_email_with_attachment(
-    to: str, subject: str, body: str, attachment_bytes: bytes, attachment_filename: str
+    to: str,
+    subject: str,
+    body: str,
+    attachment_bytes: bytes,
+    attachment_filename: str,
+    maintype: str = "application",
+    subtype: str = "pdf",
 ) -> bool:
     if not settings.smtp_host or not to:
         return False
@@ -37,7 +43,7 @@ def send_email_with_attachment(
         email["To"] = to
         email.set_content(body)
         email.add_attachment(
-            attachment_bytes, maintype="application", subtype="pdf", filename=attachment_filename
+            attachment_bytes, maintype=maintype, subtype=subtype, filename=attachment_filename
         )
         with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
             server.starttls()

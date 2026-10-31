@@ -12,6 +12,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
 from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import audit, models
@@ -83,6 +84,44 @@ def _parse_date_cell(value) -> datetime.date | None:
     return None
 
 
+def _detect_duplicates(db: Session, candidates: list[dict]) -> list[str]:
+    """Repère les candidats qui semblent déjà avoir un diplôme pour le même
+    examen — même nom complet (insensible à la casse/aux espaces) et même date
+    de naissance, pour le même type d'examen. Compare les lignes entre elles
+    (doublon dans le fichier lui-même) ET contre les diplômes déjà en base
+    (ré-import accidentel d'un lot déjà traité). Ne bloque jamais seul :
+    affiché comme avertissement, à confirmer explicitement pour continuer."""
+    seen: set[tuple[str, object, str]] = set()
+    warnings: list[str] = []
+
+    for values in candidates:
+        key = (values["nom_complet"].strip().lower(), values["date_naissance"], values["type_examen"].strip().lower())
+        if key in seen:
+            warnings.append(
+                f"« {values['nom_complet']} » ({values['type_examen']}) apparaît en double dans le fichier importé."
+            )
+        else:
+            seen.add(key)
+
+    noms = {v["nom_complet"].strip().lower() for v in candidates}
+    if noms:
+        existants = (
+            db.query(models.Diplome.nom_complet, models.Diplome.date_naissance, models.Diplome.type_examen)
+            .filter(func.lower(func.trim(models.Diplome.nom_complet)).in_(noms))
+            .all()
+        )
+        existants_set = {(e.nom_complet.strip().lower(), e.date_naissance, e.type_examen.strip().lower()) for e in existants}
+        for values in candidates:
+            key = (values["nom_complet"].strip().lower(), values["date_naissance"], values["type_examen"].strip().lower())
+            if key in existants_set:
+                warnings.append(
+                    f"« {values['nom_complet']} » a déjà un diplôme enregistré pour l'examen "
+                    f"« {values['type_examen']} » avec la même date de naissance."
+                )
+
+    return warnings
+
+
 def _next_numero_diplome(db: Session) -> str:
     """Numéro imprévisible (même logique que les cartes, voir admin_cartes.py) :
     un numéro devinable permettrait d'énumérer /verify-diplome/{numero} et
@@ -124,6 +163,56 @@ def diplomes_list(
         request,
         "admin/diplomes_list.html",
         {"admin": user, "batches": batches, "active": "diplomes"},
+    )
+
+
+@router.get("/statistiques")
+def diplomes_statistiques(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_diplomes_access_web),
+):
+    totaux = (
+        db.query(
+            models.Diplome.annee_scolaire,
+            models.Diplome.type_examen,
+            func.count(models.Diplome.id).label("total"),
+        )
+        .group_by(models.Diplome.annee_scolaire, models.Diplome.type_examen)
+        .order_by(models.Diplome.annee_scolaire.desc(), models.Diplome.type_examen)
+        .all()
+    )
+    mentions_rows = (
+        db.query(
+            models.Diplome.annee_scolaire,
+            models.Diplome.type_examen,
+            models.Diplome.mention,
+            func.count(models.Diplome.id).label("total"),
+        )
+        .filter(models.Diplome.mention.isnot(None))
+        .group_by(models.Diplome.annee_scolaire, models.Diplome.type_examen, models.Diplome.mention)
+        .all()
+    )
+    mentions_by_group: dict[tuple[str, str], list[tuple[str, int]]] = {}
+    for row in mentions_rows:
+        key = (row.annee_scolaire, row.type_examen)
+        mentions_by_group.setdefault(key, []).append((row.mention, row.total))
+
+    groupes = [
+        {
+            "annee_scolaire": row.annee_scolaire,
+            "type_examen": row.type_examen,
+            "total": row.total,
+            "mentions": sorted(mentions_by_group.get((row.annee_scolaire, row.type_examen), []), key=lambda m: -m[1]),
+        }
+        for row in totaux
+    ]
+    total_general = sum(g["total"] for g in groupes)
+
+    return templates.TemplateResponse(
+        request,
+        "admin/diplomes_statistiques.html",
+        {"admin": user, "groupes": groupes, "total_general": total_general, "active": "diplomes"},
     )
 
 
@@ -173,7 +262,10 @@ def diplomes_importer_form(
     return templates.TemplateResponse(
         request,
         "admin/diplomes_importer.html",
-        {"admin": user, "active": "diplomes", "errors": None, "today": datetime.date.today().isoformat()},
+        {
+            "admin": user, "active": "diplomes", "errors": None, "warnings": None,
+            "today": datetime.date.today().isoformat(),
+        },
     )
 
 
@@ -182,16 +274,20 @@ async def diplomes_importer_process(
     request: Request,
     fichier: UploadFile,
     date_delivrance: str = Form(...),
+    confirmer_doublons: bool = Form(False),
     db: Session = Depends(get_db),
     user: models.User = Depends(require_diplomes_access_web),
 ):
     from openpyxl import load_workbook
 
-    def _error(messages: list[str]):
+    def _error(messages: list[str], warnings: list[str] | None = None):
         return templates.TemplateResponse(
             request,
             "admin/diplomes_importer.html",
-            {"admin": user, "active": "diplomes", "errors": messages, "today": date_delivrance},
+            {
+                "admin": user, "active": "diplomes", "errors": messages, "warnings": warnings,
+                "today": date_delivrance,
+            },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -250,6 +346,11 @@ async def diplomes_importer_process(
         return _error(row_errors)
     if not candidates:
         return _error(["Aucune ligne de candidat trouvée dans le fichier."])
+
+    if not confirmer_doublons:
+        duplicate_warnings = _detect_duplicates(db, candidates)
+        if duplicate_warnings:
+            return _error([], warnings=duplicate_warnings)
 
     import_batch = f"LOT-{datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(2)}"
     generated = []

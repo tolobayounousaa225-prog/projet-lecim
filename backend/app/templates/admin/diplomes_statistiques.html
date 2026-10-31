@@ -1,0 +1,44 @@
+{% extends "admin/base.html" %}
+{% block title %}Statistiques des diplômes{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Statistiques des diplômes délivrés</h1>
+  <a href="/admin/diplomes" class="btn btn-outline">&larr; Retour à la liste</a>
+</div>
+<p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">
+  {{ total_general }} diplôme(s) délivré(s) au total, tous lots confondus.
+</p>
+
+{% if groupes %}
+<div style="display:flex; flex-direction:column; gap:16px; margin-top:20px;">
+  {% for g in groupes %}
+  <div class="form-card" style="max-width:none;">
+    <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+      <strong style="color:var(--green-dark); font-size:1.05rem;">{{ g.type_examen }} — {{ g.annee_scolaire }}</strong>
+      <span class="pill pill-green">{{ g.total }} diplôme(s)</span>
+    </div>
+    {% if g.mentions %}
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      {% for mention, count in g.mentions %}
+      {% set pct = (count / g.total * 100) if g.total else 0 %}
+      <div>
+        <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:3px;">
+          <span>{{ mention }}</span>
+          <span style="color:var(--text-muted);">{{ count }} ({{ "%.0f"|format(pct) }}%)</span>
+        </div>
+        <div style="background:var(--cream); border-radius:6px; height:10px; overflow:hidden;">
+          <div style="background:var(--green); height:100%; width:{{ pct }}%;"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:var(--text-muted); font-size:0.85rem; margin:0;">Aucune mention renseignée pour ce groupe.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">Aucun diplôme généré pour le moment.</div>
+{% endif %}
+{% endblock %}
