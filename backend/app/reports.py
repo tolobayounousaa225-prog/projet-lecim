@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session, joinedload
 from . import models
 from .config import settings
 from .finances_constants import RECETTE_CATEGORIES
+from .postes import poste_label
 from .security_utils import csv_safe
 
 LOGO_PATH = Path(__file__).resolve().parent / "static" / "img" / "logo.jpg"
@@ -1251,6 +1252,374 @@ def generate_delegations_national_report_pdf(db: Session, bilan: dict, user: "mo
                 row.cell(str(ligne["reunions"]))
                 row.cell(money(ligne["total_entrees"]))
         pdf.ln(6)
+
+    return bytes(pdf.output())
+
+
+def bilan_moral_president(db: Session, annee_scolaire: str, date_debut: datetime.date, date_fin: datetime.date) -> dict:
+    """Bilan moral annuel du Président — consolide en un seul endroit les actions
+    de tous les secrétariats du BEN, de toutes les délégations régionales, des
+    établissements membres et des autres domaines (projets, patrimoine,
+    partenariats, affaires sociales, boîte à idées, satisfaction), pour servir de
+    base au rapport moral présenté à l'Assemblée Générale. Distinct du rapport
+    financier (generate_annual_report_pdf) : ici l'accent est mis sur les
+    ACTIONS menées, pas sur la comptabilité détaillée (qui reste disponible via
+    le rapport financier, lié en fin de document)."""
+    from . import models as m
+
+    # Borne pour les colonnes DateTime (Document.created_at, TachePersonnelle.created_at,
+    # Idee.created_at, SondageSatisfaction.created_at, CarteScolaire.date_soumission,
+    # DemandeAssistance.date_soumission) : `<= date_fin` comparerait un horodatage à
+    # minuit et exclurait à tort tout ce qui a été créé aujourd'hui après 00h00 — même
+    # convention que generate_annual_report_pdf (CarteMembre.date_disponibilite) pour
+    # inclure la journée entière.
+    fin_datetime = datetime.datetime.combine(date_fin, datetime.time.max)
+
+    # ---------- 1. Vie associative nationale (BEN) ----------
+    reunions_ben = (
+        db.query(m.Reunion)
+        .filter(m.Reunion.delegation_id.is_(None), m.Reunion.date >= date_debut, m.Reunion.date <= date_fin)
+        .order_by(m.Reunion.date)
+        .all()
+    )
+    total_presences = sum(len(r.presences) for r in reunions_ben)
+    total_presents = sum(r.present_count for r in reunions_ben)
+    taux_presence_ben = round(total_presents / total_presences * 100, 1) if total_presences else None
+    membres_ben = db.query(m.Membre).filter(m.Membre.delegation_id.is_(None)).count()
+    activites = (
+        db.query(m.Activity)
+        .filter(m.Activity.event_date >= date_debut, m.Activity.event_date <= date_fin)
+        .order_by(m.Activity.event_date)
+        .all()
+    )
+    inscriptions_total = (
+        db.query(func.count(m.ActivityInscription.id))
+        .join(m.Activity, m.Activity.id == m.ActivityInscription.activity_id)
+        .filter(m.Activity.event_date >= date_debut, m.Activity.event_date <= date_fin)
+        .scalar()
+    ) or 0
+
+    vie_associative = {
+        "reunions_tenues": len(reunions_ben),
+        "taux_presence": taux_presence_ben,
+        "membres_ben": membres_ben,
+        "activites_organisees": len(activites),
+        "inscriptions_activites": inscriptions_total,
+    }
+
+    # ---------- 2. Activité des secrétariats du BEN (par poste) ----------
+    def _par_poste(query_counts) -> dict[str, int]:
+        result: dict[str, int] = {}
+        for poste, count in query_counts:
+            if poste:
+                result[poste] = count
+        return result
+
+    documents_by_poste = _par_poste(
+        db.query(m.User.poste, func.count(m.Document.id))
+        .join(m.User, m.User.id == m.Document.uploaded_by_id)
+        .filter(m.Document.created_at >= date_debut, m.Document.created_at <= fin_datetime)
+        .group_by(m.User.poste)
+        .all()
+    )
+    courriers_by_poste = _par_poste(
+        db.query(m.User.poste, func.count(m.Courrier.id))
+        .join(m.User, m.User.id == m.Courrier.created_by_id)
+        .filter(m.Courrier.date_courrier >= date_debut, m.Courrier.date_courrier <= date_fin)
+        .group_by(m.User.poste)
+        .all()
+    )
+    taches_by_poste = _par_poste(
+        db.query(m.User.poste, func.count(m.TachePersonnelle.id))
+        .join(m.User, m.User.id == m.TachePersonnelle.user_id)
+        .filter(
+            m.TachePersonnelle.is_done.is_(True),
+            m.TachePersonnelle.created_at >= date_debut, m.TachePersonnelle.created_at <= fin_datetime,
+        )
+        .group_by(m.User.poste)
+        .all()
+    )
+    idees_by_poste = _par_poste(
+        db.query(m.User.poste, func.count(m.Idee.id))
+        .join(m.User, m.User.id == m.Idee.auteur_id)
+        .filter(m.Idee.created_at >= date_debut, m.Idee.created_at <= fin_datetime)
+        .group_by(m.User.poste)
+        .all()
+    )
+
+    postes_concernes = sorted(
+        set(documents_by_poste) | set(courriers_by_poste) | set(taches_by_poste) | set(idees_by_poste)
+    )
+    secretariats = [
+        {
+            "poste": poste,
+            "label": poste_label(poste),
+            "documents": documents_by_poste.get(poste, 0),
+            "courriers": courriers_by_poste.get(poste, 0),
+            "taches": taches_by_poste.get(poste, 0),
+            "idees": idees_by_poste.get(poste, 0),
+        }
+        for poste in postes_concernes
+    ]
+
+    # ---------- 3. Délégations régionales ----------
+    delegations = delegations_national_bilan(db, date_debut, date_fin, annee_scolaire)
+
+    # ---------- 4. Établissements membres (écoles) ----------
+    regions_etablissements = comparatif_regions(db, annee_scolaire)
+    etablissements_total = db.query(m.Etablissement).count()
+    nouveaux_etablissements = (
+        db.query(m.Etablissement)
+        .filter(m.Etablissement.date_adhesion >= date_debut, m.Etablissement.date_adhesion <= date_fin)
+        .count()
+    )
+    cartes_scolaires_delivrees = (
+        db.query(m.CarteScolaire)
+        .filter(
+            m.CarteScolaire.status.in_(["validee", "imprimee", "disponible"]),
+            m.CarteScolaire.date_soumission >= date_debut, m.CarteScolaire.date_soumission <= fin_datetime,
+        )
+        .count()
+    )
+    visites_effectuees = (
+        db.query(m.VisiteEtablissement)
+        .filter(m.VisiteEtablissement.date >= date_debut, m.VisiteEtablissement.date <= date_fin)
+        .count()
+    )
+    etablissements_bilan = {
+        "total": etablissements_total,
+        "nouveaux": nouveaux_etablissements,
+        "cartes_scolaires_delivrees": cartes_scolaires_delivrees,
+        "visites_effectuees": visites_effectuees,
+        "regions": regions_etablissements,
+    }
+
+    # ---------- 5. Autres domaines ----------
+    def _counts_by_statut(model_cls, statuts: dict[str, str], date_field=None) -> dict[str, int]:
+        q = db.query(model_cls)
+        if date_field is not None:
+            # date_field est ici toujours une colonne DateTime (ex. DemandeAssistance.date_soumission).
+            q = q.filter(date_field >= date_debut, date_field <= fin_datetime)
+        rows = q.all()
+        return {statut: sum(1 for r in rows if r.statut == statut) for statut in statuts}
+
+    projets_counts = _counts_by_statut(m.Projet, m.PROJET_STATUTS)
+    partenaires_counts = {
+        statut: db.query(m.Partenaire).filter(m.Partenaire.statut == statut).count()
+        for statut in ("actif", "en_discussion", "inactif")
+    }
+    patrimoine_total = db.query(func.coalesce(func.sum(m.Patrimoine.quantite), 0)).scalar() or 0
+    patrimoine_valeur = db.query(func.coalesce(func.sum(m.Patrimoine.valeur_estimee), 0)).scalar() or 0
+    demandes_assistance_counts = _counts_by_statut(
+        m.DemandeAssistance, m.DEMANDE_ASSISTANCE_STATUTS, m.DemandeAssistance.date_soumission
+    )
+    idees_counts = (
+        db.query(m.Idee.statut, func.count(m.Idee.id))
+        .filter(m.Idee.created_at >= date_debut, m.Idee.created_at <= fin_datetime)
+        .group_by(m.Idee.statut)
+        .all()
+    )
+    idees_total_periode = sum(c for _, c in idees_counts)
+    idees_retenues = next((c for s, c in idees_counts if s == "retenue"), 0)
+
+    notes_satisfaction = [
+        s.note_moyenne
+        for s in db.query(m.SondageSatisfaction)
+        .filter(m.SondageSatisfaction.created_at >= date_debut, m.SondageSatisfaction.created_at <= fin_datetime)
+        .all()
+        if s.note_moyenne is not None
+    ]
+    satisfaction_moyenne = round(sum(notes_satisfaction) / len(notes_satisfaction), 1) if notes_satisfaction else None
+
+    cartes_membres_counts = {
+        statut: db.query(m.CarteMembre).filter(m.CarteMembre.status == statut).count()
+        for statut in ("soumise", "validee", "imprimee", "disponible")
+    }
+
+    autres = {
+        "projets": projets_counts,
+        "partenaires": partenaires_counts,
+        "patrimoine_total": patrimoine_total,
+        "patrimoine_valeur": patrimoine_valeur,
+        "demandes_assistance": demandes_assistance_counts,
+        "idees_total_periode": idees_total_periode,
+        "idees_retenues": idees_retenues,
+        "satisfaction_moyenne": satisfaction_moyenne,
+        "satisfaction_nb_reunions": len(notes_satisfaction),
+        "cartes_membres": cartes_membres_counts,
+    }
+
+    # ---------- 6. Résumé financier (pointeur vers le rapport financier complet) ----------
+    finances = _period_data(db, date_debut, date_fin)
+    solde_cumule = _solde_cumule_au(db, date_fin)
+
+    return {
+        "annee_scolaire": annee_scolaire,
+        "date_debut": date_debut,
+        "date_fin": date_fin,
+        "vie_associative": vie_associative,
+        "secretariats": secretariats,
+        "delegations": delegations,
+        "etablissements": etablissements_bilan,
+        "autres": autres,
+        "finances": {
+            "total_entrees": finances["total_entrees"],
+            "total_depenses": finances["total_depenses"],
+            "solde_periode": finances["solde_periode"],
+            "solde_cumule": solde_cumule,
+        },
+    }
+
+
+def generate_bilan_moral_pdf(bilan: dict, user: "models.User") -> bytes:
+    """Export PDF du bilan moral consolidé par bilan_moral_president() — une
+    section par domaine (vie associative, secrétariats, délégations,
+    établissements, autres, résumé financier)."""
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=18)
+    pdf.add_page()
+    _add_logo(pdf)
+
+    pdf.set_font("Helvetica", "B", 17)
+    pdf.set_text_color(11, 61, 46)
+    pdf.cell(0, 10, "LECIM - Bilan moral annuel du Président", new_x="LMARGIN", new_y="NEXT")
+
+    pdf.set_font("Helvetica", "", 11)
+    pdf.set_text_color(80, 80, 80)
+    pdf.cell(0, 7, f"Année scolaire {bilan['annee_scolaire']}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(
+        0, 7,
+        f"Période du {bilan['date_debut'].strftime('%d/%m/%Y')} au {bilan['date_fin'].strftime('%d/%m/%Y')} "
+        f"- Généré le {datetime.date.today().strftime('%d/%m/%Y')} par {pdf_safe(user.full_name)}",
+        new_x="LMARGIN", new_y="NEXT",
+    )
+    pdf.ln(4)
+
+    def section_title(text: str) -> None:
+        pdf.set_font("Helvetica", "B", 14)
+        pdf.set_text_color(11, 61, 46)
+        pdf.cell(0, 9, text, new_x="LMARGIN", new_y="NEXT")
+        pdf.set_text_color(30, 30, 30)
+
+    def kv_row(label: str, value: str, bold: bool = False) -> None:
+        pdf.set_font("Helvetica", "B" if bold else "", 11)
+        pdf.cell(100, 7, label)
+        pdf.cell(0, 7, value, new_x="LMARGIN", new_y="NEXT")
+
+    va = bilan["vie_associative"]
+    section_title("1. Vie associative nationale (BEN)")
+    kv_row("Réunions tenues sur la période", str(va["reunions_tenues"]))
+    kv_row("Taux de présence moyen", f"{va['taux_presence']}%" if va["taux_presence"] is not None else "Non disponible")
+    kv_row("Membres actifs du BEN national", str(va["membres_ben"]))
+    kv_row("Activités publiques organisées", str(va["activites_organisees"]))
+    kv_row("Inscriptions à ces activités", str(va["inscriptions_activites"]))
+    pdf.ln(6)
+
+    section_title("2. Activité des secrétariats du BEN")
+    if bilan["secretariats"]:
+        pdf.set_font("Helvetica", "", 10)
+        with pdf.table(col_widths=(70, 30, 30, 30, 30), text_align=("LEFT", "RIGHT", "RIGHT", "RIGHT", "RIGHT")) as table:
+            row = table.row()
+            for h in ("Secrétariat / poste", "Documents", "Courriers", "Tâches", "Idées"):
+                row.cell(h, style=FontFace(emphasis="BOLD"))
+            for s in bilan["secretariats"]:
+                row = table.row()
+                row.cell(pdf_safe(s["label"]))
+                row.cell(str(s["documents"]))
+                row.cell(str(s["courriers"]))
+                row.cell(str(s["taches"]))
+                row.cell(str(s["idees"]))
+    else:
+        pdf.set_font("Helvetica", "I", 10)
+        pdf.cell(0, 7, "Aucune activité de secrétariat enregistrée sur la période.", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(6)
+
+    deleg = bilan["delegations"]
+    section_title("3. Délégations régionales")
+    kv_row("Délégations régionales", str(deleg["national"]["delegations"]))
+    kv_row("Établissements affiliés (toutes délégations)", str(deleg["national"]["etablissements"]))
+    kv_row("Membres des comités locaux", str(deleg["national"]["membres"]))
+    kv_row("Réunions locales tenues sur la période", str(deleg["national"]["reunions"]))
+    kv_row("Entrées rattachées aux délégations", money(deleg["national"]["total_entrees"]))
+    pdf.ln(2)
+    pdf.set_font("Helvetica", "", 10)
+    with pdf.table(col_widths=(80, 25, 25, 25, 35), text_align=("LEFT", "RIGHT", "RIGHT", "RIGHT", "RIGHT")) as table:
+        row = table.row()
+        for h in ("Région", "Délég.", "Établ.", "Réunions", "Entrées"):
+            row.cell(h, style=FontFace(emphasis="BOLD"))
+        for region in deleg["regions"]:
+            row = table.row()
+            row.cell(pdf_safe(region["nom"]))
+            row.cell(str(len(region["delegations"])))
+            row.cell(str(region["etablissements"]))
+            row.cell(str(region["reunions"]))
+            row.cell(money(region["total_entrees"]))
+    pdf.ln(6)
+
+    etab = bilan["etablissements"]
+    section_title("4. Établissements membres (écoles)")
+    kv_row("Établissements affiliés au total", str(etab["total"]))
+    kv_row("Nouvelles affiliations sur la période", str(etab["nouveaux"]))
+    kv_row("Cartes scolaires délivrées sur la période", str(etab["cartes_scolaires_delivrees"]))
+    kv_row("Visites d'établissements effectuées", str(etab["visites_effectuees"]))
+    pdf.ln(2)
+    if etab["regions"]:
+        pdf.set_font("Helvetica", "", 10)
+        with pdf.table(col_widths=(60, 25, 30, 30, 30), text_align=("LEFT", "RIGHT", "RIGHT", "RIGHT", "RIGHT")) as table:
+            row = table.row()
+            for h in ("Région", "Écoles", "Effectifs", "Admis / Inscrits", "Réussite"):
+                row.cell(h, style=FontFace(emphasis="BOLD"))
+            for r in etab["regions"]:
+                row = table.row()
+                row.cell(pdf_safe(r["region"]))
+                row.cell(str(r["ecoles"]))
+                row.cell(str(r["effectifs"]))
+                row.cell(f"{r['admis']} / {r['inscrits']}")
+                row.cell(f"{r['taux_reussite']}%" if r["taux_reussite"] is not None else "-")
+    pdf.ln(6)
+
+    autres = bilan["autres"]
+    section_title("5. Autres domaines d'activité")
+    kv_row(
+        "Projets",
+        f"{autres['projets'].get('en_cours', 0)} en cours, {autres['projets'].get('termine', 0)} terminé(s), "
+        f"{autres['projets'].get('planifie', 0)} planifié(s)",
+    )
+    kv_row(
+        "Partenariats",
+        f"{autres['partenaires'].get('actif', 0)} actif(s), {autres['partenaires'].get('en_discussion', 0)} en discussion",
+    )
+    kv_row("Biens du patrimoine", f"{autres['patrimoine_total']} (valeur estimée {money(autres['patrimoine_valeur'])})")
+    kv_row(
+        "Demandes d'assistance traitées",
+        f"{autres['demandes_assistance'].get('traitee', 0)} traitée(s) sur "
+        f"{sum(autres['demandes_assistance'].values())} reçue(s) sur la période",
+    )
+    kv_row(
+        "Boîte à idées",
+        f"{autres['idees_total_periode']} proposée(s) sur la période, {autres['idees_retenues']} retenue(s)",
+    )
+    kv_row(
+        "Satisfaction aux réunions sondées",
+        f"{autres['satisfaction_moyenne']}/5 (sur {autres['satisfaction_nb_reunions']} réunion(s))"
+        if autres["satisfaction_moyenne"] is not None else "Aucun sondage sur la période",
+    )
+    cm = autres["cartes_membres"]
+    kv_row(
+        "Cartes de membres",
+        f"{cm.get('disponible', 0) + cm.get('imprimee', 0)} délivrée(s), {cm.get('soumise', 0)} en attente",
+    )
+    pdf.ln(6)
+
+    fin = bilan["finances"]
+    section_title("6. Résumé financier de la période")
+    kv_row("Total des entrées", money(fin["total_entrees"]))
+    kv_row("Total des dépenses", money(fin["total_depenses"]))
+    kv_row("Solde de la période", money(fin["solde_periode"]))
+    kv_row("Solde cumulé au " + bilan["date_fin"].strftime("%d/%m/%Y"), money(fin["solde_cumule"]), bold=True)
+    pdf.set_font("Helvetica", "I", 9)
+    pdf.set_text_color(130, 130, 130)
+    pdf.cell(0, 6, "(détail comptable complet disponible dans le rapport financier annuel)", new_x="LMARGIN", new_y="NEXT")
 
     return bytes(pdf.output())
 

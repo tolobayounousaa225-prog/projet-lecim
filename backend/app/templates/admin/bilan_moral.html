@@ -1,0 +1,169 @@
+{% extends "admin/base.html" %}
+{% block title %}Bilan moral annuel{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1 style="margin:0">Bilan moral annuel du Président</h1>
+    <p style="color:var(--text-muted); margin:4px 0 0;">
+      Année scolaire {{ bilan.annee_scolaire }} — période du {{ bilan.date_debut.strftime("%d/%m/%Y") }} au {{ bilan.date_fin.strftime("%d/%m/%Y") }}
+    </p>
+  </div>
+  <a href="/admin/executif/bilan-moral.pdf?annee_scolaire={{ bilan.annee_scolaire }}" class="btn btn-outline">Télécharger en PDF</a>
+</div>
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin:24px 0 14px;">1. Vie associative nationale (BEN)</h2>
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:14px; margin-bottom:10px;">
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.5rem; font-weight:700; color:var(--green-dark);">{{ bilan.vie_associative.reunions_tenues }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Réunions tenues</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.5rem; font-weight:700; color:var(--green-dark);">{{ bilan.vie_associative.taux_presence ~ "%" if bilan.vie_associative.taux_presence is not none else "—" }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Taux de présence moyen</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.5rem; font-weight:700; color:var(--green-dark);">{{ bilan.vie_associative.membres_ben }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Membres actifs du BEN</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.5rem; font-weight:700; color:var(--green-dark);">{{ bilan.vie_associative.activites_organisees }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Activités organisées</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.5rem; font-weight:700; color:var(--green-dark);">{{ bilan.vie_associative.inscriptions_activites }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Inscriptions aux activités</div>
+  </div>
+</div>
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin:24px 0 14px;">2. Activité des secrétariats du BEN</h2>
+{% if bilan.secretariats %}
+<table style="margin-bottom:10px;">
+  <thead><tr><th>Secrétariat / poste</th><th>Documents</th><th>Courriers</th><th>Tâches</th><th>Idées</th></tr></thead>
+  <tbody>
+    {% for s in bilan.secretariats %}
+    <tr>
+      <td>{{ s.label }}</td>
+      <td>{{ s.documents }}</td>
+      <td>{{ s.courriers }}</td>
+      <td>{{ s.taches }}</td>
+      <td>{{ s.idees }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune activité de secrétariat enregistrée sur la période.</div>
+{% endif %}
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin:24px 0 14px;">3. Délégations régionales</h2>
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:14px; margin-bottom:10px;">
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.5rem; font-weight:700; color:var(--green-dark);">{{ bilan.delegations.national.delegations }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Délégations régionales</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.5rem; font-weight:700; color:var(--green-dark);">{{ bilan.delegations.national.etablissements }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Établissements affiliés</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.5rem; font-weight:700; color:var(--green-dark);">{{ bilan.delegations.national.reunions }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Réunions locales</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.5rem; font-weight:700; color:var(--green-dark);">{{ "{:,}".format(bilan.delegations.national.total_entrees).replace(",", " ") }} FCFA</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Entrées rattachées</div>
+  </div>
+</div>
+<p style="margin:0 0 20px;"><a href="/admin/delegations/bilan-national">Voir le détail par région &rarr;</a></p>
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin:24px 0 14px;">4. Établissements membres (écoles)</h2>
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:14px; margin-bottom:10px;">
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.5rem; font-weight:700; color:var(--green-dark);">{{ bilan.etablissements.total }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Établissements affiliés</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.5rem; font-weight:700; color:var(--green-dark);">{{ bilan.etablissements.nouveaux }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Nouvelles affiliations</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.5rem; font-weight:700; color:var(--green-dark);">{{ bilan.etablissements.cartes_scolaires_delivrees }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Cartes scolaires délivrées</div>
+  </div>
+  <div class="form-card" style="max-width:none; text-align:center;">
+    <div style="font-size:1.5rem; font-weight:700; color:var(--green-dark);">{{ bilan.etablissements.visites_effectuees }}</div>
+    <div style="color:var(--text-muted); font-size:0.85rem;">Visites effectuées</div>
+  </div>
+</div>
+{% if bilan.etablissements.regions %}
+<table style="margin-bottom:20px;">
+  <thead><tr><th>Région</th><th>Écoles</th><th>Effectifs</th><th>Admis / Inscrits</th><th>Réussite</th></tr></thead>
+  <tbody>
+    {% for r in bilan.etablissements.regions %}
+    <tr>
+      <td>{{ r.region }}</td>
+      <td>{{ r.ecoles }}</td>
+      <td>{{ r.effectifs }}</td>
+      <td>{{ r.admis }} / {{ r.inscrits }}</td>
+      <td>{{ r.taux_reussite ~ "%" if r.taux_reussite is not none else "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin:24px 0 14px;">5. Autres domaines d'activité</h2>
+<div class="form-card" style="max-width:none; margin-bottom:20px;">
+  <dl style="margin:0; font-size:0.9rem;">
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">Projets</dt>
+      <dd style="margin:0; font-weight:600;">{{ bilan.autres.projets.get('en_cours', 0) }} en cours, {{ bilan.autres.projets.get('termine', 0) }} terminé(s), {{ bilan.autres.projets.get('planifie', 0) }} planifié(s)</dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">Partenariats</dt>
+      <dd style="margin:0; font-weight:600;">{{ bilan.autres.partenaires.get('actif', 0) }} actif(s), {{ bilan.autres.partenaires.get('en_discussion', 0) }} en discussion</dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">Biens du patrimoine</dt>
+      <dd style="margin:0; font-weight:600;">{{ bilan.autres.patrimoine_total }} ({{ "{:,}".format(bilan.autres.patrimoine_valeur).replace(",", " ") }} FCFA estimés)</dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">Demandes d'assistance</dt>
+      <dd style="margin:0; font-weight:600;">{{ bilan.autres.demandes_assistance.get('traitee', 0) }} traitée(s) sur {{ bilan.autres.demandes_assistance.values()|sum }} reçue(s)</dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">Boîte à idées</dt>
+      <dd style="margin:0; font-weight:600;">{{ bilan.autres.idees_total_periode }} proposée(s), {{ bilan.autres.idees_retenues }} retenue(s)</dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">Satisfaction aux réunions sondées</dt>
+      <dd style="margin:0; font-weight:600;">
+        {% if bilan.autres.satisfaction_moyenne is not none %}{{ bilan.autres.satisfaction_moyenne }}/5 (sur {{ bilan.autres.satisfaction_nb_reunions }} réunion(s)){% else %}Aucun sondage sur la période{% endif %}
+      </dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0;">
+      <dt style="color:var(--text-muted);">Cartes de membres</dt>
+      <dd style="margin:0; font-weight:600;">{{ bilan.autres.cartes_membres.get('disponible', 0) + bilan.autres.cartes_membres.get('imprimee', 0) }} délivrée(s), {{ bilan.autres.cartes_membres.get('soumise', 0) }} en attente</dd>
+    </div>
+  </dl>
+</div>
+
+<h2 style="font-size:1.1rem; color:var(--green-dark); margin:24px 0 14px;">6. Résumé financier de la période</h2>
+<div class="form-card" style="max-width:none; margin-bottom:10px;">
+  <dl style="margin:0; font-size:0.9rem;">
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">Total des entrées</dt><dd style="margin:0; font-weight:600;">{{ "{:,}".format(bilan.finances.total_entrees).replace(",", " ") }} FCFA</dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">Total des dépenses</dt><dd style="margin:0; font-weight:600;">{{ "{:,}".format(bilan.finances.total_depenses).replace(",", " ") }} FCFA</dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <dt style="color:var(--text-muted);">Solde de la période</dt><dd style="margin:0; font-weight:600;">{{ "{:,}".format(bilan.finances.solde_periode).replace(",", " ") }} FCFA</dd>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:8px 0;">
+      <dt style="color:var(--text-muted);">Solde cumulé au {{ bilan.date_fin.strftime("%d/%m/%Y") }}</dt><dd style="margin:0; font-weight:700;">{{ "{:,}".format(bilan.finances.solde_cumule).replace(",", " ") }} FCFA</dd>
+    </div>
+  </dl>
+  <p style="color:var(--text-muted); font-size:0.8rem; margin:10px 0 0;">Détail comptable complet disponible dans le rapport financier annuel.</p>
+</div>
+{% endblock %}

@@ -22,6 +22,13 @@ from ..deps import require_diplomes_access_web
 
 router = APIRouter(prefix="/admin/diplomes", tags=["admin-diplomes"])
 
+# Garde-fous contre un import surdimensionné : sans eux, une seule requête peut
+# déclencher la génération synchrone de dizaines/centaines de milliers de PDF
+# + un ZIP géant en mémoire (DoS par épuisement de ressources, même avec un
+# compte admin légitime mais un fichier malformé ou une erreur de manipulation).
+MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024  # 5 Mo — largement suffisant pour un .xlsx de quelques milliers de lignes
+MAX_IMPORT_ROWS = 2000
+
 templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
@@ -299,6 +306,11 @@ async def diplomes_importer_process(
     raw = await fichier.read()
     if not raw:
         return _error(["Le fichier envoyé est vide."])
+    if len(raw) > MAX_IMPORT_FILE_BYTES:
+        return _error([
+            f"Fichier trop volumineux ({len(raw) / 1024 / 1024:.1f} Mo, maximum "
+            f"{MAX_IMPORT_FILE_BYTES // 1024 // 1024} Mo) — scindez l'import en plusieurs fichiers plus petits."
+        ])
 
     try:
         wb = load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
@@ -326,9 +338,19 @@ async def diplomes_importer_process(
 
     candidates = []
     row_errors = []
+    row_count = 0
     for row_number, row in enumerate(rows_iter, start=2):
         if row is None or all(cell is None or str(cell).strip() == "" for cell in row):
             continue
+        row_count += 1
+        if row_count > MAX_IMPORT_ROWS:
+            # Arrêt immédiat dès que le seuil est dépassé — read_only=True rend
+            # l'itération paresseuse, donc ne jamais continuer à matérialiser des
+            # lignes au-delà du plafond, plutôt que de ne vérifier qu'après coup.
+            return _error([
+                f"Trop de candidats dans ce fichier (plus de {MAX_IMPORT_ROWS} lignes) — "
+                f"scindez l'import en plusieurs fichiers plus petits."
+            ])
         values = {}
         for field, idx in column_index.items():
             cell = row[idx] if idx < len(row) else None

@@ -10,14 +10,17 @@ from sqlalchemy.orm import Session
 from .. import audit, models, storage
 from ..database import get_db
 from ..deps import require_executif_access_web
+from ..security_utils import safe_content_disposition
 from ..reports import (
     _period_data,
     _solde_cumule_au,
+    bilan_moral_president,
     comparatif_regions,
     current_annee_scolaire,
     etablissements_en_retard,
     etablissements_growth_by_year,
     generate_annual_report_pdf,
+    generate_bilan_moral_pdf,
     generate_comparatif_regions_pdf,
     generate_impact_report_pdf,
     money,
@@ -168,6 +171,47 @@ def executif_comparatif_regions_export_pdf(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={"Content-Disposition": 'attachment; filename="comparatif-regions.pdf"'},
+    )
+
+
+@router.get("/bilan-moral")
+def executif_bilan_moral(
+    request: Request,
+    annee_scolaire: str | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_executif_access_web),
+):
+    today = datetime.date.today()
+    annee = annee_scolaire or current_annee_scolaire()
+    debut_annee = datetime.date(today.year if today.month >= 9 else today.year - 1, 9, 1)
+    bilan = bilan_moral_president(db, annee, debut_annee, today)
+    return templates.TemplateResponse(
+        request,
+        "admin/bilan_moral.html",
+        {"admin": user, "active": "executif", "bilan": bilan},
+    )
+
+
+@router.get("/bilan-moral.pdf")
+def executif_bilan_moral_pdf(
+    annee_scolaire: str | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_executif_access_web),
+):
+    today = datetime.date.today()
+    annee = annee_scolaire or current_annee_scolaire()
+    debut_annee = datetime.date(today.year if today.month >= 9 else today.year - 1, 9, 1)
+    bilan = bilan_moral_president(db, annee, debut_annee, today)
+    pdf_bytes = generate_bilan_moral_pdf(bilan, user)
+    # annee vient d'un paramètre de requête (annee_scolaire), potentiellement
+    # fourni par l'appelant — assaini avant d'être reflété dans l'en-tête
+    # Content-Disposition (contrairement aux deux routes voisines ci-dessous,
+    # dont l'année est soit calculée côté serveur, soit déjà validée par regex).
+    filename = safe_content_disposition(f"lecim-bilan-moral-{annee}.pdf")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
