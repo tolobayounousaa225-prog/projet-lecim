@@ -314,9 +314,11 @@ require_visites_access_web = _module_dependency_web("visites")
 def require_delegation_management_web(
     user: models.User = Depends(require_login_web),
 ) -> models.User:
-    """Créer/gérer les délégations et leurs comptes : administrateur ou 2e Vice-Président
-    chargé de l'Intérieur (statutairement en charge de l'implantation de la LECIM)."""
-    if user.is_admin or user.poste == "vp2_interieur":
+    """Créer/gérer les délégations et leurs comptes : administrateur, 2e Vice-Président
+    chargé de l'Intérieur, ou le Secrétaire chargé de l'Intérieur (statutairement sous
+    la tutelle du 2e VP, mêmes attributions de terrain — implantation, adhésion,
+    animation des antennes régionales — voir postes.py)."""
+    if user.is_admin or user.poste in ("vp2_interieur", "sec_interieur"):
         return user
     raise NotAuthorizedException()
 
