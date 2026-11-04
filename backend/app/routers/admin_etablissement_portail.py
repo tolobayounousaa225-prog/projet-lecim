@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from .. import audit, models
 from ..attestations_pdf import generate_etablissement_attestation_pdf
 from ..database import get_db
-from ..deps import require_finance_access_web
+from ..deps import require_etab_compte_access_web, require_finance_access_web
 from ..postes import ETAB_MODULES
 from ..security import hash_password, password_policy_error
 
@@ -25,7 +25,7 @@ def etablissement_compte(
     etablissement_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_finance_access_web),
+    user: models.User = Depends(require_etab_compte_access_web),
 ):
     etablissement = db.get(models.Etablissement, etablissement_id)
     if not etablissement:
@@ -61,7 +61,7 @@ async def etablissement_compte_create(
     password: str = Form(...),
     role: str = Form("titulaire"),
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_finance_access_web),
+    user: models.User = Depends(require_etab_compte_access_web),
 ):
     etablissement = db.get(models.Etablissement, etablissement_id)
     if not etablissement:
@@ -140,7 +140,7 @@ def etablissement_compte_delete(
     etablissement_id: int,
     compte_id: int,
     db: Session = Depends(get_db),
-    user: models.User = Depends(require_finance_access_web),
+    user: models.User = Depends(require_etab_compte_access_web),
 ):
     compte = db.get(models.User, compte_id)
     if compte and compte.etablissement_id == etablissement_id:

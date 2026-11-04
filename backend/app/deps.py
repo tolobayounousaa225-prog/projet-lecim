@@ -273,6 +273,21 @@ require_news_access_web = _module_dependency_web("news")
 require_activities_access_web = _module_dependency_web("activities")
 require_contact_access_web = _module_dependency_web("contact")
 require_finance_access_web = _module_dependency_web("finances")
+
+
+def require_etab_compte_access_web(
+    user: models.User = Depends(require_login_web),
+) -> models.User:
+    """Gestion du compte de connexion d'un établissement (création/révocation) :
+    accordée au module finances (déjà le cas) OU au module delegations — le 2e
+    Vice-Président chargé de l'Intérieur / un secrétariat délégations n'a pas
+    besoin de voir la fiche financière d'un établissement (cotisations,
+    adhésion) pour pouvoir créer son compte de connexion, ce qui justifie une
+    dépendance dédiée plutôt que d'élargir require_finance_access_web lui-même
+    (qui reste le seul gardien des données financières)."""
+    if user.has_module("finances") or user.has_module("delegations"):
+        return user
+    raise NotAuthorizedException()
 require_cartes_gestion_web = _module_dependency_web("cartes_gestion")
 require_partenaires_access_web = _module_dependency_web("partenaires")
 require_projets_patrimoine_access_web = _module_dependency_web("projets_patrimoine")

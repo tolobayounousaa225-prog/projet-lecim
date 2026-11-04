@@ -113,13 +113,14 @@
 <h2 style="font-size:1.1rem; color:var(--green-dark); margin:30px 0 14px;">Établissements rattachés</h2>
 {% if etablissements %}
 <table>
-  <thead><tr><th>Nom</th><th>Statut</th><th>Bureau local</th></tr></thead>
+  <thead><tr><th>Nom</th><th>Statut</th><th>Bureau local</th><th></th></tr></thead>
   <tbody>
     {% for e in etablissements %}
     <tr>
       <td>{{ e.nom }}</td>
       <td>{{ e.statut_label }}</td>
       <td>{{ e.bureau_local or "—" }}</td>
+      <td class="actions-cell"><a href="/admin/etablissements/{{ e.id }}/compte" class="btn btn-outline btn-sm">Gérer le compte</a></td>
     </tr>
     {% endfor %}
   </tbody>
