@@ -31,7 +31,9 @@ def admin_search(
 
     results: list[tuple[float, schemas.SearchResultOut]] = []
 
-    can_manage_delegations = user.is_admin or user.poste == "vp2_interieur"
+    # Même règle que require_delegation_management_web (deps.py) : admin, 2e VP
+    # chargé de l'Intérieur, ou le Secrétaire chargé de l'Intérieur (sous sa tutelle).
+    can_manage_delegations = user.is_admin or user.poste in ("vp2_interieur", "sec_interieur")
     if user.can_manage_membres or can_manage_delegations:
         membres = db.query(models.Membre).limit(CANDIDATES_CAP).all()
         for m in membres:
