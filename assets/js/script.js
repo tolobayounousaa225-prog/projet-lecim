@@ -2,7 +2,6 @@ var API_BASE = window.LECIM_API_BASE || "http://localhost:8000";
 
 document.addEventListener("DOMContentLoaded", function () {
   initFlashInfoBar();
-  initDataSaverMode();
   initNavToggle();
   initNavDropdowns();
   initLoginLink();
@@ -242,39 +241,6 @@ function prefersReducedMotion() {
   return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 }
 
-var DATA_SAVER_STORAGE_KEY = "lecim_data_saver";
-
-function isDataSaverMode() {
-  return document.documentElement.classList.contains("data-saver");
-}
-
-function initDataSaverMode() {
-  var stored = null;
-  try { stored = localStorage.getItem(DATA_SAVER_STORAGE_KEY); } catch (e) {}
-
-  var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  var autoSlow = !!(conn && (conn.saveData || /2g/.test(conn.effectiveType || "")));
-  var active = stored === "on" || (stored !== "off" && autoSlow);
-
-  if (active) document.documentElement.classList.add("data-saver");
-
-  var footerBottom = document.querySelector(".footer-bottom");
-  if (!footerBottom) return;
-  var isArabic = document.documentElement.lang === "ar";
-
-  var toggle = document.createElement("button");
-  toggle.type = "button";
-  toggle.className = "data-saver-toggle";
-  toggle.textContent = active
-    ? (isArabic ? "إيقاف وضع توفير البيانات" : "Désactiver le mode économie de données")
-    : (isArabic ? "تفعيل وضع توفير البيانات" : "Activer le mode économie de données");
-  toggle.addEventListener("click", function () {
-    try { localStorage.setItem(DATA_SAVER_STORAGE_KEY, active ? "off" : "on"); } catch (e) {}
-    window.location.reload();
-  });
-  footerBottom.appendChild(toggle);
-}
-
 function initHeaderScrollShadow() {
   var header = document.querySelector(".site-header");
   if (!header) return;
@@ -357,7 +323,7 @@ function addSuccessIcon(box) {
 
 function initHeroParallax() {
   var visual = document.querySelector(".hero-visual");
-  if (!visual || prefersReducedMotion() || isDataSaverMode()) return;
+  if (!visual || prefersReducedMotion()) return;
   function update() {
     var offset = Math.min(window.scrollY * 0.12, 40);
     visual.style.transform = "translateY(" + offset + "px)";
@@ -367,7 +333,7 @@ function initHeroParallax() {
 }
 
 function initCardTilt() {
-  if (prefersReducedMotion() || isDataSaverMode()) return;
+  if (prefersReducedMotion()) return;
   if (!(window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches)) return;
 
   var SELECTOR = [
@@ -655,7 +621,7 @@ function loadSiteContent() {
       });
       bgElements.forEach(function (el) {
         var url = values[el.getAttribute("data-content-bg-key")];
-        if (!url || isDataSaverMode()) return;
+        if (!url) return;
         el.style.setProperty(
           "--hero-bg-image",
           "linear-gradient(135deg, rgba(10,61,99,.88) 0%, rgba(4,56,114,.82) 55%, rgba(8,58,92,.90) 100%), url('" +

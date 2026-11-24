@@ -2532,22 +2532,3 @@ body.page-fade-out { opacity: 0; transition: opacity .22s ease; }
   .reveal { opacity: 1; transform: none; }
 }
 
-/* Mode économie de données : désactive les animations décoratives coûteuses
-   (parallaxe, tilt, défilement) et n'affiche pas les photos de fond en HD. */
-html.data-saver *, html.data-saver *::before, html.data-saver *::after {
-  animation-duration: .001ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: .001ms !important;
-  scroll-behavior: auto !important;
-}
-html.data-saver .reveal { opacity: 1; transform: none; }
-html.data-saver .hero-visual { transform: none !important; }
-html.data-saver .hero.has-bg-image::after,
-html.data-saver .hero-float-badge { animation: none !important; }
-
-.data-saver-toggle {
-  background: none; border: none; color: rgba(255,255,255,.6);
-  font-size: 0.78rem; text-decoration: underline; cursor: pointer;
-  padding: 0;
-}
-.data-saver-toggle:hover { color: var(--white); }
