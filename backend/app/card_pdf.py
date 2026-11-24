@@ -61,7 +61,9 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
     """Recto basé sur le modèle de carte approuvé (image de fond fixe) : seuls
     le badge de catégorie, la photo, le nom/la fonction et le QR de vérification
     sont superposés — le reste du visuel (en-tête, armoiries, filigrane) vient
-    tel quel de l'image approuvée, jamais redessiné."""
+    tel quel de l'image approuvée, jamais redessiné. Réservé aux comptes du
+    Bureau Exécutif National — les présidents de délégation ont leur propre
+    modèle entièrement dessiné (voir _add_recto_delegation)."""
     pdf.add_page()
 
     if MEMBRE_TEMPLATE_PATH.exists():
@@ -73,8 +75,7 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
         pdf.set_fill_color(*CREAM)
         pdf.rect(0, 0, CARD_W, CARD_H, style="F")
 
-    is_delegation = bool(carte.user.delegation_id)
-    badge_text = "DÉLÉGATION RÉGIONALE - CARTE OFFICIELLE" if is_delegation else "ADMINISTRATION NATIONALE - CARTE OFFICIELLE"
+    badge_text = "ADMINISTRATION NATIONALE - CARTE OFFICIELLE"
     badge_x, badge_y, badge_w, badge_h = 14.12, 12.69, 58.21, 3.89
     pdf.set_fill_color(*BADGE_BLUE)
     pdf.rect(badge_x, badge_y, badge_w, badge_h, style="F")
@@ -159,9 +160,6 @@ def _add_verso(pdf: FPDF, carte) -> None:
     pdf.set_fill_color(*GREEN)
     pdf.rect(corner_r, 0, CARD_W - 2 * corner_r, 1.2, style="F")
 
-    is_delegation = bool(carte.user.delegation_id)
-    qualite = "délégué(e) régional(e)" if is_delegation else "membre du Bureau Exécutif National"
-
     pdf.set_text_color(*BADGE_BLUE)
     pdf.set_font("Helvetica", "B", 7.5)
     pdf.set_xy(5, 5)
@@ -173,8 +171,9 @@ def _add_verso(pdf: FPDF, carte) -> None:
     pdf.multi_cell(
         CARD_W - 10, 3.3,
         _safe_text(
-            f"Cette carte atteste la qualité de {qualite} de son titulaire et demeure "
-            "la propriété de la LECIM. Merci de la retourner au secrétariat en cas de découverte."
+            "Cette carte atteste la qualité de membre du Bureau Exécutif National de son "
+            "titulaire et demeure la propriété de la LECIM. Merci de la retourner au "
+            "secrétariat en cas de découverte."
         ),
         align="L",
     )
@@ -202,12 +201,200 @@ def _add_verso(pdf: FPDF, carte) -> None:
     pdf.rect(corner_r, CARD_H - 1.2, CARD_W - 2 * corner_r, 1.2, style="F")
 
 
+def _add_recto_delegation(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
+    """Recto des présidents de délégation régionale — modèle propre (gabarit
+    fourni par l'utilisateur, "Bureau Local"), entièrement redessiné plutôt que
+    superposé sur l'image de fond nationale : liseré or/vert, bandeau de
+    catégorie, photo encadrée, nom/fonction/délégation, naissance, QR de
+    vérification. Version française uniquement (le modèle d'origine est
+    bilingue FR/AR, non reproduit ici faute de prise en charge de l'arabe
+    dans le pipeline PDF actuel)."""
+    pdf.add_page()
+    corner_r = 3.18
+
+    pdf.set_fill_color(255, 255, 255)
+    pdf.rect(0, 0, CARD_W, CARD_H, style="F", round_corners=True, corner_radius=corner_r)
+
+    # Liseré décoratif gauche (or puis vert) — version simplifiée, non diagonale,
+    # du bandeau du modèle approuvé.
+    pdf.set_fill_color(*GOLD)
+    pdf.rect(0, 0, 2.2, CARD_H, style="F")
+    pdf.set_fill_color(*GREEN)
+    pdf.rect(2.2, 0, 2.2, CARD_H, style="F")
+
+    header_x = 8.5
+    if LOGO_PATH.exists():
+        pdf.image(str(LOGO_PATH), x=header_x, y=2.2, w=8, h=8)
+        header_x += 9.5
+    pdf.set_text_color(*GREEN_DARK)
+    pdf.set_font("Helvetica", "B", 5.4)
+    pdf.set_xy(header_x, 2.2)
+    pdf.cell(CARD_W - header_x - 3, 3, "LECIM", align="L")
+    pdf.set_font("Helvetica", "", 4.1)
+    pdf.set_text_color(70, 85, 78)
+    pdf.set_xy(header_x, 5.3)
+    pdf.multi_cell(
+        CARD_W - header_x - 3, 2.6,
+        "Ligue des Etablissements Confessionnels Islamiques et Madrassas",
+        align="L",
+    )
+
+    ribbon_y = 12.2
+    pdf.set_fill_color(*GREEN)
+    pdf.rect(2.2, ribbon_y, CARD_W - 2.2, 3.7, style="F")
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Helvetica", "B", 5.8)
+    pdf.set_xy(5.5, ribbon_y + 0.7)
+    pdf.cell(CARD_W - 9, 2.6, "BUREAU LOCAL - CARTE OFFICIELLE", align="L")
+
+    photo_x, photo_y, photo_w, photo_h = 6, 18, 17, 20
+    pdf.set_draw_color(*GREEN)
+    pdf.set_fill_color(240, 242, 239)
+    pdf.rect(photo_x, photo_y, photo_w, photo_h, style="DF", round_corners=True, corner_radius=1.2)
+    if photo_bytes:
+        img = Image.open(io.BytesIO(photo_bytes)).convert("RGB")
+        side = min(img.size)
+        left, top = (img.width - side) // 2, (img.height - side) // 2
+        img = img.crop((left, top, left + side, top + side))
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        pdf.image(io.BytesIO(buf.getvalue()), x=photo_x + 0.8, y=photo_y + 0.8, w=photo_w - 1.6, h=photo_h - 1.6)
+    else:
+        pdf.set_font("Helvetica", "", 5.5)
+        pdf.set_text_color(*GREEN)
+        pdf.set_xy(photo_x, photo_y + photo_h / 2 - 2)
+        pdf.cell(photo_w, 4, "PHOTO", align="C")
+
+    info_x, info_w = 26, CARD_W - 26 - 4
+    pdf.set_text_color(*GREEN)
+    pdf.set_font("Helvetica", "", 4.6)
+    pdf.set_xy(info_x, 18.2)
+    pdf.cell(info_w, 2.8, "NOM COMPLET", align="L")
+    pdf.set_text_color(10, 10, 10)
+    pdf.set_font("Helvetica", "B", 7.2)
+    pdf.set_xy(info_x, 20.8)
+    pdf.multi_cell(info_w, 3.4, _safe_text(carte.full_name_snapshot), align="L")
+
+    fonction = carte.user.role_local or "Président du Bureau Local"
+    pdf.set_text_color(*GREEN)
+    pdf.set_font("Helvetica", "", 4.6)
+    pdf.set_xy(info_x, 27.5)
+    pdf.cell(info_w, 2.8, "FONCTION", align="L")
+    pdf.set_text_color(10, 10, 10)
+    pdf.set_font("Helvetica", "B", 6.4)
+    pdf.set_xy(info_x, 30.1)
+    pdf.cell(info_w, 3.2, _safe_text(fonction), align="L")
+
+    delegation_nom = carte.user.delegation.nom if carte.user.delegation else "-"
+    pdf.set_text_color(90, 90, 90)
+    pdf.set_font("Helvetica", "", 5.6)
+    pdf.set_xy(info_x, 33.8)
+    pdf.cell(info_w, 3, _safe_text(delegation_nom), align="L")
+
+    naissance_bits = []
+    if carte.date_naissance:
+        naissance_bits.append(f"Ne(e) le {carte.date_naissance.strftime('%d/%m/%Y')}")
+    if carte.lieu_naissance:
+        naissance_bits.append(f"a {_safe_text(carte.lieu_naissance)}")
+    if naissance_bits:
+        pdf.set_text_color(90, 90, 90)
+        pdf.set_font("Helvetica", "", 4.6)
+        pdf.set_xy(6, 39.3)
+        pdf.cell(63, 3, " ".join(naissance_bits), align="L")
+
+    qr_payload = f"{settings.public_base_url}/verify/{carte.numero_carte or ''}"
+    qr_img = qrcode.make(qr_payload, border=1)
+    qr_size = 11.0
+    qr_x = CARD_W - 3.2 - qr_size
+    qr_y = CARD_H - 3.2 - qr_size
+    pdf.set_fill_color(255, 255, 255)
+    pdf.rect(qr_x - 0.8, qr_y - 0.8, qr_size + 1.6, qr_size + 1.6, style="F", round_corners=True, corner_radius=1)
+    pdf.image(qr_img.get_image() if hasattr(qr_img, "get_image") else qr_img, x=qr_x, y=qr_y, w=qr_size, h=qr_size)
+
+    pdf.set_font("Helvetica", "B", 6.0)
+    pdf.set_text_color(*GREEN)
+    pdf.set_xy(6, CARD_H - 9)
+    pdf.cell(60, 3, f"N. {carte.numero_carte or '-'}", align="L")
+    pdf.set_font("Helvetica", "", 5.0)
+    pdf.set_text_color(80, 80, 80)
+    pdf.set_xy(6, CARD_H - 6)
+    validite = carte.date_validite.strftime("%d/%m/%Y") if carte.date_validite else "-"
+    pdf.cell(60, 3, f"Valable jusqu'au {validite}", align="L")
+
+
+def _add_verso_delegation(pdf: FPDF, carte) -> None:
+    """Verso des présidents de délégation — même sobriété que le verso national,
+    avec la ligne de valeurs du modèle approuvé (Cooperation / Service /
+    Qualite / Excellence) en plus pour differencier visuellement la categorie."""
+    pdf.add_page()
+    corner_r = 3.18
+
+    pdf.set_fill_color(255, 255, 255)
+    pdf.rect(0, 0, CARD_W, CARD_H, style="F", round_corners=True, corner_radius=corner_r)
+
+    pdf.set_fill_color(*GREEN)
+    pdf.rect(corner_r, 0, CARD_W - 2 * corner_r, 1.2, style="F")
+
+    pdf.set_text_color(*BADGE_BLUE)
+    pdf.set_font("Helvetica", "B", 7.5)
+    pdf.set_xy(5, 5)
+    pdf.cell(CARD_W - 10, 4, "LECIM", align="L")
+
+    pdf.set_text_color(70, 70, 70)
+    pdf.set_font("Helvetica", "", 6.3)
+    pdf.set_xy(5, 10.5)
+    pdf.multi_cell(
+        CARD_W - 10, 3.3,
+        _safe_text(
+            "Cette carte atteste la qualité de président de délégation régionale de son "
+            "titulaire et demeure la propriété de la LECIM. Merci de la retourner au "
+            "secrétariat en cas de découverte."
+        ),
+        align="L",
+    )
+
+    valeurs = ["Cooperation", "Service", "Qualite", "Excellence"]
+    val_y = 34
+    col_w = (CARD_W - 10) / len(valeurs)
+    pdf.set_draw_color(*GREEN)
+    pdf.line(5, val_y - 1.5, CARD_W - 5, val_y - 1.5)
+    for i, label in enumerate(valeurs):
+        cx = 5 + col_w * i
+        pdf.set_fill_color(*GREEN)
+        pdf.ellipse(cx + col_w / 2 - 0.8, val_y, 1.6, 1.6, style="F")
+        pdf.set_text_color(*GREEN_DARK)
+        pdf.set_font("Helvetica", "", 4.6)
+        pdf.set_xy(cx, val_y + 2.2)
+        pdf.cell(col_w, 3, label, align="C")
+
+    sig_y = CARD_H - 11
+    pdf.set_draw_color(180, 180, 180)
+    pdf.line(CARD_W - 36, sig_y, CARD_W - 5, sig_y)
+    pdf.set_font("Helvetica", "", 5.2)
+    pdf.set_text_color(120, 120, 120)
+    pdf.set_xy(CARD_W - 36, sig_y + 1)
+    pdf.cell(31, 3, "Signature", align="C")
+
+    pdf.set_text_color(130, 130, 130)
+    pdf.set_font("Helvetica", "", 5.3)
+    pdf.set_xy(5, CARD_H - 7)
+    pdf.cell(40, 3, "lecimnational@gmail.com", align="L")
+
+    pdf.set_fill_color(*GREEN)
+    pdf.rect(corner_r, CARD_H - 1.2, CARD_W - 2 * corner_r, 1.2, style="F")
+
+
 def generate_card_pdf(carte, photo_bytes: bytes | None) -> bytes:
     pdf = FPDF(orientation="L", unit="mm", format=(CARD_H, CARD_W))
     pdf.set_auto_page_break(auto=False)
 
-    _add_recto(pdf, carte, photo_bytes)
-    _add_verso(pdf, carte)
+    is_delegation = bool(carte.user.delegation_id)
+    if is_delegation:
+        _add_recto_delegation(pdf, carte, photo_bytes)
+        _add_verso_delegation(pdf, carte)
+    else:
+        _add_recto(pdf, carte, photo_bytes)
+        _add_verso(pdf, carte)
 
     return bytes(pdf.output())
 
@@ -218,14 +405,20 @@ def generate_card_pdf_recto(carte, photo_bytes: bytes | None) -> bytes:
     il faut donc deux fichiers séparés pour les deux passages d'impression."""
     pdf = FPDF(orientation="L", unit="mm", format=(CARD_H, CARD_W))
     pdf.set_auto_page_break(auto=False)
-    _add_recto(pdf, carte, photo_bytes)
+    if carte.user.delegation_id:
+        _add_recto_delegation(pdf, carte, photo_bytes)
+    else:
+        _add_recto(pdf, carte, photo_bytes)
     return bytes(pdf.output())
 
 
 def generate_card_pdf_verso(carte) -> bytes:
     pdf = FPDF(orientation="L", unit="mm", format=(CARD_H, CARD_W))
     pdf.set_auto_page_break(auto=False)
-    _add_verso(pdf, carte)
+    if carte.user.delegation_id:
+        _add_verso_delegation(pdf, carte)
+    else:
+        _add_verso(pdf, carte)
     return bytes(pdf.output())
 
 

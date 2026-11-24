@@ -1348,6 +1348,9 @@ class CarteMembre(Base):
     full_name_snapshot: Mapped[str] = mapped_column(String(255), nullable=False)
     photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     date_naissance: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    # Affiché sur le modèle de carte des présidents de délégation (absent du
+    # modèle national) — distinct de `ville` qui désigne la résidence actuelle.
+    lieu_naissance: Mapped[str | None] = mapped_column(String(255), nullable=True)
     ville: Mapped[str | None] = mapped_column(String(255), nullable=True)
     telephone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     cni_numero: Mapped[str | None] = mapped_column(String(50), nullable=True)

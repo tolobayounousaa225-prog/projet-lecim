@@ -13,6 +13,7 @@
   <p><strong>Poste :</strong> {{ carte.user.poste_label }}</p>
   <p><strong>E-mail :</strong> {{ carte.user.email }}</p>
   {% if carte.date_naissance %}<p><strong>Date de naissance :</strong> {{ carte.date_naissance.strftime("%d/%m/%Y") }}</p>{% endif %}
+  {% if carte.lieu_naissance %}<p><strong>Lieu de naissance :</strong> {{ carte.lieu_naissance }}</p>{% endif %}
   {% if carte.cni_numero %}<p><strong>N° CNI :</strong> {{ carte.cni_numero }}</p>{% endif %}
   {% if carte.ville %}<p><strong>Ville :</strong> {{ carte.ville }}</p>{% endif %}
   {% if carte.adresse %}<p><strong>Adresse :</strong> {{ carte.adresse }}</p>{% endif %}

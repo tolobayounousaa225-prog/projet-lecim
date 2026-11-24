@@ -525,6 +525,12 @@ def run_startup_migrations() -> None:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE diplomes ADD COLUMN date_naissance DATE"))
 
+    if inspector.has_table("cartes_membres"):
+        cartes_membres_columns = {c["name"] for c in inspector.get_columns("cartes_membres")}
+        if "lieu_naissance" not in cartes_membres_columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE cartes_membres ADD COLUMN lieu_naissance VARCHAR(255)"))
+
     Base.metadata.create_all(bind=engine)
 
     if inspector.has_table("etablissements"):
