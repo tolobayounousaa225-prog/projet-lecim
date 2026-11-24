@@ -23,13 +23,18 @@ templates = Jinja2Templates(directory=str(templates_dir))
 CARTES_PHOTOS_DIR = "cartes_photos"
 
 
-def _next_numero_carte(db: Session) -> str:
+def _next_numero_carte(db: Session, is_delegation: bool = False) -> str:
     """Génère un numéro de carte imprévisible (espace aléatoire, pas un compteur
     séquentiel) — un numéro devinable permettrait d'énumérer /verify/{numero}/photo
     et d'aspirer les photos/noms de tous les membres. La contrainte d'unicité en
-    base (numero_carte) est le filet de sécurité final contre toute collision."""
+    base (numero_carte) est le filet de sécurité final contre toute collision.
+
+    Préfixe distinct pour les présidents de délégation (LECIM-DEL-...) afin que
+    leur numéro de carte ne puisse pas être confondu avec ceux du Bureau
+    Exécutif National (LECIM-...)."""
+    prefix = "LECIM-DEL-" if is_delegation else "LECIM-"
     for _ in range(10):
-        candidate = f"LECIM-{secrets.token_hex(4).upper()}"
+        candidate = f"{prefix}{secrets.token_hex(4).upper()}"
         exists = db.query(models.CarteMembre.id).filter(models.CarteMembre.numero_carte == candidate).first()
         if not exists:
             return candidate
@@ -81,6 +86,7 @@ async def carte_mine_create(
     request: Request,
     full_name: str = Form(...),
     date_naissance: str = Form(""),
+    lieu_naissance: str = Form(""),
     ville: str = Form(""),
     adresse: str = Form(""),
     telephone: str = Form(""),
@@ -128,6 +134,7 @@ async def carte_mine_create(
         full_name_snapshot=full_name,
         photo_path=photo_path,
         date_naissance=datetime.date.fromisoformat(date_naissance) if date_naissance else None,
+        lieu_naissance=lieu_naissance or None,
         ville=ville or None,
         adresse=adresse or None,
         telephone=telephone or None,
@@ -266,6 +273,8 @@ async def carte_new_create(
 
 
 # ---------- Espace dédié : cartes des présidents de délégation régionale ----------
+# Numéro de carte prefixé différemment (LECIM-DEL-...) pour ne jamais être
+# confondu avec un numéro du Bureau Exécutif National (LECIM-...).
 
 def _delegation_titulaires_candidats(db: Session) -> list[models.User]:
     return (
@@ -354,7 +363,7 @@ async def carte_delegation_new_create(
         contact_urgence_telephone=contact_urgence_telephone or None,
         email_personnel=email_personnel or None,
         status="validee",
-        numero_carte=_next_numero_carte(db),
+        numero_carte=_next_numero_carte(db, is_delegation=True),
         date_validation=datetime.datetime.utcnow(),
         date_validite=_validite_dans_n_ans(datetime.date.today(), CARTE_VALIDITE_ANNEES),
         validated_by_id=user.id,
@@ -441,7 +450,7 @@ def carte_valider(
         carte.date_validite = _validite_dans_n_ans(datetime.date.today(), CARTE_VALIDITE_ANNEES)
         carte.validated_by_id = user.id
         if not carte.numero_carte:
-            carte.numero_carte = _next_numero_carte(db)
+            carte.numero_carte = _next_numero_carte(db, is_delegation=bool(carte.user.delegation_id))
         notify(
             db,
             carte.user_id,

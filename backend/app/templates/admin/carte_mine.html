@@ -57,6 +57,12 @@
       <label for="date_naissance">Date de naissance</label>
       <input type="date" id="date_naissance" name="date_naissance">
     </div>
+    {% if admin.delegation_id %}
+    <div class="form-group">
+      <label for="lieu_naissance">Lieu de naissance</label>
+      <input type="text" id="lieu_naissance" name="lieu_naissance" maxlength="255">
+    </div>
+    {% endif %}
     <div class="form-group">
       <label for="cni_numero">N° CNI / pièce d'identité</label>
       <input type="text" id="cni_numero" name="cni_numero">
