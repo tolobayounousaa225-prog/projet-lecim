@@ -7,8 +7,9 @@
 <div class="form-card" style="max-width:560px;">
   {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
   <p style="color:var(--text-muted); font-size:0.9rem; margin-top:0;">
-    Pour un président, un délégué régional ou tout autre membre — la carte est créée
-    et validée immédiatement, prête à imprimer, sans attendre une demande de sa part.
+    Pour un membre du Bureau Exécutif National — la carte est créée et validée
+    immédiatement, prête à imprimer, sans attendre une demande de sa part.
+    Pour un président de délégation régionale, voir <a href="/admin/cartes/delegations/new">l'espace dédié</a>.
   </p>
   <form method="post" action="/admin/cartes/new" enctype="multipart/form-data">
     <div class="form-group">

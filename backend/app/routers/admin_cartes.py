@@ -155,9 +155,12 @@ def carte_new_form(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_cartes_gestion_web),
 ):
+    # Comptes du Bureau Exécutif National uniquement — les présidents de délégation
+    # ont leur propre espace dédié (voir /admin/cartes/delegations/new) pour ne pas
+    # les mélanger avec les membres nationaux dans cette liste.
     candidats = (
         db.query(models.User)
-        .filter(models.User.etablissement_id.is_(None))
+        .filter(models.User.etablissement_id.is_(None), models.User.delegation_id.is_(None))
         .order_by(models.User.full_name)
         .all()
     )
@@ -193,7 +196,7 @@ async def carte_new_create(
     def _form_error(message: str):
         candidats = (
             db.query(models.User)
-            .filter(models.User.etablissement_id.is_(None))
+            .filter(models.User.etablissement_id.is_(None), models.User.delegation_id.is_(None))
             .order_by(models.User.full_name)
             .all()
         )
@@ -262,6 +265,117 @@ async def carte_new_create(
     return RedirectResponse(url=f"/admin/cartes/{carte.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
+# ---------- Espace dédié : cartes des présidents de délégation régionale ----------
+
+def _delegation_titulaires_candidats(db: Session) -> list[models.User]:
+    return (
+        db.query(models.User)
+        .filter(models.User.delegation_id.isnot(None), models.User.is_delegation_titulaire.is_(True))
+        .order_by(models.User.full_name)
+        .all()
+    )
+
+
+@router.get("/cartes/delegations/new")
+def carte_delegation_new_form(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_cartes_gestion_web),
+):
+    return templates.TemplateResponse(
+        request,
+        "admin/carte_nouvelle_delegation.html",
+        {"admin": user, "candidats": _delegation_titulaires_candidats(db), "active": "cartes", "error": None},
+    )
+
+
+@router.post("/cartes/delegations/new")
+async def carte_delegation_new_create(
+    request: Request,
+    user_id: int = Form(...),
+    full_name: str = Form(...),
+    date_naissance: str = Form(""),
+    ville: str = Form(""),
+    adresse: str = Form(""),
+    telephone: str = Form(""),
+    cni_numero: str = Form(""),
+    contact_urgence_nom: str = Form(""),
+    contact_urgence_telephone: str = Form(""),
+    email_personnel: str = Form(""),
+    photo: UploadFile | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_cartes_gestion_web),
+):
+    """Même principe que carte_new_create, mais restreint aux titulaires de
+    délégation (présidents de délégation régionale) — espace dédié demandé pour
+    ne pas les mélanger avec les comptes du Bureau Exécutif National."""
+
+    def _form_error(message: str):
+        return templates.TemplateResponse(
+            request,
+            "admin/carte_nouvelle_delegation.html",
+            {"admin": user, "candidats": _delegation_titulaires_candidats(db), "active": "cartes", "error": message},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    target = db.get(models.User, user_id)
+    if not target or not target.delegation_id or not target.is_delegation_titulaire:
+        return _form_error("Compte introuvable ou n'est pas un président de délégation.")
+
+    existing = (
+        db.query(models.CarteMembre)
+        .filter(models.CarteMembre.user_id == target.id)
+        .order_by(models.CarteMembre.date_soumission.desc())
+        .first()
+    )
+    if existing is not None and existing.status != "rejetee":
+        return _form_error(f"{target.full_name} a déjà une carte en cours ou délivrée.")
+
+    photo_path = None
+    if photo is not None and photo.filename:
+        try:
+            stored_name, _original = await storage.save_upload(db, photo, CARTES_PHOTOS_DIR, ALLOWED_PHOTO_EXT)
+            photo_path = f"cartes_photos/{stored_name}"
+        except ValueError as exc:
+            return _form_error(str(exc))
+
+    carte = models.CarteMembre(
+        user_id=target.id,
+        full_name_snapshot=full_name,
+        photo_path=photo_path,
+        date_naissance=datetime.date.fromisoformat(date_naissance) if date_naissance else None,
+        ville=ville or None,
+        adresse=adresse or None,
+        telephone=telephone or None,
+        cni_numero=cni_numero or None,
+        contact_urgence_nom=contact_urgence_nom or None,
+        contact_urgence_telephone=contact_urgence_telephone or None,
+        email_personnel=email_personnel or None,
+        status="validee",
+        numero_carte=_next_numero_carte(db),
+        date_validation=datetime.datetime.utcnow(),
+        date_validite=_validite_dans_n_ans(datetime.date.today(), CARTE_VALIDITE_ANNEES),
+        validated_by_id=user.id,
+    )
+    db.add(carte)
+    db.flush()
+    notify(
+        db, target.id,
+        "Une carte de membre a été créée pour vous par le secrétariat — elle est prête.",
+        link="/admin/cartes/mine",
+    )
+    audit.log(
+        db, user, "create", "Carte de membre", carte.id,
+        f"A créé et validé directement la carte de {target.full_name} ({target.poste_label})",
+    )
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return _form_error("Conflit sur le numéro de carte généré — veuillez réessayer.")
+    return RedirectResponse(url=f"/admin/cartes/{carte.id}", status_code=status.HTTP_303_SEE_OTHER)
+
+
 @router.get("/cartes")
 def cartes_list(
     request: Request,
@@ -269,10 +383,12 @@ def cartes_list(
     user: models.User = Depends(require_cartes_gestion_web),
 ):
     items = db.query(models.CarteMembre).order_by(models.CarteMembre.date_soumission.desc()).all()
+    items_ben = [i for i in items if not i.user.delegation_id]
+    items_delegations = [i for i in items if i.user.delegation_id]
     return templates.TemplateResponse(
         request,
         "admin/cartes_gestion_list.html",
-        {"admin": user, "items": items, "active": "cartes"},
+        {"admin": user, "items_ben": items_ben, "items_delegations": items_delegations, "active": "cartes"},
     )
 
 
