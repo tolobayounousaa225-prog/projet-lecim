@@ -1,0 +1,7 @@
+# Empeche GitHub Pages (Jekyll) de publier des repertoires qui n'ont rien a
+# faire sur le site vitrine public : le backend n'a jamais ete concu pour
+# etre servi par ce domaine (il a son propre serveur sur api.lecim-ci.org),
+# et se retrouvait pourtant accessible en clair (ex: lecim-ci.org/backend/app/security.py).
+exclude:
+  - backend
+  - ARCHITECTURE_GESTION_SCOLAIRE.md
