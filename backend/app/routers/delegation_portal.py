@@ -329,12 +329,13 @@ def delegation_membres_new_form(
     return templates.TemplateResponse(
         request,
         "delegation/membre_form.html",
-        {"user": user, "delegation": user.delegation, "item": None, "active": "membres"},
+        {"user": user, "delegation": user.delegation, "item": None, "active": "membres", "error": None},
     )
 
 
 @router.post("/delegation/membres/new")
 def delegation_membres_create(
+    request: Request,
     full_name: str = Form(...),
     fonction: str = Form(""),
     phone: str = Form(""),
@@ -342,6 +343,26 @@ def delegation_membres_create(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_delegation_membres_web),
 ):
+    # Limites alignées sur les colonnes de la table membres (full_name/email
+    # varchar(255), poste varchar(64), phone varchar(50)) — sans ce contrôle, un
+    # champ trop long provoque un StringDataRightTruncation non rattrapé (500).
+    champs_trop_longs = (
+        len(full_name) > 255 or len(fonction) > 64 or len(phone) > 50 or len(email) > 255
+    )
+    if champs_trop_longs:
+        return templates.TemplateResponse(
+            request,
+            "delegation/membre_form.html",
+            {
+                "user": user,
+                "delegation": user.delegation,
+                "item": None,
+                "active": "membres",
+                "error": "Un des champs dépasse la longueur autorisée (nom/e-mail : 255 caractères, fonction : 64, téléphone : 50).",
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
     membre = models.Membre(
         full_name=full_name,
         poste=fonction or None,

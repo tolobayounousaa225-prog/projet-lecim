@@ -2,23 +2,24 @@
 {% block title %}Nouveau membre{% endblock %}
 {% block content %}
 <h1>Ajouter un membre au comité local</h1>
+{% if error %}<div class="error-box" style="margin-bottom:16px;">{{ error }}</div>{% endif %}
 <div class="form-card">
   <form method="post" action="/delegation/membres/new">
     <div class="form-group">
       <label for="full_name">Nom complet</label>
-      <input type="text" id="full_name" name="full_name" required>
+      <input type="text" id="full_name" name="full_name" maxlength="255" required>
     </div>
     <div class="form-group">
       <label for="fonction">Fonction au sein du comité local</label>
-      <input type="text" id="fonction" name="fonction" placeholder="Ex. Coordinateur local">
+      <input type="text" id="fonction" name="fonction" maxlength="64" placeholder="Ex. Coordinateur local">
     </div>
     <div class="form-group">
       <label for="phone">Téléphone</label>
-      <input type="text" id="phone" name="phone">
+      <input type="text" id="phone" name="phone" maxlength="50">
     </div>
     <div class="form-group">
       <label for="email">E-mail</label>
-      <input type="email" id="email" name="email">
+      <input type="email" id="email" name="email" maxlength="255">
     </div>
     <button type="submit" class="btn btn-primary">Enregistrer</button>
     <a href="/delegation/membres" class="btn btn-outline">Annuler</a>
