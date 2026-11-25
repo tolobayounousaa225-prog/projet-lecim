@@ -41,6 +41,33 @@ def _next_numero_carte(db: Session, is_delegation: bool = False) -> str:
     raise RuntimeError("Impossible de générer un numéro de carte disponible")
 
 
+# Memes limites que les colonnes de cartes_membres (models.py) — sans ce controle,
+# un champ trop long declenche un StringDataRightTruncation non rattrape par
+# psycopg2 (500 brut), exactement comme le bug deja corrige sur le formulaire
+# "membre de delegation" (delegation_portal.py).
+_CARTE_FIELD_LIMITS = {
+    "Nom complet": ("full_name", 255),
+    "Lieu de naissance": ("lieu_naissance", 255),
+    "Ville": ("ville", 255),
+    "Téléphone": ("telephone", 50),
+    "N° CNI": ("cni_numero", 50),
+    "Adresse": ("adresse", 255),
+    "Contact d'urgence (nom)": ("contact_urgence_nom", 255),
+    "Contact d'urgence (téléphone)": ("contact_urgence_telephone", 50),
+    "E-mail personnel": ("email_personnel", 255),
+}
+
+
+def _carte_field_too_long(**champs: str) -> str | None:
+    """Retourne un message d'erreur si un champ depasse sa limite en base,
+    sinon None. `champs` est passe par nom de colonne (cf. _CARTE_FIELD_LIMITS)."""
+    for label, (key, limit) in _CARTE_FIELD_LIMITS.items():
+        value = champs.get(key)
+        if value and len(value) > limit:
+            return f"« {label} » dépasse la longueur autorisée ({limit} caractères)."
+    return None
+
+
 CARTE_VALIDITE_ANNEES = 3
 
 
@@ -109,25 +136,36 @@ async def carte_mine_create(
         # qu'elle n'a pas été rejetée (cohérent avec l'affichage du formulaire).
         return RedirectResponse(url="/admin/cartes/mine", status_code=status.HTTP_303_SEE_OTHER)
 
+    def _mine_error(message: str):
+        return templates.TemplateResponse(
+            request,
+            "admin/carte_mine.html",
+            {
+                "admin": user,
+                "carte": None,
+                "can_request": True,
+                "today": datetime.date.today(),
+                "active": "carte_mine",
+                "error": message,
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    too_long = _carte_field_too_long(
+        full_name=full_name, lieu_naissance=lieu_naissance, ville=ville, telephone=telephone,
+        cni_numero=cni_numero, adresse=adresse, contact_urgence_nom=contact_urgence_nom,
+        contact_urgence_telephone=contact_urgence_telephone, email_personnel=email_personnel,
+    )
+    if too_long:
+        return _mine_error(too_long)
+
     photo_path = None
     if photo is not None and photo.filename:
         try:
             stored_name, _original = await storage.save_upload(db, photo, CARTES_PHOTOS_DIR, ALLOWED_PHOTO_EXT)
             photo_path = f"cartes_photos/{stored_name}"
         except ValueError as exc:
-            return templates.TemplateResponse(
-                request,
-                "admin/carte_mine.html",
-                {
-                    "admin": user,
-                    "carte": None,
-                    "can_request": True,
-                    "today": datetime.date.today(),
-                    "active": "carte_mine",
-                    "error": str(exc),
-                },
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
+            return _mine_error(str(exc))
 
     carte = models.CarteMembre(
         user_id=user.id,
@@ -226,6 +264,14 @@ async def carte_new_create(
     )
     if existing is not None and existing.status != "rejetee":
         return _form_error(f"{target.full_name} a déjà une carte en cours ou délivrée.")
+
+    too_long = _carte_field_too_long(
+        full_name=full_name, ville=ville, telephone=telephone, cni_numero=cni_numero,
+        adresse=adresse, contact_urgence_nom=contact_urgence_nom,
+        contact_urgence_telephone=contact_urgence_telephone, email_personnel=email_personnel,
+    )
+    if too_long:
+        return _form_error(too_long)
 
     photo_path = None
     if photo is not None and photo.filename:
@@ -340,6 +386,14 @@ async def carte_delegation_new_create(
     )
     if existing is not None and existing.status != "rejetee":
         return _form_error(f"{target.full_name} a déjà une carte en cours ou délivrée.")
+
+    too_long = _carte_field_too_long(
+        full_name=full_name, lieu_naissance=lieu_naissance, ville=ville, telephone=telephone,
+        cni_numero=cni_numero, adresse=adresse, contact_urgence_nom=contact_urgence_nom,
+        contact_urgence_telephone=contact_urgence_telephone, email_personnel=email_personnel,
+    )
+    if too_long:
+        return _form_error(too_long)
 
     photo_path = None
     if photo is not None and photo.filename:

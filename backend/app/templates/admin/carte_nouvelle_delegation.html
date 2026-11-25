@@ -25,7 +25,7 @@
     </div>
     <div class="form-group">
       <label for="full_name">Nom complet (tel qu'il doit apparaître sur la carte)</label>
-      <input type="text" id="full_name" name="full_name" required>
+      <input type="text" id="full_name" name="full_name" required maxlength="255">
     </div>
     <div class="form-group">
       <label for="photo">Photo d'identité (JPG, PNG — format portrait recommandé)</label>
@@ -41,32 +41,32 @@
     </div>
     <div class="form-group">
       <label for="cni_numero">N° CNI / pièce d'identité</label>
-      <input type="text" id="cni_numero" name="cni_numero">
+      <input type="text" id="cni_numero" name="cni_numero" maxlength="50">
     </div>
     <div class="form-group">
       <label for="ville">Ville / résidence</label>
-      <input type="text" id="ville" name="ville">
+      <input type="text" id="ville" name="ville" maxlength="255">
     </div>
     <div class="form-group">
       <label for="adresse">Adresse complète (quartier, commune)</label>
-      <input type="text" id="adresse" name="adresse">
+      <input type="text" id="adresse" name="adresse" maxlength="255">
     </div>
     <div class="form-group">
       <label for="telephone">Téléphone</label>
-      <input type="text" id="telephone" name="telephone">
+      <input type="text" id="telephone" name="telephone" maxlength="50">
     </div>
     <div class="form-group">
       <label for="email_personnel">E-mail personnel</label>
-      <input type="email" id="email_personnel" name="email_personnel">
+      <input type="email" id="email_personnel" name="email_personnel" maxlength="255">
     </div>
     <div class="form-row">
       <div class="form-group">
         <label for="contact_urgence_nom">Contact d'urgence — nom</label>
-        <input type="text" id="contact_urgence_nom" name="contact_urgence_nom">
+        <input type="text" id="contact_urgence_nom" name="contact_urgence_nom" maxlength="255">
       </div>
       <div class="form-group">
         <label for="contact_urgence_telephone">Contact d'urgence — téléphone</label>
-        <input type="text" id="contact_urgence_telephone" name="contact_urgence_telephone">
+        <input type="text" id="contact_urgence_telephone" name="contact_urgence_telephone" maxlength="50">
       </div>
     </div>
     <button type="submit" class="btn btn-primary">Créer et valider la carte</button>
