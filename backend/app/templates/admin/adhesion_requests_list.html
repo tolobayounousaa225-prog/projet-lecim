@@ -1,7 +1,10 @@
 {% extends "admin/base.html" %}
 {% block title %}Demandes d'adhésion{% endblock %}
 {% block content %}
-<h1>Demandes d'adhésion reçues depuis la vitrine</h1>
+<div class="topbar">
+  <h1 style="margin:0">Demandes d'adhésion reçues depuis la vitrine</h1>
+  <a href="/admin/adhesion-requests/historique-delegations" class="btn btn-outline">Historique des avis des délégations</a>
+</div>
 <p class="form-note" style="margin-top:-8px;">
   Chaque demande est identifiée par un code (récépissé remis au demandeur). Après
   l'entretien au siège, ouvrez la demande pour l'examiner et la valider ou la rejeter.

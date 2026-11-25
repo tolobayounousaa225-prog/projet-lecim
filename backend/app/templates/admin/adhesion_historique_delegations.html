@@ -1,0 +1,45 @@
+{% extends "admin/base.html" %}
+{% block title %}Historique des avis des délégations{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Historique des avis des délégations</h1>
+  <a href="/admin/adhesion-requests" class="btn btn-outline">&larr; Retour aux demandes</a>
+</div>
+<p class="form-note" style="margin-top:0;">
+  Vue consolidée par délégation, pour repérer les écarts entre présidents (l'un rejette
+  systématiquement, l'autre ne filtre jamais rien) plutôt que de voir chaque avis isolément.
+</p>
+
+{% if groupes %}
+{% for g in groupes %}
+<div class="form-card" style="margin-bottom:20px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <strong style="color:var(--green-dark); font-size:1.05rem;">{{ g.delegation.nom if g.delegation else "Délégation inconnue" }}</strong>
+    <div>
+      <span class="pill pill-green">{{ g.favorable }} favorable{{ "s" if g.favorable != 1 else "" }}</span>
+      <span class="pill pill-red">{{ g.defavorable }} défavorable{{ "s" if g.defavorable != 1 else "" }}</span>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>Établissement</th><th>Avis</th><th>Justification</th><th>Date</th><th></th></tr></thead>
+    <tbody>
+      {% for d in g.decisions %}
+      <tr>
+        <td>{{ d.nom_etablissement }}</td>
+        <td>
+          {% if d.delegation_avis == "favorable" %}<span class="pill pill-green">Favorable</span>
+          {% else %}<span class="pill pill-red">Défavorable</span>{% endif %}
+        </td>
+        <td>{{ d.delegation_notes or "—" }}</td>
+        <td>{{ d.delegation_avis_at.strftime("%d/%m/%Y") if d.delegation_avis_at else "—" }}</td>
+        <td class="actions-cell"><a href="/admin/adhesion-requests/{{ d.id }}" class="btn btn-outline btn-sm">Voir</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endfor %}
+{% else %}
+<div class="empty-state">Aucun avis de délégation enregistré pour le moment.</div>
+{% endif %}
+{% endblock %}

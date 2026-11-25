@@ -20,6 +20,7 @@ from ..deps import (
     require_delegation_rapport_web,
     require_delegation_reunions_web,
 )
+from ..email_utils import send_email
 from ..finances_constants import cotisation_rule
 from ..notifications import notify, notify_adhesion_examinateurs
 from ..reminders import send_reminder_for_reunion
@@ -556,13 +557,14 @@ def delegation_adhesion_detail(
     return templates.TemplateResponse(
         request,
         "delegation/adhesion_detail.html",
-        {"user": user, "delegation": user.delegation, "demande": demande, "active": "adhesions"},
+        {"user": user, "delegation": user.delegation, "demande": demande, "active": "adhesions", "error": None},
     )
 
 
 @router.post("/delegation/adhesions/{demande_id}/avis")
 def delegation_adhesion_avis(
     demande_id: int,
+    request: Request,
     avis: str = Form(...),
     notes: str = Form(""),
     db: Session = Depends(get_db),
@@ -577,6 +579,24 @@ def delegation_adhesion_avis(
     ):
         return RedirectResponse(url="/delegation/adhesions", status_code=status.HTTP_303_SEE_OTHER)
 
+    if avis == "defavorable" and not notes.strip():
+        # Un avis defavorable rejette directement la demande sans passage par
+        # le BEN : le demandeur doit recevoir une justification, donc elle est
+        # obligatoire dans ce cas (facultative pour un avis favorable, qui
+        # n'est qu'une recommandation transmise au BEN).
+        return templates.TemplateResponse(
+            request,
+            "delegation/adhesion_detail.html",
+            {
+                "user": user,
+                "delegation": user.delegation,
+                "demande": demande,
+                "active": "adhesions",
+                "error": "Merci de justifier votre avis défavorable — cette justification sera transmise au demandeur.",
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
     demande.delegation_avis = avis
     demande.delegation_notes = notes or None
     demande.delegation_avis_par_id = user.id
@@ -588,6 +608,18 @@ def delegation_adhesion_avis(
         # le BEN (contrairement à un avis favorable, qui laisse la décision
         # finale au secrétariat BEN).
         demande.etat_demande = "rejetee"
+        if demande.email:
+            send_email(
+                demande.email,
+                "Votre demande d'adhésion à la LECIM",
+                "Bonjour,\n\n"
+                f"Votre demande d'adhésion ({demande.code_demande}) a été examinée par la délégation "
+                f"régionale « {user.delegation.nom if user.delegation else ''} » et n'a malheureusement "
+                "pas pu être retenue, pour le motif suivant :\n\n"
+                f"{notes.strip()}\n\n"
+                "Pour toute question, vous pouvez contacter le secrétariat de la LECIM.\n\n"
+                "Cordialement,\nLe secrétariat LECIM",
+            )
     else:
         notify_adhesion_examinateurs(
             db,

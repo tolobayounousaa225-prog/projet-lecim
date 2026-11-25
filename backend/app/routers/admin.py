@@ -699,6 +699,40 @@ def adhesion_requests_list(
     )
 
 
+@router.get("/adhesion-requests/historique-delegations")
+def adhesion_historique_delegations(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_adhesion_examen_access_web),
+):
+    """Vue consolidée des avis donnés par chaque délégation sur les demandes
+    d'adhésion — permet au BEN de repérer les écarts (une délégation qui
+    rejette systématiquement, ou au contraire ne filtre jamais rien) plutôt
+    que de ne voir chaque avis qu'isolément, demande par demande."""
+    decisions = (
+        db.query(models.AdhesionRequest)
+        .filter(models.AdhesionRequest.delegation_avis.isnot(None))
+        .order_by(desc(models.AdhesionRequest.delegation_avis_at))
+        .all()
+    )
+    par_delegation: dict[int, dict] = {}
+    for d in decisions:
+        if not d.delegation_id:
+            continue
+        entry = par_delegation.setdefault(
+            d.delegation_id, {"delegation": d.delegation, "favorable": 0, "defavorable": 0, "decisions": []}
+        )
+        entry[d.delegation_avis] += 1
+        entry["decisions"].append(d)
+
+    groupes = sorted(par_delegation.values(), key=lambda e: e["delegation"].nom if e["delegation"] else "")
+    return templates.TemplateResponse(
+        request,
+        "admin/adhesion_historique_delegations.html",
+        {"admin": user, "groupes": groupes, "active": "adhesion_requests"},
+    )
+
+
 @router.get("/adhesion-requests/{request_id}")
 def adhesion_request_detail(
     request_id: int,

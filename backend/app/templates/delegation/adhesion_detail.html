@@ -24,27 +24,29 @@
   <h3 style="margin-top:0;">Votre avis</h3>
   <p>
     {% if demande.delegation_avis == "favorable" %}<span class="pill pill-green">Avis favorable</span> — transmis au Bureau Exécutif National pour décision finale.
-    {% else %}<span class="pill pill-red">Avis défavorable</span> — cette demande est rejetée.{% endif %}
+    {% else %}<span class="pill pill-red">Avis défavorable</span> — cette demande est rejetée. Le demandeur a reçu votre justification{{ " par e-mail" if demande.email else "" }}.{% endif %}
   </p>
   {% if demande.delegation_notes %}<p style="color:var(--text-muted);">{{ demande.delegation_notes }}</p>{% endif %}
 </div>
 {% else %}
 <div class="form-card">
   <h3 style="margin-top:0;">Donner votre avis</h3>
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
   <p class="form-note" style="margin-top:0;">
-    Un avis défavorable rejette directement la demande. Un avis favorable la transmet au
-    Bureau Exécutif National, qui prendra la décision finale.
+    Un avis défavorable rejette directement la demande — le demandeur recevra votre
+    justification{{ " par e-mail" if demande.email else "" }}, elle est donc obligatoire dans ce
+    cas. Un avis favorable la transmet au Bureau Exécutif National, qui prendra la décision finale.
   </p>
   <form method="post" action="/delegation/adhesions/{{ demande.id }}/avis">
     <div class="form-group">
       <label for="avis">Votre avis</label>
-      <select id="avis" name="avis" required>
+      <select id="avis" name="avis" required onchange="document.getElementById('notes').required = this.value === 'defavorable';">
         <option value="favorable">Favorable</option>
         <option value="defavorable">Défavorable</option>
       </select>
     </div>
     <div class="form-group">
-      <label for="notes">Notes (optionnel)</label>
+      <label for="notes">Notes — <span id="notes-hint">facultatif pour un avis favorable, obligatoire pour un avis défavorable</span></label>
       <textarea id="notes" name="notes" rows="4"></textarea>
     </div>
     <button type="submit" class="btn btn-primary">Enregistrer mon avis</button>
