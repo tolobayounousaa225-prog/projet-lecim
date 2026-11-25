@@ -50,6 +50,11 @@
     padding: 4px 10px; border-radius: 999px; background: #fdf1e0; color: #8a5a10;
     font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em;
   }
+  .found-note {
+    text-align: left; font-size: 0.8rem; color: #58707f; margin: 12px 0 4px;
+    padding: 10px 12px; background: var(--cream); border-radius: 10px;
+  }
+  .found-note a { color: var(--green-dark); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -71,6 +76,8 @@
       <div><dt>N° de carte</dt><dd>{{ carte.numero_carte }}</dd></div>
       {% if carte.date_validite %}<div><dt>Valable jusqu'au</dt><dd>{{ carte.date_validite.strftime("%d/%m/%Y") }}</dd></div>{% endif %}
     </dl>
+    <p class="found-note">📦 Carte trouvée ? Merci de la retourner au secrétariat LECIM —
+      <a href="mailto:lecimnational@gmail.com">lecimnational@gmail.com</a> / 27 24 51 38 20</p>
 
     {% if show_confidential %}
     <p class="confidential-tag">🔒 Informations confidentielles — visibles uniquement par le personnel LECIM connecté</p>
@@ -98,6 +105,8 @@
       <div><dt>N° de carte</dt><dd>{{ carte.numero_carte }}</dd></div>
       <div><dt>Expirée depuis le</dt><dd>{{ carte.date_validite.strftime("%d/%m/%Y") }}</dd></div>
     </dl>
+    <p class="found-note">📦 Carte trouvée ? Merci de la retourner au secrétariat LECIM —
+      <a href="mailto:lecimnational@gmail.com">lecimnational@gmail.com</a> / 27 24 51 38 20</p>
 
     {% if show_confidential %}
     <p class="confidential-tag">🔒 Informations confidentielles — visibles uniquement par le personnel LECIM connecté</p>
