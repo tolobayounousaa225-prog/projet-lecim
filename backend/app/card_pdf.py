@@ -5,7 +5,7 @@ from pathlib import Path
 
 import qrcode
 from fpdf import FPDF
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 
 from .config import settings
 
@@ -60,20 +60,59 @@ def _draw_president_signature_mini(pdf: FPDF, right_edge: float, bottom_edge: fl
     pdf.cell(width, name_h, _safe_text(PRESIDENT_NOM), align="C")
 
 
+def _load_photo_upright(photo_bytes: bytes) -> Image.Image:
+    """Ouvre une photo et applique la rotation indiquée par ses metadonnees EXIF
+    (orientation telephone) — sans ca, une photo prise en portrait sur mobile
+    peut ressortir couchee sur la carte, meme bien cadree a l'origine."""
+    img = Image.open(io.BytesIO(photo_bytes))
+    img = ImageOps.exif_transpose(img)
+    return img.convert("RGB")
+
+
+def _crop_to_ratio(img: Image.Image, target_w: float, target_h: float) -> Image.Image:
+    """Recadre « cover » (remplit le cadre sans deformer) vers le ratio
+    target_w/target_h, avec le meme leger decalage vers le haut que le
+    recadrage circulaire — evite d'etirer une photo carree dans un cadre
+    rectangulaire, ce qui deformait visages et epaules."""
+    target_ratio = target_w / target_h
+    src_ratio = img.width / img.height
+    if src_ratio > target_ratio:
+        new_w = int(img.height * target_ratio)
+        left = (img.width - new_w) // 2
+        box = (left, 0, left + new_w, img.height)
+    else:
+        new_h = int(img.width / target_ratio)
+        top = max(0, (img.height - new_h) // 2 - int(new_h * 0.06))
+        box = (0, top, img.width, top + new_h)
+    return img.crop(box)
+
+
 def _circular_photo_png(photo_bytes: bytes, diameter_px: int = 400) -> bytes:
     """Recadre une photo en cercle (fond transparent) pour l'incruster sur le
-    modèle de carte approuvé — fpdf2 gère nativement la transparence PNG."""
-    img = Image.open(io.BytesIO(photo_bytes)).convert("RGB")
+    modèle de carte approuvé — fpdf2 gère nativement la transparence PNG.
+    Le cercle est dessine en sursample (4x) puis reduit : un cercle dessine
+    directement a la taille cible a des bords en escalier visibles a
+    l'impression, le sursample les lisse (anticrenelage)."""
+    img = _load_photo_upright(photo_bytes)
     side = min(img.size)
     left = (img.width - side) // 2
-    top = (img.height - side) // 2
-    img = img.crop((left, top, left + side, top + side)).resize((diameter_px, diameter_px), Image.LANCZOS)
+    # Leger decalage vers le haut du recadrage carre : sur un portrait, le
+    # visage est generalement dans la moitie superieure de la photo — un
+    # centrage strict a tendance a couper le haut du crane plutot que le bas
+    # des epaules.
+    top = max(0, (img.height - side) // 2 - int(side * 0.06))
+    img = img.crop((left, top, left + side, top + side))
 
-    mask = Image.new("L", (diameter_px, diameter_px), 0)
-    ImageDraw.Draw(mask).ellipse((0, 0, diameter_px, diameter_px), fill=255)
+    supersample = 4
+    big = diameter_px * supersample
+    img = img.resize((big, big), Image.LANCZOS)
 
-    out = Image.new("RGBA", (diameter_px, diameter_px))
+    mask = Image.new("L", (big, big), 0)
+    ImageDraw.Draw(mask).ellipse((0, 0, big, big), fill=255)
+
+    out = Image.new("RGBA", (big, big))
     out.paste(img, (0, 0), mask)
+    out = out.resize((diameter_px, diameter_px), Image.LANCZOS)
     buffer = io.BytesIO()
     out.save(buffer, format="PNG")
     return buffer.getvalue()
@@ -267,10 +306,7 @@ def _add_recto_delegation(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
     pdf.set_fill_color(240, 242, 239)
     pdf.rect(photo_x, photo_y, photo_w, photo_h, style="DF", round_corners=True, corner_radius=1.2)
     if photo_bytes:
-        img = Image.open(io.BytesIO(photo_bytes)).convert("RGB")
-        side = min(img.size)
-        left, top = (img.width - side) // 2, (img.height - side) // 2
-        img = img.crop((left, top, left + side, top + side))
+        img = _crop_to_ratio(_load_photo_upright(photo_bytes), photo_w - 1.6, photo_h - 1.6)
         buf = io.BytesIO()
         img.save(buf, format="PNG")
         pdf.image(io.BytesIO(buf.getvalue()), x=photo_x + 0.8, y=photo_y + 0.8, w=photo_w - 1.6, h=photo_h - 1.6)
@@ -461,7 +497,10 @@ def _add_recto_eleve(pdf: FPDF, carte, photo_bytes: bytes | None, ecole_logo_byt
 
     photo_x, photo_y, photo_w, photo_h = 4, 18, 21, 27
     if photo_bytes:
-        pdf.image(io.BytesIO(photo_bytes), x=photo_x, y=photo_y, w=photo_w, h=photo_h)
+        img = _crop_to_ratio(_load_photo_upright(photo_bytes), photo_w, photo_h)
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        pdf.image(io.BytesIO(buf.getvalue()), x=photo_x, y=photo_y, w=photo_w, h=photo_h)
     else:
         pdf.set_draw_color(*GREEN)
         pdf.set_fill_color(255, 255, 255)
