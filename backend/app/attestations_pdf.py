@@ -16,7 +16,10 @@ GREEN = (15, 122, 76)
 GOLD = (224, 165, 44)
 
 LOGO_PATH = Path(__file__).resolve().parent / "static" / "img" / "logo.jpg"
-SIGNATURE_PRESIDENT_PATH = Path(__file__).resolve().parent / "static" / "img" / "signature_president.png"
+# Hors de static/ : ce dossier est monte publiquement (app.mount("/static", ...)
+# dans main.py), donc tout fichier sous static/ est telechargeable par
+# n'importe qui sans authentification — inacceptable pour ce cachet officiel.
+SIGNATURE_PRESIDENT_PATH = Path(__file__).resolve().parent / "private_assets" / "signature_president.png"
 # Ratio largeur/hauteur de l'image de signature+cachet fournie, pour la
 # redimensionner sans la deformer quelle que soit la largeur demandee.
 _SIGNATURE_RATIO = 599 / 411

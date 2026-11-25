@@ -8,8 +8,9 @@ backend/.venv/
 backend/.env
 
 # Signature + cachet officiel du president — jamais sur le depot public
-# (deploye directement sur le VPS, hors git). Voir README/notes de deploiement.
-backend/app/static/img/signature_president.png
+# (deploye directement sur le VPS, hors git). Hors de app/static/ : ce dossier
+# est monte publiquement par l'API (voir app.mount("/static", ...) dans main.py).
+backend/app/private_assets/
 
 # Base de données locale et fichiers générés
 backend/lecim_dev.db

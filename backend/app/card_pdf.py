@@ -36,7 +36,10 @@ def _safe_text(value: str) -> str:
 
 LOGO_PATH = Path(__file__).resolve().parent / "static" / "img" / "logo.jpg"
 MEMBRE_TEMPLATE_PATH = Path(__file__).resolve().parent / "static" / "img" / "carte_membre_template.png"
-SIGNATURE_PRESIDENT_PATH = Path(__file__).resolve().parent / "static" / "img" / "signature_president.png"
+# Hors de static/ : ce dossier est monte publiquement (app.mount("/static", ...)
+# dans main.py), donc tout fichier sous static/ est telechargeable par
+# n'importe qui sans authentification — inacceptable pour ce cachet officiel.
+SIGNATURE_PRESIDENT_PATH = Path(__file__).resolve().parent / "private_assets" / "signature_president.png"
 _SIGNATURE_RATIO = 599 / 411
 PRESIDENT_NOM = "Ahmed SYLLA"
 
