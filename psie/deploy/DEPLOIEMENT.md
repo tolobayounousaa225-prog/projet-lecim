@@ -9,7 +9,7 @@
 
 ```
 Site vitrine (dépôt « PSIE »)  →  GitHub Pages, gratuit
-Application (ce dépôt, dossier psie/) →  serveur Hostinger (VPS)
+Application (ce dépôt, dossier psie/) →  VPS Contabo, partagé avec la LECIM (pile Docker séparée)
 ```
 
 Le site public est un dépôt à part (voir son README). L'application, elle, porte la connexion, la
@@ -19,7 +19,7 @@ demande d'adhésion, le suivi, les QR codes et tout l'espace interne.
 
 | Élément | Pourquoi | Statut |
 |---|---|---|
-| Un **VPS Hostinger** (pas l'hébergement web mutualisé : il ne sait pas faire tourner Docker) sous Ubuntu 24.04 ; si Hostinger propose un modèle « Ubuntu avec Docker », le choisir | héberger l'application | à commander |
+| Le **VPS Contabo** qui héberge déjà la LECIM (Ubuntu, Docker) : la PSIE y tourne dans sa propre pile, sans toucher à la LECIM | héberger l'application | existant, à vérifier avec `diagnostic.sh` |
 | Accès SSH au serveur | installer et lancer | à vérifier |
 | Un **serveur e-mail (SMTP)** | code de connexion (double authentification), relances, convocations | à obtenir |
 | Un **nom de domaine** | HTTPS propre et QR codes définitifs | **plus tard** (voir ci-dessous) |
@@ -35,25 +35,40 @@ Caddy sait obtenir un certificat HTTPS pour une adresse de type `IP-AVEC-DES-TIR
 > Le QR code contient l'adresse de l'application : s'il pointe vers une adresse provisoire, les documents
 > déjà imprimés cesseront d'être vérifiables le jour où l'adresse change.
 
-## 2. Préparer le serveur Hostinger
+## 2. Vérifier le serveur Contabo (partagé avec la LECIM)
 
-Hostinger est un serveur **dédié à la PSIE** : on utilise donc le **mode B** (Caddy inclus, il obtient
-tout seul le certificat HTTPS).
+Le serveur porte déjà la LECIM : on n'y change **rien** de ce qui la concerne (pare-feu, ports 80 et 443,
+reverse proxy en place). La PSIE s'ajoute à côté, dans une pile Docker nommée `psie` (base de données,
+réseau et volumes à elle), et n'écoute que sur `127.0.0.1:8100`, donc jamais en conflit avec le port 8000 ou
+5432 de la LECIM. C'est le **mode A**.
+
+Avant d'installer, lancez ce contrôle en lecture seule et envoyez-moi le résultat (il vérifie la mémoire,
+le disque, Docker, les ports et le reverse proxy en place) :
 
 ```bash
-# 1re connexion (en root, avec l'adresse IP fournie par Hostinger)
-adduser psie && usermod -aG sudo psie        # créer un utilisateur normal, puis se reconnecter avec lui
-sudo apt update && sudo apt -y upgrade
-sudo ufw allow OpenSSH && sudo ufw allow 80,443/tcp && sudo ufw enable
-docker --version || curl -fsSL https://get.docker.com | sudo sh   # installer Docker s'il est absent
-sudo usermod -aG docker psie                 # puis se déconnecter / reconnecter
-free -h && df -h /                           # vérifier la mémoire et le disque
+ssh utilisateur@IP-DU-SERVEUR
+git clone https://github.com/tolobayounousaa225-prog/projet-lecim.git psie-app
+cd psie-app/psie/deploy && bash diagnostic.sh
 ```
 
-Si le serveur est **partagé avec la LECIM** (ou un autre site qui occupe déjà les ports 80 et 443),
-utiliser plutôt le mode A décrit à la section 4.
+Si la mémoire disponible est inférieure à environ 1 Go (Jitsi est gourmand), ne pas installer :
+prendre un VPS séparé (voir le cahier des charges, § 6.1).
 
 ## 3. Installation
+
+### Installation automatique (recommandée)
+
+```bash
+cd psie-app/psie/deploy
+./installer.sh            # pose 5 questions (domaine, e-mail…), génère les secrets, démarre, crée l'administrateur
+./installer.sh --essai    # essai privé sans domaine ni e-mail, visible par tunnel SSH seulement
+```
+
+Le script vérifie la mémoire et le port, ne touche jamais à la LECIM, ne remplace jamais un `.env` existant et
+termine en affichant le bloc exact à ajouter au reverse proxy. Les étapes manuelles ci-dessous disent la même
+chose, pas à pas.
+
+### Installation manuelle
 
 ```bash
 # Sur le serveur
@@ -74,7 +89,7 @@ L'application **refuse de démarrer** (avec un message clair) si `COOKIE_SECURE=
 configuration est dangereuse : clé secrète faible, double authentification sans SMTP, adresse publique
 en `http://`, etc.
 
-Réglages importants du fichier `.env` pour Hostinger (mode B) :
+Réglages importants du fichier `.env` (mode A, Contabo) :
 
 | Variable | Valeur |
 |---|---|
@@ -86,8 +101,8 @@ Réglages importants du fichier `.env` pour Hostinger (mode B) :
 Démarrage :
 
 ```bash
-docker compose --env-file .env --profile caddy up -d --build   # mode B (Hostinger) : Caddy obtient le certificat HTTPS
-# mode A (serveur déjà équipé d'un reverse proxy) : docker compose --env-file .env up -d --build
+docker compose --env-file .env up -d --build                  # mode A (Contabo, reverse proxy déjà en place de la LECIM)
+# mode B (serveur dédié sans reverse proxy) : ajouter --profile caddy, Caddy obtient alors le certificat HTTPS
 docker compose ps                                              # api et db doivent être « healthy »
 docker compose exec api python -m scripts.init_db              # crée le compte administrateur et les 6 fondateurs
 curl -s http://127.0.0.1:8100/health/db                        # doit afficher {"status":"ok"}
@@ -95,7 +110,7 @@ curl -s http://127.0.0.1:8100/health/db                        # doit afficher {
 
 Les migrations de base de données sont appliquées **automatiquement** à chaque démarrage.
 
-## 4. Brancher un reverse proxy existant (mode A uniquement, pas pour Hostinger)
+## 4. Brancher le reverse proxy de la LECIM (mode A : c'est le cas sur le Contabo)
 
 La PSIE écoute sur `127.0.0.1:8100` du serveur. Il faut dire au Caddy existant d'y envoyer le
 trafic du nouveau domaine. Regardez d'abord comment il tourne :
