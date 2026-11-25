@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ col.titre }}{% endblock %}
+{% block content %}
+<p><a href="{{ '/gestion/contenu' if col.singleton else '/gestion/contenu/' ~ col.key }}">← {{ col.titre if not col.singleton else t('nav_site_content') }}</a></p>
+<h1>{{ col.titre }}</h1>
+<p class="muted">{{ col.aide }}</p>
+{% if request.query_params.get('ok') %}<p class="card">Enregistré. Le site se met à jour.</p>{% endif %}
+{% for e in errors %}<p class="alert">{{ e }}</p>{% endfor %}
+<section class="card">
+  <form method="post" enctype="multipart/form-data" class="stack"
+        action="{{ '/gestion/contenu/%s/unique' % col.key if col.singleton else ('/gestion/contenu/%s/%d/modifier' % (col.key, item.id) if item else '/gestion/contenu/%s/nouveau' % col.key) }}">
+    {% for f in col.fields %}
+      {% if f.kind in ('bi', 'bilong') %}
+        <fieldset class="stack"><legend>{{ f.label }}{% if f.required %} *{% endif %}</legend>
+          {% if f.kind == 'bi' %}
+          <label>Français<input name="{{ f.name }}__fr" value="{{ values.get(f.name ~ '__fr', '') }}"></label>
+          <label>العربية<input name="{{ f.name }}__ar" dir="rtl" value="{{ values.get(f.name ~ '__ar', '') }}"></label>
+          {% else %}
+          <label>Français<textarea name="{{ f.name }}__fr" rows="6">{{ values.get(f.name ~ '__fr', '') }}</textarea></label>
+          <label>العربية<textarea name="{{ f.name }}__ar" dir="rtl" rows="6">{{ values.get(f.name ~ '__ar', '') }}</textarea></label>
+          {% endif %}
+          {% if f.help %}<small class="muted">{{ f.help }}</small>{% endif %}
+        </fieldset>
+      {% elif f.kind == 'bool' %}
+        <label class="check"><input type="checkbox" name="{{ f.name }}" {% if values.get(f.name) %}checked{% endif %}> {{ f.label }}</label>
+      {% elif f.kind == 'media' %}
+        <fieldset class="stack"><legend>{{ f.label }}{% if f.required %} *{% endif %}</legend>
+          {% set current = medias.get(f.name) %}
+          {% if current %}
+            <p>Fichier actuel : <a href="/medias/{{ current.id }}.{{ current.extension }}" target="_blank" rel="noopener">{{ current.nom }}</a> ({{ (current.taille / 1024) | round | int }} Ko)</p>
+            <input type="hidden" name="{{ f.name }}__id" value="{{ current.id }}">
+            {% if not f.required %}<label class="check"><input type="checkbox" name="{{ f.name }}__clear" value="1"> Retirer ce fichier</label>{% endif %}
+          {% endif %}
+          <label>{{ 'Remplacer par' if current else 'Choisir' }} {{ 'un PDF' if f.media == 'pdf' else 'une image (JPG, PNG ou WebP)' }}
+            <input type="file" name="{{ f.name }}__file" accept="{{ 'application/pdf' if f.media == 'pdf' else 'image/jpeg,image/png,image/webp' }}"></label>
+        </fieldset>
+      {% else %}
+        <label>{{ f.label }}{% if f.required %} *{% endif %}
+          {% if f.kind == 'choice' %}
+          <select name="{{ f.name }}">
+            <option value="">—</option>
+            {% for k, v in f.choices.items() %}<option value="{{ k }}" {% if values.get(f.name) == k %}selected{% endif %}>{{ v }}</option>{% endfor %}
+          </select>
+          {% elif f.kind == 'long' %}<textarea name="{{ f.name }}" rows="6">{{ values.get(f.name, '') }}</textarea>
+          {% else %}<input name="{{ f.name }}" value="{{ values.get(f.name, '') }}"
+              {% if f.kind == 'date' %}type="date"{% elif f.kind == 'int' %}type="number"{% elif f.kind == 'phone' %}inputmode="numeric"{% endif %}>
+          {% endif %}
+          {% if f.help %}<small class="muted">{{ f.help }}</small>{% endif %}
+        </label>
+      {% endif %}
+    {% endfor %}
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+</section>
+{% endblock %}

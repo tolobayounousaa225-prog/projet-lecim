@@ -38,6 +38,13 @@ def require_member_manager(user: models.User = Depends(get_current_user)) -> mod
     return user
 
 
+def require_content_editor(user: models.User = Depends(get_current_user)) -> models.User:
+    if not user.can_edit_site_content:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Réservé au Secrétariat Information et Communication et à l'administrateur")
+    return user
+
+
 def require_admin(user: models.User = Depends(get_current_user)) -> models.User:
     if not user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Réservé à l'administrateur")

@@ -11,6 +11,10 @@ ROLES = {
     "den": "Directeur Exécutif National",
     "finances": "Secrétaire chargé des finances (ou adjoint)",
     "secretaire": "Secrétaire de la DEN",
+    "communication": "Secrétariat Information et Communication",
+    "formation": "Secrétariat Formation",
+    "examens": "Secrétariat Examens",
+    "ressources": "Secrétariat Mobilisation des ressources",
     "administrateur_ca": "Administrateur du CA",
     "commissaire": "Commissaire aux comptes",
     "faitiere": "Représentant de faîtière",
@@ -26,8 +30,11 @@ FINANCE_READ_ROLES = {"finances", "den", "administrateur_ca", "commissaire"}
 # Adhésion : examen et décision par la DEN ; l'avis écrit du CA (Statuts art. 18) peut être
 # enregistré par un administrateur ou, en son nom, par la DEN et le secrétariat.
 ADHESION_AVIS_ROLES = {"administrateur_ca", "den", "secretaire"}
+# Contenu du site vitrine (actualités, équipe, partenaires, documents…) : le Secrétariat Information
+# et Communication et l'administrateur. Toute modification est publiée immédiatement.
+CONTENT_EDITOR_ROLES = {"admin", "communication"}
 # Rôles soumis à la double authentification par e-mail
-TWO_FACTOR_ROLES = {"admin", "finances"}
+TWO_FACTOR_ROLES = {"admin", "finances", "communication"}
 
 # --- Finances ------------------------------------------------------------------
 ECHEANCE_TYPES = {
@@ -187,6 +194,10 @@ class User(Base):
     @property
     def can_manage_members(self) -> bool:
         return self.role in MEMBER_MANAGER_ROLES
+
+    @property
+    def can_edit_site_content(self) -> bool:
+        return self.role in CONTENT_EDITOR_ROLES
 
     @property
     def can_view_finances(self) -> bool:
@@ -853,4 +864,71 @@ class DeclarationInteret(Base):
     declarant_nom: Mapped[str] = mapped_column(String(255), nullable=False)
     objet: Mapped[str] = mapped_column(Text, nullable=False)
     date_declaration: Mapped[datetime.date] = mapped_column(Date, default=datetime.date.today)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+# ---------- Contenu du site vitrine ----------
+
+class ContenuSite(Base):
+    """Un élément de contenu du site vitrine (une actualité, un partenaire, le mot du Président…).
+    Le détail est un JSON dont la forme dépend de la collection (voir site_content.py)."""
+
+    __tablename__ = "contenus_site"
+    __table_args__ = (UniqueConstraint("collection", "cle", name="uq_contenu_collection_cle"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    collection: Mapped[str] = mapped_column(String(30), index=True, nullable=False)
+    # Identifiant lisible dans la collection (slug d'une actualité ou d'une faîtière) ; « main » pour
+    # les contenus uniques (annonce, Président, contact) ; vide pour les autres.
+    cle: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    data: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow,
+                                                          onupdate=datetime.datetime.utcnow)
+
+
+class MediaSite(Base):
+    """Image ou PDF déposé par un éditeur, conservé en base (sauvegardé avec le reste)."""
+
+    __tablename__ = "medias_site"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    nom: Mapped[str] = mapped_column(String(120), nullable=False)
+    mime: Mapped[str] = mapped_column(String(60), nullable=False)
+    extension: Mapped[str] = mapped_column(String(5), nullable=False)
+    taille: Mapped[int] = mapped_column(Integer, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    contenu: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+# ---------- Espace d'une faîtière : délégués régionaux et écoles ----------
+
+class DelegueRegional(Base):
+    """Délégué d'une faîtière dans une DRENA (renseigné par la faîtière elle-même)."""
+
+    __tablename__ = "delegues_regionaux"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    faitiere_id: Mapped[int] = mapped_column(ForeignKey("faitieres.id", ondelete="CASCADE"), index=True, nullable=False)
+    nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    drena: Mapped[str] = mapped_column(String(80), nullable=False)
+    telephone: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+class Ecole(Base):
+    """Établissement d'une faîtière."""
+
+    __tablename__ = "ecoles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    faitiere_id: Mapped[int] = mapped_column(ForeignKey("faitieres.id", ondelete="CASCADE"), index=True, nullable=False)
+    nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    localite: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    drena: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    telephone: Mapped[str | None] = mapped_column(String(40), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)

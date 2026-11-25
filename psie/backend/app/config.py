@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     vitrine_url: str = ""
     vitrine_origins: str = ""
 
+    # Reconstruction automatique du site vitrine à chaque modification du contenu : dépôt GitHub du
+    # site (« propriétaire/dépôt ») et jeton limité à ce dépôt. Vide = pas de reconstruction automatique.
+    github_dispatch_repo: str = ""
+    github_dispatch_token: str = ""
+
     # Tâches planifiées (génération des cotisations de l'année, relances, résumé hebdomadaire)
     scheduler_enabled: bool = True
 

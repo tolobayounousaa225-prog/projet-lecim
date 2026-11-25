@@ -108,6 +108,16 @@ source de données en lecture seule (`/api/public/vitrine.json` : sigles, noms e
 actualités publiées), accessible uniquement depuis l'adresse déclarée dans `VITRINE_ORIGINS`, sans cookie. Tant que
 `VITRINE_URL` est vide, l'application sert elle-même ses pages publiques.
 
+## Contenu du site et espaces
+
+- **Contenu du site** (`/gestion/contenu`) : actualités, équipe, partenaires, documents, transparence, galerie, fiches des
+  faîtières, DRENA, annonce, Président, contact. Réservé au **Secrétariat Information et Communication** et à l'administrateur
+  (double authentification). Publication immédiate ; le site se reconstruit seul. Voir **[deploy/CONTENU_SITE.md](deploy/CONTENU_SITE.md)**.
+- **Secrétariats** : un rôle et un compte par secrétariat (administration, finances, information et communication,
+  formation, examens, mobilisation des ressources), créés par l'administrateur.
+- **Espace de chaque faîtière** : sa fiche, ses cotisations, ses **délégués régionaux** et ses **écoles**, qu'elle tient à jour
+  elle-même ; elle ne voit jamais celles des autres.
+
 ## Mise en ligne
 
 Voir **[deploy/DEPLOIEMENT.md](deploy/DEPLOIEMENT.md)** (serveur partagé ou dédié, HTTPS, e-mail,

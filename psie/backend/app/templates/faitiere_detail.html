@@ -19,6 +19,14 @@
   </dl>
 </section>
 
+<section class="card">
+  <h2>{{ t('space_title') }}</h2>
+  <ul class="linklist">
+    <li><a href="/faitieres/{{ item.id }}/delegues">{{ t('space_delegates') }}</a></li>
+    <li><a href="/faitieres/{{ item.id }}/ecoles">{{ t('space_schools') }}</a></li>
+  </ul>
+</section>
+
 {% if show_dues %}
 <section class="card">
   <h2>{{ t('nav_dues') }}</h2>

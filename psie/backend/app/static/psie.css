@@ -69,3 +69,7 @@ label.check input { width: auto; }
 
 .linklist { columns: 2; list-style: none; padding: 0; margin: 0; }
 .linklist li { padding: 6px 0; }
+
+/* Éditeur du contenu du site */
+fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin: 0; min-width: 0; }
+legend { font-weight: 600; padding: 0 6px; }
