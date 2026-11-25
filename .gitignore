@@ -7,6 +7,10 @@ backend/.venv/
 # Environnement (secrets) — garder uniquement .env.example en dépôt
 backend/.env
 
+# Signature + cachet officiel du president — jamais sur le depot public
+# (deploye directement sur le VPS, hors git). Voir README/notes de deploiement.
+backend/app/static/img/signature_president.png
+
 # Base de données locale et fichiers générés
 backend/lecim_dev.db
 backend/backups/

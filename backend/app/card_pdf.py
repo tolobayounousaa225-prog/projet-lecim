@@ -36,6 +36,28 @@ def _safe_text(value: str) -> str:
 
 LOGO_PATH = Path(__file__).resolve().parent / "static" / "img" / "logo.jpg"
 MEMBRE_TEMPLATE_PATH = Path(__file__).resolve().parent / "static" / "img" / "carte_membre_template.png"
+SIGNATURE_PRESIDENT_PATH = Path(__file__).resolve().parent / "static" / "img" / "signature_president.png"
+_SIGNATURE_RATIO = 599 / 411
+PRESIDENT_NOM = "Ahmed SYLLA"
+
+
+def _draw_president_signature_mini(pdf: FPDF, right_edge: float, bottom_edge: float, width: float) -> None:
+    """Version miniature de la signature + cachet du president pour le verso
+    des cartes (espace tres restreint) — alignee sur son bord droit/bas.
+    `bottom_edge` est la position y sous laquelle plus rien n'est dessine."""
+    height = width / _SIGNATURE_RATIO
+    name_h = 2.4
+    line_gap = 0.6
+    img_y = bottom_edge - name_h - line_gap - height
+    if SIGNATURE_PRESIDENT_PATH.exists():
+        pdf.image(str(SIGNATURE_PRESIDENT_PATH), x=right_edge - width, y=img_y, w=width, h=height)
+    line_y = img_y + height + line_gap
+    pdf.set_draw_color(180, 180, 180)
+    pdf.line(right_edge - width, line_y, right_edge, line_y)
+    pdf.set_font("Helvetica", "B", 3.8)
+    pdf.set_text_color(60, 60, 60)
+    pdf.set_xy(right_edge - width, line_y + 0.3)
+    pdf.cell(width, name_h, _safe_text(PRESIDENT_NOM), align="C")
 
 
 def _circular_photo_png(photo_bytes: bytes, diameter_px: int = 400) -> bytes:
@@ -183,14 +205,7 @@ def _add_verso(pdf: FPDF, carte) -> None:
     # identique sur toutes les cartes. Les informations propres au titulaire
     # (nom, fonction, numero, QR) restent uniquement au recto.
 
-    # Ligne de signature
-    sig_y = CARD_H - 11
-    pdf.set_draw_color(180, 180, 180)
-    pdf.line(CARD_W - 36, sig_y, CARD_W - 5, sig_y)
-    pdf.set_font("Helvetica", "", 5.2)
-    pdf.set_text_color(120, 120, 120)
-    pdf.set_xy(CARD_W - 36, sig_y + 1)
-    pdf.cell(31, 3, "Signature", align="C")
+    _draw_president_signature_mini(pdf, CARD_W - 5, CARD_H - 2, 20)
 
     pdf.set_text_color(130, 130, 130)
     pdf.set_font("Helvetica", "", 5.3)
@@ -367,13 +382,7 @@ def _add_verso_delegation(pdf: FPDF, carte) -> None:
         pdf.set_xy(cx, val_y + 2.2)
         pdf.cell(col_w, 3, label, align="C")
 
-    sig_y = CARD_H - 11
-    pdf.set_draw_color(180, 180, 180)
-    pdf.line(CARD_W - 36, sig_y, CARD_W - 5, sig_y)
-    pdf.set_font("Helvetica", "", 5.2)
-    pdf.set_text_color(120, 120, 120)
-    pdf.set_xy(CARD_W - 36, sig_y + 1)
-    pdf.cell(31, 3, "Signature", align="C")
+    _draw_president_signature_mini(pdf, CARD_W - 5, CARD_H - 2, 12)
 
     pdf.set_text_color(130, 130, 130)
     pdf.set_font("Helvetica", "", 5.3)

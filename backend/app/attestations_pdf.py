@@ -16,6 +16,30 @@ GREEN = (15, 122, 76)
 GOLD = (224, 165, 44)
 
 LOGO_PATH = Path(__file__).resolve().parent / "static" / "img" / "logo.jpg"
+SIGNATURE_PRESIDENT_PATH = Path(__file__).resolve().parent / "static" / "img" / "signature_president.png"
+# Ratio largeur/hauteur de l'image de signature+cachet fournie, pour la
+# redimensionner sans la deformer quelle que soit la largeur demandee.
+_SIGNATURE_RATIO = 599 / 411
+PRESIDENT_NOM = "Ahmed SYLLA"
+
+
+def _draw_president_signature(pdf: FPDF, x: float, y: float, width: float, line_width: float) -> float:
+    """Dessine la signature scannee + le cachet du president (si le fichier est
+    present), une ligne de validation puis son nom imprime — a l'emplacement
+    (x, y). Retourne le y de la ligne de base pour que l'appelant positionne la
+    suite. Si l'image n'a pas encore ete fournie, se degrade silencieusement
+    sur l'ancien comportement (ligne + nom, sans visuel)."""
+    height = width / _SIGNATURE_RATIO
+    if SIGNATURE_PRESIDENT_PATH.exists():
+        pdf.image(str(SIGNATURE_PRESIDENT_PATH), x=x, y=y, w=width, h=height)
+    line_y = y + height + 1.5
+    pdf.set_draw_color(150, 150, 150)
+    pdf.line(x, line_y, x + line_width, line_y)
+    pdf.set_xy(x, line_y + 1)
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_text_color(40, 40, 40)
+    pdf.cell(line_width, 5, pdf_safe(PRESIDENT_NOM), align="C")
+    return line_y + 6
 
 
 def numero_affiliation(etablissement_id: int) -> str:
@@ -89,7 +113,7 @@ def _footer_qr_and_signature(pdf: FPDF, verify_url: str, numero: str) -> None:
     pdf.cell(qr_size + 16, 3.5, "Scanner pour verifier", align="C", new_x="LMARGIN", new_y="NEXT")
 
     sig_x = 28
-    sig_y = pdf.h - 55
+    sig_y = pdf.h - 62
     pdf.set_xy(sig_x, sig_y)
     pdf.set_font("Helvetica", "", 10.5)
     pdf.set_text_color(40, 40, 40)
@@ -97,8 +121,7 @@ def _footer_qr_and_signature(pdf: FPDF, verify_url: str, numero: str) -> None:
     pdf.set_xy(sig_x, sig_y + 8)
     pdf.set_font("Helvetica", "B", 10.5)
     pdf.cell(75, 6, "Le President de la LECIM", new_x="LMARGIN", new_y="NEXT")
-    pdf.set_draw_color(150, 150, 150)
-    pdf.line(sig_x, sig_y + 24, sig_x + 65, sig_y + 24)
+    _draw_president_signature(pdf, sig_x, sig_y + 15, 30, 65)
 
     pdf.set_xy(0, pdf.h - 16)
     pdf.set_font("Helvetica", "", 7.5)
@@ -340,7 +363,7 @@ def generate_diplome_pdf(diplome) -> bytes:
     pdf.cell(right_w, 4, "Scanner pour verifier", align="C")
 
     # Bas de page : date et signature (pleine largeur, sous les deux colonnes).
-    sig_y = pdf.h - 45
+    sig_y = pdf.h - 52
     pdf.set_xy(left_x, sig_y)
     pdf.set_font("Helvetica", "", 10.5)
     pdf.set_text_color(40, 40, 40)
@@ -348,8 +371,7 @@ def generate_diplome_pdf(diplome) -> bytes:
     pdf.set_xy(left_x, sig_y + 8)
     pdf.set_font("Helvetica", "B", 10.5)
     pdf.cell(90, 6, "Le President de la LECIM", new_x="LMARGIN", new_y="NEXT")
-    pdf.set_draw_color(150, 150, 150)
-    pdf.line(left_x, sig_y + 24, left_x + 75, sig_y + 24)
+    _draw_president_signature(pdf, left_x, sig_y + 15, 20, 75)
 
     pdf.set_xy(0, pdf.h - 16)
     pdf.set_font("Helvetica", "", 7.5)
