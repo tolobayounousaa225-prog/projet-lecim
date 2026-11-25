@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ item.titre(lang) }}{% endblock %}
+{% block content %}
+<article class="card">
+  <h1>{{ item.titre(lang) }}</h1>
+  <p class="muted">{{ item.date_publication }}</p>
+  <div class="prose">{{ item.contenu(lang) }}</div>
+</article>
+<p><a href="/actualites">{{ t('back') }}</a></p>
+{% endblock %}

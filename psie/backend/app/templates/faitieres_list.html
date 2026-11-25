@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_members') }}{% endblock %}
+{% block content %}
+<div class="row"><h1>{{ t('nav_members') }}</h1>
+  {% if user.can_manage_members %}<a class="btn" href="/faitieres/new">{{ t('new_member') }}</a>{% endif %}
+</div>
+<table>
+  <thead><tr><th>{{ t('acronym') }}</th><th>{{ t('name') }}</th><th>{{ t('category') }}</th><th>{{ t('status') }}</th></tr></thead>
+  <tbody>
+  {% for f in items %}
+    <tr>
+      <td><a href="/faitieres/{{ f.id }}">{{ f.sigle }}</a></td>
+      <td>{{ f.nom }}</td><td>{{ lbl('categorie', f.categorie) }}</td>
+      <td><span class="badge {{ f.statut }}">{{ lbl('statut', f.statut) }}</span></td>
+    </tr>
+  {% else %}
+    <tr><td colspan="4" class="muted">{{ t('none') }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

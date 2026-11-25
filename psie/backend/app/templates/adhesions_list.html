@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_adhesions') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav_adhesions') }}</h1>
+<table>
+  <thead><tr><th>{{ t('tracking_code') }}</th><th>{{ t('acronym') }}</th><th>{{ t('name') }}</th><th>{{ t('date') }}</th><th>{{ t('status') }}</th></tr></thead>
+  <tbody>
+  {% for d in items %}
+    <tr><td><a href="/adhesions/{{ d.id }}">{{ d.code }}</a></td><td>{{ d.sigle }}</td><td>{{ d.nom }}</td>
+      <td>{{ d.created_at.strftime('%Y-%m-%d') }}</td><td>{{ t('adh_' ~ d.etat) }}{% if d.avis_ca %} · CA : {{ d.avis_ca }}{% endif %}</td></tr>
+  {% else %}<tr><td colspan="5" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endblock %}

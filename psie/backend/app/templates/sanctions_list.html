@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_sanctions') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav_sanctions') }}</h1>
+<table>
+  <thead><tr><th>{{ t('date') }}</th><th>{{ t('organisation') }}</th><th>{{ t('g_sanction') }}</th><th>{{ t('decision_ref') }}</th><th>{{ t('status') }}</th><th></th></tr></thead>
+  <tbody>
+  {% for s in items %}
+    <tr id="s{{ s.id }}"><td>{{ s.date_decision }}</td><td>{{ s.faitiere.sigle }}</td><td>{{ s.type_label }}</td><td>{{ s.reference }}</td>
+      <td>{% if s.levee_le %}{{ t('g_lifted') }} {{ s.levee_le }}{% else %}{{ t('g_in_force') }}{% endif %}{% if s.notifiee_le %} · {{ t('g_notified') }}{% endif %}</td>
+      <td><a href="/sanctions/{{ s.id }}/notification.pdf" target="_blank">PDF</a>
+        {% if user.can_manage_members %}
+          {% if not s.notifiee_le %}<form method="post" action="/sanctions/{{ s.id }}/notifier" class="inline"><button class="link">{{ t('g_mark_notified') }}</button></form>{% endif %}
+          {% if s.type == 'suspension' and not s.levee_le and s.faitiere.statut == 'suspendu' %}
+          <form method="post" action="/sanctions/{{ s.id }}/lever" class="inline"><input name="motif" placeholder="{{ t('reason') }}" required><button class="link">{{ t('g_lift') }}</button></form>{% endif %}
+        {% endif %}</td></tr>
+  {% else %}<tr><td colspan="6" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% if user.can_manage_members %}
+<section class="card">
+  <h2>{{ t('g_new_sanction') }}</h2>
+  <p class="muted">{{ t('g_sanction_help') }}</p>
+  <form method="post" action="/sanctions" class="grid">
+    <label>{{ t('organisation') }}<select name="faitiere_id">{% for f in faitieres %}<option value="{{ f.id }}">{{ f.sigle }}</option>{% endfor %}</select></label>
+    <label>{{ t('g_sanction') }}<select name="type">{% for k, v in types.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+    <label>{{ t('decision_ref') }}<input name="reference" required></label>
+    <label>{{ t('date') }}<input type="date" name="date_decision"></label>
+    <label>{{ t('reason') }}<textarea name="motif" rows="2" required></textarea></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

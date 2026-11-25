@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ t('f_other_receipts') }}{% endblock %}
+{% block content %}
+<h1>{{ t('f_other_receipts') }}</h1>
+<p class="muted">{{ t('f_other_receipts_help') }}</p>
+<table>
+  <thead><tr><th>{{ t('date') }}</th><th>{{ t('call_title') }}</th><th>{{ t('category') }}</th><th>{{ t('f_source') }}</th><th>{{ t('amount') }}</th></tr></thead>
+  <tbody>
+  {% for r in items %}<tr><td>{{ r.date_recette }}</td><td>{{ r.libelle }}</td><td>{{ r.categorie_label }}</td><td>{{ r.source or '—' }}</td><td>{{ fcfa(r.montant) }}</td></tr>
+  {% else %}<tr><td colspan="5" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% if user.can_write_finances %}
+<section class="card"><h2>{{ t('add') }}</h2>
+  <form method="post" action="/recettes" class="grid">
+    <label>{{ t('call_title') }}<input name="libelle" required></label>
+    <label>{{ t('category') }}<select name="categorie">{% for k, v in categories.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+    <label>{{ t('f_source') }}<input name="source"></label>
+    <label>{{ t('amount') }} (FCFA)<input type="number" name="montant" min="1" required></label>
+    <label>{{ t('date') }}<input type="date" name="date_recette" required></label>
+    <label>{{ t('reference') }}<input name="reference"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form></section>
+{% endif %}
+{% endblock %}

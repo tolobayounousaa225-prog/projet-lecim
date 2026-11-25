@@ -1,0 +1,5 @@
+# Utilisé seulement avec le profil « caddy » (serveur dédié). HTTPS automatique (Let's Encrypt).
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy api:8000
+}

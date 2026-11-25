@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ d.code }}{% endblock %}
+{% block content %}
+<div class="row"><h1>{{ d.sigle }} <small>{{ d.code }}</small></h1><span class="badge">{{ t('adh_' ~ d.etat) }}</span></div>
+<section class="card">
+  <dl>
+    <dt>{{ t('name') }}</dt><dd>{{ d.nom }}</dd>
+    <dt>{{ t('f_rep_name') }}</dt><dd>{{ d.representant_nom }}{% if d.representant_fonction %} ({{ d.representant_fonction }}){% endif %}</dd>
+    <dt>{{ t('email') }}</dt><dd>{{ d.email }}</dd>
+    <dt>{{ t('phone') }}</dt><dd>{{ d.telephone }}</dd>
+    <dt>{{ t('seat') }}</dt><dd>{{ d.siege or '—' }}</dd>
+    <dt>{{ t('legal_status') }}</dt><dd>{{ d.statut_juridique or '—' }}</dd>
+    <dt>{{ t('created_on') }}</dt><dd>{{ d.date_creation or '—' }}</dd>
+    <dt>{{ t('f_nb_structures') }}</dt><dd>{{ d.nb_structures if d.nb_structures is not none else '—' }}</dd>
+    {% if d.message %}<dt>{{ t('f_message') }}</dt><dd>{{ d.message }}</dd>{% endif %}
+    {% if d.notes_examen %}<dt>{{ t('notes') }}</dt><dd>{{ d.notes_examen }}</dd>{% endif %}
+    <dt>CA</dt><dd>{{ d.avis_ca or '—' }}{% if d.avis_ca_motif %} — {{ d.avis_ca_motif }}{% endif %}</dd>
+    {% if d.decision_reference %}<dt>{{ t('decision_ref') }}</dt><dd>{{ d.decision_reference }} ({{ d.decision_date }})</dd>{% endif %}
+    {% if d.faitiere_id %}<dt>{{ t('nav_members') }}</dt><dd><a href="/faitieres/{{ d.faitiere_id }}">{{ d.sigle }}</a>
+      · <a href="/adhesions/{{ d.id }}/certificat.pdf" target="_blank">{{ t('certificate') }}</a></dd>{% endif %}
+  </dl>
+</section>
+
+{% if d.is_open %}
+{% if user.can_manage_members %}
+<section class="card"><h2>{{ t('adh_en_examen') }}</h2>
+  <form method="post" action="/adhesions/{{ d.id }}/examen" class="stack">
+    <label>{{ t('notes') }}<textarea name="notes" rows="2">{{ d.notes_examen or '' }}</textarea></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form></section>
+{% endif %}
+{% if user.role in ('administrateur_ca', 'den', 'secretaire') %}
+<section class="card"><h2>Avis du CA</h2>
+  <form method="post" action="/adhesions/{{ d.id }}/avis" class="grid">
+    <label>Avis<select name="avis"><option value="favorable">Favorable</option><option value="defavorable">Défavorable</option></select></label>
+    <label>{{ t('reason') }}<input name="motif"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form></section>
+{% endif %}
+{% if user.can_manage_members %}
+<section class="card"><h2>Décision de l'Assemblée Générale</h2>
+  <form method="post" action="/adhesions/{{ d.id }}/decision" class="grid">
+    <label>Décision<select name="decision"><option value="accepter">Accepter</option><option value="refuser">Refuser</option></select></label>
+    <label>{{ t('decision_ref') }}<input name="reference" required></label>
+    <label>{{ t('date') }}<input type="date" name="date_decision"></label>
+    <label>{{ t('adhesion_fee') }} (FCFA, facultatif)<input type="number" name="droit_adhesion" min="1"></label>
+    <label>{{ t('reason') }}<input name="motif"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form></section>
+{% endif %}
+{% endif %}
+<p><a href="/adhesions">{{ t('back') }}</a></p>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ t('join_title') }}{% endblock %}
+{% block content %}
+<h1>{{ t('join_title') }}</h1>
+<section class="card"><p>{{ t('join_conditions') }}</p></section>
+<form method="post" action="/adhesion" class="card stack">
+  <div class="grid">
+    <label>{{ t('f_org_name') }}<input name="nom" required maxlength="255"></label>
+    <label>{{ t('acronym') }}<input name="sigle" required maxlength="50"></label>
+    <label>{{ t('f_rep_name') }}<input name="representant_nom" required maxlength="255"></label>
+    <label>{{ t('f_rep_function') }}<input name="representant_fonction" maxlength="255"></label>
+    <label>{{ t('email') }}<input type="email" name="email" required></label>
+    <label>{{ t('phone') }}<input name="telephone" required inputmode="tel"></label>
+    <label>{{ t('seat') }}<input name="siege" maxlength="255"></label>
+    <label>{{ t('legal_status') }}<input name="statut_juridique" maxlength="255"></label>
+    <label>{{ t('created_on') }}<input type="date" name="date_creation"></label>
+    <label>{{ t('f_nb_structures') }}<input type="number" name="nb_structures" min="0"></label>
+  </div>
+  <label>{{ t('f_message') }}<textarea name="message" rows="3" maxlength="3000"></textarea></label>
+  <div class="hp" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
+  <label class="check"><input type="checkbox" name="accepte_statuts" required> {{ t('f_accept_statutes') }}</label>
+  <label class="check"><input type="checkbox" name="accepte_cotisations" required> {{ t('f_accept_dues') }}</label>
+  <div><button class="btn">{{ t('f_submit') }}</button> <a href="/adhesion/suivi">{{ t('track_title') }}</a></div>
+</form>
+{% endblock %}

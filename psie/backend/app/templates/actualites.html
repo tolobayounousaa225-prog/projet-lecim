@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ t('news_title') }}{% endblock %}
+{% block content %}
+<h1>{{ t('news_title') }}</h1>
+{% for n in items %}
+<article class="card">
+  <h2>{{ n.titre(lang) }}</h2>
+  <p class="muted">{{ n.date_publication }}</p>
+  <p>{{ n.contenu(lang)[:240] }}{% if n.contenu(lang)|length > 240 %}…{% endif %}</p>
+  <a href="/actualites/{{ n.id }}">{{ t('read_more') }}</a>
+</article>
+{% else %}<p class="muted">{{ t('news_none') }}</p>{% endfor %}
+{% endblock %}

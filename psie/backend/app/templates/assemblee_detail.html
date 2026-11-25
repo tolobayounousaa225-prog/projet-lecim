@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ a.type_label }}{% endblock %}
+{% block content %}
+{% set manager = user.can_manage_members %}
+<div class="row"><h1>{{ a.type_label }} <small>{{ a.date_assemblee }}</small></h1><span class="badge">{{ a.statut_label }}</span></div>
+
+<section class="card">
+  <dl>
+    <dt>{{ t('g_place') }}</dt><dd>{{ a.lieu }}{% if a.heure %} · {{ a.heure }}{% endif %}</dd>
+    <dt>{{ t('g_vote_mode') }}</dt><dd>{{ modes[a.mode_vote] }}</dd>
+    {% if a.demande_age %}<dt>{{ t('g_age_request') }}</dt><dd>{{ a.demande_age }}</dd>{% endif %}
+    <dt>{{ t('g_agenda') }}</dt><dd class="prose">{{ a.ordre_du_jour }}</dd>
+    {% if a.requires_ca_opinion %}<dt>{{ t('g_ca_opinion') }}</dt><dd>{{ a.avis_ca_reference or '—' }}</dd>{% endif %}
+    {% if a.convocation_at %}<dt>{{ t('g_convened') }}</dt><dd>{{ a.convocation_at.strftime('%Y-%m-%d') }} ({{ a.convocation_envoyes }} e-mail)</dd>{% endif %}
+  </dl>
+  {% if a.statut != 'preparation' %}<p><a href="/assemblees/{{ a.id }}/convocation.pdf" target="_blank">{{ t('g_convocation_pdf') }}</a></p>{% endif %}
+</section>
+
+{% if a.statut == 'preparation' %}
+<section class="card"><h2>{{ t('g_prepare') }}</h2>
+  {% if a.requires_ca_opinion and user.role in ('administrateur_ca', 'den', 'secretaire') %}
+  <form method="post" action="/assemblees/{{ a.id }}/avis-ca" class="grid">
+    <label>{{ t('g_ca_opinion') }}<input name="reference" required value="{{ a.avis_ca_reference or '' }}"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+  {% endif %}
+  {% if manager %}
+  <form method="post" action="/assemblees/{{ a.id }}/convoquer" class="inline"><button class="btn">{{ t('g_convene') }}</button></form>
+  {% endif %}
+</section>
+{% elif a.statut == 'convoquee' and manager %}
+<section class="card"><form method="post" action="/assemblees/{{ a.id }}/ouvrir" class="inline"><button class="btn">{{ t('g_open_session') }}</button></form></section>
+{% endif %}
+
+{% if a.presences %}
+<section class="card">
+  <h2>{{ t('g_attendance') }}</h2>
+  <p class="{{ 'ok' if voting.quorum else 'alert' }}">
+    {{ t('g_quorum') }} : {{ voting.presents }} / {{ voting.base }} —
+    {{ t('g_quorum_reached') if voting.quorum else t('g_quorum_missing') }}</p>
+  <form method="post" action="/assemblees/{{ a.id }}/emargement">
+    <table>
+      <thead><tr><th></th><th>{{ t('full_name') }}</th><th>{{ t('organ') }}</th><th>{{ t('organisation') }}</th>{% if dues %}<th>{{ t('nav_dues') }}</th>{% endif %}</tr></thead>
+      <tbody>
+      {% for p in a.presences %}
+        <tr><td><input type="checkbox" name="present" value="{{ p.id }}" {% if p.present %}checked{% endif %} {% if a.statut != 'en_seance' or not manager %}disabled{% endif %}></td>
+          <td>{{ p.nom }}</td><td>{{ lbl('organe', p.organe) }}</td><td>{{ p.faitiere.sigle if p.faitiere else '—' }}</td>
+          {% if dues %}<td>{% if p.faitiere_id and dues.get(p.faitiere_id) %}<span class="badge {{ dues[p.faitiere_id] }}">{{ t('st_' ~ dues[p.faitiere_id]) }}</span>{% endif %}</td>{% endif %}</tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% if a.statut == 'en_seance' and manager %}<p><button class="btn">{{ t('save') }}</button></p>{% endif %}
+  </form>
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>{{ t('g_resolutions') }}</h2>
+  {% for r in a.resolutions %}
+  <article class="card">
+    <h3>n°{{ r.numero }} — {{ r.intitule }} {% if r.regle == 'dissolution' %}<span class="badge radie">4/5</span>{% endif %}</h3>
+    {% if r.texte %}<p class="prose">{{ r.texte }}</p>{% endif %}
+    {% if r.statut == 'close' %}
+      <p><span class="badge {{ 'actif' if r.adoptee else 'radie' }}">{{ t('g_adopted') if r.adoptee else t('g_rejected') }}</span>
+        {% if r.mode_adoption == 'consensus' %}{{ t('g_consensus') }}{% else %}{{ r.pour }} {{ t('g_for') }} · {{ r.contre }} {{ t('g_against') }} · {{ r.abstention }} {{ t('g_abstain') }} / {{ r.presents }}{% endif %}</p>
+    {% elif a.statut == 'en_seance' and manager %}
+      {% if voting.quorum %}
+      <form method="post" action="/assemblees/{{ a.id }}/resolutions/{{ r.id }}/votes">
+        <table><tbody>
+        {% for key, label in voting.units.items() %}
+          {% set current = (r.votes | selectattr('unite', 'equalto', key) | list | first) %}
+          <tr><td>{{ label }}</td><td><select name="vote_{{ key }}"><option value="">—</option>
+            {% for c, cl in vote_choix.items() %}<option value="{{ c }}" {% if current and current.choix == c %}selected{% endif %}>{{ cl }}</option>{% endfor %}</select></td></tr>
+        {% endfor %}
+        </tbody></table>
+        <button class="btn">{{ t('g_save_votes') }}</button>
+      </form>
+      <form method="post" action="/assemblees/{{ a.id }}/resolutions/{{ r.id }}/cloturer" class="row" style="margin-top:8px">
+        <button class="btn">{{ t('g_close_vote') }}</button>
+        {% if r.regle != 'dissolution' %}<label class="check"><input type="checkbox" name="consensus" value="1"> {{ t('g_consensus') }}</label>{% endif %}
+      </form>
+      {% else %}<p class="alert">{{ t('g_quorum_missing') }}</p>{% endif %}
+    {% endif %}
+  </article>
+  {% else %}<p class="muted">{{ t('none') }}</p>{% endfor %}
+  {% if manager and a.statut in ('preparation', 'convoquee', 'en_seance') %}
+  <form method="post" action="/assemblees/{{ a.id }}/resolutions" class="grid">
+    <label>{{ t('call_title') }}<input name="intitule" required></label>
+    <label>{{ t('g_text') }}<input name="texte"></label>
+    <label>{{ t('g_rule') }}<select name="regle"><option value="majorite">{{ t('g_majority') }}</option>{% if a.type == 'AGE' %}<option value="dissolution">{{ t('g_dissolution') }}</option>{% endif %}</select></label>
+    <div><button class="btn">{{ t('add') }}</button></div>
+  </form>
+  {% endif %}
+</section>
+
+{% if a.statut == 'en_seance' and manager %}
+<section class="card"><h2>{{ t('g_close_assembly') }}</h2>
+  <form method="post" action="/assemblees/{{ a.id }}/cloturer" class="grid">
+    <label>{{ t('g_president') }}<input name="president" required></label>
+    <label>{{ t('g_assessor') }} 1<input name="assesseur1" required></label>
+    <label>{{ t('g_assessor') }} 2<input name="assesseur2" required></label>
+    <div><button class="btn">{{ t('g_close_assembly') }}</button></div>
+  </form></section>
+{% endif %}
+{% if a.statut == 'close' %}<p><a class="btn" href="/assemblees/{{ a.id }}/pv.pdf" target="_blank">{{ t('g_minutes') }}</a></p>{% endif %}
+<p><a href="/assemblees">{{ t('back') }}</a></p>
+{% endblock %}
