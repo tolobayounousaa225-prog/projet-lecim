@@ -1215,7 +1215,20 @@ section { padding: 80px 0; }
   box-shadow: var(--shadow);
 }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 18px; }
 .form-group { margin-bottom: 18px; }
+
+.form-section-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.98rem; font-weight: 700; color: var(--green-dark);
+  margin: 0 0 18px; padding-bottom: 10px; border-bottom: 2px solid var(--border);
+}
+.form-section-title:not(:first-child) { margin-top: 34px; }
+.form-section-badge {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--green);
+  color: var(--white); font-size: 0.8rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
 .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text-dark); }
 .form-group input, .form-group select, .form-group textarea {
   width: 100%;
@@ -1756,7 +1769,7 @@ section { padding: 80px 0; }
   .missions-grid { grid-template-columns: 1fr; }
   .hero-stats { grid-template-columns: 1fr 1fr; }
   .org-grid, .values-grid, .opm-grid, .vision-mission-grid, .temoignages-grid { grid-template-columns: 1fr; }
-  .form-row { grid-template-columns: 1fr; }
+  .form-row, .form-row-3 { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
   .cta-band { flex-direction: column; text-align: center; }
 }
