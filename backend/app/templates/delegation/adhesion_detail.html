@@ -1,0 +1,55 @@
+{% extends "delegation/base.html" %}
+{% block title %}Demande d'adhésion — {{ demande.nom_etablissement }}{% endblock %}
+{% block content %}
+<h1 style="margin-bottom:4px;">{{ demande.nom_etablissement }}</h1>
+<p style="color:var(--text-muted); margin-top:0;">Soumise le {{ demande.created_at.strftime("%d/%m/%Y à %H:%M") }}</p>
+
+<div class="form-card" style="margin-bottom:20px;">
+  <h3 style="margin-top:0;">Informations soumises par le demandeur</h3>
+  <table>
+    <tbody>
+      <tr><th style="width:220px;">Nom du directeur</th><td>{{ demande.nom_directeur }}</td></tr>
+      <tr><th>Localité</th><td>{{ demande.localite }}</td></tr>
+      <tr><th>Téléphone</th><td>{{ demande.telephone }}</td></tr>
+      {% if demande.email %}<tr><th>E-mail</th><td>{{ demande.email }}</td></tr>{% endif %}
+      {% if demande.nombre_classes %}<tr><th>Nombre de classes</th><td>{{ demande.nombre_classes }}</td></tr>{% endif %}
+      {% if demande.nombre_garcons or demande.nombre_filles %}<tr><th>Effectif estimé</th><td>{{ demande.nombre_garcons or 0 }} garçons, {{ demande.nombre_filles or 0 }} filles</td></tr>{% endif %}
+      {% if demande.message %}<tr><th>Message</th><td>{{ demande.message }}</td></tr>{% endif %}
+    </tbody>
+  </table>
+</div>
+
+{% if demande.delegation_avis %}
+<div class="form-card">
+  <h3 style="margin-top:0;">Votre avis</h3>
+  <p>
+    {% if demande.delegation_avis == "favorable" %}<span class="pill pill-green">Avis favorable</span> — transmis au Bureau Exécutif National pour décision finale.
+    {% else %}<span class="pill pill-red">Avis défavorable</span> — cette demande est rejetée.{% endif %}
+  </p>
+  {% if demande.delegation_notes %}<p style="color:var(--text-muted);">{{ demande.delegation_notes }}</p>{% endif %}
+</div>
+{% else %}
+<div class="form-card">
+  <h3 style="margin-top:0;">Donner votre avis</h3>
+  <p class="form-note" style="margin-top:0;">
+    Un avis défavorable rejette directement la demande. Un avis favorable la transmet au
+    Bureau Exécutif National, qui prendra la décision finale.
+  </p>
+  <form method="post" action="/delegation/adhesions/{{ demande.id }}/avis">
+    <div class="form-group">
+      <label for="avis">Votre avis</label>
+      <select id="avis" name="avis" required>
+        <option value="favorable">Favorable</option>
+        <option value="defavorable">Défavorable</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="notes">Notes (optionnel)</label>
+      <textarea id="notes" name="notes" rows="4"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer mon avis</button>
+    <a href="/delegation/adhesions" class="btn btn-outline">Retour à la liste</a>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

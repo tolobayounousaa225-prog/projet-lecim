@@ -187,7 +187,14 @@
           </div>
 
           <div class="form-group">
-            <label for="ad-localite">المنطقة / الجهة *</label>
+            <label for="ad-delegation">الوفد الجهوي *</label>
+            <select id="ad-delegation" required>
+              <option value="">— اختر وفدكم —</option>
+            </select>
+            <p style="font-size:0.82rem; color:var(--text-muted); margin:4px 0 0;">سيُعرض طلبكم أولاً على رئيس هذا الوفد.</p>
+          </div>
+          <div class="form-group">
+            <label for="ad-localite">الموقع الدقيق (الحي، البلدية) *</label>
             <input type="text" id="ad-localite" required>
           </div>
           <div class="form-row">
@@ -259,6 +266,7 @@
               <strong>تم إرسال الطلب بنجاح</strong>
               <p style="margin:6px 0 0;">رمز الطلب : <strong id="adhesion-code"></strong></p>
               <p style="margin:6px 0 0; color:var(--text-muted);">احتفظوا بهذا الرمز وحمّلوا الوصل أدناه. توجّهوا بعد ذلك إلى مقر LECIM بهذا المستند لإجراء مقابلة التحقق.</p>
+              <p id="adhesion-no-delegation-note" style="display:none; margin:10px 0 0; padding:10px 12px; background:#fdf1e0; color:#8a5a10; border-radius:10px; font-size:0.88rem;">الوفد الجهوي المختار ليس له حالياً مسؤول نشط — يُرجى التواصل مباشرة مع رئيس الرابطة لمتابعة ملفكم.</p>
               <a id="adhesion-recepisse-link" href="#" target="_blank" class="btn btn-primary" style="margin-top:14px; display:inline-block;">تحميل الوصل</a>
 
               <div id="adhesion-wave-payment" style="display:none; margin-top:20px; padding-top:18px; border-top:1px solid var(--border);">

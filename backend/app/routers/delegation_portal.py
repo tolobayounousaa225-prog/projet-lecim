@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from .. import audit, models, storage
 from ..database import get_db
 from ..deps import (
+    require_delegation_adhesions_web,
     require_delegation_annonces_web,
     require_delegation_cotisations_web,
     require_delegation_documents_web,
@@ -20,7 +21,7 @@ from ..deps import (
     require_delegation_reunions_web,
 )
 from ..finances_constants import cotisation_rule
-from ..notifications import notify
+from ..notifications import notify, notify_adhesion_examinateurs
 from ..reminders import send_reminder_for_reunion
 from ..security import hash_password, password_policy_error, verify_password
 from ..security_utils import safe_content_disposition
@@ -519,6 +520,88 @@ def delegation_etablissement_detail(
         "delegation/etablissement_detail.html",
         {"user": user, "delegation": user.delegation, "etablissement": etablissement, "active": "etablissements"},
     )
+
+
+# ---------- Avis sur les demandes d'adhésion de la région ----------
+
+@router.get("/delegation/adhesions")
+def delegation_adhesions_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_adhesions_web),
+):
+    items = (
+        db.query(models.AdhesionRequest)
+        .filter(models.AdhesionRequest.delegation_id == user.delegation_id)
+        .order_by(models.AdhesionRequest.created_at.desc())
+        .all()
+    )
+    return templates.TemplateResponse(
+        request,
+        "delegation/adhesions_list.html",
+        {"user": user, "delegation": user.delegation, "items": items, "active": "adhesions"},
+    )
+
+
+@router.get("/delegation/adhesions/{demande_id}")
+def delegation_adhesion_detail(
+    demande_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_adhesions_web),
+):
+    demande = db.get(models.AdhesionRequest, demande_id)
+    if not demande or demande.delegation_id != user.delegation_id:
+        return RedirectResponse(url="/delegation/adhesions", status_code=status.HTTP_303_SEE_OTHER)
+    return templates.TemplateResponse(
+        request,
+        "delegation/adhesion_detail.html",
+        {"user": user, "delegation": user.delegation, "demande": demande, "active": "adhesions"},
+    )
+
+
+@router.post("/delegation/adhesions/{demande_id}/avis")
+def delegation_adhesion_avis(
+    demande_id: int,
+    avis: str = Form(...),
+    notes: str = Form(""),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_delegation_adhesions_web),
+):
+    demande = db.get(models.AdhesionRequest, demande_id)
+    if (
+        not demande
+        or demande.delegation_id != user.delegation_id
+        or demande.delegation_avis is not None
+        or avis not in ("favorable", "defavorable")
+    ):
+        return RedirectResponse(url="/delegation/adhesions", status_code=status.HTTP_303_SEE_OTHER)
+
+    demande.delegation_avis = avis
+    demande.delegation_notes = notes or None
+    demande.delegation_avis_par_id = user.id
+    demande.delegation_avis_at = datetime.datetime.utcnow()
+
+    if avis == "defavorable":
+        # La délégation est l'autorité de premier filtre sur sa propre région :
+        # un avis défavorable rejette directement la demande, sans passer par
+        # le BEN (contrairement à un avis favorable, qui laisse la décision
+        # finale au secrétariat BEN).
+        demande.etat_demande = "rejetee"
+    else:
+        notify_adhesion_examinateurs(
+            db,
+            f"Avis favorable de la délégation {user.delegation.nom if user.delegation else ''} sur la "
+            f"demande d'adhésion de {demande.nom_etablissement} — à examiner.",
+            link=f"/admin/adhesion-requests/{demande.id}",
+        )
+
+    audit.log(
+        db, user, "update", "Demande d'adhésion", demande.id,
+        f"A donné un avis {avis} sur la demande de {demande.nom_etablissement}",
+    )
+    db.commit()
+    return RedirectResponse(url=f"/delegation/adhesions/{demande_id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
 # ---------- Rapport d'activité de la délégation (PDF, en libre-service) ----------

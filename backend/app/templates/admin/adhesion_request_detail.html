@@ -7,6 +7,26 @@
 </p>
 
 <div class="form-card" style="margin-bottom:20px;">
+  <h3 style="margin-top:0;">Parcours délégation régionale</h3>
+  {% if item.delegation %}
+  <table>
+    <tbody>
+      <tr><th style="width:220px;">Délégation choisie</th><td>{{ item.delegation.nom }}</td></tr>
+      <tr><th>Avis</th><td>
+        {% if item.delegation_avis == "favorable" %}<span class="pill pill-green">{{ avis_labels.get(item.delegation_avis) }}</span>
+        {% elif item.delegation_avis == "defavorable" %}<span class="pill pill-red">{{ avis_labels.get(item.delegation_avis) }}</span>
+        {% else %}<span class="pill pill-gold">En attente de l'avis de la délégation</span>{% endif %}
+      </td></tr>
+      {% if item.delegation_notes %}<tr><th>Notes de la délégation</th><td>{{ item.delegation_notes }}</td></tr>{% endif %}
+      {% if item.delegation_avis_par %}<tr><th>Donné par</th><td>{{ item.delegation_avis_par.full_name }} — {{ item.delegation_avis_at.strftime("%d/%m/%Y à %H:%M") }}</td></tr>{% endif %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="form-note" style="margin:0;">Aucune délégation sélectionnée par le demandeur (demande antérieure à cette étape).</p>
+  {% endif %}
+</div>
+
+<div class="form-card" style="margin-bottom:20px;">
   <h3 style="margin-top:0;">Informations soumises par le demandeur</h3>
   <table>
     <tbody>
@@ -37,12 +57,22 @@
   {% endif %}
 </div>
 
+{% if item.delegation_avis == "defavorable" %}
+<div class="form-card">
+  <h3 style="margin-top:0;">Examen et validation</h3>
+  <div class="error-box">
+    Cette demande a été rejetée par la délégation « {{ item.delegation.nom if item.delegation else '-' }} »
+    — elle n'est plus modifiable par le BEN.
+  </div>
+</div>
+{% else %}
 <div class="form-card">
   <h3 style="margin-top:0;">Examen et validation</h3>
   <p class="form-note" style="margin-top:0;">
     À remplir à l'issue de l'entretien avec le demandeur au siège de la LECIM. Une fois
-    l'état passé à « Validée », un certificat signé par le Président est généré et peut
-    être imprimé et remis au demandeur.
+    l'état passé à « Validée », l'établissement est créé automatiquement (rattaché à la
+    délégation choisie), un certificat signé par le Président est généré, et le demandeur
+    est invité par e-mail à se présenter au siège.
   </p>
   <form method="post" action="/admin/adhesion-requests/{{ item.id }}/examen">
     <div class="form-group">
@@ -127,4 +157,5 @@
     <a href="/admin/adhesion-requests" class="btn btn-outline">Retour à la liste</a>
   </form>
 </div>
+{% endif %}
 {% endblock %}

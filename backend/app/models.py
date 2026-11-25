@@ -444,6 +444,23 @@ class AdhesionRequest(Base):
     nombre_filles: Mapped[int | None] = mapped_column(Integer, nullable=True)
     message: Mapped[str] = mapped_column(Text, nullable=True)
 
+    # Délégation régionale choisie par le demandeur — route la demande vers son
+    # président pour un premier avis avant l'examen BEN. Nullable pour les
+    # demandes historiques antérieures à cette étape (jamais renseigné à
+    # l'époque) ; exigé côté formulaire pour toute nouvelle soumission.
+    delegation_id: Mapped[int | None] = mapped_column(ForeignKey("delegations.id"), nullable=True)
+
+    # --- Renseigné par le président de la délégation choisie (avant le BEN) ---
+    # Un avis défavorable rejette définitivement la demande sans passer par le
+    # BEN (délégation = autorité de premier filtre sur sa propre région). Un
+    # avis favorable (ou l'absence de délégation avec un compte actif) laisse
+    # la décision finale au secrétariat BEN, qui voit toujours cet avis et ces
+    # notes avant de statuer.
+    delegation_avis: Mapped[str | None] = mapped_column(String(20), nullable=True)  # favorable | defavorable
+    delegation_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    delegation_avis_par_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    delegation_avis_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+
     # --- Renseignés par le secrétariat lors de l'examen / entretien ---
     etat_demande: Mapped[str] = mapped_column(String(20), default="nouvelle")  # nouvelle | en_cours | validee | rejetee
     agree: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
@@ -454,17 +471,28 @@ class AdhesionRequest(Base):
     examinee_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     valide_par_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     valide_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+    # Renseigné automatiquement si la validation BEN crée directement
+    # l'établissement (plutôt que de laisser les finances ressaisir la fiche
+    # à la main) — voir generer_etablissement_depuis_adhesion().
+    etablissement_cree_id: Mapped[int | None] = mapped_column(ForeignKey("etablissements.id", ondelete="SET NULL"), nullable=True)
 
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
 
+    delegation: Mapped["Delegation | None"] = relationship(foreign_keys=[delegation_id])
+    delegation_avis_par: Mapped["User | None"] = relationship(foreign_keys=[delegation_avis_par_id])
     examinee_par: Mapped["User | None"] = relationship(foreign_keys=[examinee_par_id])
     valide_par: Mapped["User | None"] = relationship(foreign_keys=[valide_par_id])
+    etablissement_cree: Mapped["Etablissement | None"] = relationship(foreign_keys=[etablissement_cree_id])
 
     @property
     def etat_label(self) -> str:
         return ADHESION_ETATS.get(self.etat_demande, self.etat_demande)
+
+    @property
+    def delegation_avis_label(self) -> str | None:
+        return ADHESION_AVIS.get(self.delegation_avis) if self.delegation_avis else None
 
 
 ADHESION_ETATS = {
@@ -472,6 +500,10 @@ ADHESION_ETATS = {
     "en_cours": "Entretien en cours",
     "validee": "Validée",
     "rejetee": "Rejetée",
+}
+ADHESION_AVIS = {
+    "favorable": "Avis favorable",
+    "defavorable": "Avis défavorable",
 }
 ADHESION_CYCLES = {
     "maternelle": "Maternelle",

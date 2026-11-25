@@ -1,0 +1,31 @@
+{% extends "delegation/base.html" %}
+{% block title %}Demandes d'adhésion{% endblock %}
+{% block content %}
+<h1 style="margin-bottom:4px;">Demandes d'adhésion de la région</h1>
+<p style="color:var(--text-muted); margin-top:0;">Donnez votre avis sur chaque demande avant son examen par le Bureau Exécutif National. Un avis défavorable rejette directement la demande.</p>
+
+{% if items %}
+<table style="margin-top:20px;">
+  <thead><tr><th>Établissement</th><th>Localité</th><th>Soumise le</th><th>Votre avis</th><th></th></tr></thead>
+  <tbody>
+    {% for d in items %}
+    <tr>
+      <td>{{ d.nom_etablissement }}</td>
+      <td>{{ d.localite }}</td>
+      <td>{{ d.created_at.strftime("%d/%m/%Y") }}</td>
+      <td>
+        {% if d.delegation_avis == "favorable" %}<span class="pill pill-green">Favorable</span>
+        {% elif d.delegation_avis == "defavorable" %}<span class="pill pill-red">Défavorable</span>
+        {% else %}<span class="pill pill-gold">En attente</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/delegation/adhesions/{{ d.id }}" class="btn btn-outline btn-sm">{% if d.delegation_avis %}Voir{% else %}Donner un avis{% endif %}</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucune demande d'adhésion pour cette délégation pour le moment.</div>
+{% endif %}
+{% endblock %}

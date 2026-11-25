@@ -1673,6 +1673,22 @@ function initAdhesionForm() {
   var successBox = document.getElementById("adhesion-success");
   var codeEl = document.getElementById("adhesion-code");
   var recepisseLink = document.getElementById("adhesion-recepisse-link");
+  var delegationSelect = document.getElementById("ad-delegation");
+  var noDelegationNote = document.getElementById("adhesion-no-delegation-note");
+
+  if (delegationSelect) {
+    fetch(API_BASE + "/api/delegations")
+      .then(function (res) { return res.json(); })
+      .then(function (delegations) {
+        delegations.forEach(function (d) {
+          var opt = document.createElement("option");
+          opt.value = d.id;
+          opt.textContent = d.nom + (d.region ? " — " + d.region : "");
+          delegationSelect.appendChild(opt);
+        });
+      })
+      .catch(function () {});
+  }
 
   var intOrNull = function (selector) {
     var v = valueOf(form, selector);
@@ -1685,6 +1701,7 @@ function initAdhesionForm() {
     var original = btn.textContent;
 
     var payload = {
+      delegation_id: intOrNull("#ad-delegation"),
       nom_etablissement: valueOf(form, "#ad-nom-etablissement"),
       nom_directeur: valueOf(form, "#ad-nom-directeur"),
       cycle: valueOf(form, "#ad-cycle") || null,
@@ -1718,6 +1735,7 @@ function initAdhesionForm() {
         form.style.display = "none";
         if (codeEl) codeEl.textContent = data.code_demande;
         if (recepisseLink) recepisseLink.href = API_BASE + "/api/adhesion-requests/" + data.code_demande + "/recepisse.pdf";
+        if (noDelegationNote) noDelegationNote.style.display = data.delegation_compte_actif ? "none" : "block";
         if (successBox) successBox.style.display = "block";
       })
       .catch(function () {

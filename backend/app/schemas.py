@@ -123,6 +123,7 @@ class ContactOut(BaseModel):
 
 
 class AdhesionRequestCreate(BaseModel):
+    delegation_id: int
     nom_etablissement: str = Field(min_length=2, max_length=255)
     nom_directeur: str = Field(min_length=2, max_length=255)
     cycle: str | None = None
@@ -144,6 +145,8 @@ class AdhesionRequestOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     code_demande: str | None
+    delegation_id: int | None
+    delegation_compte_actif: bool
     nom_etablissement: str
     nom_directeur: str
     cycle: str | None

@@ -233,6 +233,7 @@ DELEGATION_MODULES: dict[str, str] = {
     "cotisations": "Cotisations des établissements (lecture seule)",
     "annonces": "Annonces vers les établissements",
     "etablissements": "Établissements de la région",
+    "adhesions": "Avis sur les demandes d'adhésion",
     "rapport": "Rapport d'activité (export PDF)",
     "documents": "Documents partagés de la délégation",
     "messagerie": "Messagerie avec le BEN national",

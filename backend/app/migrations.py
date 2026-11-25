@@ -531,6 +531,33 @@ def run_startup_migrations() -> None:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE cartes_membres ADD COLUMN lieu_naissance VARCHAR(255)"))
 
+    if inspector.has_table("adhesion_requests"):
+        adhesion_requests_columns = {c["name"] for c in inspector.get_columns("adhesion_requests")}
+        if "delegation_id" not in adhesion_requests_columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE adhesion_requests ADD COLUMN delegation_id INTEGER REFERENCES delegations(id)"))
+        if "delegation_avis" not in adhesion_requests_columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE adhesion_requests ADD COLUMN delegation_avis VARCHAR(20)"))
+        if "delegation_notes" not in adhesion_requests_columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE adhesion_requests ADD COLUMN delegation_notes TEXT"))
+        if "delegation_avis_par_id" not in adhesion_requests_columns:
+            with engine.begin() as conn:
+                conn.execute(text(
+                    "ALTER TABLE adhesion_requests ADD COLUMN delegation_avis_par_id INTEGER "
+                    "REFERENCES users(id) ON DELETE SET NULL"
+                ))
+        if "delegation_avis_at" not in adhesion_requests_columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE adhesion_requests ADD COLUMN delegation_avis_at TIMESTAMP"))
+        if "etablissement_cree_id" not in adhesion_requests_columns:
+            with engine.begin() as conn:
+                conn.execute(text(
+                    "ALTER TABLE adhesion_requests ADD COLUMN etablissement_cree_id INTEGER "
+                    "REFERENCES etablissements(id) ON DELETE SET NULL"
+                ))
+
     Base.metadata.create_all(bind=engine)
 
     if inspector.has_table("etablissements"):

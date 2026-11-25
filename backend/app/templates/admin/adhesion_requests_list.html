@@ -10,7 +10,7 @@
 {% if items %}
 <table>
   <thead>
-    <tr><th>Code</th><th>Date</th><th>Établissement</th><th>Directeur</th><th>Contact</th><th>Localité</th><th>Statut</th><th>Actions</th></tr>
+    <tr><th>Code</th><th>Date</th><th>Établissement</th><th>Directeur</th><th>Contact</th><th>Localité</th><th>Délégation</th><th>Statut</th><th>Actions</th></tr>
   </thead>
   <tbody>
     {% for item in items %}
@@ -21,6 +21,12 @@
       <td>{{ item.nom_directeur }}</td>
       <td>{{ item.telephone }}{% if item.email %}<br>{{ item.email }}{% endif %}</td>
       <td>{{ item.localite }}</td>
+      <td>
+        {{ item.delegation.nom if item.delegation else "—" }}
+        {% if item.delegation_avis == "favorable" %}<br><span class="pill pill-green">Avis favorable</span>
+        {% elif item.delegation_avis == "defavorable" %}<br><span class="pill pill-red">Avis défavorable</span>
+        {% elif item.delegation %}<br><span class="pill pill-gold">Avis en attente</span>{% endif %}
+      </td>
       <td>
         {% if item.etat_demande == "validee" %}
           <span class="pill pill-green">{{ item.etat_label }}</span>

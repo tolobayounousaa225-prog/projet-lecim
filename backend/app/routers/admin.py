@@ -719,6 +719,7 @@ def adhesion_request_detail(
             "cycles": models.ADHESION_CYCLES,
             "proprietes": models.ADHESION_PROPRIETES,
             "etats": models.ADHESION_ETATS,
+            "avis_labels": models.ADHESION_AVIS,
         },
     )
 
@@ -744,6 +745,11 @@ def adhesion_request_examen(
     item = db.get(models.AdhesionRequest, request_id)
     if not item:
         return RedirectResponse(url="/admin/adhesion-requests", status_code=status.HTTP_303_SEE_OTHER)
+    if item.delegation_avis == "defavorable":
+        # Deja rejetee par la delegation : verrou cote serveur en plus du
+        # formulaire masque cote template, pour ne jamais revenir dessus
+        # au BEN par une requete manuelle.
+        return RedirectResponse(url=f"/admin/adhesion-requests/{request_id}", status_code=status.HTTP_303_SEE_OTHER)
 
     def _int_or_none(v: str) -> int | None:
         return int(v) if v.strip().isdigit() else None
@@ -776,6 +782,40 @@ def adhesion_request_examen(
         item.valide_at = now
         if not item.date_adhesion:
             item.date_adhesion = now.date()
+
+        if item.etablissement_cree_id is None:
+            # Cree directement la fiche etablissement a partir de la demande,
+            # plutot que de laisser les finances la ressaisir a la main — et
+            # rattache au passage la delegation choisie par le demandeur
+            # (c'est le seul endroit du code qui renseigne ce lien).
+            etablissement = models.Etablissement(
+                nom=item.nom_etablissement,
+                directeur_nom=item.nom_directeur,
+                contact_telephone=item.telephone,
+                contact_email=item.email or None,
+                bureau_local=item.localite,
+                region=item.delegation.region if item.delegation else None,
+                delegation_id=item.delegation_id,
+                date_adhesion=item.date_adhesion,
+            )
+            db.add(etablissement)
+            db.flush()
+            item.etablissement_cree_id = etablissement.id
+            audit.log(
+                db, user, "create", "Établissement", etablissement.id,
+                f"Créé automatiquement depuis la demande d'adhésion de {item.nom_etablissement}",
+            )
+
+        if item.email:
+            send_email(
+                item.email,
+                "Votre adhésion à la LECIM est validée",
+                "Bonjour,\n\n"
+                f"Votre demande d'adhésion ({item.code_demande}) a été validée par la LECIM.\n"
+                "Merci de vous présenter au siège de la LECIM (Abobo PK18, Abidjan) pour le "
+                "retrait de votre certificat et la suite des formalités.\n\n"
+                "Cordialement,\nLe secrétariat LECIM",
+            )
 
     db.commit()
     return RedirectResponse(url=f"/admin/adhesion-requests/{request_id}", status_code=status.HTTP_303_SEE_OTHER)
