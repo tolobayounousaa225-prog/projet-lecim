@@ -196,3 +196,6 @@ main.bare .card.narrow { margin: 16px auto; width: 100%; }
 }
 
 progress { width: 100%; max-width: 360px; height: 10px; accent-color: #14532d; }
+
+main.bare.wide { align-items: stretch; justify-content: flex-start; max-width: 880px; margin: 0 auto; }
+main.bare.wide .auth-brand, main.bare.wide .auth-lang { align-self: center; }

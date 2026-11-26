@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% if not user %}{% set bare = true %}{% endif %}
 {% block content %}
 <section class="card narrow">
   <h1>{{ message }}</h1>

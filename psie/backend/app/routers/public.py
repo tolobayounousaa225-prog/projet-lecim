@@ -44,14 +44,25 @@ def vitrine_data(db: Session = Depends(get_db)):
     return JSONResponse({"membres": members, "actualites": news}, headers={"Cache-Control": "public, max-age=300"})
 
 
+def _to_vitrine(page: str) -> RedirectResponse | None:
+    """La vitrine est le seul site public : ses pages ne sont pas recopiées ici."""
+    if settings.vitrine_url:
+        return RedirectResponse(f"{settings.vitrine_url.rstrip('/')}/{page}", status_code=302)
+    return None
+
+
 @router.get("/apropos")
 def about(request: Request, user: models.User | None = Depends(get_optional_user)):
+    if (r := _to_vitrine("apropos.html")):
+        return r
     return render(request, "apropos.html", user)
 
 
 @router.get("/membres")
 def public_members(request: Request, user: models.User | None = Depends(get_optional_user),
                    db: Session = Depends(get_db)):
+    if (r := _to_vitrine("membres.html")):
+        return r
     members = [f for f in db.query(models.Faitiere).order_by(models.Faitiere.categorie, models.Faitiere.sigle)
                if f.is_membre_actif or (f.categorie == "honneur" and f.statut == "actif")]
     return render(request, "membres_public.html", user, members=members)
@@ -60,6 +71,8 @@ def public_members(request: Request, user: models.User | None = Depends(get_opti
 @router.get("/actualites")
 def news_list(request: Request, user: models.User | None = Depends(get_optional_user),
               db: Session = Depends(get_db)):
+    if (r := _to_vitrine("actualites.html")):
+        return r
     items = (db.query(models.Actualite).filter_by(publie=True)
              .order_by(models.Actualite.date_publication.desc(), models.Actualite.id.desc()).all())
     return render(request, "actualites.html", user, items=items)
@@ -68,6 +81,8 @@ def news_list(request: Request, user: models.User | None = Depends(get_optional_
 @router.get("/actualites/{item_id}")
 def news_detail(item_id: int, request: Request, user: models.User | None = Depends(get_optional_user),
                 db: Session = Depends(get_db)):
+    if (r := _to_vitrine(f"actualite.html?id={int(item_id)}")):
+        return r
     item = db.get(models.Actualite, item_id)
     if not item or not item.publie:
         raise HTTPException(status_code=404, detail="Actualité introuvable")
