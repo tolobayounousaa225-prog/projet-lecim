@@ -11,14 +11,14 @@
     <div><button class="btn">{{ t('save') }}</button></div>
   </form>{% endif %}
 </section>
-<table>
-  <thead><tr><th>{{ t('date') }}</th><th>{{ t('f_donor') }}</th><th>{{ t('f_nature') }}</th><th>{{ t('amount') }}</th><th></th></tr></thead>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ t('date') }}</th><th>{{ t('f_donor') }}</th><th>{{ t('f_nature') }}</th><th>{{ t('amount') }}</th><th><span class="sr-only">{{ t('a11y_actions') }}</span></th></tr></thead>
   <tbody>
   {% for d in items %}<tr><td>{{ d.date_don }}</td><td>{{ d.donateur_nom }}<div class="muted">{{ d.adresse }}</div></td><td>{{ d.nature_label }}{% if d.description %} — {{ d.description }}{% endif %}</td>
     <td>{{ fcfa(d.valeur) }}</td><td>{% if d.verification_renforcee %}<span class="badge partiel">{{ t('f_enhanced') }}</span>{% endif %}</td></tr>
   {% else %}<tr><td colspan="5" class="muted">{{ t('none') }}</td></tr>{% endfor %}
   </tbody>
-</table>
+</table></div>
 {% if user.can_write_finances %}
 <section class="card"><h2>{{ t('add') }}</h2>
   <form method="post" action="/dons" class="grid">

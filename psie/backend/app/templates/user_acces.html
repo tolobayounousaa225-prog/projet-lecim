@@ -6,7 +6,7 @@
 <p class="muted">{{ t('access_person_help') }}</p>
 {% if saved %}<p class="notice">{{ t('access_saved') }}</p>{% endif %}
 <form method="post" action="/users/{{ target.id }}/acces" class="card">
-  <table>
+  <div class="table-wrap"><table>
     <thead><tr><th>{{ t('access_section') }}</th><th>{{ t('access_role_level') }}</th><th>{{ t('access_person_level') }}</th></tr></thead>
     <tbody>
     {% for key, s in sections.items() %}
@@ -18,7 +18,7 @@
         </select></td></tr>
     {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   <p class="actions"><button class="btn">{{ t('save') }}</button></p>
 </form>
 {% endblock %}

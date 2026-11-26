@@ -41,6 +41,7 @@ def faitiere_row(db: Session, f: models.Faitiere, annee: int) -> dict:
         "bilans_valides": sum(1 for b in bilans if b.statut == "valide"),
         "a_jour": finance.faitiere_a_jour(db, f.id, annee),
     }
+    row["a_jour_n"] = 1 if row["a_jour"] else 0
     row["admin"] = row["admin_francophone"] + row["admin_arabisant"]
     row["enseignants"] = row["ens_francophone"] + row["ens_arabisant"]
     row["francophones"] = row["admin_francophone"] + row["ens_francophone"]

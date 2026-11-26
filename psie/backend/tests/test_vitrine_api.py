@@ -71,3 +71,25 @@ def test_production_requires_https_for_vitrine():
                                         vitrine_origins="https://psie.example.org")) == []
     assert any("VITRINE" in p for p in production_problems(Settings(**good, vitrine_url="http://psie.example.org")))
     assert any("VITRINE" in p for p in production_problems(Settings(**good, vitrine_origins="http://x.org")))
+
+
+def test_public_directory_lists_published_schools_without_personal_data(db, anon):
+    from app import models
+
+    from .conftest import client_for, make_faitiere, make_user
+    f = make_faitiere(db, "LECIM")
+    f.statut = "actif"
+    db.commit()
+    make_user(db, "rep@psie.ci", "faitiere", faitiere_id=f.id)
+    rep = client_for("rep@psie.ci")
+    rep.post(f"/faitieres/{f.id}/ecoles", data={"nom": "École Publique", "localite": "Bouaké", "drena": "Bouaké 1", "niveau": "primaire",
+                                                "directeur": "M. Secret", "telephone": "0707070707"})
+    rep.post(f"/faitieres/{f.id}/ecoles", data={"nom": "École Retirée"})
+    hidden = db.query(models.Ecole).filter_by(nom="École Retirée").one()
+    assert rep.post(f"/faitieres/{f.id}/ecoles/{hidden.id}/annuaire").status_code == 303
+    body = anon.get("/api/public/site.json").text
+    data = anon.get("/api/public/site.json").json()
+    assert data["annuaire"] == [{"nom": "École Publique", "niveau": "primaire", "localite": "Bouaké", "drena": "Bouaké 1", "faitiere": "LECIM"}]
+    assert "Secret" not in body and "0707070707" not in body and "Retirée" not in body
+    rep.post(f"/faitieres/{f.id}/ecoles/{hidden.id}/annuaire")                      # republier
+    assert len(anon.get("/api/public/site.json").json()["annuaire"]) == 2

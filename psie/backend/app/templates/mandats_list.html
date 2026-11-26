@@ -2,7 +2,7 @@
 {% block title %}{{ t('nav_mandates') }}{% endblock %}
 {% block content %}
 <h1>{{ t('nav_mandates') }}</h1>
-<table>
+<div class="table-wrap"><table data-filterable data-filter-label="{{ t('d_search') }}">
   <thead><tr><th>{{ t('full_name') }}</th><th>{{ t('organ') }}</th><th>{{ t('function') }}</th><th>{{ t('organisation') }}</th><th>{{ t('end_date') }}</th></tr></thead>
   <tbody>
   {% for m in items %}
@@ -11,7 +11,7 @@
       <td class="{{ m.echeance or '' }}">{{ m.date_fin or '—' }}</td></tr>
   {% else %}<tr><td colspan="5" class="muted">{{ t('none') }}</td></tr>{% endfor %}
   </tbody>
-</table>
+</table></div>
 
 {% if user.can_manage_members %}
 <section class="card">

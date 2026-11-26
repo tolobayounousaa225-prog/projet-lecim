@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nt_title') }}{% endblock %}
+{% block content %}
+<div class="row"><h1>{{ t('nt_title') }}</h1>
+  <form method="post" action="/notifications/tout-lire"><button class="btn secondary">{{ t('nt_read_all') }}</button></form></div>
+<section class="card">
+  <form method="post" action="/notifications/preferences" class="inline">
+    <label><input type="checkbox" name="email" value="1"{% if user.notif_email %} checked{% endif %}> {{ t('nt_by_email') }}</label>
+    <button class="btn">{{ t('save') }}</button>
+  </form>
+</section>
+<ul class="notif-list">
+{% for n in items %}
+  <li class="card{% if not n.lue_at %} unread{% endif %}">
+    <a href="/notifications/{{ n.id }}/ouvrir"><strong>{{ n.titre }}</strong></a>
+    {% if n.texte %}<p>{{ n.texte }}</p>{% endif %}
+    <small class="muted">{{ n.created_at.strftime('%d/%m/%Y %H:%M') }}{% if not n.lue_at %} · {{ t('nt_new') }}{% endif %}</small>
+  </li>
+{% else %}<li class="card muted">{{ t('none') }}</li>{% endfor %}
+</ul>
+{% endblock %}

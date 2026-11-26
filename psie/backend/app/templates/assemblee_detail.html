@@ -55,8 +55,8 @@
     {{ t('g_quorum') }} : {{ voting.presents }} / {{ voting.base }} —
     {{ t('g_quorum_reached') if voting.quorum else t('g_quorum_missing') }}</p>
   <form method="post" action="/assemblees/{{ a.id }}/emargement">
-    <table>
-      <thead><tr><th></th><th>{{ t('full_name') }}</th><th>{{ t('organ') }}</th><th>{{ t('organisation') }}</th>{% if dues %}<th>{{ t('nav_dues') }}</th>{% endif %}</tr></thead>
+    <div class="table-wrap"><table>
+      <thead><tr><th><span class="sr-only">{{ t('a11y_actions') }}</span></th><th>{{ t('full_name') }}</th><th>{{ t('organ') }}</th><th>{{ t('organisation') }}</th>{% if dues %}<th>{{ t('nav_dues') }}</th>{% endif %}</tr></thead>
       <tbody>
       {% for p in a.presences %}
         <tr><td><input type="checkbox" name="present" value="{{ p.id }}" {% if p.present %}checked{% endif %} {% if a.statut != 'en_seance' or not manager %}disabled{% endif %}></td>
@@ -64,7 +64,7 @@
           {% if dues %}<td>{% if p.faitiere_id and dues.get(p.faitiere_id) %}<span class="badge {{ dues[p.faitiere_id] }}">{{ t('st_' ~ dues[p.faitiere_id]) }}</span>{% endif %}</td>{% endif %}</tr>
       {% endfor %}
       </tbody>
-    </table>
+    </table></div>
     {% if a.statut == 'en_seance' and manager %}<p><button class="btn">{{ t('save') }}</button></p>{% endif %}
   </form>
 </section>
@@ -82,13 +82,13 @@
     {% elif a.statut == 'en_seance' and manager %}
       {% if voting.quorum %}
       <form method="post" action="/assemblees/{{ a.id }}/resolutions/{{ r.id }}/votes">
-        <table><tbody>
+        <div class="table-wrap"><table><tbody>
         {% for key, label in voting.units.items() %}
           {% set current = (r.votes | selectattr('unite', 'equalto', key) | list | first) %}
           <tr><td>{{ label }}</td><td><select name="vote_{{ key }}"><option value="">—</option>
             {% for c, cl in vote_choix.items() %}<option value="{{ c }}" {% if current and current.choix == c %}selected{% endif %}>{{ cl }}</option>{% endfor %}</select></td></tr>
         {% endfor %}
-        </tbody></table>
+        </tbody></table></div>
         <button class="btn">{{ t('g_save_votes') }}</button>
       </form>
       <form method="post" action="/assemblees/{{ a.id }}/resolutions/{{ r.id }}/cloturer" class="row" style="margin-top:8px">

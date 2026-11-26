@@ -23,6 +23,7 @@ SECTIONS = {
     "finances": ("Finances et cotisations", "المالية والاشتراكات", "Cotisations, paiements, reçus, appels exceptionnels, dépenses, recettes, dons, budget, états financiers."),
     "ecoles": ("Écoles et suivi des faîtières", "المدارس ومتابعة المنظمات", "Écoles affiliées, recensement du personnel, résultats d'examens, bilans, statistiques par faîtière."),
     "documents": ("Documents, courrier et registres", "الوثائق والمراسلات والسجلات", "Documents de la PSIE, courrier arrivée et départ, conventions (circuit d'approbation), registres légaux des délibérations."),
+    "formation": ("Formation", "التكوين", "Formations et sessions, inscriptions du personnel des faîtières, présence, certificats."),
     "interets": ("Déclarations d'intérêts", "تصريحات المصالح", "Conflits d'intérêts déclarés par les membres des organes."),
     "contenu": ("Contenu du site", "محتوى الموقع", "Actualités, équipe, partenaires, documents publics du site vitrine."),
 }
@@ -34,15 +35,15 @@ ADMIN_ONLY_PREFIXES = ("/users", "/audit", "/acces")
 # Valeurs par défaut : chaque secrétariat ne voit que ce qui le concerne.
 DEFAULTS: dict[str, dict[str, int]] = {
     # L'administrateur technique n'a pas accès aux finances par défaut (principe de séparation des fonctions).
-    "admin": {"documents": 2, "ecoles": 1, "membres": 2, "adhesions": 2, "assemblees": 2, "sanctions": 2, "interets": 2, "contenu": 2},
-    "den": {"documents": 2, "ecoles": 2, "membres": 2, "adhesions": 2, "assemblees": 2, "sanctions": 2, "finances": 1, "interets": 2},
-    "secretaire": {"documents": 2, "ecoles": 2, "membres": 2, "adhesions": 2, "assemblees": 2, "sanctions": 2, "interets": 2},
+    "admin": {"formation": 1, "documents": 2, "ecoles": 1, "membres": 2, "adhesions": 2, "assemblees": 2, "sanctions": 2, "interets": 2, "contenu": 2},
+    "den": {"formation": 2, "documents": 2, "ecoles": 2, "membres": 2, "adhesions": 2, "assemblees": 2, "sanctions": 2, "finances": 1, "interets": 2},
+    "secretaire": {"formation": 2, "documents": 2, "ecoles": 2, "membres": 2, "adhesions": 2, "assemblees": 2, "sanctions": 2, "interets": 2},
     "finances": {"documents": 1, "ecoles": 1, "finances": 2, "membres": 1, "assemblees": 1, "interets": 2},
     "communication": {"documents": 1, "contenu": 2, "interets": 2},
-    "formation": {"documents": 1, "ecoles": 2, "interets": 2},
-    "examens": {"documents": 1, "ecoles": 2, "interets": 2},
+    "formation": {"formation": 2, "documents": 1, "ecoles": 2, "interets": 2},
+    "examens": {"formation": 1, "documents": 1, "ecoles": 2, "interets": 2},
     "ressources": {"documents": 1, "ecoles": 1, "interets": 2},
-    "administrateur_ca": {"documents": 1, "ecoles": 1, "membres": 1, "adhesions": 1, "assemblees": 1, "sanctions": 1, "finances": 1, "interets": 2},
+    "administrateur_ca": {"formation": 1, "documents": 1, "ecoles": 1, "membres": 1, "adhesions": 1, "assemblees": 1, "sanctions": 1, "finances": 1, "interets": 2},
     "commissaire": {"documents": 1, "finances": 1, "interets": 2},
 }
 
@@ -56,7 +57,7 @@ _PREFIXES = (
     ("/finances", "finances"), ("/depenses", "finances"), ("/justificatifs", "finances"), ("/recettes", "finances"),
     ("/dons", "finances"), ("/budget", "finances"), ("/etat-financier", "finances"), ("/rapports-cc", "finances"),
     ("/statistiques", "ecoles"), ("/ecoles", "ecoles"), ("/bilans", "ecoles"),
-    ("/documents", "documents"), ("/courrier", "documents"), ("/conventions", "documents"), ("/registres", "documents"),
+    ("/documents", "documents"), ("/courrier", "documents"), ("/conventions", "documents"), ("/registres", "documents"), ("/signatures", "documents"), ("/formations", "formation"),
     ("/annonces", "membres"), ("/demandes", "membres"),
     ("/interets", "interets"),
     ("/gestion", "contenu"),

@@ -2,8 +2,8 @@
 {% block title %}{{ t('nav_sanctions') }}{% endblock %}
 {% block content %}
 <h1>{{ t('nav_sanctions') }}</h1>
-<table>
-  <thead><tr><th>{{ t('date') }}</th><th>{{ t('organisation') }}</th><th>{{ t('g_sanction') }}</th><th>{{ t('decision_ref') }}</th><th>{{ t('status') }}</th><th></th></tr></thead>
+<div class="table-wrap"><table data-filterable data-filter-label="{{ t('d_search') }}">
+  <thead><tr><th>{{ t('date') }}</th><th>{{ t('organisation') }}</th><th>{{ t('g_sanction') }}</th><th>{{ t('decision_ref') }}</th><th>{{ t('status') }}</th><th><span class="sr-only">{{ t('a11y_actions') }}</span></th></tr></thead>
   <tbody>
   {% for s in items %}
     <tr id="s{{ s.id }}"><td>{{ s.date_decision }}</td><td>{{ s.faitiere.sigle }}</td><td>{{ s.type_label }}</td><td>{{ s.reference }}</td>
@@ -16,7 +16,7 @@
         {% endif %}</td></tr>
   {% else %}<tr><td colspan="6" class="muted">{{ t('none') }}</td></tr>{% endfor %}
   </tbody>
-</table>
+</table></div>
 {% if user.can_write_sanctions %}
 <section class="card">
   <h2>{{ t('g_new_sanction') }}</h2>

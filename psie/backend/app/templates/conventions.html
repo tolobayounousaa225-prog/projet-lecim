@@ -3,7 +3,7 @@
 {% block content %}
 <h1>{{ t('nav_agreements') }}</h1>
 <p class="muted">{{ t('c_help') }}</p>
-<div class="table-wrap"><table>
+<div class="table-wrap"><table data-filterable data-filter-label="{{ t('d_search') }}">
   <thead><tr><th>{{ t('d_title') }}</th><th>{{ t('c_partner') }}</th><th>{{ t('status') }}</th><th>{{ t('d_added') }}</th></tr></thead>
   <tbody>{% for c in items %}<tr><td><a href="/conventions/{{ c.id }}">{{ c.titre }}</a></td><td>{{ c.partenaire }}</td>
     <td><span class="badge {{ c.statut }}">{{ lbl('convention_statut', c.statut) }}</span></td><td>{{ c.created_at.strftime('%d/%m/%Y') }}</td></tr>

@@ -6,7 +6,7 @@
 <p class="muted">{{ col.aide }}</p>
 {% if request.query_params.get('ok') %}<p class="card">Enregistré. Le site se met à jour.</p>{% endif %}
 <p><a class="btn" href="/gestion/contenu/{{ col.key }}/nouveau">{{ t('add') }}</a></p>
-<table>
+<div class="table-wrap"><table>
   <tbody>
   {% for item, title in entries %}
     <tr>
@@ -22,5 +22,5 @@
     </tr>
   {% else %}<tr><td class="muted">{{ t('none') }}</td></tr>{% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endblock %}

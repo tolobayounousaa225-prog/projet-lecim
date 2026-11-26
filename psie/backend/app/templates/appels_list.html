@@ -2,7 +2,7 @@
 {% block title %}{{ t('nav_calls') }}{% endblock %}
 {% block content %}
 <h1>{{ t('nav_calls') }}</h1>
-<table>
+<div class="table-wrap"><table>
   <thead><tr><th>{{ t('call_title') }}</th><th>{{ t('deadline') }}</th><th>{{ t('due') }}</th><th>{{ t('paid') }}</th><th>{{ t('recovery_rate') }}</th><th>{{ t('status') }}</th></tr></thead>
   <tbody>
   {% for a in appels %}
@@ -11,7 +11,7 @@
       <td><span class="badge {{ 'paye' if a.is_solde else 'partiel' }}">{{ t('solved') if a.is_solde else t('in_progress') }}</span></td></tr>
   {% else %}<tr><td colspan="6" class="muted">{{ t('none') }}</td></tr>{% endfor %}
   </tbody>
-</table>
+</table></div>
 
 {% if user.can_write_finances %}
 <section class="card">
@@ -25,15 +25,15 @@
       <label>{{ t('common_amount') }}<input type="number" name="montant_commun" min="1"></label>
     </div>
     <label>{{ t('call_reason') }}<textarea name="motif" rows="2"></textarea></label>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>{{ t('include') }}</th><th>{{ t('acronym') }}</th><th>{{ t('own_amount') }}</th></tr></thead>
       <tbody>
       {% for f in membres %}
-        <tr><td><input type="checkbox" name="inclure_{{ f.id }}" checked></td><td>{{ f.sigle }}</td>
-          <td><input type="number" name="montant_{{ f.id }}" min="1"></td></tr>
+        <tr><td><input type="checkbox" name="inclure_{{ f.id }}" checked aria-label="{{ f.sigle }}"></td><td>{{ f.sigle }}</td>
+          <td><input type="number" name="montant_{{ f.id }}" min="1" aria-label="{{ f.sigle }} — {{ t('amount') }}"></td></tr>
       {% endfor %}
       </tbody>
-    </table>
+    </table></div>
     <div><button class="btn">{{ t('save') }}</button></div>
   </form>
 </section>

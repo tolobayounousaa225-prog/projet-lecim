@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
-from .. import adhesion, models
+from .. import adhesion, models, notifier
 from ..config import settings
 from ..database import get_db
 from ..deps import get_optional_user
@@ -127,6 +127,8 @@ async def join_submit(
         if up is not None and up.filename:
             uploads[kind] = (up.filename, await up.read())
     adhesion.attach_pieces(db, demande, uploads)
+    notifier.notify_roles(db, {"den", "secretaire"}, f"Nouvelle demande d'adhésion : {demande.sigle}",
+                          texte=f"{demande.nom} — code {demande.code}", lien=f"/adhesions/{demande.id}", kind="adhesion")
     db.commit()
     send_email(demande.email, f"PSIE — Demande d'adhésion {demande.code}",
                f"Votre demande d'adhésion a bien été reçue. Code de suivi : {demande.code}\n\n"

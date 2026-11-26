@@ -73,12 +73,12 @@ def test_mail_numbering_follow_up_and_reply(db, staff):
     assert com.post(f"/courrier/{first.id}/suivi", data={"statut": "recu"}).status_code == 403
 
 
-def test_agreement_circuit_follows_the_statutes(db, staff):
+def test_agreement_circuit_follows_the_statutes(db, staff, monkeypatch):
     den, ca, sec, com = client_for("den@psie.ci"), client_for("ca@psie.ci"), client_for("sec@psie.ci"), client_for("com@psie.ci")
     assert upload(den, "/conventions", titre="Convention Waqf", partenaire="Fondation X", montant="500000").status_code == 303
     c = db.query(models.Convention).one()
     act = lambda who, a, **k: who.post(f"/conventions/{c.id}/action", data={"action": a, **k})
-    assert act(den, "signer").status_code == 403 or act(den, "signer").status_code == 400       # pas avant l'avis du CA
+    assert den.post(f"/signatures/convention/{c.id}/code").status_code == 403                    # pas avant l'avis du CA
     assert act(ca, "avis_favorable").status_code == 400                                          # pas encore soumise
     assert act(com, "soumettre").status_code == 403                                              # lecture seule
     assert act(sec, "soumettre").status_code == 303
@@ -89,8 +89,12 @@ def test_agreement_circuit_follows_the_statutes(db, staff):
     assert db.get(models.Convention, c.id).statut == "rejetee"
     assert act(den, "soumettre").status_code == 303                                              # reprise après rejet
     assert act(ca, "avis_favorable").status_code == 303
-    assert act(sec, "signer").status_code == 403                                                 # la signature est celle du DEN
-    assert act(den, "signer").status_code == 303
+    assert sec.post(f"/signatures/convention/{c.id}/code").status_code == 403                    # la signature est celle du DEN
+    codes = []
+    import app.signatures as sg
+    monkeypatch.setattr(sg, "send_email", lambda to, subject, body: codes.append(body.split(": ")[1][:6]) or True)
+    assert den.post(f"/signatures/convention/{c.id}/code").status_code == 303
+    assert den.post(f"/signatures/convention/{c.id}/confirmer", data={"code": codes[0]}).status_code == 303
     db.expire_all()
     assert db.get(models.Convention, c.id).statut == "signee"
     assert act(den, "soumettre").status_code == 400                                              # figée une fois signée

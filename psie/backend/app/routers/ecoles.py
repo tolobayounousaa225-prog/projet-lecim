@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session
 
-from .. import imports, models, stats
+from .. import imports, models, notifier, stats
 from ..audit import log_action
 from ..database import get_db
 from ..deps import get_current_user
@@ -187,6 +187,17 @@ def ecole_update(faitiere_id: int, ecole_id: int, nom: str = Form(""), localite:
     return _back(f, e)
 
 
+@router.post("/faitieres/{faitiere_id}/ecoles/{ecole_id}/annuaire")
+def ecole_directory(faitiere_id: int, ecole_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Publier ou retirer l'école de l'annuaire public de la vitrine (seuls nom, niveau, localité, DRENA et faîtière y figurent)."""
+    f = _faitiere(db, user, faitiere_id, write=True)
+    e = _ecole(db, f, ecole_id)
+    e.publique = not e.publique
+    log_action(db, user, "annuaire", "ecoles", e.id, f"{e.nom} → {'publiée' if e.publique else 'retirée'}")
+    db.commit()
+    return _back(f, e)
+
+
 @router.post("/faitieres/{faitiere_id}/ecoles/{ecole_id}/supprimer")
 def ecole_delete(faitiere_id: int, ecole_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     f = _faitiere(db, user, faitiere_id, write=True)
@@ -273,6 +284,9 @@ def bilan_save(faitiere_id: int, ecole_id: int, annee: str = Form(""), resume: s
     b.statut = "soumis" if action == "soumettre" else "brouillon"
     b.updated_at = datetime.datetime.utcnow()
     log_action(db, user, "bilan_" + b.statut, "ecoles", e.id, f"{e.nom} {year}")
+    if b.statut == "soumis":
+        notifier.notify_roles(db, {"den", "formation", "examens"}, f"Bilan à examiner : {e.nom} ({f.sigle})", texte=f"Année {year}",
+                              lien=f"/faitieres/{f.id}/ecoles/{e.id}", kind="bilan", exclude_id=user.id)
     db.commit()
     return _back(f, e)
 
@@ -295,6 +309,7 @@ def bilan_decision(faitiere_id: int, ecole_id: int, bilan_id: int, decision: str
     b.avis = _text(avis, "Avis", decision == "a_corriger", 2000)
     b.statut = "valide" if decision == "valider" else "a_corriger"
     log_action(db, user, "bilan_" + b.statut, "ecoles", e.id, f"{e.nom} {b.annee}")
+    notifier.notify_faitiere(db, f.id, f"Bilan {b.statut_label.lower()} : {e.nom}", texte=b.avis, lien=f"/faitieres/{f.id}/ecoles/{e.id}", kind="bilan")
     db.commit()
     return _back(f, e)
 

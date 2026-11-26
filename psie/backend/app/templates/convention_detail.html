@@ -10,14 +10,14 @@
   {% if has_file %}<dt>{{ t('d_file') }}</dt><dd><a href="/conventions/{{ c.id }}/fichier">{{ c.nom }}</a></dd>{% endif %}
 </dl></section>
 <section class="card"><h2>{{ t('c_circuit') }}</h2>
-  {% if can_prepare or can_opine or can_sign %}
+  {% if can_sign %}<p><a class="btn" href="/signatures/convention/{{ c.id }}">{{ t('c_sign') }}</a></p>{% endif %}
+  {% if can_prepare or can_opine %}
   <form method="post" action="/conventions/{{ c.id }}/action" class="stack">
     <label>{{ t('c_comment') }}<textarea name="commentaire" rows="2"></textarea></label>
     <div>
       {% if can_prepare %}<button class="btn" name="action" value="soumettre">{{ t('c_submit') }}</button>{% endif %}
       {% if can_opine %}<button class="btn" name="action" value="avis_favorable">{{ t('c_favourable') }}</button>
         <button class="btn secondary" name="action" value="avis_defavorable">{{ t('c_unfavourable') }}</button>{% endif %}
-      {% if can_sign %}<button class="btn" name="action" value="signer">{{ t('c_sign') }}</button>{% endif %}
     </div>
   </form>
   {% endif %}

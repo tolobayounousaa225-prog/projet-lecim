@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ t('sg_title') }}{% endblock %}
+{% block content %}
+<p><a href="{{ back }}">← {{ t('back') }}</a></p>
+<h1>{{ t('sg_title') }} <small>{{ kind }}</small></h1>
+<section class="card"><h2>{{ title }}</h2>
+  {% if existing %}<h3>{{ t('sg_existing') }}</h3>
+  <ul>{% for s in existing %}<li>{{ s.signer_nom }} ({{ lbl('role', s.signer_role) }}) — {{ s.signed_at.strftime('%d/%m/%Y %H:%M') }} UTC
+    · <a href="/signatures/{{ s.id }}/certificat.pdf" target="_blank">{{ t('sg_certificate') }}</a></li>{% endfor %}</ul>{% endif %}
+</section>
+<section class="card">
+  {% if refusal %}<p class="alert">{{ refusal }}</p>
+  {% else %}
+  {% if error == 'wrong' %}<p class="alert">{{ t('sg_wrong') }}</p>{% elif error == 'code' %}<p class="alert">{{ t('sg_expired') }}</p>{% elif error == 'wait' %}<p class="alert">{{ t('sg_wait') }}</p>{% endif %}
+  <p>{{ t('sg_help') }}</p>
+  <form method="post" action="/signatures/{{ doc_type }}/{{ doc_id }}/code"><button class="btn secondary">{{ t('sg_send_code') }}</button></form>
+  {% if sent %}<p class="muted">{{ t('sg_sent') }}</p>{% endif %}
+  <form method="post" action="/signatures/{{ doc_type }}/{{ doc_id }}/confirmer" class="inline">
+    <label>{{ t('sg_code') }}<input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required></label>
+    <button class="btn">{{ t('sg_confirm') }}</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

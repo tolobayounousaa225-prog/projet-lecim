@@ -19,8 +19,8 @@
 </section>
 
 <h2>{{ t('payments') }}</h2>
-<table>
-  <thead><tr><th>{{ t('receipt') }}</th><th>{{ t('date') }}</th><th>{{ t('amount') }}</th><th>{{ t('mode') }}</th><th>{{ t('reference') }}</th><th></th></tr></thead>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ t('receipt') }}</th><th>{{ t('date') }}</th><th>{{ t('amount') }}</th><th>{{ t('mode') }}</th><th>{{ t('reference') }}</th><th><span class="sr-only">{{ t('a11y_actions') }}</span></th></tr></thead>
   <tbody>
   {% for p in e.paiements %}
     <tr>
@@ -39,7 +39,7 @@
     </tr>
   {% else %}<tr><td colspan="6" class="muted">{{ t('none') }}</td></tr>{% endfor %}
   </tbody>
-</table>
+</table></div>
 
 {% if user.can_write_finances and e.solde > 0 %}
 <section class="card">

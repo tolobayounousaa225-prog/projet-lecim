@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ t('fm_title') }}{% endblock %}
+{% block content %}
+<h1>{{ t('fm_title') }}</h1>
+{% for f in items %}
+<section class="card">
+  <h2>{{ f.titre }}</h2>
+  {% if f.description %}<p>{{ f.description }}</p>{% endif %}
+  <p class="muted">{% if f.public_cible %}{{ t('fm_audience') }} : {{ f.public_cible }}{% endif %}{% if f.duree %} · {{ t('fm_duration') }} : {{ f.duree }}{% endif %}</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ t('m_date') }}</th><th>{{ t('e_locality') }}</th><th>{{ t('fm_places') }}</th><th>{{ t('status') }}</th><th><span class="sr-only">{{ t('a11y_actions') }}</span></th></tr></thead>
+    <tbody>{% for s in f.sessions if can_write or s.statut != 'annulee' %}
+      <tr><td>{{ s.date_debut.strftime('%d/%m/%Y') }}{% if s.date_fin and s.date_fin != s.date_debut %} → {{ s.date_fin.strftime('%d/%m/%Y') }}{% endif %}</td><td>{{ s.lieu }}</td>
+        <td>{{ s.inscrits_actifs }}{% if s.places %} / {{ s.places }}{% endif %}</td>
+        <td><span class="badge {{ s.statut }}">{{ lbl('session_statut', s.statut) }}</span>{% if mine.get(s.id) %} ✔ {{ t('fm_registered') }}{% endif %}</td>
+        <td><a href="/formations/sessions/{{ s.id }}">{{ t('fm_open') }}</a></td></tr>
+    {% else %}<tr><td colspan="5" class="muted">{{ t('none') }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% if can_write %}
+  <form method="post" action="/formations/{{ f.id }}/sessions" class="grid">
+    <label>{{ t('c_start') }} *<input type="date" name="date_debut" required></label><label>{{ t('c_end') }}<input type="date" name="date_fin"></label>
+    <label>{{ t('e_locality') }} *<input name="lieu" required></label><label>{{ t('fm_places') }}<input name="places" inputmode="numeric"></label>
+    <label>{{ t('fm_deadline') }}<input type="date" name="limite_inscription"></label>
+    <div><button class="btn">{{ t('fm_add_session') }}</button></div>
+  </form>
+  {% endif %}
+</section>
+{% else %}<p class="card muted">{{ t('none') }}</p>{% endfor %}
+{% if can_write %}
+<section class="card"><h2>{{ t('fm_new') }}</h2>
+  <form method="post" action="/formations" class="grid">
+    <label>{{ t('d_title') }} *<input name="titre" required></label><label>{{ t('fm_audience') }}<input name="public_cible"></label>
+    <label>{{ t('fm_duration') }}<input name="duree"></label><label>{{ t('d_description') }}<input name="description"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form></section>
+{% endif %}
+{% endblock %}

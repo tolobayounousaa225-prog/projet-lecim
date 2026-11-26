@@ -14,6 +14,7 @@
   {% if user and user.is_internal %}
     <div class="nav-group"><h2>{{ t('nav_group_overview') }}</h2>
       {{ nav_item('/admin', t('nav_dashboard')) }}
+      {{ nav_item('/recherche', t('gs_title'), '/recherche') }}
     </div>
     {% if user.can('membres') or user.can('adhesions') %}
     <div class="nav-group"><h2>{{ t('nav_group_members') }}</h2>
@@ -26,6 +27,9 @@
       {{ nav_item('/documents', t('nav_documents'), '/documents') }}{{ nav_item('/courrier', t('nav_mail'), '/courrier') }}
       {{ nav_item('/conventions', t('nav_agreements'), '/conventions') }}{{ nav_item('/registres', t('nav_registers'), '/registres') }}
     </div>
+    {% endif %}
+    {% if user.can('formation') %}
+    <div class="nav-group"><h2>{{ t('nav_training') }}</h2>{{ nav_item('/formations', t('fm_title'), '/formations') }}</div>
     {% endif %}
     {% if user.can('ecoles') or user.can('membres') %}
     <div class="nav-group"><h2>{{ t('nav_group_federations') }}</h2>
@@ -61,11 +65,13 @@
     {% endif %}
   {% elif user and user.faitiere_id %}
     <div class="nav-group"><h2>{{ t('nav_group_my_space') }}</h2>
+      {{ nav_item('/recherche', t('gs_title'), '/recherche') }}
       {{ nav_item('/faitieres/%d' % user.faitiere_id, t('nav_my_org')) }}
       {{ nav_item('/faitieres/%d/delegues' % user.faitiere_id, t('space_delegates'), '/faitieres/%d/delegues' % user.faitiere_id) }}
       {{ nav_item('/faitieres/%d/ecoles' % user.faitiere_id, t('space_schools'), '/faitieres/%d/ecoles' % user.faitiere_id) }}
       {{ nav_item('/faitieres/%d/statistiques' % user.faitiere_id, t('nav_stats'), '/faitieres/%d/statistiques' % user.faitiere_id) }}
       {{ nav_item('/assemblees', t('nav_assemblies'), '/assemblees') }}
+      {{ nav_item('/formations', t('fm_title'), '/formations') }}
       {{ nav_item('/annonces', t('nav_announcements'), '/annonces') }}
       {{ nav_item('/demandes', t('nav_requests'), '/demandes') }}
     </div>
@@ -89,10 +95,16 @@
         <nav class="nav">{{ nav_links() }}</nav>
       </details>
       <span class="appbar-spacer"></span>
+      <form class="global-search" role="search" method="get" action="/recherche">
+        <input id="global-search" type="search" name="q" placeholder="{{ t('gs_placeholder') }}" aria-label="{{ t('gs_placeholder') }}" maxlength="80">
+      </form>
+      <a class="bell" href="/notifications" aria-label="{{ t('nt_title') }}{% if unread_notifications %} ({{ unread_notifications }}){% endif %}">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3a6 6 0 0 0-6 6v3.6L4.5 16v1h15v-1L18 12.6V9a6 6 0 0 0-6-6zm0 18a2.5 2.5 0 0 0 2.4-2h-4.8A2.5 2.5 0 0 0 12 21z" fill="currentColor"/></svg>
+        {% if unread_notifications %}<span class="bell-count">{{ unread_notifications if unread_notifications < 100 else '99+' }}</span>{% endif %}</a>
       <a href="/lang/fr" class="lang {% if lang == 'fr' %}on{% endif %}">FR</a>
       <a href="/lang/ar" class="lang {% if lang == 'ar' %}on{% endif %}">العربية</a>
       <details class="user-menu">
-        <summary><span class="avatar" aria-hidden="true">{{ user.full_name[:1] | upper }}</span>
+        <summary aria-label="{{ user.full_name }}"><span class="avatar" aria-hidden="true">{{ user.full_name[:1] | upper }}</span>
           <span class="who"><strong>{{ user.full_name }}</strong><small>{{ lbl('role', user.role) }}</small></span></summary>
         <div class="user-menu-panel">
           <a href="/mot-de-passe">{{ t('nav_password') }}</a>
@@ -143,5 +155,6 @@
   {% endif %}
 </main>
 {% endif %}
+{% if app_shell %}<script src="/static/psie.js" defer></script>{% endif %}
 </body>
 </html>

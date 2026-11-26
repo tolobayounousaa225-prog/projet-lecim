@@ -3,8 +3,8 @@
 {% block content %}
 <h1>{{ t('nav_news_admin') }}</h1>
 {% if not item %}
-<table>
-  <thead><tr><th>{{ t('date') }}</th><th>{{ t('call_title') }}</th><th>{{ t('status') }}</th><th></th></tr></thead>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ t('date') }}</th><th>{{ t('call_title') }}</th><th>{{ t('status') }}</th><th><span class="sr-only">{{ t('a11y_actions') }}</span></th></tr></thead>
   <tbody>
   {% for n in items %}
     <tr><td>{{ n.date_publication }}</td><td>{{ n.titre_fr or n.titre_ar }}</td><td>{{ t('active') if n.publie else t('disabled') }}</td>
@@ -12,7 +12,7 @@
         <form method="post" action="/gestion/actualites/{{ n.id }}/delete" class="inline"><button class="link danger">{{ t('delete') }}</button></form></td></tr>
   {% else %}<tr><td colspan="4" class="muted">{{ t('none') }}</td></tr>{% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endif %}
 <section class="card">
   <h2>{{ t('edit') if item else t('add') }}</h2>
