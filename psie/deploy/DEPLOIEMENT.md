@@ -179,6 +179,20 @@ Vérifiez ensuite : `https://VOTRE-DOMAINE/health` doit répondre `{"status":"ok
    Mot de passe oublié : l'administrateur en définit un nouveau dans « Comptes » (cela débloque aussi
    un compte verrouillé). Il n'existe pas encore de lien « mot de passe oublié » automatique par e-mail.
 
+## 5 bis. Créer les comptes d'un coup (secrétariats, faîtières)
+
+1. Copiez `comptes-modele.csv`, ouvrez-le avec Excel, remplacez les lignes d'exemple par vos vraies personnes
+   (colonnes : `nom ; email ; role ; faitiere ; origine`) et enregistrez-le en **CSV**.
+   Rôles possibles : `den`, `finances`, `secretaire`, `communication`, `formation`, `examens`, `ressources`,
+   `administrateur_ca`, `commissaire`, `faitiere` (avec le sigle de la faîtière dans la colonne `faitiere`).
+2. Déposez le fichier sur le serveur, puis **simulez d'abord** (ne crée rien) :
+   `./creer-comptes.sh mes-comptes.csv`
+3. Si tout est bon, créez les comptes : `./creer-comptes.sh mes-comptes.csv --appliquer`
+
+Personne ne reçoit de mot de passe : chacun reçoit un e-mail avec un **lien personnel, valable 7 jours et à usage
+unique**, pour choisir le sien. Si l'e-mail ne part pas, le script affiche le lien à transmettre en privé. Un compte
+déjà existant n'est jamais modifié. Supprimez ensuite le fichier du serveur.
+
 ## 6. Sauvegardes (automatiques)
 
 Une seule commande met tout en place :
