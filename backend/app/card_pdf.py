@@ -235,6 +235,12 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
         pdf.cell(19, 3, _safe_text(carte.lieu_naissance), align="L")
 
     fonction_y = naissance_y + 7.3
+    # Le bandeau decoratif arabe de l'image de fond passe juste ici : un
+    # rectangle de la meme teinte que le fond (echantillonnee sur le modele)
+    # le masque localement pour que "Fonction" reste net, sans avoir a
+    # comprimer le reste du bloc identite pour l'eviter.
+    pdf.set_fill_color(243, 242, 240)
+    pdf.rect(info_x - 1, fonction_y - 0.5, info_w + 2, 6.8, style="F")
     pdf.set_text_color(*GREEN)
     pdf.set_font("Helvetica", "", 5.8)
     pdf.set_xy(info_x, fonction_y)
