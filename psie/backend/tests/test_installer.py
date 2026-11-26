@@ -187,3 +187,25 @@ def test_going_public_needs_an_existing_install(tmp_path):
     folder.mkdir()
     r = public(folder, **PUBLIC)
     assert r.returncode == 1 and "installer.sh" in r.stderr
+
+
+@pytest.mark.parametrize("override,message", [
+    ({"SMTP_FROM": "cwyt iees uxrz svoe"}, "n'est pas une adresse e-mail"),         # le code collé par erreur à la place de l'adresse
+    ({"SMTP_FROM": "pas-une-adresse"}, "n'est pas une adresse e-mail"),
+    ({"SMTP_PASSWORD": "abcd efgh ijkl mn"}, "16 lettres"),                          # 14 lettres : code incomplet
+    ({"SMTP_PASSWORD": "abcdefghijklmnopq"}, "16 lettres"),
+    ({"SMTP_USER": "pasunmail", "SMTP_FROM": "psie@gmail.com"}, "adresse e-mail complète"),
+])
+def test_public_mode_refuses_the_classic_smtp_mistakes(tmp_path, override, message):
+    folder = trial_install(tmp_path)
+    before = (folder / ".env").read_text()
+    r = public(folder, **{**PUBLIC, **override})
+    assert r.returncode == 1 and message in r.stderr
+    assert (folder / ".env").read_text() == before
+
+
+def test_installer_refuses_a_password_pasted_as_sender_address(tmp_path):
+    r, folder = run(tmp_path, **{**GOOD, "SMTP_HOST": "smtp.gmail.com", "SMTP_PASSWORD": "abcdefghijklmnop", "SMTP_FROM": "abcd efgh ijkl mnop"})
+    assert r.returncode == 1 and "n'est pas une adresse e-mail" in r.stderr and not (folder / ".env").exists()
+    r, folder = run(tmp_path / "b", **{**GOOD, "SMTP_HOST": "smtp.gmail.com", "SMTP_PASSWORD": "trop-court"})
+    assert r.returncode == 1 and "16 lettres" in r.stderr and not (folder / ".env").exists()
