@@ -6,6 +6,7 @@ import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from .backup import create_backup, email_latest_backup
+from .card_expiration import check_card_expirations
 from .courrier_reminders import check_overdue_courrier
 from .offsite_backup import sync_latest_backup
 from .mandates import check_mandate_expirations
@@ -73,6 +74,13 @@ def _run_courrier_reminders_job() -> None:
         logger.exception("Échec de la vérification du courrier sans réponse")
 
 
+def _run_card_expiration_job() -> None:
+    try:
+        check_card_expirations()
+    except Exception:
+        logger.exception("Échec de la vérification de l'échéance des cartes de membre")
+
+
 def start() -> None:
     scheduler.add_job(_run_backup_job, "cron", hour=2, minute=0, id="daily_backup", replace_existing=True)
     scheduler.add_job(_run_reminders_job, "cron", hour=7, minute=0, id="daily_reminders", replace_existing=True)
@@ -85,6 +93,9 @@ def start() -> None:
     )
     scheduler.add_job(
         _run_courrier_reminders_job, "cron", hour=7, minute=45, id="daily_courrier_reminders", replace_existing=True
+    )
+    scheduler.add_job(
+        _run_card_expiration_job, "cron", hour=8, minute=15, id="daily_card_expiration", replace_existing=True
     )
     scheduler.add_job(
         _run_newsletter_job, "cron", day=1, hour=8, minute=0, id="monthly_newsletter", replace_existing=True

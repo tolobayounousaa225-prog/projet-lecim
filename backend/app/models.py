@@ -1403,6 +1403,7 @@ class CarteMembre(Base):
     date_impression: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     date_disponibilite: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     validated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    expiration_alert_envoyee: Mapped[bool] = mapped_column(Boolean, default=False)
 
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
     validated_by: Mapped["User | None"] = relationship(foreign_keys=[validated_by_id])
