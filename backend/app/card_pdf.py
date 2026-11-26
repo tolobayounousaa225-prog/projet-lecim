@@ -47,16 +47,23 @@ PRESIDENT_NOM = "Ahmed SYLLA"
 # Abreviations anglaises (JAN, FEB...) : convention des documents d'identite
 # internationaux (passeports, visas — norme OACI/ICAO Doc 9303), qui evite
 # l'ambiguite JJ/MM vs MM/JJ entre pays et ne depend d'aucune locale serveur.
+# Reservee aux dates completes (jour+mois+annee) : sans jour, l'echeance de
+# validite (mois+annee) n'a pas cette ambiguite et s'affiche en francais.
 _MOIS_ABR = [
     "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
     "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
 ]
 
+_MOIS_FR = [
+    "JANVIER", "FEVRIER", "MARS", "AVRIL", "MAI", "JUIN",
+    "JUILLET", "AOUT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DECEMBRE",
+]
+
 
 def _mois_annee_intl(date) -> str:
-    """Formate une date en "MOIS AAAA" (ex. "APR 2028") — la carte n'affiche
+    """Formate une date en "MOIS AAAA" (ex. "AVRIL 2028") — la carte n'affiche
     que l'echeance de validite, pas un jour precis qui n'a pas ete decide."""
-    return f"{_MOIS_ABR[date.month - 1]} {date.year}"
+    return f"{_MOIS_FR[date.month - 1]} {date.year}"
 
 
 def _date_internationale(date) -> str:
