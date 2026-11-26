@@ -82,3 +82,29 @@ def test_another_port_can_be_chosen_when_8100_is_taken(tmp_path):
 def test_diagnostic_script_is_read_only_and_runs_anywhere():
     r = subprocess.run(["bash", str(DEPLOY / "diagnostic.sh")], capture_output=True, text=True, timeout=60)
     assert r.returncode == 0 and "Aucun fichier n'a été modifié" in r.stdout and "Mémoire" in r.stdout
+
+
+def test_dedicated_server_without_domain_uses_a_provisional_ip_address(tmp_path):
+    env = {k: v for k, v in GOOD.items() if k != "PSIE_DOMAIN"}
+    r, folder = run(tmp_path, "--serveur-dedie", **env, PSIE_IP="185.215.166.186")
+    assert r.returncode == 0, r.stderr
+    values = read_env(folder)
+    assert values["DOMAIN"] == "185-215-166-186.sslip.io" and values["PUBLIC_BASE_URL"] == "https://185-215-166-186.sslip.io"
+    assert "adresse provisoire" in r.stdout.lower()
+
+
+@pytest.mark.parametrize("ip", ["", "999", "185.215.166", "a.b.c.d", "1.2.3.4; rm -rf /"])
+def test_dedicated_server_refuses_a_bad_ip(tmp_path, ip):
+    env = {k: v for k, v in GOOD.items() if k != "PSIE_DOMAIN"}
+    r, folder = run(tmp_path, "--serveur-dedie", **env, PSIE_IP=ip)
+    assert r.returncode == 1 and not (folder / ".env").exists()
+
+
+def test_dedicated_server_keeps_a_real_domain_when_given(tmp_path):
+    r, folder = run(tmp_path, "--serveur-dedie", **GOOD)
+    assert r.returncode == 0 and read_env(folder)["DOMAIN"] == "app.psie-ci.org"
+
+
+def test_trial_and_dedicated_modes_cannot_be_combined(tmp_path):
+    r, folder = run(tmp_path, "--essai", "--serveur-dedie")
+    assert r.returncode == 2 and not (folder / ".env").exists()

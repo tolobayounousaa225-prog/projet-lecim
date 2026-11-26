@@ -1,26 +1,29 @@
 #!/usr/bin/env bash
-# Installe la PSIE sur un serveur PARTAGÉ avec la LECIM (reverse proxy déjà en place, mode A).
-# Il ne touche à rien de la LECIM : la PSIE vit dans sa propre pile Docker « psie » (base, réseau et
-# volumes à elle) et n'écoute que sur 127.0.0.1:PSIE_PORT.
+# Installe la PSIE, soit sur un serveur PARTAGÉ avec la LECIM (reverse proxy déjà en place, mode A),
+# soit sur un serveur DÉDIÉ vide (--serveur-dedie, mode B : Caddy inclus, HTTPS automatique).
+# La PSIE vit dans sa propre pile Docker « psie » (base, réseau et volumes à elle).
 #
 # Usage, depuis ce dossier (psie/deploy) :
 #   ./installer.sh                 installation guidée (pose quelques questions)
+#   ./installer.sh --serveur-dedie serveur neuf réservé à la PSIE : Caddy obtient le certificat HTTPS tout seul
 #   ./installer.sh --essai         essai privé : sans HTTPS ni e-mail, visible seulement par tunnel SSH
 #   ./installer.sh --seulement-env prépare le fichier .env et s'arrête (rien n'est lancé)
 # Sûr à relancer : un .env existant n'est jamais écrasé.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-ESSAI=0; SEULEMENT_ENV=0
+ESSAI=0; SEULEMENT_ENV=0; DEDIE=0
 for arg in "$@"; do
   case "$arg" in
     --essai) ESSAI=1 ;;
+    --serveur-dedie) DEDIE=1 ;;
     --seulement-env) SEULEMENT_ENV=1 ;;
-    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,14p' "$0"; exit 0 ;;
     *) echo "Option inconnue : $arg" >&2; exit 2 ;;
   esac
 done
 
+[ "$ESSAI" -eq 1 ] && [ "$DEDIE" -eq 1 ] && { echo "--essai et --serveur-dedie ne vont pas ensemble." >&2; exit 2; }
 say()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
 fail() { printf '\nERREUR : %s\n' "$*" >&2; exit 1; }
 secret() { python3 -c "import secrets; print(secrets.token_urlsafe($1))"; }
@@ -51,6 +54,9 @@ if [ -f .env ]; then
   echo "Un fichier .env existe déjà : il est conservé tel quel."
 else
   PORT="${PSIE_PORT:-8100}"
+  if [ "$DEDIE" -eq 1 ] && [ "$SEULEMENT_ENV" -eq 0 ]; then
+    for p in 80 443; do port_busy "$p" && fail "Le port $p est déjà utilisé : ce serveur n'est pas vide. Utilisez plutôt l'installation partagée (sans --serveur-dedie)."; done
+  fi
   if [ "$SEULEMENT_ENV" -eq 0 ] && port_busy "$PORT"; then
     fail "Le port $PORT est déjà utilisé sur ce serveur. Relancez avec un autre :  PSIE_PORT=8110 ./installer.sh"
   fi
@@ -58,7 +64,13 @@ else
     DOMAINE="127.0.0.1"; PUBLIC="http://127.0.0.1:$PORT"; COOKIE=false; TWOFA=false
     SMTP_HOST=""; SMTP_PORT=587; SMTP_USER=""; SMTP_PASSWORD=""; SMTP_FROM="no-reply@psie.local"
   else
-    DOMAINE=$(ask PSIE_DOMAIN "Nom de domaine de l'application (ex. app.psie-ci.org)")
+    DOMAINE=$(ask PSIE_DOMAIN "Nom de domaine de l'application (ex. app.psie-ci.org ; laissez vide pour une adresse provisoire)")
+    if [ -z "$DOMAINE" ] && [ "$DEDIE" -eq 1 ]; then
+      IP=$(ask PSIE_IP "Adresse IP de ce serveur (ex. 203.0.113.7)")
+      printf '%s' "$IP" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$' || fail "Adresse IP invalide : « $IP »."
+      DOMAINE="$(printf '%s' "$IP" | tr . -).sslip.io"
+      echo "Adresse provisoire : $DOMAINE (à remplacer par votre vrai domaine plus tard, avant d'imprimer des reçus à QR code)."
+    fi
     [ -n "$DOMAINE" ] || fail "Le nom de domaine est obligatoire (ou utilisez --essai pour un essai privé)."
     case "$DOMAINE" in *[!A-Za-z0-9.-]*|"."*|*"..") fail "Nom de domaine invalide : $DOMAINE" ;; esac
     PUBLIC="https://$DOMAINE"; COOKIE=true; TWOFA=true
@@ -107,7 +119,8 @@ fi
 [ "$SEULEMENT_ENV" -eq 1 ] && { say "Terminé : .env prêt, rien n'a été lancé."; exit 0; }
 
 say "3/5 Démarrage de la pile « psie » (ne touche pas à la LECIM)"
-docker compose --env-file .env up -d --build
+PROFIL=""; [ "$DEDIE" -eq 1 ] && PROFIL="--profile caddy"
+docker compose --env-file .env $PROFIL up -d --build
 
 say "4/5 Attente de l'application et création du compte administrateur"
 PORT=$(grep -E '^PSIE_PORT=' .env | cut -d= -f2)
@@ -119,9 +132,15 @@ done
 docker compose exec -T api python -m scripts.init_db
 echo "Application prête : $(curl -fsS "http://127.0.0.1:${PORT}/health/db")"
 
-say "5/5 Prochaine étape : brancher le reverse proxy de la LECIM"
+say "5/5 Prochaine étape"
 DOM=$(grep -E '^DOMAIN=' .env | cut -d= -f2)
-if grep -q '^COOKIE_SECURE=false' .env; then
+if [ "$DEDIE" -eq 1 ]; then
+  cat <<TXT
+Caddy demande maintenant le certificat HTTPS (comptez 1 à 2 minutes). Vérifiez :
+    https://${DOM}/health      doit répondre {"status":"ok"}
+Les ports 80 et 443 doivent être ouverts dans le pare-feu du serveur (sudo ufw allow 80,443/tcp) et chez le fournisseur.
+TXT
+elif grep -q '^COOKIE_SECURE=false' .env; then
   cat <<TXT
 Mode essai : l'application n'est visible que depuis le serveur. Depuis votre ordinateur :
     ssh -L ${PORT}:127.0.0.1:${PORT} utilisateur@IP-DU-SERVEUR

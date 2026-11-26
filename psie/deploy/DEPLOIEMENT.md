@@ -54,6 +54,27 @@ cd psie-app/psie/deploy && bash diagnostic.sh
 Si la mémoire disponible est inférieure à environ 1 Go (Jitsi est gourmand), ne pas installer :
 prendre un VPS séparé (voir le cahier des charges, § 6.1).
 
+### Variante : serveur neuf, réservé à la PSIE (mode B, la plus simple)
+
+Sur un VPS vide (Ubuntu 24.04), on prépare d'abord la machine, puis on installe avec `--serveur-dedie`
+(Caddy est inclus et obtient seul le certificat HTTPS).
+
+```bash
+# 1re connexion, en root : ssh root@IP-DU-SERVEUR
+apt update && apt -y upgrade
+adduser psie && usermod -aG sudo psie                      # utilisateur normal pour travailler
+ufw allow OpenSSH && ufw allow 80,443/tcp && ufw --force enable   # pare-feu : SSH, HTTP, HTTPS seulement
+curl -fsSL https://get.docker.com | sh && usermod -aG docker psie  # installe Docker
+reboot                                                     # puis se reconnecter : ssh psie@IP-DU-SERVEUR
+```
+
+Puis, connecté en `psie` :
+
+```bash
+git clone https://github.com/tolobayounousaa225-prog/projet-lecim.git psie-app
+cd psie-app/psie/deploy && ./installer.sh --serveur-dedie
+```
+
 ## 3. Installation
 
 ### Installation automatique (recommandée)
