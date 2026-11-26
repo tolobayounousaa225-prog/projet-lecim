@@ -964,7 +964,134 @@ class Ecole(Base):
     localite: Mapped[str | None] = mapped_column(String(120), nullable=True)
     drena: Mapped[str | None] = mapped_column(String(80), nullable=True)
     telephone: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    niveau: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    directeur: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    recensements = relationship("RecensementEcole", cascade="all, delete-orphan", order_by="RecensementEcole.annee.desc()")
+    resultats = relationship("ResultatExamen", cascade="all, delete-orphan", order_by="ResultatExamen.annee.desc()")
+    bilans = relationship("BilanEcole", cascade="all, delete-orphan", order_by="BilanEcole.annee.desc()")
+
+    @property
+    def niveau_label(self) -> str:
+        return NIVEAUX_ECOLE.get(self.niveau or "", "—")
+
+
+NIVEAUX_ECOLE = {
+    "prescolaire": "Préscolaire", "primaire": "Primaire", "secondaire": "Secondaire", "mixte": "Plusieurs niveaux",
+    "superieur": "Supérieur / formation",
+}
+EXAMENS = {
+    "cepe": "CEPE", "bepc": "BEPC", "bac": "Baccalauréat", "arabe_primaire": "Examen d'arabe (primaire)",
+    "arabe_secondaire": "Examen d'arabe (secondaire)",
+}
+BILAN_STATUTS = {"brouillon": "Brouillon", "soumis": "Proposé à la PSIE", "a_corriger": "À corriger", "valide": "Validé"}
+DEMANDE_TYPES = {"attestation": "Attestation", "rendez_vous": "Rendez-vous", "soutien": "Soutien / accompagnement",
+                 "information": "Demande d'information", "autre": "Autre"}
+DEMANDE_STATUTS = {"ouverte": "Ouverte", "en_cours": "En cours", "traitee": "Traitée"}
+
+
+class RecensementEcole(Base):
+    """Recensement annuel d'une école : élèves et personnel (administratif / enseignant, francophone / arabisant)."""
+
+    __tablename__ = "recensements_ecole"
+    __table_args__ = (UniqueConstraint("ecole_id", "annee", name="uq_recensement_ecole_annee"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ecole_id: Mapped[int] = mapped_column(ForeignKey("ecoles.id", ondelete="CASCADE"), index=True, nullable=False)
+    annee: Mapped[int] = mapped_column(Integer, nullable=False)
+    eleves: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    admin_francophone: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    admin_arabisant: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    ens_francophone: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    ens_arabisant: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    @property
+    def personnel_total(self) -> int:
+        return self.admin_francophone + self.admin_arabisant + self.ens_francophone + self.ens_arabisant
+
+
+class ResultatExamen(Base):
+    """Résultat d'un examen pour une école et une année."""
+
+    __tablename__ = "resultats_examens"
+    __table_args__ = (UniqueConstraint("ecole_id", "annee", "examen", name="uq_resultat_ecole_annee_examen"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ecole_id: Mapped[int] = mapped_column(ForeignKey("ecoles.id", ondelete="CASCADE"), index=True, nullable=False)
+    annee: Mapped[int] = mapped_column(Integer, nullable=False)
+    examen: Mapped[str] = mapped_column(String(20), nullable=False)
+    inscrits: Mapped[int] = mapped_column(Integer, nullable=False)
+    admis: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    @property
+    def taux(self) -> float:
+        return round(100 * self.admis / self.inscrits, 1) if self.inscrits else 0.0
+
+    @property
+    def examen_label(self) -> str:
+        return EXAMENS.get(self.examen, self.examen)
+
+
+class BilanEcole(Base):
+    """Bilan annuel d'une école : proposé par la faîtière, examiné puis validé par la PSIE."""
+
+    __tablename__ = "bilans_ecole"
+    __table_args__ = (UniqueConstraint("ecole_id", "annee", name="uq_bilan_ecole_annee"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ecole_id: Mapped[int] = mapped_column(ForeignKey("ecoles.id", ondelete="CASCADE"), index=True, nullable=False)
+    annee: Mapped[int] = mapped_column(Integer, nullable=False)
+    resume: Mapped[str] = mapped_column(Text, nullable=False)
+    difficultes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    perspectives: Mapped[str | None] = mapped_column(Text, nullable=True)
+    statut: Mapped[str] = mapped_column(String(20), default="brouillon", nullable=False)
+    avis: Mapped[str | None] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    @property
+    def statut_label(self) -> str:
+        return BILAN_STATUTS.get(self.statut, self.statut)
+
+
+class Annonce(Base):
+    """Message de la PSIE vers toutes les faîtières (faitiere_id vide) ou vers une seule."""
+
+    __tablename__ = "annonces"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    faitiere_id: Mapped[int | None] = mapped_column(ForeignKey("faitieres.id", ondelete="CASCADE"), index=True, nullable=True)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    texte: Mapped[str] = mapped_column(Text, nullable=False)
+    auteur_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+class DemandeFaitiere(Base):
+    """Demande d'une faîtière à la PSIE (attestation, rendez-vous, soutien…), avec réponse et suivi."""
+
+    __tablename__ = "demandes_faitiere"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    faitiere_id: Mapped[int] = mapped_column(ForeignKey("faitieres.id", ondelete="CASCADE"), index=True, nullable=False)
+    type: Mapped[str] = mapped_column(String(20), nullable=False)
+    objet: Mapped[str] = mapped_column(String(255), nullable=False)
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    statut: Mapped[str] = mapped_column(String(20), default="ouverte", nullable=False)
+    reponse: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    faitiere = relationship("Faitiere")
+
+    @property
+    def type_label(self) -> str:
+        return DEMANDE_TYPES.get(self.type, self.type)
+
+    @property
+    def statut_label(self) -> str:
+        return DEMANDE_STATUTS.get(self.statut, self.statut)
 
 
 class ReinitialisationMdp(Base):

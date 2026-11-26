@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_announcements') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav_announcements') }}</h1>
+{% for a in items %}
+<article class="card">
+  <div class="row"><h2>{{ a.titre }}</h2><small class="muted">{{ a.created_at.strftime('%d/%m/%Y') }} · {{ names.get(a.faitiere_id, t('r_all')) if a.faitiere_id else t('r_all') }}</small></div>
+  <p>{{ a.texte }}</p>
+  {% if user.can_manage_members %}<form method="post" action="/annonces/{{ a.id }}/supprimer" class="inline"><button class="link danger">{{ t('delete') }}</button></form>{% endif %}
+</article>
+{% else %}<p class="card muted">{{ t('none') }}</p>{% endfor %}
+{% if user.can_manage_members %}
+<section class="card">
+  <h2>{{ t('r_new_announcement') }}</h2>
+  <form method="post" action="/annonces" class="stack">
+    <label>{{ t('r_title') }} *<input name="titre" required maxlength="255"></label>
+    <label>{{ t('r_message') }} *<textarea name="texte" rows="4" required></textarea></label>
+    <label>{{ t('r_target') }}<select name="cible"><option value="">{{ t('r_all') }}</option>{% for f in faitieres %}<option value="{{ f.id }}">{{ f.sigle }}</option>{% endfor %}</select></label>
+    <div><button class="btn">{{ t('r_publish') }}</button></div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

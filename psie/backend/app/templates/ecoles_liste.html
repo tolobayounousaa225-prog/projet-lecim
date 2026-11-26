@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ t('space_schools') }} — {{ f.sigle }}{% endblock %}
+{% block content %}
+<p><a href="/faitieres/{{ f.id }}">← {{ f.sigle }}</a></p>
+<div class="row">
+  <h1>{{ t('space_schools') }} <small>{{ f.sigle }}</small></h1>
+  <form method="get" class="inline">
+    <label>{{ t('e_year') }} <select name="annee">{% for y in years %}<option value="{{ y }}"{% if y == annee %} selected{% endif %}>{{ y }}</option>{% endfor %}</select></label>
+    <button class="btn">OK</button>
+  </form>
+</div>
+
+<div class="tiles">
+  <div class="tile"><div class="num">{{ row.ecoles }}</div><div>{{ t('e_schools_count') }}</div></div>
+  <div class="tile"><div class="num">{{ row.eleves }}</div><div>{{ t('e_pupils') }}</div></div>
+  <div class="tile"><div class="num">{{ row.personnel }}</div><div>{{ t('e_staff_total') }}</div></div>
+  <div class="tile"><div class="num">{{ row.francophones }}</div><div>{{ t('e_francophone') }}</div></div>
+  <div class="tile"><div class="num">{{ row.arabisants }}</div><div>{{ t('e_arabisant') }}</div></div>
+</div>
+
+<section class="card">
+  <div class="row"><h2>{{ t('e_list') }}</h2><a href="/faitieres/{{ f.id }}/export-ecoles.csv?annee={{ annee }}">{{ t('e_export') }}</a></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ t('name') }}</th><th>{{ t('e_level') }}</th><th>{{ t('e_locality') }}</th><th>DRENA</th><th>{{ t('e_pupils') }}</th><th>{{ t('e_staff_total') }}</th><th></th></tr></thead>
+    <tbody>
+    {% for e in ecoles %}{% set r = recs.get(e.id) %}
+      <tr><td><a href="/faitieres/{{ f.id }}/ecoles/{{ e.id }}">{{ e.nom }}</a></td><td>{{ lbl('niveau', e.niveau) if e.niveau else '—' }}</td>
+        <td>{{ e.localite or '—' }}</td><td>{{ e.drena or '—' }}</td>
+        <td>{{ r.eleves if r else '—' }}</td><td>{{ r.personnel_total if r else '—' }}</td>
+        <td>{% if can_write %}<form method="post" action="/faitieres/{{ f.id }}/ecoles/{{ e.id }}/supprimer" class="inline"><button class="link danger">{{ t('delete') }}</button></form>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="7" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+
+{% if can_write %}
+<section class="card">
+  <h2>{{ t('add') }}</h2>
+  <form method="post" action="/faitieres/{{ f.id }}/ecoles" class="grid">
+    <label>{{ t('name') }} *<input name="nom" required></label>
+    <label>{{ t('e_level') }}<select name="niveau"><option value="">—</option>{% for k in niveaux %}<option value="{{ k }}">{{ lbl('niveau', k) }}</option>{% endfor %}</select></label>
+    <label>{{ t('e_locality') }}<input name="localite"></label>
+    <label>DRENA<input name="drena"></label>
+    <label>{{ t('e_director') }}<input name="directeur"></label>
+    <label>{{ t('phone') }}<input name="telephone"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+</section>
+<section class="card">
+  <h2>{{ t('e_import') }}</h2>
+  <p class="muted">{{ t('e_import_help') }}</p>
+  <form method="post" action="/faitieres/{{ f.id }}/ecoles/import" enctype="multipart/form-data" class="grid">
+    <label>CSV<input type="file" name="fichier" accept=".csv,text/csv" required></label>
+    <div><button class="btn">{{ t('e_import_btn') }}</button></div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

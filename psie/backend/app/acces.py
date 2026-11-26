@@ -21,6 +21,7 @@ SECTIONS = {
     "assemblees": ("Assemblées", "الجمعيات", "Convocations, émargement, résolutions, votes, procès-verbaux, documents."),
     "sanctions": ("Sanctions", "العقوبات", "Dossiers disciplinaires et notifications."),
     "finances": ("Finances et cotisations", "المالية والاشتراكات", "Cotisations, paiements, reçus, appels exceptionnels, dépenses, recettes, dons, budget, états financiers."),
+    "ecoles": ("Écoles et suivi des faîtières", "المدارس ومتابعة المنظمات", "Écoles affiliées, recensement du personnel, résultats d'examens, bilans, statistiques par faîtière."),
     "interets": ("Déclarations d'intérêts", "تصريحات المصالح", "Conflits d'intérêts déclarés par les membres des organes."),
     "contenu": ("Contenu du site", "محتوى الموقع", "Actualités, équipe, partenaires, documents publics du site vitrine."),
 }
@@ -32,15 +33,15 @@ ADMIN_ONLY_PREFIXES = ("/users", "/audit", "/acces")
 # Valeurs par défaut : chaque secrétariat ne voit que ce qui le concerne.
 DEFAULTS: dict[str, dict[str, int]] = {
     # L'administrateur technique n'a pas accès aux finances par défaut (principe de séparation des fonctions).
-    "admin": {"membres": 2, "adhesions": 2, "assemblees": 2, "sanctions": 2, "interets": 2, "contenu": 2},
-    "den": {"membres": 2, "adhesions": 2, "assemblees": 2, "sanctions": 2, "finances": 1, "interets": 2},
-    "secretaire": {"membres": 2, "adhesions": 2, "assemblees": 2, "sanctions": 2, "interets": 2},
-    "finances": {"finances": 2, "membres": 1, "assemblees": 1, "interets": 2},
+    "admin": {"ecoles": 1, "membres": 2, "adhesions": 2, "assemblees": 2, "sanctions": 2, "interets": 2, "contenu": 2},
+    "den": {"ecoles": 2, "membres": 2, "adhesions": 2, "assemblees": 2, "sanctions": 2, "finances": 1, "interets": 2},
+    "secretaire": {"ecoles": 2, "membres": 2, "adhesions": 2, "assemblees": 2, "sanctions": 2, "interets": 2},
+    "finances": {"ecoles": 1, "finances": 2, "membres": 1, "assemblees": 1, "interets": 2},
     "communication": {"contenu": 2, "interets": 2},
-    "formation": {"interets": 2},
-    "examens": {"interets": 2},
-    "ressources": {"interets": 2},
-    "administrateur_ca": {"membres": 1, "adhesions": 1, "assemblees": 1, "sanctions": 1, "finances": 1, "interets": 2},
+    "formation": {"ecoles": 2, "interets": 2},
+    "examens": {"ecoles": 2, "interets": 2},
+    "ressources": {"ecoles": 1, "interets": 2},
+    "administrateur_ca": {"ecoles": 1, "membres": 1, "adhesions": 1, "assemblees": 1, "sanctions": 1, "finances": 1, "interets": 2},
     "commissaire": {"finances": 1, "interets": 2},
 }
 
@@ -53,15 +54,20 @@ _PREFIXES = (
     ("/cotisations", "finances"), ("/echeances", "finances"), ("/paiements", "finances"), ("/appels", "finances"),
     ("/finances", "finances"), ("/depenses", "finances"), ("/justificatifs", "finances"), ("/recettes", "finances"),
     ("/dons", "finances"), ("/budget", "finances"), ("/etat-financier", "finances"), ("/rapports-cc", "finances"),
+    ("/statistiques", "ecoles"), ("/ecoles", "ecoles"), ("/bilans", "ecoles"),
+    ("/annonces", "membres"), ("/demandes", "membres"),
     ("/interets", "interets"),
     ("/gestion", "contenu"),
 )
+_ECOLES_PATH = re.compile(r"/faitieres/\d+/(ecoles|statistiques|export-ecoles\.csv)(/.*)?")
 _FINANCE_DOCS = re.compile(r"/faitieres/\d+/(attestation|releve)\.pdf")
 
 
 def section_for_path(path: str) -> str | None:
     if _FINANCE_DOCS.fullmatch(path):
         return "finances"
+    if _ECOLES_PATH.fullmatch(path):
+        return "ecoles"
     for prefix, section in _PREFIXES:
         if path == prefix or path.startswith(prefix + "/"):
             return section

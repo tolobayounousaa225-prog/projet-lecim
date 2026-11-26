@@ -21,6 +21,12 @@
       {% if user.can('adhesions') %}{{ nav_item('/adhesions', t('nav_adhesions'), '/adhesions') }}{% endif %}
     </div>
     {% endif %}
+    {% if user.can('ecoles') or user.can('membres') %}
+    <div class="nav-group"><h2>{{ t('nav_group_federations') }}</h2>
+      {% if user.can('ecoles') %}{{ nav_item('/statistiques', t('nav_stats'), '/statistiques') }}{% endif %}
+      {% if user.can('membres') %}{{ nav_item('/annonces', t('nav_announcements'), '/annonces') }}{{ nav_item('/demandes', t('nav_requests'), '/demandes') }}{% endif %}
+    </div>
+    {% endif %}
     {% if user.can('assemblees') or user.can('sanctions') or user.can('interets') %}
     <div class="nav-group"><h2>{{ t('nav_group_life') }}</h2>
       {% if user.can('assemblees') %}{{ nav_item('/assemblees', t('nav_assemblies'), '/assemblees') }}{% endif %}
@@ -53,7 +59,10 @@
       {{ nav_item('/faitieres/%d' % user.faitiere_id, t('nav_my_org')) }}
       {{ nav_item('/faitieres/%d/delegues' % user.faitiere_id, t('space_delegates'), '/faitieres/%d/delegues' % user.faitiere_id) }}
       {{ nav_item('/faitieres/%d/ecoles' % user.faitiere_id, t('space_schools'), '/faitieres/%d/ecoles' % user.faitiere_id) }}
+      {{ nav_item('/faitieres/%d/statistiques' % user.faitiere_id, t('nav_stats'), '/faitieres/%d/statistiques' % user.faitiere_id) }}
       {{ nav_item('/assemblees', t('nav_assemblies'), '/assemblees') }}
+      {{ nav_item('/annonces', t('nav_announcements'), '/annonces') }}
+      {{ nav_item('/demandes', t('nav_requests'), '/demandes') }}
     </div>
   {% endif %}
 {% endmacro %}

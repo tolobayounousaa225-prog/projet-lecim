@@ -2,10 +2,11 @@ import datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .. import acces, finance, gouvernance, models
+from .. import acces, finance, gouvernance, models, stats
 from ..audit import log_action
 from ..database import get_db
 from ..deps import get_current_user, require_admin, require_internal, require_member_manager
@@ -53,7 +54,7 @@ def dashboard(request: Request, user: models.User = Depends(require_internal), d
 
 
 URL_OF = {"membres": "/faitieres", "adhesions": "/adhesions", "assemblees": "/assemblees", "sanctions": "/sanctions",
-          "finances": "/cotisations", "interets": "/interets", "contenu": "/gestion/contenu"}
+          "finances": "/cotisations", "ecoles": "/statistiques", "interets": "/interets", "contenu": "/gestion/contenu"}
 
 
 # ---------- Membres (faîtières) ----------
@@ -128,7 +129,13 @@ def faitiere_detail(faitiere_id: int, request: Request, user: models.User = Depe
         if show_dues else []
     )
     pieces = db.query(models.PieceFaitiere).filter_by(faitiere_id=item.id).order_by(models.PieceFaitiere.id).all()
-    return render(request, "faitiere_detail.html", user, item=item, show_dues=show_dues,
+    dash = stats.dossier(db, item, stats.current_year()) if (not user.is_internal or user.can("ecoles")) else None
+    annonces = db.query(models.Annonce).filter(or_(models.Annonce.faitiere_id.is_(None), models.Annonce.faitiere_id == item.id)) \
+        .order_by(models.Annonce.id.desc()).limit(3).all() if dash else []
+    prochains = [a for a in db.query(models.Assemblee).order_by(models.Assemblee.date_assemblee).all()
+                 if a.date_assemblee >= datetime.date.today() and a.statut != "preparation"][:3] if dash else []
+    return render(request, "faitiere_detail.html", user, item=item, show_dues=show_dues, dash=dash, annonces=annonces,
+                  prochains=prochains, annee=stats.current_year(),
                   echeances=echeances, fcfa=finance.fcfa, pieces=pieces, piece_types=models.MEMBRE_PIECE_TYPES)
 
 

@@ -194,3 +194,5 @@ main.bare .card.narrow { margin: 16px auto; width: 100%; }
   .shell { display: block; } .content { padding: 0; max-width: none; }
   .card, .tile { box-shadow: none; }
 }
+
+progress { width: 100%; max-width: 360px; height: 10px; accent-color: #14532d; }
