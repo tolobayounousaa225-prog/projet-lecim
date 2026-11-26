@@ -530,6 +530,11 @@ def run_startup_migrations() -> None:
         if "lieu_naissance" not in cartes_membres_columns:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE cartes_membres ADD COLUMN lieu_naissance VARCHAR(255)"))
+        if "expiration_alert_envoyee" not in cartes_membres_columns:
+            with engine.begin() as conn:
+                conn.execute(
+                    text("ALTER TABLE cartes_membres ADD COLUMN expiration_alert_envoyee BOOLEAN DEFAULT FALSE")
+                )
 
     if inspector.has_table("adhesion_requests"):
         adhesion_requests_columns = {c["name"] for c in inspector.get_columns("adhesion_requests")}
