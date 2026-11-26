@@ -75,6 +75,17 @@ git clone https://github.com/tolobayounousaa225-prog/projet-lecim.git psie-app
 cd psie-app/psie/deploy && ./installer.sh --serveur-dedie
 ```
 
+### Passer de l'essai privé au mode public
+
+Après `./installer.sh --essai` (sans domaine ni e-mail), quand l'envoi d'e-mails est prêt (Gmail : validation en
+2 étapes + « mot de passe d'application » de 16 lettres) :
+
+```bash
+cd psie-app && git pull && cd psie/deploy
+./ouvrir-au-public.sh      # sauvegarde .env, active HTTPS + e-mail + double vérification, teste l'envoi
+```
+Retour arrière en cas de problème : `cp .env.avant-public .env && docker compose --env-file .env up -d`.
+
 ## 3. Installation
 
 ### Installation automatique (recommandée)

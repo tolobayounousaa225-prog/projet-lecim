@@ -108,3 +108,82 @@ def test_dedicated_server_keeps_a_real_domain_when_given(tmp_path):
 def test_trial_and_dedicated_modes_cannot_be_combined(tmp_path):
     r, folder = run(tmp_path, "--essai", "--serveur-dedie")
     assert r.returncode == 2 and not (folder / ".env").exists()
+
+
+# ---------------------------------------------------------------- passage en public
+
+def public(folder, **env):
+    clean = {k: v for k, v in os.environ.items() if not k.startswith(("PSIE_", "SMTP_", "ADMIN_", "VITRINE_"))}
+    shutil.copy(DEPLOY / "ouvrir-au-public.sh", folder / "ouvrir-au-public.sh")
+    return subprocess.run(["bash", "ouvrir-au-public.sh", "--sans-docker"], cwd=folder, env={**clean, **env},
+                          capture_output=True, text=True, stdin=subprocess.DEVNULL)
+
+
+PUBLIC = {"PSIE_IP": "185.215.166.186", "SMTP_HOST": "smtp.gmail.com", "SMTP_USER": "psie@gmail.com",
+          "SMTP_PASSWORD": "abcd efgh ijkl mnop"}
+
+
+def trial_install(tmp_path):
+    r, folder = run(tmp_path, "--essai", ADMIN_EMAIL="chef@psie-ci.org")
+    assert r.returncode == 0, r.stderr
+    return folder
+
+
+def test_going_public_updates_only_what_is_needed_and_keeps_a_backup(tmp_path):
+    folder = trial_install(tmp_path)
+    before = read_env(folder)
+    r = public(folder, **PUBLIC)
+    assert r.returncode == 0, r.stderr
+    after = read_env(folder)
+    assert after["DOMAIN"] == "185-215-166-186.sslip.io" and after["PUBLIC_BASE_URL"] == "https://185-215-166-186.sslip.io"
+    assert after["COOKIE_SECURE"] == "true" and after["TWO_FACTOR_ENABLED"] == "true"
+    assert after["SMTP_HOST"] == "smtp.gmail.com" and after["SMTP_USER"] == "psie@gmail.com" and after["SMTP_FROM"] == "psie@gmail.com"
+    assert after["SMTP_PASSWORD"] == "abcdefghijklmnop"                       # espaces du code Google retirés
+    for same in ("POSTGRES_PASSWORD", "SECRET_KEY", "ADMIN_BOOTSTRAP_EMAIL", "ADMIN_BOOTSTRAP_PASSWORD", "PSIE_PORT"):
+        assert after[same] == before[same], same                              # la base et les secrets ne changent pas
+    assert oct((folder / ".env").stat().st_mode & 0o777) == "0o600"
+    assert read_env_file(folder / ".env.avant-public")["COOKIE_SECURE"] == "false"
+    settings = Settings(_env_file=None, secret_key=after["SECRET_KEY"], cookie_secure=True, debug=False, two_factor_enabled=True,
+                        smtp_host=after["SMTP_HOST"], public_base_url=after["PUBLIC_BASE_URL"], vitrine_url=after["VITRINE_URL"],
+                        vitrine_origins=after["VITRINE_ORIGINS"])
+    assert production_problems(settings) == []
+
+
+def read_env_file(path) -> dict:
+    return dict(line.split("=", 1) for line in path.read_text().splitlines() if "=" in line and not line.startswith("#"))
+
+
+def test_going_public_with_a_real_domain(tmp_path):
+    folder = trial_install(tmp_path)
+    env = {k: v for k, v in PUBLIC.items() if k != "PSIE_IP"}
+    assert public(folder, **env, PSIE_DOMAIN="app.psie-ci.org").returncode == 0
+    assert read_env(folder)["PUBLIC_BASE_URL"] == "https://app.psie-ci.org"
+
+
+def test_going_public_twice_is_refused_and_changes_nothing(tmp_path):
+    folder = trial_install(tmp_path)
+    assert public(folder, **PUBLIC).returncode == 0
+    snapshot = (folder / ".env").read_text()
+    again = public(folder, **PUBLIC)
+    assert again.returncode == 1 and "déjà en mode public" in again.stderr and (folder / ".env").read_text() == snapshot
+
+
+@pytest.mark.parametrize("override,message", [
+    ({"PSIE_IP": "999"}, "IP invalide"), ({"PSIE_IP": "1.2.3.4; rm -rf /"}, "IP invalide"),
+    ({"SMTP_USER": ""}, "obligatoire"), ({"SMTP_PASSWORD": ""}, "obligatoire"),
+    ({"SMTP_PASSWORD": "mot$de$passe"}, "non pris en charge"), ({"SMTP_PASSWORD": "a#b"}, "non pris en charge"),
+    ({"PSIE_DOMAIN": "mauvais domaine!"}, "invalide"),
+])
+def test_bad_answers_leave_the_env_untouched(tmp_path, override, message):
+    folder = trial_install(tmp_path)
+    before = (folder / ".env").read_text()
+    r = public(folder, **{**PUBLIC, **override})
+    assert r.returncode == 1 and message in r.stderr
+    assert (folder / ".env").read_text() == before and not (folder / ".env.avant-public").exists()
+
+
+def test_going_public_needs_an_existing_install(tmp_path):
+    folder = tmp_path / "vide"
+    folder.mkdir()
+    r = public(folder, **PUBLIC)
+    assert r.returncode == 1 and "installer.sh" in r.stderr
