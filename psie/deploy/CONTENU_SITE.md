@@ -30,7 +30,11 @@ doit s'arrêter et laisser en ligne la version précédente.
    `python -m scripts.import_site_content /chemin/du/depot/PSIE`
    (sans `--remplacer`, une rubrique déjà renseignée n'est jamais écrasée).
 5. Créer les comptes des secrétariats dans « Comptes » (rôle choisi dans la liste).
-6. Côté dépôt du site : faire lire `CONTENT_URL` à la construction (étape suivante, dans le dépôt PSIE).
+6. Côté dépôt du site (GitHub → PSIE → Settings → Secrets and variables → Actions → **Variables**) : ajouter
+   `CONTENT_URL` = `https://VOTRE-DOMAINE/api/public/site.json`. Dès lors le site lit son contenu dans l'application
+   (voir le README du dépôt PSIE).
+7. Vérifier : modifier l'annonce dans « Contenu du site », puis regarder l'onglet *Actions* du dépôt PSIE : une
+   construction « Site vitrine » démarre seule (événement `contenu-modifie`) et le site change en 1 à 2 minutes.
 
 ## Fichiers envoyés (logos, photos, PDF)
 
