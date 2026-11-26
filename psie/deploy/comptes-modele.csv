@@ -1,0 +1,8 @@
+nom;email;role;faitiere;origine
+Nom Prénom du DEN;den@exemple.org;den;;
+Nom Prénom du secrétaire aux finances;finances@exemple.org;finances;;
+Nom Prénom du secrétariat Examens;examens@exemple.org;examens;;
+Nom Prénom du secrétariat Formation;formation@exemple.org;formation;;
+Nom Prénom du secrétariat Communication;communication@exemple.org;communication;;
+Nom Prénom du secrétariat Ressources;ressources@exemple.org;ressources;;
+Nom Prénom représentant LECIM;representant-lecim@exemple.org;faitiere;LECIM;
