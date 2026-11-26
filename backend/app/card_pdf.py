@@ -47,16 +47,23 @@ PRESIDENT_NOM = "Ahmed SYLLA"
 # Abreviations anglaises (JAN, FEB...) : convention des documents d'identite
 # internationaux (passeports, visas — norme OACI/ICAO Doc 9303), qui evite
 # l'ambiguite JJ/MM vs MM/JJ entre pays et ne depend d'aucune locale serveur.
+# Reservee aux dates completes (jour+mois+annee) : sans jour, l'echeance de
+# validite (mois+annee) n'a pas cette ambiguite et s'affiche en francais.
 _MOIS_ABR = [
     "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
     "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
 ]
 
+_MOIS_FR = [
+    "JANVIER", "FEVRIER", "MARS", "AVRIL", "MAI", "JUIN",
+    "JUILLET", "AOUT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DECEMBRE",
+]
+
 
 def _mois_annee_intl(date) -> str:
-    """Formate une date en "MOIS AAAA" (ex. "APR 2028") — la carte n'affiche
+    """Formate une date en "MOIS AAAA" (ex. "AVRIL 2028") — la carte n'affiche
     que l'echeance de validite, pas un jour precis qui n'a pas ete decide."""
-    return f"{_MOIS_ABR[date.month - 1]} {date.year}"
+    return f"{_MOIS_FR[date.month - 1]} {date.year}"
 
 
 def _date_internationale(date) -> str:
@@ -201,15 +208,19 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
         pdf.set_xy(photo_x, photo_cy - 2)
         pdf.cell(photo_d, 4, "PHOTO", align="C")
 
-    info_x, info_y, info_w = 25.85, 23.5, 37.66
+    # Bloc identite remonte legerement (demande explicite) pour que Nom,
+    # Fonction et Naissance tiennent tous les trois avant le bandeau
+    # decoratif arabe de l'image de fond (bande verticale fixe ~39.6-42.1mm,
+    # verifiee par echantillonnage de pixels du modele) sans avoir a le
+    # masquer ou a empieter dessus.
+    info_x, info_y, info_w = 25.85, 20.5, 37.66
     pdf.set_text_color(*GREEN)
     pdf.set_font("Helvetica", "", 5.8)
     pdf.set_xy(info_x, info_y)
     pdf.cell(info_w, 3, "Nom complet", align="L")
     pdf.set_text_color(10, 10, 10)
-    # Reste sur une seule ligne (comme "Fonction" plus bas) : un nom compose
-    # long qui passerait sur 2 lignes deborderait sur le bloc naissance,
-    # desormais rapproche juste en dessous.
+    # Reste sur une seule ligne : un nom compose long qui passerait sur
+    # 2 lignes deborderait sur le bloc suivant (Fonction).
     nom_text = _safe_text(carte.full_name_snapshot)
     nom_size = 8.2
     pdf.set_font("Helvetica", "B", nom_size)
@@ -217,13 +228,26 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
         nom_size -= 0.3
         pdf.set_font("Helvetica", "B", nom_size)
     pdf.set_xy(info_x, info_y + 3)
-    pdf.cell(info_w, 3.6, nom_text, align="L")
+    pdf.cell(info_w, 3.3, nom_text, align="L")
 
-    # Naissance juste apres le nom, avant la fonction — suit l'ordre logique
-    # de lecture d'une identite (qui, ne quand/ou, puis quel role) plutot que
-    # de la faire figurer tout en bas comme une information secondaire.
-    # Interligne resserre entre nom et naissance (demande explicite).
-    naissance_y = info_y + 7.3
+    # Fonction juste apres le nom, puis naissance juste en dessous de la
+    # fonction (ordre explicitement demande).
+    fonction_y = info_y + 6.8
+    pdf.set_text_color(*GREEN)
+    pdf.set_font("Helvetica", "", 5.8)
+    pdf.set_xy(info_x, fonction_y)
+    pdf.cell(info_w, 3, "Fonction", align="L")
+    pdf.set_text_color(10, 10, 10)
+    fonction_text = _safe_text(carte.user.poste_label)
+    fonction_size = 6.8
+    pdf.set_font("Helvetica", "B", fonction_size)
+    while fonction_size > 4.5 and pdf.get_string_width(fonction_text) > info_w:
+        fonction_size -= 0.3
+        pdf.set_font("Helvetica", "B", fonction_size)
+    pdf.set_xy(info_x, fonction_y + 2.7)
+    pdf.cell(info_w, 3.2, fonction_text, align="L")
+
+    naissance_y = fonction_y + 6.4
     if carte.date_naissance:
         pdf.set_text_color(*GREEN)
         pdf.set_font("Helvetica", "", 4.3)
@@ -242,26 +266,6 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
         pdf.set_font("Helvetica", "B", 5.5)
         pdf.set_xy(info_x + 19, naissance_y + 2.6)
         pdf.cell(19, 3, _safe_text(carte.lieu_naissance), align="L")
-
-    # Le bandeau decoratif arabe de l'image de fond occupe la bande verticale
-    # ~39.6-42.1mm (verifie par echantillonnage de pixels du modele) : plutot
-    # que de le masquer avec un rectangle plat (visible en "sticker" sur le
-    # fond texture), Fonction est placee juste apres, sur la zone unie du
-    # modele, pour rester nette sans rien recouvrir.
-    fonction_y = 42.0
-    pdf.set_text_color(*GREEN)
-    pdf.set_font("Helvetica", "", 5.8)
-    pdf.set_xy(info_x, fonction_y)
-    pdf.cell(info_w, 3, "Fonction", align="L")
-    pdf.set_text_color(10, 10, 10)
-    fonction_text = _safe_text(carte.user.poste_label)
-    fonction_size = 6.8
-    pdf.set_font("Helvetica", "B", fonction_size)
-    while fonction_size > 4.5 and pdf.get_string_width(fonction_text) > info_w:
-        fonction_size -= 0.3
-        pdf.set_font("Helvetica", "B", fonction_size)
-    pdf.set_xy(info_x, fonction_y + 2.6)
-    pdf.cell(info_w, 3.2, fonction_text, align="L")
 
     # Signature + cachet du president (remplace le QR, deplace au verso —
     # demande explicite : le recto porte l'identite du titulaire et son
