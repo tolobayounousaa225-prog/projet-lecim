@@ -44,16 +44,25 @@ _SIGNATURE_RATIO = 599 / 411
 PRESIDENT_NOM = "Ahmed SYLLA"
 
 
-_MOIS_FR = [
-    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
+# Abreviations anglaises (JAN, FEB...) : convention des documents d'identite
+# internationaux (passeports, visas — norme OACI/ICAO Doc 9303), qui evite
+# l'ambiguite JJ/MM vs MM/JJ entre pays et ne depend d'aucune locale serveur.
+_MOIS_ABR = [
+    "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+    "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
 ]
 
 
-def _mois_annee_fr(date) -> str:
-    """Formate une date en "Mois AAAA" (ex. "Avril 2028") sans dependre de la
-    locale du serveur — la carte n'affiche que l'echeance, pas le jour exact."""
-    return f"{_MOIS_FR[date.month - 1]} {date.year}"
+def _mois_annee_intl(date) -> str:
+    """Formate une date en "MOIS AAAA" (ex. "APR 2028") — la carte n'affiche
+    que l'echeance de validite, pas un jour precis qui n'a pas ete decide."""
+    return f"{_MOIS_ABR[date.month - 1]} {date.year}"
+
+
+def _date_internationale(date) -> str:
+    """Formate une date complete en "JJ MOIS AAAA" (ex. "12 JUN 1985"),
+    format standard des documents d'identite internationaux."""
+    return f"{date.day:02d} {_MOIS_ABR[date.month - 1]} {date.year}"
 
 
 def _draw_qr_mini(pdf: FPDF, carte, right_edge: float, bottom_edge: float, size: float, caption: bool = True) -> None:
@@ -215,16 +224,28 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
     pdf.set_xy(info_x, info_y + 12.3)
     pdf.cell(info_w, 3.4, fonction_text, align="L")
 
-    naissance_bits = []
+    # Naissance : deux champs libelles cote a cote (comme Nom complet/Fonction
+    # ci-dessus) plutot qu'une phrase — convention des documents d'identite
+    # internationaux (champs courts, pas de texte redige).
+    naissance_y = 41.2
     if carte.date_naissance:
-        naissance_bits.append(f"Ne(e) le {carte.date_naissance.strftime('%d/%m/%Y')}")
+        pdf.set_text_color(*GREEN)
+        pdf.set_font("Helvetica", "", 4.3)
+        pdf.set_xy(info_x, naissance_y)
+        pdf.cell(18, 2.6, "NE(E) LE", align="L")
+        pdf.set_text_color(10, 10, 10)
+        pdf.set_font("Helvetica", "B", 5.5)
+        pdf.set_xy(info_x, naissance_y + 2.6)
+        pdf.cell(18, 3, _date_internationale(carte.date_naissance), align="L")
     if carte.lieu_naissance:
-        naissance_bits.append(f"a {_safe_text(carte.lieu_naissance)}")
-    if naissance_bits:
-        pdf.set_text_color(70, 70, 70)
-        pdf.set_font("Helvetica", "", 4.8)
-        pdf.set_xy(5.56, 42.3)
-        pdf.cell(55, 3, " ".join(naissance_bits), align="L")
+        pdf.set_text_color(*GREEN)
+        pdf.set_font("Helvetica", "", 4.3)
+        pdf.set_xy(info_x + 19, naissance_y)
+        pdf.cell(19, 2.6, "LIEU", align="L")
+        pdf.set_text_color(10, 10, 10)
+        pdf.set_font("Helvetica", "B", 5.5)
+        pdf.set_xy(info_x + 19, naissance_y + 2.6)
+        pdf.cell(19, 3, _safe_text(carte.lieu_naissance), align="L")
 
     # Signature + cachet du president (remplace le QR, deplace au verso —
     # demande explicite : le recto porte l'identite du titulaire et son
@@ -233,13 +254,17 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
 
     pdf.set_font("Helvetica", "B", 6.2)
     pdf.set_text_color(*GREEN)
-    pdf.set_xy(3.5, CARD_H - 9)
+    pdf.set_xy(3.5, CARD_H - 8.2)
     pdf.cell(30, 3, f"N. {carte.numero_carte or '-'}", align="L")
-    pdf.set_font("Helvetica", "", 5.3)
-    pdf.set_text_color(80, 80, 80)
-    pdf.set_xy(3.5, CARD_H - 6)
-    validite = _mois_annee_fr(carte.date_validite) if carte.date_validite else "-"
-    pdf.cell(30, 3, f"Valable jusqu'a {validite}", align="L")
+    pdf.set_text_color(*GREEN)
+    pdf.set_font("Helvetica", "", 4.3)
+    pdf.set_xy(3.5, CARD_H - 5.3)
+    pdf.cell(30, 2.6, "VALABLE JUSQU'AU", align="L")
+    pdf.set_text_color(10, 10, 10)
+    pdf.set_font("Helvetica", "B", 5.3)
+    pdf.set_xy(3.5, CARD_H - 2.9)
+    validite = _mois_annee_intl(carte.date_validite) if carte.date_validite else "-"
+    pdf.cell(30, 2.9, validite, align="L")
 
 
 def _add_verso(pdf: FPDF, carte) -> None:
@@ -379,29 +404,44 @@ def _add_recto_delegation(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
     pdf.set_xy(info_x, 33.8)
     pdf.cell(info_w, 3, _safe_text(delegation_nom), align="L")
 
-    naissance_bits = []
+    # Naissance : deux champs libelles cote a cote, meme convention que la
+    # carte BEN (_add_recto) plutot qu'une phrase.
+    naissance_y = 39.0
     if carte.date_naissance:
-        naissance_bits.append(f"Ne(e) le {carte.date_naissance.strftime('%d/%m/%Y')}")
+        pdf.set_text_color(*GREEN)
+        pdf.set_font("Helvetica", "", 4.0)
+        pdf.set_xy(info_x, naissance_y)
+        pdf.cell(27, 2.4, "NE(E) LE", align="L")
+        pdf.set_text_color(10, 10, 10)
+        pdf.set_font("Helvetica", "B", 5.0)
+        pdf.set_xy(info_x, naissance_y + 2.4)
+        pdf.cell(27, 2.8, _date_internationale(carte.date_naissance), align="L")
     if carte.lieu_naissance:
-        naissance_bits.append(f"a {_safe_text(carte.lieu_naissance)}")
-    if naissance_bits:
-        pdf.set_text_color(90, 90, 90)
-        pdf.set_font("Helvetica", "", 4.6)
-        pdf.set_xy(6, 39.3)
-        pdf.cell(63, 3, " ".join(naissance_bits), align="L")
+        pdf.set_text_color(*GREEN)
+        pdf.set_font("Helvetica", "", 4.0)
+        pdf.set_xy(info_x + 28, naissance_y)
+        pdf.cell(27, 2.4, "LIEU", align="L")
+        pdf.set_text_color(10, 10, 10)
+        pdf.set_font("Helvetica", "B", 5.0)
+        pdf.set_xy(info_x + 28, naissance_y + 2.4)
+        pdf.cell(27, 2.8, _safe_text(carte.lieu_naissance), align="L")
 
     # Signature + cachet du president (remplace le QR, deplace au verso).
     _draw_president_signature_mini(pdf, CARD_W - 3.2, CARD_H - 2.5, 15)
 
     pdf.set_font("Helvetica", "B", 6.0)
     pdf.set_text_color(*GREEN)
-    pdf.set_xy(6, CARD_H - 9)
-    pdf.cell(60, 3, f"N. {carte.numero_carte or '-'}", align="L")
-    pdf.set_font("Helvetica", "", 5.0)
-    pdf.set_text_color(80, 80, 80)
-    pdf.set_xy(6, CARD_H - 6)
-    validite = _mois_annee_fr(carte.date_validite) if carte.date_validite else "-"
-    pdf.cell(60, 3, f"Valable jusqu'a {validite}", align="L")
+    pdf.set_xy(6, CARD_H - 8.2)
+    pdf.cell(55, 3, f"N. {carte.numero_carte or '-'}", align="L")
+    pdf.set_text_color(*GREEN)
+    pdf.set_font("Helvetica", "", 4.0)
+    pdf.set_xy(6, CARD_H - 5.3)
+    pdf.cell(55, 2.4, "VALABLE JUSQU'AU", align="L")
+    pdf.set_text_color(10, 10, 10)
+    pdf.set_font("Helvetica", "B", 5.0)
+    pdf.set_xy(6, CARD_H - 2.9)
+    validite = _mois_annee_intl(carte.date_validite) if carte.date_validite else "-"
+    pdf.cell(55, 2.8, validite, align="L")
 
 
 def _add_verso_delegation(pdf: FPDF, carte) -> None:
