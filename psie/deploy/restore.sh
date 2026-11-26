@@ -5,7 +5,19 @@
 # Pour tester sans Docker : PSQL_CMD="psql -h localhost -U psie" PGPASSWORD=... ./restore.sh --test FICHIER
 set -euo pipefail
 cd "$(dirname "$0")"
-[ -f .env ] && set -a && . ./.env && set +a
+# Lit .env ligne par ligne SANS l'exécuter : une valeur avec des espaces (ex. « Administrateur PSIE ») ne pose aucun problème.
+load_env() {
+  local line key val
+  [ -f .env ] || return 0
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in ''|\#*) continue ;; esac
+    key="${line%%=*}"; val="${line#*=}"
+    [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+    val="${val%\"}"; val="${val#\"}"
+    export "$key=$val"
+  done < .env
+}
+load_env
 
 MODE="${1:-}"; FILE="${2:-}"
 [ -n "$MODE" ] && [ -f "$FILE" ] || { echo "Usage : $0 --test|--prod FICHIER.sql.gz.enc" >&2; exit 2; }

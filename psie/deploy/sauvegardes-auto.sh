@@ -7,6 +7,18 @@
 # Relancer la commande ne change rien de ce qui marche déjà : la phrase secrète n'est jamais remplacée.
 set -euo pipefail
 cd "$(dirname "$0")"
+# Lit .env ligne par ligne SANS l'exécuter : une valeur avec des espaces (ex. « Administrateur PSIE ») ne pose aucun problème.
+load_env() {
+  local line key val
+  [ -f .env ] || return 0
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in ''|\#*) continue ;; esac
+    key="${line%%=*}"; val="${line#*=}"
+    [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+    val="${val%\"}"; val="${val#\"}"
+    export "$key=$val"
+  done < .env
+}
 DIR="$(pwd)"
 MODE="install"; DOCKER=1; TEST=1
 for a in "$@"; do
@@ -17,7 +29,7 @@ for a in "$@"; do
     *) echo "Option inconnue : $a" >&2; exit 2 ;;
   esac
 done
-[ -f .env ] && set -a && . ./.env && set +a
+load_env
 BACKUP_DIR="${BACKUP_DIR:-./backups}"
 PASSFILE="${BACKUP_PASSFILE:-./backup.pass}"
 MARK="# psie-sauvegarde"
