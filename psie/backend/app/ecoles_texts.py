@@ -102,6 +102,10 @@ ECOLES_TEXTS = {
     "fm_closed_info": _t("Les inscriptions ne sont plus ouvertes pour cette session.", "انتهى التسجيل لهذه الدورة."),
     "fm_verification": _t("Vérification de certificat", "التحقق من الشهادة"), "fm_valid": _t("Certificat authentique", "شهادة أصلية"),
     "fm_beneficiary": _t("Bénéficiaire", "المستفيد"), "fm_training": _t("Formation", "التكوين"), "fm_cert_number": _t("Certificat n°", "رقم الشهادة"),
+    "dir_status": _t("Annuaire public de la vitrine", "الدليل العمومي للموقع"), "dir_published": _t("publiée", "منشورة"), "dir_hidden": _t("non publiée", "غير منشورة"),
+    "dir_hide": _t("Retirer de l'annuaire", "إزالة من الدليل"), "dir_publish": _t("Publier dans l'annuaire", "نشر في الدليل"),
+    "dir_help": _t("Seuls le nom, le niveau, la localité, la DRENA et la faîtière sont publiés : jamais le directeur ni les téléphones.",
+                   "تُنشر فقط التسمية والمستوى والمنطقة والمديرية الجهوية والمنظمة: لا المدير ولا أرقام الهاتف."),
     "dash_sec_ecoles": _t("Écoles et suivi des faîtières", "المدارس ومتابعة المنظمات"),
 }
 

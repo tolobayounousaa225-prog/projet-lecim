@@ -966,6 +966,7 @@ class Ecole(Base):
     drena: Mapped[str | None] = mapped_column(String(80), nullable=True)
     telephone: Mapped[str | None] = mapped_column(String(40), nullable=True)
     niveau: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    publique: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true(), nullable=False)
     directeur: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
 

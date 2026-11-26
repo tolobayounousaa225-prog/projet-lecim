@@ -413,6 +413,10 @@ def export_site(db: Session) -> dict:
                 item["slug"] = r.cle
             items.append(item)
         result[key] = items
+    result["annuaire"] = [
+        {"nom": e.nom, "niveau": e.niveau or "", "localite": e.localite or "", "drena": e.drena or "", "faitiere": f.sigle}
+        for e, f in db.query(models.Ecole, models.Faitiere).join(models.Faitiere, models.Ecole.faitiere_id == models.Faitiere.id)
+        .filter(models.Ecole.publique.is_(True)).order_by(models.Faitiere.sigle, models.Ecole.nom) if f.is_membre_actif]
     result["media"] = [{"path": media_path(m), "url": f"/medias/{m.id}.{m.extension}", "sha256": m.sha256,
                         "taille": m.taille} for m in sorted(used.values(), key=lambda m: m.id)]
     body = json.dumps({k: v for k, v in result.items()}, sort_keys=True, ensure_ascii=False)

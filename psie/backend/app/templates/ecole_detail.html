@@ -5,6 +5,9 @@
 <h1>{{ e.nom }} <small>{{ f.sigle }}</small></h1>
 
 <section class="card">
+  <p>{{ t('dir_status') }} : <strong>{{ t('dir_published') if e.publique else t('dir_hidden') }}</strong>
+  {% if can_write %}<form method="post" action="/faitieres/{{ f.id }}/ecoles/{{ e.id }}/annuaire" class="inline"><button class="btn secondary">{{ t('dir_hide') if e.publique else t('dir_publish') }}</button></form>{% endif %}</p>
+  <p class="muted">{{ t('dir_help') }}</p>
   {% if can_write %}
   <form method="post" action="/faitieres/{{ f.id }}/ecoles/{{ e.id }}/modifier" class="grid">
     <label>{{ t('name') }} *<input name="nom" value="{{ e.nom }}" required></label>

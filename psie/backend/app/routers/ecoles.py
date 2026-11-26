@@ -187,6 +187,17 @@ def ecole_update(faitiere_id: int, ecole_id: int, nom: str = Form(""), localite:
     return _back(f, e)
 
 
+@router.post("/faitieres/{faitiere_id}/ecoles/{ecole_id}/annuaire")
+def ecole_directory(faitiere_id: int, ecole_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Publier ou retirer l'école de l'annuaire public de la vitrine (seuls nom, niveau, localité, DRENA et faîtière y figurent)."""
+    f = _faitiere(db, user, faitiere_id, write=True)
+    e = _ecole(db, f, ecole_id)
+    e.publique = not e.publique
+    log_action(db, user, "annuaire", "ecoles", e.id, f"{e.nom} → {'publiée' if e.publique else 'retirée'}")
+    db.commit()
+    return _back(f, e)
+
+
 @router.post("/faitieres/{faitiere_id}/ecoles/{ecole_id}/supprimer")
 def ecole_delete(faitiere_id: int, ecole_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     f = _faitiere(db, user, faitiere_id, write=True)
