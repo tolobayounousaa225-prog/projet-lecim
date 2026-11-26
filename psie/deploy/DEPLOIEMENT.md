@@ -179,22 +179,32 @@ Vérifiez ensuite : `https://VOTRE-DOMAINE/health` doit répondre `{"status":"ok
    Mot de passe oublié : l'administrateur en définit un nouveau dans « Comptes » (cela débloque aussi
    un compte verrouillé). Il n'existe pas encore de lien « mot de passe oublié » automatique par e-mail.
 
-## 6. Sauvegardes (à mettre en place le premier jour)
+## 6. Sauvegardes (automatiques)
+
+Une seule commande met tout en place :
 
 ```bash
-cd ~/psie-app/psie/deploy
-python3 -c "import secrets; print(secrets.token_urlsafe(32))" > backup.pass && chmod 600 backup.pass
-cat backup.pass       # COPIEZ cette phrase dans un gestionnaire de mots de passe, HORS du serveur
+cd ~/psie-app/psie/deploy        # le dossier où se trouve docker-compose.yml
+./sauvegardes-auto.sh
 ```
+
+Elle crée la phrase secrète (affichée **une seule fois** : copiez-la dans un gestionnaire de mots de passe,
+**hors du serveur**), planifie une sauvegarde chiffrée **chaque nuit à 2 h 15** et un **test de restauration
+chaque dimanche à 3 h 30**, puis fait tout de suite une première sauvegarde et la restaure en test.
+Les sauvegardes de plus de 30 jours sont supprimées. Relancer la commande ne casse rien et ne change jamais la
+phrase secrète.
 
 > **Sans cette phrase, les sauvegardes sont illisibles pour toujours.** Ne la gardez pas seulement
 > sur le serveur.
 
+Vérifier quand vous voulez que tout tourne : `./sauvegardes-auto.sh --statut` (dernière sauvegarde, tâches
+planifiées, fin du journal `backups/backup.log`).
+
+Commandes manuelles (déjà utilisées par l'automatisation) :
+
 ```bash
-./backup.sh                                   # sauvegarde chiffrée dans ./backups
+./backup.sh                                   # une sauvegarde chiffrée tout de suite, dans ./backups
 ./restore.sh --test backups/psie-XXXX.sql.gz.enc   # prouve qu'elle est restaurable (sans toucher à la production)
-crontab -e                                    # puis ajouter, pour une sauvegarde chaque nuit à 2 h :
-# 0 2 * * * cd /home/UTILISATEUR/psie-app/psie/deploy && ./backup.sh >> backups/backup.log 2>&1
 ```
 
 **Copie hors du serveur** : un disque qui tombe en panne emporte aussi ses sauvegardes. Définissez dans
@@ -242,7 +252,7 @@ La base PostgreSQL n'a **aucun port publié** : elle n'est joignable que par l'a
 - [ ] Montant de la cotisation de l'année saisi
 - [ ] DEN et secrétaire aux finances créés **avec leur organisation d'origine** (organisations différentes) ; une dépense de test signée, payée puis annulée côté test
 - [ ] Seuil de vérification renforcée des dons défini par le secrétaire aux finances
-- [ ] Une sauvegarde faite **et** restaurée en test ; phrase secrète copiée hors du serveur
-- [ ] Copie hors serveur configurée ; tâche cron en place
+- [ ] `./sauvegardes-auto.sh` lancé ; phrase secrète copiée hors du serveur ; `--statut` tout vert
+- [ ] Copie hors serveur configurée
 - [ ] Traductions arabes relues ; logo en place
 - [ ] Un faux dépôt d'adhésion testé de bout en bout
