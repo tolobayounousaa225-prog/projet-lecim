@@ -18,6 +18,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "ar": "منصة الهياكل الإسلامية للتعليم",
     },
     "nav_site_content": {"fr": "Contenu du site", "ar": "محتوى الموقع"},
+    "back_to_site": {"fr": "← Retour au site de la PSIE", "ar": "العودة إلى موقع المنصة →"},
     "space_title": {"fr": "Espace de la faîtière", "ar": "فضاء المنظمة"},
     "space_delegates": {"fr": "Délégués régionaux", "ar": "المندوبون الجهويون"},
     "space_schools": {"fr": "Écoles", "ar": "المدارس"},

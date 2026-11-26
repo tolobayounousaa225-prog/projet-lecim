@@ -50,7 +50,6 @@
     {% if user.can('contenu') %}
     <div class="nav-group"><h2>{{ t('nav_group_site') }}</h2>
       {{ nav_item('/gestion/contenu', t('nav_site_content'), '/gestion/contenu') }}
-      {{ nav_item('/gestion/actualites', t('nav_news_admin'), '/gestion/actualites') }}
     </div>
     {% endif %}
     {% if user.is_admin %}
@@ -127,7 +126,7 @@
   </div>
 </header>
 {% endif %}
-<main{% if bare %} class="bare"{% endif %}>
+<main{% if bare %} class="bare{% if wide %} wide{% endif %}"{% endif %}>
   {% if bare %}
   <div class="auth-brand">
     <img src="/static/logo.png" alt="PSIE" width="84" height="84">
@@ -136,6 +135,7 @@
   {% endif %}
   {{ page_content }}
   {% if bare %}
+  {% if vitrine_url %}<p class="auth-lang"><a href="{{ vitrine_url }}/">{{ t('back_to_site') }}</a></p>{% endif %}
   <p class="auth-lang">
     <a href="/lang/fr" class="lang {% if lang == 'fr' %}on{% endif %}">FR</a>
     <a href="/lang/ar" class="lang {% if lang == 'ar' %}on{% endif %}">العربية</a>
