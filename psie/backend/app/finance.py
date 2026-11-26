@@ -344,3 +344,24 @@ def send_weekly_digest(db: Session, today: datetime.date | None = None, sender=s
         if sender(u.email, "PSIE — Cotisations en retard", body):
             reached += 1
     return reached
+
+
+def send_receipt(paiement: models.Paiement, sender=None) -> bool:
+    """Envoie le reçu PDF à la faîtière (adresse de sa fiche). Sans adresse ou si l'envoi échoue : False,
+    jamais d'exception : l'enregistrement d'un paiement ne doit pas dépendre de l'e-mail."""
+    from . import pdfs
+
+    sender = sender or send_email          # résolu à l'appel (et non à la définition) : remplaçable dans les tests
+    faitiere = paiement.echeance.faitiere
+    if paiement.annule or not faitiere.email:
+        return False
+    e = paiement.echeance
+    body = (f"Bonjour,\n\nLa PSIE accuse réception de votre paiement de {fcfa(paiement.montant)} "
+            f"({e.libelle}), le {paiement.date_paiement:%d/%m/%Y}. Reçu n° {paiement.recu_numero} en pièce jointe.\n"
+            f"Solde restant : {fcfa(max(e.solde, 0))}.\n\nMerci.\n\n"
+            f"تؤكد المنصة استلام دفعتكم بمبلغ {fcfa(paiement.montant)}. الإيصال رقم {paiement.recu_numero} مرفق.\n")
+    try:
+        return bool(sender(faitiere.email, f"PSIE — Reçu {paiement.recu_numero}", body,
+                           attachments=[(f"{paiement.recu_numero}.pdf", pdfs.receipt_pdf(paiement), "application/pdf")]))
+    except Exception:  # noqa: BLE001
+        return False

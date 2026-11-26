@@ -29,7 +29,7 @@
 
 {% if show_dues %}
 <section class="card">
-  <h2>{{ t('nav_dues') }}</h2>
+  <div class="row"><h2>{{ t('nav_dues') }}</h2><a href="/faitieres/{{ item.id }}/releve.pdf" target="_blank">{{ t('statement_pdf') }}</a></div>
   <table>
     <thead><tr><th>{{ t('name') }}</th><th>{{ t('due') }}</th><th>{{ t('paid') }}</th><th>{{ t('deadline') }}</th><th>{{ t('status') }}</th><th></th></tr></thead>
     <tbody>

@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session
 
 from .. import finance, models, pdfs
+from ..audit import log_action
 from ..config import settings
 from ..database import get_db
 from ..deps import get_current_user
@@ -114,7 +115,8 @@ def echeance_detail(echeance_id: int, request: Request, user: models.User = Depe
                     db: Session = Depends(get_db)):
     e = _get_echeance(user, echeance_id, db)
     return render(request, "echeance_detail.html", user, e=e, fcfa=finance.fcfa,
-                  modes=models.MODES_PAIEMENT, today=datetime.date.today())
+                  modes=models.MODES_PAIEMENT, today=datetime.date.today(),
+                  receipt_notice=request.query_params.get("recu"))
 
 
 @router.post("/echeances/{echeance_id}/paiements")
@@ -127,9 +129,22 @@ def paiement_create(echeance_id: int, montant: int = Form(...), date_paiement: s
     when = parse_date(date_paiement)
     if not when:
         raise HTTPException(status_code=400, detail="Date de paiement obligatoire")
-    finance.record_paiement(db, user, e, montant, when, mode, clean(reference))
+    paiement = finance.record_paiement(db, user, e, montant, when, mode, clean(reference))
     db.commit()
-    return _redirect(f"/echeances/{e.id}")
+    sent = finance.send_receipt(paiement)          # le paiement est enregistré quoi qu'il arrive
+    return _redirect(f"/echeances/{e.id}?recu={'envoye' if sent else 'non'}")
+
+
+@router.post("/paiements/{paiement_id}/renvoyer-recu")
+def paiement_resend_receipt(paiement_id: int, user: models.User = Depends(require_finance_write),
+                            db: Session = Depends(get_db)):
+    p = db.get(models.Paiement, paiement_id)
+    if not p or p.annule:
+        raise HTTPException(status_code=404, detail="Paiement introuvable ou annulé")
+    sent = finance.send_receipt(p)
+    log_action(db, user, "recu_envoye" if sent else "recu_non_envoye", "paiement", p.id, p.recu_numero)
+    db.commit()
+    return _redirect(f"/echeances/{p.echeance_id}?recu={'envoye' if sent else 'non'}")
 
 
 @router.post("/paiements/{paiement_id}/annuler")
@@ -152,6 +167,17 @@ def _pdf_response(content: bytes, filename: str) -> Response:
 def recu_pdf(paiement_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     p = _get_paiement(user, paiement_id, db)
     return _pdf_response(pdfs.receipt_pdf(p), f"{p.recu_numero}.pdf")
+
+
+@router.get("/faitieres/{faitiere_id}/releve.pdf")
+def releve_pdf(faitiere_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Relevé de compte d'une faîtière : toutes ses échéances et tous ses paiements.
+    Réservé aux organes qui voient les finances et à la faîtière elle-même."""
+    f = db.get(models.Faitiere, faitiere_id)
+    if not f or not user.can_view_faitiere(faitiere_id) or (user.is_internal and not user.can_view_finances):
+        raise HTTPException(status_code=404, detail="Faîtière introuvable")
+    echeances = db.query(models.Echeance).filter_by(faitiere_id=f.id).order_by(models.Echeance.annee, models.Echeance.id).all()
+    return _pdf_response(pdfs.releve_pdf(f, echeances), f"releve-{f.sigle}.pdf".replace(" ", "-"))
 
 
 @router.get("/faitieres/{faitiere_id}/attestation.pdf")

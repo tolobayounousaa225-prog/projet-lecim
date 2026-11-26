@@ -5,6 +5,7 @@
   <h1>{{ e.libelle }} <small>{{ e.faitiere.sigle }}</small></h1>
   <span class="badge {{ e.statut }}">{{ t('st_' ~ e.statut) }}</span>
 </div>
+{% if receipt_notice == 'envoye' %}<p class="notice">{{ t('receipt_sent') }}</p>{% elif receipt_notice == 'non' %}<p class="alert">{{ t('receipt_not_sent') }}</p>{% endif %}
 <section class="card">
   <dl>
     <dt>{{ t('due') }}</dt><dd>{{ fcfa(e.montant_du) }}</dd>
@@ -27,6 +28,7 @@
       <td>{{ p.date_paiement }}</td><td>{{ fcfa(p.montant) }}</td><td>{{ p.mode_label }}</td><td>{{ p.reference or '—' }}</td>
       <td>
         <a href="/paiements/{{ p.id }}/recu.pdf" target="_blank">PDF</a>
+        {% if not p.annule and user.can_write_finances %}<form method="post" action="/paiements/{{ p.id }}/renvoyer-recu" class="inline"><button class="link">{{ t('resend_receipt') }}</button></form>{% endif %}
         {% if p.annule %}<div class="muted">{{ p.annule_motif }}</div>
         {% elif user.can_write_finances %}
         <form method="post" action="/paiements/{{ p.id }}/annuler" class="inline">

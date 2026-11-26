@@ -974,3 +974,14 @@ class PieceFaitiere(Base):
     @property
     def type_label(self) -> str:
         return MEMBRE_PIECE_TYPES.get(self.type, self.type)
+
+
+class RappelLog(Base):
+    """Rappel réglementaire déjà envoyé (mandat qui arrive à échéance, rapport semestriel, états financiers
+    avant une AG…) : une clé unique par rappel évite de l'envoyer deux fois."""
+
+    __tablename__ = "rappels_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cle: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    sent_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
