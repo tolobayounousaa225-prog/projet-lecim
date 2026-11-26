@@ -85,7 +85,8 @@ def test_dangerous_files_refuse_the_whole_application(db, anon, staff, mails, na
 def test_pieces_are_only_for_the_bodies_of_the_psie(db, anon, staff, mails):
     apply(anon, files={"statuts_file": ("statuts.pdf", PDF, "application/pdf")})
     d, piece = db.query(models.DemandeAdhesion).one(), db.query(models.PieceDemande).one()
-    got = client_for("exam@psie.ci").get(f"/adhesions/{d.id}/pieces/{piece.id}")
+    assert client_for("exam@psie.ci").get(f"/adhesions/{d.id}/pieces/{piece.id}").status_code == 403    # autre secrétariat
+    got = client_for("ca@psie.ci").get(f"/adhesions/{d.id}/pieces/{piece.id}")
     assert got.status_code == 200 and got.content == PDF and "attachment" in got.headers["content-disposition"]
     assert got.headers["cache-control"] == "private, no-store"
     assert anon.get(f"/adhesions/{d.id}/pieces/{piece.id}").status_code == 303
@@ -224,7 +225,8 @@ def test_members_see_annexes_only_once_the_assembly_is_convened(db, staff):
     got = rep.get(f"/annexes/{annexes[convened.id].id}")
     assert got.status_code == 200 and got.content == PDF and "attachment" in got.headers["content-disposition"]
     assert "Rapport moral" in rep.get(f"/assemblees/{convened.id}").text
-    assert client_for("exam@psie.ci").get(f"/annexes/{annexes[prep.id].id}").status_code == 200            # organes de la PSIE
+    assert client_for("ca@psie.ci").get(f"/annexes/{annexes[prep.id].id}").status_code == 200              # le CA lit les assemblées
+    assert client_for("exam@psie.ci").get(f"/annexes/{annexes[prep.id].id}").status_code == 403            # autre secrétariat
 
 
 def test_only_managers_write_annexes_and_a_closed_assembly_is_frozen(db, staff, anon):

@@ -136,7 +136,8 @@ def test_refusal_needs_reference_and_is_final(db, demande, anon):
 
 def test_permissions_on_instruction(db, demande, anon):
     fin = client_for("fin@psie.local")
-    assert fin.get("/adhesions").status_code == 200          # lecture
+    assert fin.get("/adhesions").status_code == 403          # le secrétariat des finances ne voit pas les adhésions
+    assert client_for("ca@psie.local").get("/adhesions").status_code == 200      # le CA les lit (avis écrit)
     assert fin.post(f"/adhesions/{demande.id}/decision", data={"decision": "refuser", "reference": "x"}).status_code == 403
     assert fin.post(f"/adhesions/{demande.id}/avis", data={"avis": "favorable"}).status_code == 403
     assert fin.post(f"/adhesions/{demande.id}/examen", data={}).status_code == 403
@@ -187,7 +188,7 @@ def test_public_members_show_only_active_members(db, anon):
 
 
 def test_news_publication_and_language_fallback(db, anon):
-    make_user(db, "sec@psie.local", "secretaire")
+    make_user(db, "sec@psie.local", "communication")
     c = client_for("sec@psie.local")
     assert c.post("/gestion/actualites", data={"titre_fr": "Assemblée annuelle", "contenu_fr": "Elle se tiendra à Bouaké.",
                                                 "publie": "on"}).status_code == 303
@@ -204,7 +205,7 @@ def test_news_publication_and_language_fallback(db, anon):
 
 
 def test_news_content_is_escaped_and_admin_restricted(db, anon):
-    make_user(db, "sec@psie.local", "secretaire")
+    make_user(db, "sec@psie.local", "communication")
     make_user(db, "ca@psie.local", "administrateur_ca")
     client_for("sec@psie.local").post("/gestion/actualites", data={
         "titre_fr": "<b>gras</b>", "contenu_fr": "<img src=x onerror=alert(1)>", "publie": "on"})

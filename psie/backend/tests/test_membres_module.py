@@ -87,7 +87,8 @@ def test_documents_are_cloistered_by_federation(db, setup, anon):
     own = client_for("rep-a@psie.ci").get(f"/pieces/{piece.id}")
     assert own.status_code == 200 and own.content == PDF and "attachment" in own.headers["content-disposition"]
     assert own.headers["cache-control"] == "private, no-store"
-    assert client_for("exam@psie.ci").get(f"/pieces/{piece.id}").status_code == 200        # organes de la PSIE
+    assert client_for("sec@psie.ci").get(f"/pieces/{piece.id}").status_code == 200         # secrétariat chargé des membres
+    assert client_for("exam@psie.ci").get(f"/pieces/{piece.id}").status_code == 403        # autre secrétariat
     assert client_for("rep-b@psie.ci").get(f"/pieces/{piece.id}").status_code == 404       # autre faîtière
     assert anon.get(f"/pieces/{piece.id}").status_code == 303
     assert client_for("den@psie.ci").get("/pieces/9999").status_code == 404
@@ -108,11 +109,12 @@ def test_member_register_pdf_for_the_bodies_of_the_psie(db, setup):
     db.add(models.Mandat(faitiere_id=a.id, organe="AG", full_name="Ancien Délégué", date_debut=datetime.date(2015, 1, 1),
                          date_fin=datetime.date(2018, 1, 1)))
     db.commit()
-    for who in ("den@psie.ci", "exam@psie.ci", "sec@psie.ci"):
+    assert client_for("exam@psie.ci").get("/registre-membres.pdf").status_code == 403
+    for who in ("den@psie.ci", "sec@psie.ci"):
         r = client_for(who).get("/registre-membres.pdf")
         assert r.status_code == 200 and r.headers["content-type"] == "application/pdf" and r.content.startswith(b"%PDF-"), who
     assert client_for("rep-a@psie.ci").get("/registre-membres.pdf").status_code == 403
-    assert db.query(models.AuditLog).filter_by(entity="registre_membres").count() == 3
+    assert db.query(models.AuditLog).filter_by(entity="registre_membres").count() == 2
 
 
 def test_register_lists_members_and_only_current_representatives(db, setup, tmp_path):

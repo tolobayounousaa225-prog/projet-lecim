@@ -93,7 +93,7 @@ def adhesion_decision(demande_id: int, decision: str = Form(...), reference: str
 def certificate_pdf(demande_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     d = _get(db, demande_id)
     own = not user.is_internal and d.faitiere_id is not None and user.can_view_faitiere(d.faitiere_id)
-    if not (user.can('adhesions') or own) or d.etat != "acceptee" or not d.faitiere or not d.cert_token:
+    if not (user.can_write_adhesions or own) or d.etat != "acceptee" or not d.faitiere or not d.cert_token:
         raise HTTPException(status_code=404, detail="Certificat introuvable")
     url = f"{settings.public_base_url.rstrip('/')}/verifier/adhesion/{d.cert_token}"
     return Response(pdfs.membership_certificate_pdf(d, url), media_type="application/pdf",

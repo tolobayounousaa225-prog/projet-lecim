@@ -327,7 +327,8 @@ def test_assembly_permissions(db, world):
     den = client_for("den@psie.local")
     create(den)
     a = db.query(models.Assemblee).one()
-    for email in ("finances@psie.local", "commissaire@psie.local", "administrateur_ca@psie.local"):
+    assert client_for("commissaire@psie.local").get(f"/assemblees/{a.id}").status_code == 403     # hors de son secrétariat
+    for email in ("finances@psie.local", "administrateur_ca@psie.local"):
         c = client_for(email)
         assert c.get(f"/assemblees/{a.id}").status_code == 200
         assert create(c).status_code == 403
@@ -421,11 +422,12 @@ def test_sanction_notification_and_permissions(db, world):
     den.post(f"/sanctions/{s.id}/notifier")
     db.refresh(s)
     assert s.notifiee_le == TODAY
-    for email in ("finances@psie.local", "commissaire@psie.local", "administrateur_ca@psie.local"):
-        c = client_for(email)
-        assert c.get("/sanctions").status_code == 200
-        assert sanction(c, world["LECIM"]).status_code == 403
-        assert c.post(f"/sanctions/{s.id}/notifier").status_code == 403
+    for email in ("finances@psie.local", "commissaire@psie.local"):
+        assert client_for(email).get("/sanctions").status_code == 403               # hors de leur secrétariat
+    c = client_for("administrateur_ca@psie.local")
+    assert c.get("/sanctions").status_code == 200                                    # le CA les lit
+    assert sanction(c, world["LECIM"]).status_code == 403
+    assert c.post(f"/sanctions/{s.id}/notifier").status_code == 403
     make_user(db, "rep@psie.local", "faitiere", faitiere_id=world["LECIM"].id)
     assert client_for("rep@psie.local").get("/sanctions").status_code == 403
     assert {a.action for a in db.query(models.AuditLog)} >= {"sanction", "notification"}
