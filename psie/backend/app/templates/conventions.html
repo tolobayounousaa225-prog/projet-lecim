@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_agreements') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav_agreements') }}</h1>
+<p class="muted">{{ t('c_help') }}</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ t('d_title') }}</th><th>{{ t('c_partner') }}</th><th>{{ t('status') }}</th><th>{{ t('d_added') }}</th></tr></thead>
+  <tbody>{% for c in items %}<tr><td><a href="/conventions/{{ c.id }}">{{ c.titre }}</a></td><td>{{ c.partenaire }}</td>
+    <td><span class="badge {{ c.statut }}">{{ lbl('convention_statut', c.statut) }}</span></td><td>{{ c.created_at.strftime('%d/%m/%Y') }}</td></tr>
+  {% else %}<tr><td colspan="4" class="muted">{{ t('none') }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% if can_write %}
+<section class="card"><h2>{{ t('c_new') }}</h2>
+  <form method="post" action="/conventions" enctype="multipart/form-data" class="grid">
+    <label>{{ t('d_title') }} *<input name="titre" required></label><label>{{ t('c_partner') }} *<input name="partenaire" required></label>
+    <label>{{ t('m_subject') }}<input name="objet"></label><label>{{ t('c_amount') }}<input name="montant" inputmode="numeric"></label>
+    <label>{{ t('c_start') }}<input type="date" name="date_debut"></label><label>{{ t('c_end') }}<input type="date" name="date_fin"></label>
+    <label>{{ t('d_file') }}<input type="file" name="fichier" accept="application/pdf,image/jpeg,image/png,image/webp"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form></section>
+{% endif %}
+{% endblock %}

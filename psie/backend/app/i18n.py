@@ -4,6 +4,7 @@ Les traductions arabes sont une première version à faire relire par un locuteu
 avant mise en ligne. Une clé absente retombe sur le français, puis sur la clé elle-même.
 """
 
+from .documents_texts import DOCUMENTS_LABELS, DOCUMENTS_TEXTS
 from .ecoles_texts import ECOLES_LABELS, ECOLES_TEXTS
 from .public_texts import PUBLIC_TEXTS
 
@@ -227,6 +228,7 @@ TEXTS: dict[str, dict[str, str]] = {
 
 TEXTS.update(PUBLIC_TEXTS)
 TEXTS.update(ECOLES_TEXTS)
+TEXTS.update(DOCUMENTS_TEXTS)
 
 
 def translate(key: str, lang: str) -> str:
@@ -277,6 +279,7 @@ LABELS: dict[str, dict[str, dict[str, str]]] = {
 }
 
 LABELS.update(ECOLES_LABELS)
+LABELS.update(DOCUMENTS_LABELS)
 
 
 def label(kind: str, key: str, lang: str) -> str:

@@ -1094,6 +1094,140 @@ class DemandeFaitiere(Base):
         return DEMANDE_STATUTS.get(self.statut, self.statut)
 
 
+DOC_CATEGORIES = {
+    "statuts": "Statuts et règlement", "decision": "Décisions et notes", "convention": "Conventions et partenariats",
+    "rapport": "Rapports", "modele": "Modèles de documents", "autre": "Autres",
+}
+COURRIER_SENS = {"arrivee": "Courrier arrivée", "depart": "Courrier départ"}
+COURRIER_STATUTS = {"recu": "Reçu", "en_traitement": "En traitement", "traite": "Traité", "archive": "Archivé"}
+CONVENTION_STATUTS = {
+    "brouillon": "Brouillon", "soumise": "En attente d'avis du CA", "approuvee": "Avis favorable du CA",
+    "rejetee": "Avis défavorable du CA", "signee": "Signée",
+}
+
+
+class Document(Base):
+    """Document de la PSIE conservé en base (statuts, décisions, rapports, modèles…)."""
+
+    __tablename__ = "documents"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    categorie: Mapped[str] = mapped_column(String(20), default="autre", nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    restreint: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    nom: Mapped[str] = mapped_column(String(120), nullable=False)
+    mime: Mapped[str] = mapped_column(String(50), nullable=False)
+    taille: Mapped[int] = mapped_column(Integer, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    contenu: Mapped[bytes] = mapped_column(LargeBinary, nullable=False, deferred=True)
+    auteur_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    @property
+    def categorie_label(self) -> str:
+        return DOC_CATEGORIES.get(self.categorie, self.categorie)
+
+
+class Courrier(Base):
+    """Registre du courrier : arrivée et départ, numéroté dans l'ordre (ARR-2026-0001, DEP-2026-0001)."""
+
+    __tablename__ = "courriers"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    sens: Mapped[str] = mapped_column(String(10), nullable=False)
+    numero: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    date_courrier: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    correspondant: Mapped[str] = mapped_column(String(255), nullable=False)
+    objet: Mapped[str] = mapped_column(String(255), nullable=False)
+    reference_externe: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    statut: Mapped[str] = mapped_column(String(20), default="recu", nullable=False)
+    responsable_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    echeance: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    reponse_a_id: Mapped[int | None] = mapped_column(ForeignKey("courriers.id", ondelete="SET NULL"), nullable=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    nom: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    mime: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    contenu: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True, deferred=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    responsable = relationship("User", foreign_keys=[responsable_id])
+
+    @property
+    def sens_label(self) -> str:
+        return COURRIER_SENS.get(self.sens, self.sens)
+
+    @property
+    def statut_label(self) -> str:
+        return COURRIER_STATUTS.get(self.statut, self.statut)
+
+    @property
+    def en_retard(self) -> bool:
+        return bool(self.echeance and self.statut in ("recu", "en_traitement") and self.echeance < datetime.date.today())
+
+
+class Convention(Base):
+    """Convention ou partenariat soumis au circuit d'approbation : DEN → avis du CA → signature du DEN."""
+
+    __tablename__ = "conventions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    partenaire: Mapped[str] = mapped_column(String(255), nullable=False)
+    objet: Mapped[str | None] = mapped_column(Text, nullable=True)
+    montant: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    date_debut: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    date_fin: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    statut: Mapped[str] = mapped_column(String(20), default="brouillon", nullable=False)
+    nom: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    mime: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    contenu: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True, deferred=True)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    etapes = relationship("ConventionEtape", cascade="all, delete-orphan", order_by="ConventionEtape.id")
+
+    @property
+    def statut_label(self) -> str:
+        return CONVENTION_STATUTS.get(self.statut, self.statut)
+
+
+class ConventionEtape(Base):
+    """Historique du circuit d'une convention : qui a fait quoi, quand, avec quel commentaire."""
+
+    __tablename__ = "convention_etapes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    convention_id: Mapped[int] = mapped_column(ForeignKey("conventions.id", ondelete="CASCADE"), index=True, nullable=False)
+    action: Mapped[str] = mapped_column(String(20), nullable=False)
+    par: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(30), nullable=False)
+    commentaire: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+class RegistreEntree(Base):
+    """Registre légal des délibérations d'un organe. Les entrées ne se modifient ni ne se suppriment : chacune est
+    chaînée à la précédente par une empreinte (toute altération rompt la chaîne et se voit à la vérification)."""
+
+    __tablename__ = "registre_entrees"
+    __table_args__ = (UniqueConstraint("registre", "numero", name="uq_registre_numero"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    registre: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
+    numero: Mapped[int] = mapped_column(Integer, nullable=False)
+    date_acte: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    resume: Mapped[str] = mapped_column(Text, nullable=False)
+    document_id: Mapped[int | None] = mapped_column(ForeignKey("documents.id", ondelete="SET NULL"), nullable=True)
+    assemblee_id: Mapped[int | None] = mapped_column(ForeignKey("assemblees.id", ondelete="SET NULL"), nullable=True)
+    auteur: Mapped[str] = mapped_column(String(255), nullable=False)
+    precedent: Mapped[str] = mapped_column(String(64), nullable=False)
+    empreinte: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
 class ReinitialisationMdp(Base):
     """Lien « mot de passe oublié » : seul l'empreinte du jeton est conservée, jamais le jeton."""
 
