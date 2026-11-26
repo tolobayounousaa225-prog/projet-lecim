@@ -76,6 +76,11 @@ if printf '%s' "$SMTP_PASSWORD" | grep -q '[$#"'"'"'\\`]'; then
   fail "Ce mot de passe contient un caractère non pris en charge dans le fichier .env. Pour Gmail, utilisez le code d'application de 16 lettres."
 fi
 SMTP_FROM=$(ask SMTP_FROM "Adresse d'expédition (pour Gmail : la même adresse)" "$SMTP_USER")
+printf '%s' "$SMTP_FROM" | grep -qE '^[^ @]+@[^ @]+\.[^ @]+$' || fail "L'adresse d'expédition « $SMTP_FROM » n'est pas une adresse e-mail (ex. psie@gmail.com). Vérifiez que vous n'avez pas collé le mot de passe à cet endroit."
+printf '%s' "$SMTP_USER" | grep -qE '^[^ @]+@[^ @]+\.[^ @]+$' || fail "L'utilisateur SMTP « $SMTP_USER » doit être une adresse e-mail complète pour Gmail."
+if [ "$SMTP_HOST" = "smtp.gmail.com" ] && [ "${#SMTP_PASSWORD}" -ne 16 ]; then
+  fail "Un mot de passe d'application Gmail fait 16 lettres (vous en avez ${#SMTP_PASSWORD}). Recopiez-le entièrement depuis myaccount.google.com/apppasswords."
+fi
 
 say "3/5 Mise à jour du fichier .env"
 cp -p .env .env.avant-public

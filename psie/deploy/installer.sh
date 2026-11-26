@@ -86,6 +86,10 @@ else
     SMTP_USER=$(ask SMTP_USER "Utilisateur SMTP")
     SMTP_PASSWORD=$(ask_secret SMTP_PASSWORD "Mot de passe SMTP (ne s'affiche pas pendant la saisie)")
     SMTP_FROM=$(ask SMTP_FROM "Adresse d'expédition" "no-reply@$DOMAINE")
+    printf '%s' "$SMTP_FROM" | grep -qE '^[^ @]+@[^ @]+\.[^ @]+$' || fail "L'adresse d'expédition « $SMTP_FROM » n'est pas une adresse e-mail. Vérifiez que vous n'avez pas collé le mot de passe à cet endroit."
+    if [ "$SMTP_HOST" = "smtp.gmail.com" ] && [ "$(printf '%s' "$SMTP_PASSWORD" | tr -d '[:space:]' | wc -c)" -ne 16 ]; then
+      fail "Un mot de passe d'application Gmail fait 16 lettres. Recopiez-le entièrement depuis myaccount.google.com/apppasswords."
+    fi
   fi
   ADMIN_EMAIL=$(ask ADMIN_EMAIL "E-mail du premier administrateur" "admin@psie.local")
   VITRINE_URL_V=$(ask VITRINE_URL "Adresse du site vitrine" "https://tolobayounousaa225-prog.github.io/PSIE/")
