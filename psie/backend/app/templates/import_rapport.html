@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ t('i_report') }}{% endblock %}
+{% block content %}
+<p><a href="{{ back }}">← {{ t('back') }}</a></p>
+<h1>{{ t('i_report') }}</h1>
+{% if report.errors %}
+<section class="card"><h2 class="danger">{{ t('i_errors') }} ({{ report.errors|length }})</h2>
+  <p>{{ t('i_nothing_saved') }}</p>
+  <ul>{% for e in report.errors %}<li>{{ e }}</li>{% endfor %}</ul></section>
+{% else %}
+<p class="card">{% if applied %}<strong>{{ t('i_done') }}</strong>{% else %}<strong>{{ t('i_simulation') }}</strong>{% endif %} — {{ report.ok|length }} {{ t('i_lines') }}</p>
+<section class="card"><ul>{% for o in report.ok[:200] %}<li>{{ o }}</li>{% endfor %}</ul>{% if report.ok|length > 200 %}<p class="muted">…</p>{% endif %}</section>
+{% endif %}
+{% endblock %}

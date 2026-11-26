@@ -1,12 +1,12 @@
 import datetime
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .. import acces, finance, gouvernance, models, stats
+from .. import acces, finance, gouvernance, imports, models, stats
 from ..audit import log_action
 from ..database import get_db
 from ..deps import get_current_user, require_admin, require_internal, require_member_manager
@@ -63,6 +63,23 @@ URL_OF = {"membres": "/faitieres", "adhesions": "/adhesions", "assemblees": "/as
 def faitieres_list(request: Request, user: models.User = Depends(require_internal), db: Session = Depends(get_db)):
     items = db.query(models.Faitiere).order_by(models.Faitiere.categorie, models.Faitiere.sigle).all()
     return render(request, "faitieres_list.html", user, items=items)
+
+
+@router.post("/faitieres/import")
+async def faitieres_import(request: Request, fichier: UploadFile = File(...), simuler: str = Form(""),
+                           user: models.User = Depends(require_member_manager), db: Session = Depends(get_db)):
+    """Ajout de plusieurs organisations d'un coup (CSV) : contrôle complet d'abord, rien n'est enregistré s'il y a une erreur."""
+    raw = await fichier.read(imports.MAX_BYTES + 1)
+    try:
+        report = imports.membres(db, raw, apply=not simuler)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    applied = bool(report.clean and not simuler)
+    if applied:
+        log_action(db, user, "import", "faitiere", None, f"{len(report.ok)} organisation(s)")
+    db.commit()
+    return render(request, "import_rapport.html", user, report=report, applied=applied, back="/faitieres",
+                  status_code=200 if report.clean else 400)
 
 
 @router.get("/faitieres/new")
@@ -298,9 +315,36 @@ def user_toggle(user_id: int, user: models.User = Depends(require_admin), db: Se
 # ---------- Journal d'audit ----------
 
 @router.get("/audit")
-def audit_list(request: Request, user: models.User = Depends(require_admin), db: Session = Depends(get_db)):
-    items = db.query(models.AuditLog).order_by(models.AuditLog.id.desc()).limit(300).all()
-    return render(request, "audit_list.html", user, items=items)
+def audit_list(request: Request, q: str = "", action: str = "", entity: str = "", personne: str = "", debut: str = "",
+               fin: str = "", sensibles: str = "", page: int = 1, user: models.User = Depends(require_admin),
+               db: Session = Depends(get_db)):
+    from .. import audit
+
+    query = audit.filter_query(db, q, action, entity, personne, debut, fin, bool(sensibles))
+    total = query.count()
+    pages = max(1, -(-total // audit.PAGE_SIZE))
+    page = min(max(page, 1), pages)
+    items = query.offset((page - 1) * audit.PAGE_SIZE).limit(audit.PAGE_SIZE).all()
+    actions, entities = audit.distinct_values(db)
+    from urllib.parse import urlencode
+    filters = {k: v for k, v in {"q": q, "action": action, "entity": entity, "personne": personne, "debut": debut, "fin": fin,
+                                 "sensibles": sensibles}.items() if v}
+    return render(request, "audit_list.html", user, items=items, total=total, page=page, pages=pages, actions=actions,
+                  entities=entities, f=filters, qs=urlencode(filters), is_sensitive=audit.is_sensitive)
+
+
+@router.get("/audit.csv")
+def audit_csv(q: str = "", action: str = "", entity: str = "", personne: str = "", debut: str = "", fin: str = "",
+              sensibles: str = "", user: models.User = Depends(require_admin), db: Session = Depends(get_db)):
+    from fastapi.responses import Response
+
+    from .. import audit
+
+    entries = audit.filter_query(db, q, action, entity, personne, debut, fin, bool(sensibles)).limit(20000).all()
+    log_action(db, user, "export", "audit", None, f"{len(entries)} ligne(s)")
+    db.commit()
+    return Response(audit.to_csv(entries), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="journal-audit.csv"', "Cache-Control": "private, no-store"})
 
 
 @router.post("/users/{user_id}/password")
