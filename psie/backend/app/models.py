@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, LargeBinary, String, Text, UniqueConstraint, text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, LargeBinary, String, Text, UniqueConstraint, text, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from . import acces
@@ -181,6 +181,7 @@ class User(Base):
     # Organisation qui a proposé cette personne (DEN, secrétaire aux finances) : sert à vérifier
     # que les deux signataires d'un paiement ne viennent pas de la même organisation (Statuts art. 38).
     faitiere_origine_id: Mapped[int | None] = mapped_column(ForeignKey("faitieres.id"), nullable=True)
+    notif_email: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true(), nullable=False)
     failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
@@ -1226,6 +1227,21 @@ class RegistreEntree(Base):
     precedent: Mapped[str] = mapped_column(String(64), nullable=False)
     empreinte: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+class Notification(Base):
+    """Message adressé à une personne : s'affiche dans la cloche de l'application, et par e-mail si elle l'accepte."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    kind: Mapped[str] = mapped_column(String(30), default="info", nullable=False)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    texte: Mapped[str | None] = mapped_column(Text, nullable=True)
+    lien: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    lue_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, index=True)
 
 
 class ReinitialisationMdp(Base):

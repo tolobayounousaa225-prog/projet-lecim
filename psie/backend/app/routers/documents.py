@@ -12,7 +12,7 @@ from fastapi.responses import RedirectResponse, Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from .. import media, models, pdfs
+from .. import media, models, notifier, pdfs
 from ..audit import log_action
 from ..database import get_db
 from ..deps import get_current_user, require_internal, require_write
@@ -168,6 +168,8 @@ async def courrier_add(sens: str = Form(""), date_courrier: str = Form(""), corr
         raise HTTPException(status_code=409, detail="Numérotation en cours : réessayez")
     if parent and parent.statut in ("recu", "en_traitement"):
         parent.statut = "traite"                               # une réponse enregistrée clôt le courrier d'origine
+    if resp:
+        notifier.notify(db, [db.get(models.User, resp)], f"Courrier à traiter : {c.numero}", texte=c.objet, lien=f"/courrier/{c.id}", kind="courrier", exclude_id=user.id)
     log_action(db, user, "creation", "courrier", c.id, f"{c.numero} — {c.objet}")
     db.commit()
     return RedirectResponse(f"/courrier/{c.id}", status_code=303)
@@ -194,7 +196,10 @@ def courrier_follow(courrier_id: int, statut: str = Form(""), responsable_id: st
     if statut not in models.COURRIER_STATUTS:
         raise HTTPException(status_code=400, detail="Statut inconnu")
     c.statut = statut
+    previous = c.responsable_id
     c.responsable_id = int(responsable_id) if responsable_id.isdigit() and db.get(models.User, int(responsable_id)) else None
+    if c.responsable_id and c.responsable_id != previous:
+        notifier.notify(db, [db.get(models.User, c.responsable_id)], f"Courrier à traiter : {c.numero}", texte=c.objet, lien=f"/courrier/{c.id}", kind="courrier", exclude_id=user.id)
     c.echeance, c.note = parse_date(echeance), _text(note, "Note", limit=3000)
     log_action(db, user, "suivi", "courrier", c.id, f"{c.numero} → {statut}")
     db.commit()
@@ -279,6 +284,15 @@ def convention_action(convention_id: int, action: str = Form(""), commentaire: s
     c.statut = after
     db.add(models.ConventionEtape(convention_id=c.id, action=action, par=user.full_name, role=user.role, commentaire=note))
     log_action(db, user, action, "conventions", c.id, f"{c.titre} → {after}")
+    link = f"/conventions/{c.id}"
+    if action == "soumettre":
+        notifier.notify_roles(db, {"administrateur_ca"}, f"Convention à examiner : {c.titre}", texte=f"Partenaire : {c.partenaire}", lien=link, kind="convention", exclude_id=user.id)
+    elif action in ("avis_favorable", "avis_defavorable"):
+        who = [db.get(models.User, c.created_by_id)] if c.created_by_id else []
+        who += db.query(models.User).filter_by(role="den", is_active=True).all()
+        notifier.notify(db, who, f"Avis du CA sur la convention : {c.titre}", texte=c.statut_label, lien=link, kind="convention", exclude_id=user.id)
+    elif action == "signer":
+        notifier.notify(db, [db.get(models.User, c.created_by_id)] if c.created_by_id else [], f"Convention signée : {c.titre}", lien=link, kind="convention", exclude_id=user.id)
     db.commit()
     return RedirectResponse(f"/conventions/{c.id}", status_code=303)
 

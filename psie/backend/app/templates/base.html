@@ -94,6 +94,9 @@
       <form class="global-search" role="search" method="get" action="/recherche">
         <input id="global-search" type="search" name="q" placeholder="{{ t('gs_placeholder') }}" aria-label="{{ t('gs_placeholder') }}" maxlength="80">
       </form>
+      <a class="bell" href="/notifications" aria-label="{{ t('nt_title') }}{% if unread_notifications %} ({{ unread_notifications }}){% endif %}">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3a6 6 0 0 0-6 6v3.6L4.5 16v1h15v-1L18 12.6V9a6 6 0 0 0-6-6zm0 18a2.5 2.5 0 0 0 2.4-2h-4.8A2.5 2.5 0 0 0 12 21z" fill="currentColor"/></svg>
+        {% if unread_notifications %}<span class="bell-count">{{ unread_notifications if unread_notifications < 100 else '99+' }}</span>{% endif %}</a>
       <a href="/lang/fr" class="lang {% if lang == 'fr' %}on{% endif %}">FR</a>
       <a href="/lang/ar" class="lang {% if lang == 'ar' %}on{% endif %}">العربية</a>
       <details class="user-menu">

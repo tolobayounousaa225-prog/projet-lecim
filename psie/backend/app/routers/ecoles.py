@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session
 
-from .. import imports, models, stats
+from .. import imports, models, notifier, stats
 from ..audit import log_action
 from ..database import get_db
 from ..deps import get_current_user
@@ -273,6 +273,9 @@ def bilan_save(faitiere_id: int, ecole_id: int, annee: str = Form(""), resume: s
     b.statut = "soumis" if action == "soumettre" else "brouillon"
     b.updated_at = datetime.datetime.utcnow()
     log_action(db, user, "bilan_" + b.statut, "ecoles", e.id, f"{e.nom} {year}")
+    if b.statut == "soumis":
+        notifier.notify_roles(db, {"den", "formation", "examens"}, f"Bilan à examiner : {e.nom} ({f.sigle})", texte=f"Année {year}",
+                              lien=f"/faitieres/{f.id}/ecoles/{e.id}", kind="bilan", exclude_id=user.id)
     db.commit()
     return _back(f, e)
 
@@ -295,6 +298,7 @@ def bilan_decision(faitiere_id: int, ecole_id: int, bilan_id: int, decision: str
     b.avis = _text(avis, "Avis", decision == "a_corriger", 2000)
     b.statut = "valide" if decision == "valider" else "a_corriger"
     log_action(db, user, "bilan_" + b.statut, "ecoles", e.id, f"{e.nom} {b.annee}")
+    notifier.notify_faitiere(db, f.id, f"Bilan {b.statut_label.lower()} : {e.nom}", texte=b.avis, lien=f"/faitieres/{f.id}/ecoles/{e.id}", kind="bilan")
     db.commit()
     return _back(f, e)
 

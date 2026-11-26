@@ -230,3 +230,8 @@ figure.chart svg { width: 100%; height: auto; max-width: 720px; }
 
 form.search-page { display: flex; gap: 8px; align-items: center; }
 form.search-page input { flex: 1; min-width: 0; }
+
+.bell { position: relative; display: inline-flex; align-items: center; padding: 6px; color: inherit; }
+.bell-count { position: absolute; top: -2px; right: -4px; min-width: 18px; padding: 0 5px; border-radius: 999px; background: #b42318; color: #fff; font-size: 11px; line-height: 18px; text-align: center; }
+.notif-list { list-style: none; padding: 0; }
+.notif-list li.unread { border-inline-start: 4px solid #c9a24b; }

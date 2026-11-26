@@ -23,7 +23,14 @@ def current_lang(request: Request) -> str:
 
 def render(request: Request, name: str, user: "models.User | None" = None, status_code: int = 200, **ctx):
     lang = current_lang(request)
+    unread = 0
+    if user is not None:                                   # compteur de la cloche (une requête indexée par page)
+        from .database import SessionLocal
+
+        with SessionLocal() as s:
+            unread = s.query(models.Notification).filter_by(user_id=user.id, lue_at=None).count()
     ctx.update(
+        unread_notifications=unread,
         user=user,
         app_shell=user is not None,
         request=request,

@@ -77,6 +77,8 @@ ECOLES_TEXTS = {
     "e_charts": _t("Graphiques", "رسوم بيانية"),
     "e_chart_need_two_years": _t("Les courbes apparaissent dès que deux années sont renseignées.", "تظهر المنحنيات عند إدخال سنتين."),
     "a11y_actions": _t("Actions", "إجراءات"),
+    "nt_title": _t("Notifications", "الإشعارات"), "nt_read_all": _t("Tout marquer comme lu", "تعليم الكل كمقروء"),
+    "nt_by_email": _t("Recevoir aussi mes notifications par e-mail", "تلقي الإشعارات أيضا عبر البريد الإلكتروني"), "nt_new": _t("nouveau", "جديد"),
     "dash_sec_ecoles": _t("Écoles et suivi des faîtières", "المدارس ومتابعة المنظمات"),
 }
 
