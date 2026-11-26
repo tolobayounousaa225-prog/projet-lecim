@@ -321,6 +321,41 @@ def load(item: models.ContenuSite) -> dict:
     return json.loads(item.data)
 
 
+MEDIA_GRACE_SECONDS = 60      # un fichier tout juste déposé n'est jamais supprimé (il peut être en cours d'enregistrement)
+
+
+def referenced_media_ids(db) -> set[int]:
+    """Identifiants des fichiers encore utilisés par un élément du site."""
+    ids: set[int] = set()
+    for row in db.query(models.ContenuSite):
+        col = COLLECTIONS.get(row.collection)
+        if not col:
+            continue
+        data = load(row)
+        for f in col.fields:
+            v = data.get(f.name)
+            if f.kind == "media" and isinstance(v, int):
+                ids.add(v)
+    return ids
+
+
+def purge_unused_media(db, grace_seconds: int | None = None) -> int:
+    """Supprime de la base (et donc du site) les fichiers que plus aucun élément n'utilise : une photo supprimée par
+    l'éditeur ne reste ni publiée, ni téléchargeable à son ancienne adresse. Retourne le nombre de fichiers supprimés."""
+    import datetime
+
+    grace = MEDIA_GRACE_SECONDS if grace_seconds is None else grace_seconds
+    limit = datetime.datetime.utcnow() - datetime.timedelta(seconds=grace)
+    db.flush()
+    used = referenced_media_ids(db)
+    removed = 0
+    for m in db.query(models.MediaSite).filter(models.MediaSite.created_at < limit):
+        if m.id not in used:
+            db.delete(m)
+            removed += 1
+    return removed
+
+
 def title_of(col: Collection, data: dict) -> str:
     for name in col.title:
         value = data.get(name)
