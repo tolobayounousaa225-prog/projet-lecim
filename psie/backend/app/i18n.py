@@ -63,6 +63,8 @@ TEXTS: dict[str, dict[str, str]] = {
     "dash_calls": {"fr": "Appels exceptionnels en cours", "ar": "نداءات استثنائية جارية"},
     "dash_to_sign": {"fr": "Dépenses à signer", "ar": "نفقات بانتظار التوقيع"},
     "dash_assemblies": {"fr": "Prochaines assemblées", "ar": "الجمعيات القادمة"},
+    "annexes_title": {"fr": "Documents de l'assemblée", "ar": "وثائق الجمعية"},
+    "annex_title": {"fr": "Titre du document", "ar": "عنوان الوثيقة"},
     "nav_dashboard": {"fr": "Tableau de bord", "ar": "لوحة القيادة"},
     "nav_members": {"fr": "Membres", "ar": "الأعضاء"},
     "nav_mandates": {"fr": "Mandats", "ar": "الانتدابات"},

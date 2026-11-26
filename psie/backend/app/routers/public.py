@@ -1,7 +1,7 @@
 """Vitrine publique : présentation, membres, actualités, demande d'adhésion, vérification."""
 
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -82,7 +82,7 @@ def join_form(request: Request, user: models.User | None = Depends(get_optional_
 
 
 @router.post("/adhesion", dependencies=[Depends(submit_limit)])
-def join_submit(
+async def join_submit(
     request: Request,
     nom: str = Form(...), sigle: str = Form(...), representant_nom: str = Form(...),
     representant_fonction: str = Form(""), email: str = Form(...), telephone: str = Form(...),
@@ -90,8 +90,11 @@ def join_submit(
     nb_structures: str = Form(""), message: str = Form(""),
     accepte_statuts: str = Form(""), accepte_cotisations: str = Form(""),
     website: str = Form(""),  # piège à robots : champ invisible que seuls les robots remplissent
+    statuts_file: UploadFile | None = File(None), recepisse_file: UploadFile | None = File(None),
     user: models.User | None = Depends(get_optional_user), db: Session = Depends(get_db),
 ):
+    if int(request.headers.get("content-length") or 0) > 35 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Envoi trop volumineux")
     if website.strip():
         # Robot : on répond comme si tout allait bien, sans rien enregistrer
         return render(request, "adhesion_confirm.html", user, code="ADH-XXXXXXXX")
@@ -104,6 +107,11 @@ def join_submit(
         nb_structures=int(nb_structures) if nb_structures.strip() else None, message=message,
         accepte_statuts=bool(accepte_statuts), accepte_cotisations=bool(accepte_cotisations),
     )
+    uploads = {}
+    for kind, up in (("statuts", statuts_file), ("recepisse", recepisse_file)):
+        if up is not None and up.filename:
+            uploads[kind] = (up.filename, await up.read())
+    adhesion.attach_pieces(db, demande, uploads)
     db.commit()
     send_email(demande.email, f"PSIE — Demande d'adhésion {demande.code}",
                f"Votre demande d'adhésion a bien été reçue. Code de suivi : {demande.code}\n\n"

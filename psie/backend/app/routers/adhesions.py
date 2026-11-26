@@ -36,7 +36,20 @@ def adhesions_list(request: Request, user: models.User = Depends(require_interna
 @router.get("/adhesions/{demande_id}")
 def adhesion_detail(demande_id: int, request: Request, user: models.User = Depends(require_internal),
                     db: Session = Depends(get_db)):
-    return render(request, "adhesion_detail.html", user, d=_get(db, demande_id), etats=models.ADHESION_ETATS)
+    d = _get(db, demande_id)
+    pieces = db.query(models.PieceDemande).filter_by(demande_id=d.id).order_by(models.PieceDemande.id).all()
+    return render(request, "adhesion_detail.html", user, d=d, etats=models.ADHESION_ETATS, pieces=pieces,
+                  piece_labels=adhesion.DEMANDE_PIECES)
+
+
+@router.get("/adhesions/{demande_id}/pieces/{piece_id}")
+def adhesion_piece(demande_id: int, piece_id: int, user: models.User = Depends(require_internal),
+                   db: Session = Depends(get_db)):
+    piece = db.get(models.PieceDemande, piece_id)
+    if not piece or piece.demande_id != demande_id:
+        raise HTTPException(status_code=404, detail="Pièce introuvable")
+    return Response(piece.contenu, media_type=piece.mime,
+                    headers={"Content-Disposition": f'attachment; filename="{piece.nom}"', "Cache-Control": "private, no-store"})
 
 
 @router.post("/adhesions/{demande_id}/examen")

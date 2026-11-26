@@ -21,6 +21,14 @@
   </dl>
 </section>
 
+<section class="card">
+  <h2>{{ t('f_documents') }}</h2>
+  <ul>
+  {% for p in pieces %}<li>{{ piece_labels.get(p.type, p.type) }} : <a href="/adhesions/{{ d.id }}/pieces/{{ p.id }}">{{ p.nom }}</a> ({{ (p.taille / 1024) | round | int }} Ko)</li>
+  {% else %}<li class="muted">{{ t('none') }}</li>{% endfor %}
+  </ul>
+</section>
+
 {% if d.is_open %}
 {% if user.can_manage_members %}
 <section class="card"><h2>{{ t('adh_en_examen') }}</h2>

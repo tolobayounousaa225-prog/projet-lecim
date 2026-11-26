@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session
 
-from .. import finance, gouvernance, models, pdfs
+from .. import finance, gouvernance, media, models, pdfs
+from ..audit import log_action
 from ..database import get_db
 from ..deps import get_current_user, require_internal, require_member_manager
 from ..web import parse_date, render
@@ -62,7 +63,9 @@ def assemblee_detail(assemblee_id: int, request: Request, user: models.User = De
         if a.statut == "preparation":
             raise HTTPException(status_code=404, detail="Assemblée introuvable")
         # Représentant : convocation uniquement (pas d'émargement ni de votes nominatifs)
-        return render(request, "assemblee_convocation.html", user, a=a)
+        annexes = db.query(models.AnnexeAssemblee).filter_by(assemblee_id=a.id).order_by(models.AnnexeAssemblee.id).all()
+        return render(request, "assemblee_convocation.html", user, a=a, annexes=annexes)
+    annexes = db.query(models.AnnexeAssemblee).filter_by(assemblee_id=a.id).order_by(models.AnnexeAssemblee.id).all()
     voting = gouvernance.voting_base(db, a)
     dues = {}
     if a.statut == "en_seance" and user.can_view_finances:
@@ -71,7 +74,7 @@ def assemblee_detail(assemblee_id: int, request: Request, user: models.User = De
             e = db.query(models.Echeance).filter_by(faitiere_id=f.id, type="annuelle",
                                                     annee=a.date_assemblee.year).first()
             dues[f.id] = e.statut if e else None
-    return render(request, "assemblee_detail.html", user, a=a, voting=voting, dues=dues,
+    return render(request, "assemblee_detail.html", user, a=a, voting=voting, dues=dues, annexes=annexes,
                   vote_choix=models.VOTE_CHOIX, modes=models.VOTE_MODES)
 
 
@@ -170,3 +173,56 @@ def minutes(assemblee_id: int, user: models.User = Depends(require_internal), db
         raise HTTPException(status_code=409, detail="Le procès-verbal n'est disponible qu'après la clôture de l'assemblée")
     return Response(pdfs.minutes_pdf(a, gouvernance.voting_base(db, a)), media_type="application/pdf",
                     headers={"Content-Disposition": f'inline; filename="pv-{a.type}-{a.date_assemblee}.pdf"'})
+
+
+# ---------- Annexes (rapports, budget, états financiers, projets de résolution) ----------
+
+@router.post("/assemblees/{assemblee_id}/annexes")
+async def annexe_upload(assemblee_id: int, request: Request, user: models.User = Depends(require_member_manager),
+                        db: Session = Depends(get_db)):
+    a = _get(db, assemblee_id)
+    if a.statut == "close":
+        raise HTTPException(status_code=409, detail="L'assemblée est clôturée")
+    if int(request.headers.get("content-length") or 0) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Envoi trop volumineux")
+    form = await request.form()
+    titre, upload = str(form.get("titre", "")).strip(), form.get("fichier")
+    if not titre or len(titre) > 200:
+        raise HTTPException(status_code=400, detail="Un titre (200 caractères au plus) est obligatoire")
+    if upload is None or isinstance(upload, str) or not upload.filename:
+        raise HTTPException(status_code=400, detail="Choisissez un fichier")
+    raw = await upload.read()
+    try:
+        data, mime, ext, _ = media.process(raw, "pdf" if raw.startswith(b"%PDF-") else "image")
+    except media.MediaError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    annexe = models.AnnexeAssemblee(assemblee_id=a.id, titre=titre, nom=media.safe_name(upload.filename), mime=mime,
+                                    extension=ext, taille=len(data), contenu=data, created_by_id=user.id)
+    db.add(annexe)
+    db.flush()
+    log_action(db, user, "creation", "annexe", annexe.id, f"{a.type} {a.date_assemblee} — {titre}")
+    db.commit()
+    return _redirect(f"/assemblees/{a.id}")
+
+
+@router.get("/annexes/{annexe_id}")
+def annexe_download(annexe_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    annexe = db.get(models.AnnexeAssemblee, annexe_id)
+    a = db.get(models.Assemblee, annexe.assemblee_id) if annexe else None
+    # Les membres ne voient les annexes qu'à partir de la convocation (jamais pendant la préparation)
+    if not annexe or (not user.is_internal and a.statut == "preparation"):
+        raise HTTPException(status_code=404, detail="Document introuvable")
+    return Response(annexe.contenu, media_type=annexe.mime,
+                    headers={"Content-Disposition": f'attachment; filename="{annexe.nom}"', "Cache-Control": "private, no-store"})
+
+
+@router.post("/annexes/{annexe_id}/supprimer")
+def annexe_delete(annexe_id: int, user: models.User = Depends(require_member_manager), db: Session = Depends(get_db)):
+    annexe = db.get(models.AnnexeAssemblee, annexe_id)
+    if not annexe:
+        raise HTTPException(status_code=404, detail="Document introuvable")
+    aid = annexe.assemblee_id
+    log_action(db, user, "suppression", "annexe", annexe.id, annexe.titre)
+    db.delete(annexe)
+    db.commit()
+    return _redirect(f"/assemblees/{aid}")
