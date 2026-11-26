@@ -26,6 +26,14 @@ def dashboard(request: Request, user: models.User = Depends(require_internal), d
     faitieres = db.query(models.Faitiere).all()
     mandats = db.query(models.Mandat).all()
     sit = finance.situation(db, datetime.date.today().year) if user.can_view_finances else None
+    today = datetime.date.today()
+    appels = [a for a in db.query(models.AppelExceptionnel).all() if any(e.solde > 0 and not e.exoneree for e in a.echeances)] \
+        if user.can_view_finances else []
+    a_signer = (db.query(models.Depense).filter_by(statut="a_valider").count()
+                if user.role in models.SIGNATAIRE_ROLES else None)
+    assemblees = (db.query(models.Assemblee).filter(models.Assemblee.date_assemblee >= today,
+                                                    models.Assemblee.statut != "close")
+                  .order_by(models.Assemblee.date_assemblee).limit(3).all())
     return render(
         request,
         "dashboard.html",
@@ -38,6 +46,7 @@ def dashboard(request: Request, user: models.User = Depends(require_internal), d
         sit=sit,
         fcfa=finance.fcfa,
         composition=gouvernance.composition_organes(db),
+        appels=appels, a_signer=a_signer, assemblees=assemblees,
     )
 
 
@@ -112,8 +121,9 @@ def faitiere_detail(faitiere_id: int, request: Request, user: models.User = Depe
         db.query(models.Echeance).filter_by(faitiere_id=item.id).order_by(models.Echeance.annee.desc()).all()
         if show_dues else []
     )
+    pieces = db.query(models.PieceFaitiere).filter_by(faitiere_id=item.id).order_by(models.PieceFaitiere.id).all()
     return render(request, "faitiere_detail.html", user, item=item, show_dues=show_dues,
-                  echeances=echeances, fcfa=finance.fcfa)
+                  echeances=echeances, fcfa=finance.fcfa, pieces=pieces, piece_types=models.MEMBRE_PIECE_TYPES)
 
 
 @router.get("/faitieres/{faitiere_id}/edit")
@@ -219,7 +229,9 @@ def mandat_delete(mandat_id: int, next: str = Form("/mandats"),
 def users_list(request: Request, user: models.User = Depends(require_admin), db: Session = Depends(get_db)):
     items = db.query(models.User).order_by(models.User.role, models.User.email).all()
     faitieres = db.query(models.Faitiere).order_by(models.Faitiere.sigle).all()
-    return render(request, "users_list.html", user, items=items, faitieres=faitieres)
+    from .membres import last_logins
+    return render(request, "users_list.html", user, items=items, faitieres=faitieres, logins=last_logins(db),
+                  sent=bool(request.query_params.get("lien")))
 
 
 @router.post("/users")

@@ -11,7 +11,7 @@ def email_configured() -> bool:
     return bool(settings.smtp_host)
 
 
-def send_email(to: str, subject: str, body: str) -> bool:
+def send_email(to: str, subject: str, body: str, attachments: list[tuple[str, bytes, str]] | None = None) -> bool:
     """Envoie un e-mail texte. Retourne True si le serveur SMTP l'a accepté, False sinon
     (SMTP non configuré ou erreur) : l'appelant décide quoi faire d'un échec."""
     if not email_configured():
@@ -22,6 +22,9 @@ def send_email(to: str, subject: str, body: str) -> bool:
     message["To"] = to
     message["Subject"] = subject
     message.set_content(body)
+    for filename, data, mime in attachments or []:
+        maintype, _, subtype = mime.partition("/")
+        message.add_attachment(data, maintype=maintype or "application", subtype=subtype or "octet-stream", filename=filename)
     try:
         with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as server:
             server.starttls()

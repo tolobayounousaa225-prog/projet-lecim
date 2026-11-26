@@ -294,3 +294,111 @@ def etat_financier_pdf(e: dict) -> bytes:
     _line(pdf, "Comptabilité de caisse : les recettes sont comptées à l'encaissement et les dépenses au paiement. "
                "Document à mettre à disposition du CA et des commissaires aux comptes au moins 15 jours avant l'AG.", h=5)
     return bytes(pdf.output())
+
+
+def registre_membres_pdf(faitieres: list[models.Faitiere]) -> bytes:
+    """Registre des membres exigé par la loi (Règlement Intérieur, art. 39) : une ligne par organisation,
+    avec ses représentants en fonction. Produit à la volée : il est toujours à jour."""
+    today = datetime.date.today()
+    pdf = _new_pdf()
+    pdf.set_auto_page_break(True, margin=18)
+    _header(pdf, "REGISTRE DES MEMBRES", "سجل الأعضاء")
+    pdf.set_x(15)
+    pdf.set_font("dv", "", 9)
+    pdf.set_text_color(*GREY)
+    pdf.cell(180, 6, f"Édité le {today:%d/%m/%Y} — {len(faitieres)} organisation(s)", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(2)
+    from .i18n import label
+
+    from fpdf.fonts import FontFace
+
+    pdf.set_fill_color(255, 255, 255)                       # le bandeau d'en-tête a laissé le vert actif
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("dv", "", 8)
+    with pdf.table(col_widths=(8, 22, 44, 26, 18, 22, 40), text_align=("CENTER", "LEFT", "LEFT", "LEFT", "LEFT", "LEFT", "LEFT"),
+                   line_height=5, padding=1.2, headings_style=FontFace(emphasis="BOLD", color=(0, 0, 0), fill_color=(222, 236, 228)),
+                   borders_layout="ALL") as table:
+        head = table.row()
+        for h in ("N°", "Sigle", "Dénomination", "Catégorie", "Statut", "Adhésion", "Représentants en fonction"):
+            head.cell(h)
+        for i, f in enumerate(faitieres, 1):
+            actifs = [m for m in f.mandats if m.echeance != "expire"]
+            reps = "\n".join(f"{m.full_name} ({m.organe})" for m in actifs) or "—"
+            row = table.row()
+            for value in (str(i), f.sigle, f.nom, f"{label('categorie', f.categorie, 'fr')}\n{label('categorie', f.categorie, 'ar')}",
+                          label("statut", f.statut, "fr"), f"{f.date_adhesion:%d/%m/%Y}" if f.date_adhesion else "—", reps):
+                row.cell(value)
+    pdf.ln(4)
+    pdf.set_x(15)
+    pdf.set_font("dv", "", 8)
+    pdf.set_text_color(*GREY)
+    pdf.multi_cell(180, 4.5, "Registre tenu en application du Règlement Intérieur de la PSIE (art. 39). "
+                   "Les représentants dont le mandat est expiré n'apparaissent plus.")
+    return bytes(pdf.output())
+
+
+def releve_pdf(faitiere: models.Faitiere, echeances: list[models.Echeance]) -> bytes:
+    """Relevé de compte d'une faîtière : échéances (dû, payé, solde) puis paiements, reçus annulés signalés."""
+    from fpdf.fonts import FontFace
+
+    today = datetime.date.today()
+    pdf = _new_pdf()
+    pdf.set_auto_page_break(True, margin=18)
+    _header(pdf, "RELEVÉ DE COMPTE", "كشف الحساب")
+    pdf.set_x(15)
+    pdf.set_font("dv", "B", 11)
+    pdf.cell(180, 7, f"{faitiere.sigle} — {faitiere.nom}"[:80], new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("dv", "", 9)
+    pdf.set_text_color(*GREY)
+    pdf.cell(180, 6, f"Édité le {today:%d/%m/%Y}", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(2)
+    pdf.set_fill_color(255, 255, 255)
+    head = FontFace(emphasis="BOLD", color=(0, 0, 0), fill_color=(222, 236, 228))
+    total_du = sum(e.montant_du for e in echeances if not e.exoneree)
+    total_paye = sum(e.montant_paye for e in echeances)
+    pdf.set_font("dv", "", 8)
+    with pdf.table(col_widths=(14, 62, 26, 26, 26, 26), text_align=("CENTER", "LEFT", "RIGHT", "RIGHT", "RIGHT", "LEFT"),
+                   line_height=5, padding=1.2, headings_style=head, borders_layout="ALL") as table:
+        row = table.row()
+        for h in ("Année", "Échéance", "Dû", "Payé", "Solde", "Situation"):
+            row.cell(h)
+        for e in echeances:
+            row = table.row()
+            etat = "Exonérée" if e.exoneree else ("À jour" if e.solde <= 0 else
+                                                  f"Échéance {e.date_limite:%d/%m/%Y}" if e.date_limite else "À payer")
+            for value in (str(e.annee), e.libelle, fcfa(e.montant_du), fcfa(e.montant_paye),
+                          fcfa(0 if e.exoneree else max(e.solde, 0)), etat):
+                row.cell(value)
+        row = table.row()
+        for value in ("", "TOTAL", fcfa(total_du), fcfa(total_paye), fcfa(max(total_du - total_paye, 0)), ""):
+            row.cell(value, style=FontFace(emphasis="BOLD"))
+    pdf.ln(5)
+    pdf.set_x(15)
+    pdf.set_font("dv", "B", 10)
+    pdf.cell(180, 7, "Paiements / الدفعات", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("dv", "", 8)
+    payments = [p for e in echeances for p in e.paiements]
+    payments.sort(key=lambda p: (p.date_paiement, p.id))
+    with pdf.table(col_widths=(30, 22, 26, 28, 74), text_align=("LEFT", "LEFT", "RIGHT", "LEFT", "LEFT"),
+                   line_height=5, padding=1.2, headings_style=head, borders_layout="ALL") as table:
+        row = table.row()
+        for h in ("Reçu", "Date", "Montant", "Mode", "Référence / remarque"):
+            row.cell(h)
+        for p in payments:
+            row = table.row()
+            note = f"ANNULÉ : {p.annule_motif or ''}" if p.annule else (p.reference or "")
+            for value in (p.recu_numero, f"{p.date_paiement:%d/%m/%Y}", fcfa(p.montant), p.mode_label, note):
+                row.cell(value)
+        if not payments:
+            row = table.row()
+            for value in ("—", "", "", "", ""):
+                row.cell(value)
+    pdf.ln(4)
+    pdf.set_x(15)
+    pdf.set_font("dv", "", 8)
+    pdf.set_text_color(*GREY)
+    pdf.multi_cell(180, 4.5, "Les paiements annulés n'entrent pas dans le total payé. Document établi à titre d'information ; "
+                   "la comptabilité de la PSIE fait foi.")
+    return bytes(pdf.output())

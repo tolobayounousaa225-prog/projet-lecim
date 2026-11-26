@@ -9,6 +9,7 @@ from . import models
 from .config import settings
 from .database import SessionLocal
 from .finance import generate_annual_echeances, send_reminders, send_weekly_digest
+from .rappels import send_regulatory_reminders
 
 logger = logging.getLogger("psie.scheduler")
 _scheduler: BackgroundScheduler | None = None
@@ -28,6 +29,9 @@ def job_daily() -> None:
         sent = send_reminders(db)
         if sent:
             logger.info("%d relance(s) envoyée(s)", sent)
+        regulatory = send_regulatory_reminders(db)
+        if regulatory:
+            logger.info("%d rappel(s) réglementaire(s) envoyé(s)", regulatory)
     except Exception:
         logger.exception("Échec de la tâche quotidienne")
         db.rollback()

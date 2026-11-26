@@ -2,7 +2,8 @@
 {% block title %}{{ t('nav_members') }}{% endblock %}
 {% block content %}
 <div class="row"><h1>{{ t('nav_members') }}</h1>
-  {% if user.can_manage_members %}<a class="btn" href="/faitieres/new">{{ t('new_member') }}</a>{% endif %}
+  <span><a href="/registre-membres.pdf" target="_blank">{{ t('register_pdf') }}</a>
+  {% if user.can_manage_members %}<a class="btn" href="/faitieres/new">{{ t('new_member') }}</a>{% endif %}</span>
 </div>
 <table>
   <thead><tr><th>{{ t('acronym') }}</th><th>{{ t('name') }}</th><th>{{ t('category') }}</th><th>{{ t('status') }}</th></tr></thead>

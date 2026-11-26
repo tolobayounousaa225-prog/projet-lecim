@@ -2,8 +2,9 @@
 {% block title %}{{ t('nav_users') }}{% endblock %}
 {% block content %}
 <h1>{{ t('nav_users') }}</h1>
+{% if sent %}<p class="notice">{{ t('link_sent') }}</p>{% endif %}
 <table>
-  <thead><tr><th>{{ t('full_name') }}</th><th>{{ t('email') }}</th><th>{{ t('role') }}</th><th>{{ t('organisation') }}</th><th>{{ t('g_origin') }}</th><th>{{ t('status') }}</th><th></th></tr></thead>
+  <thead><tr><th>{{ t('full_name') }}</th><th>{{ t('email') }}</th><th>{{ t('role') }}</th><th>{{ t('organisation') }}</th><th>{{ t('g_origin') }}</th><th>{{ t('status') }}</th><th>{{ t('last_login') }}</th><th></th></tr></thead>
   <tbody>
   {% for u in items %}
     <tr><td>{{ u.full_name }}</td><td>{{ u.email }}</td><td>{{ lbl('role', u.role) }}</td>
@@ -13,7 +14,10 @@
           {% for f in faitieres %}<option value="{{ f.id }}" {% if u.faitiere_origine_id == f.id %}selected{% endif %}>{{ f.sigle }}</option>{% endfor %}</select>
           <button class="link">{{ t('save') }}</button></form>{% else %}—{% endif %}</td>
       <td>{{ t('active') if u.is_active else t('disabled') }}</td>
-      <td>{% if u.id != user.id %}<form method="post" action="/users/{{ u.id }}/toggle" class="inline"><button class="link">{{ t('toggle') }}</button></form>{% endif %}
+      <td>{{ logins[u.id].strftime('%d/%m/%Y %H:%M') if u.id in logins else '—' }}</td>
+      <td><a href="/users/{{ u.id }}/edit">{{ t('edit') }}</a>
+        {% if u.is_active %}<form method="post" action="/users/{{ u.id }}/lien-mdp" class="inline"><button class="link">{{ t('send_link') }}</button></form>{% endif %}
+        {% if u.id != user.id %}<form method="post" action="/users/{{ u.id }}/toggle" class="inline"><button class="link">{{ t('toggle') }}</button></form>{% endif %}
         <form method="post" action="/users/{{ u.id }}/password" class="inline"><input type="password" name="password" placeholder="{{ t('new_password') }}" required autocomplete="new-password" style="width:11em"> <button class="link">{{ t('reset_password') }}</button></form></td></tr>
   {% endfor %}
   </tbody>

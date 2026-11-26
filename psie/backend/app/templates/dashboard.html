@@ -10,6 +10,17 @@
   {% endfor %}
 </div>
 
+<div class="tiles">
+  {% if user.can_view_finances %}<div class="tile"><div class="num"><a href="/appels">{{ appels | length }}</a></div><div>{{ t('dash_calls') }}</div></div>{% endif %}
+  {% if a_signer is not none %}<div class="tile"><div class="num"><a href="/depenses">{{ a_signer }}</a></div><div>{{ t('dash_to_sign') }}</div></div>{% endif %}
+</div>
+{% if assemblees %}
+<section class="card">
+  <h2>{{ t('dash_assemblies') }}</h2>
+  <ul>{% for a in assemblees %}<li><a href="/assemblees/{{ a.id }}">{{ a.type_label }}</a> — {{ a.date_assemblee.strftime('%d/%m/%Y') }}, {{ a.lieu }} ({{ a.statut_label }})</li>{% endfor %}</ul>
+</section>
+{% endif %}
+
 <section class="card">
   <h2>{{ t('g_composition') }}</h2>
   <div class="tiles">

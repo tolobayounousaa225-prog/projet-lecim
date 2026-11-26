@@ -29,7 +29,7 @@
 
 {% if show_dues %}
 <section class="card">
-  <h2>{{ t('nav_dues') }}</h2>
+  <div class="row"><h2>{{ t('nav_dues') }}</h2><a href="/faitieres/{{ item.id }}/releve.pdf" target="_blank">{{ t('statement_pdf') }}</a></div>
   <table>
     <thead><tr><th>{{ t('name') }}</th><th>{{ t('due') }}</th><th>{{ t('paid') }}</th><th>{{ t('deadline') }}</th><th>{{ t('status') }}</th><th></th></tr></thead>
     <tbody>
@@ -48,14 +48,15 @@
   <table>
     <thead><tr><th>{{ t('full_name') }}</th><th>{{ t('organ') }}</th><th>{{ t('function') }}</th><th>{{ t('start_date') }}</th><th>{{ t('end_date') }}</th>{% if user.can_manage_members %}<th></th>{% endif %}</tr></thead>
     <tbody>
-    {% for m in item.mandats %}
+    {% for m in item.mandats if m.echeance != 'expire' %}
       <tr>
         <td>{{ m.full_name }}</td><td>{{ lbl('organe', m.organe) }}</td><td>{{ m.fonction or '—' }}</td>
         <td>{{ m.date_debut or '—' }}</td>
         <td class="{{ m.echeance or '' }}">{{ m.date_fin or '—' }}</td>
         {% if user.can_manage_members %}
-        <td><form method="post" action="/mandats/{{ m.id }}/delete" class="inline">
-          <input type="hidden" name="next" value="/faitieres/{{ item.id }}"><button class="link danger">{{ t('delete') }}</button></form></td>
+        <td><a href="/mandats/{{ m.id }}/edit">{{ t('edit') }}</a>
+          <form method="post" action="/mandats/{{ m.id }}/terminer" class="inline">
+          <input type="hidden" name="next" value="/faitieres/{{ item.id }}"><button class="link">{{ t('end_mandate') }}</button></form></td>
         {% endif %}
       </tr>
     {% else %}
@@ -63,6 +64,18 @@
     {% endfor %}
     </tbody>
   </table>
+
+  {% set past = item.mandats | selectattr('echeance', 'equalto', 'expire') | list %}
+  {% if past %}
+  <h3>{{ t('mandates_history') }}</h3>
+  <table class="muted">
+    <tbody>
+    {% for m in past %}
+      <tr><td>{{ m.full_name }}</td><td>{{ lbl('organe', m.organe) }}</td><td>{{ m.fonction or '—' }}</td><td>{{ m.date_debut or '—' }} → {{ m.date_fin or '—' }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
 
   {% if user.can_manage_members %}
   <form method="post" action="/mandats" class="grid">
@@ -75,6 +88,25 @@
     <label>{{ t('end_date') }}<input type="date" name="date_fin"></label>
     <label>{{ t('email') }}<input type="email" name="email"></label>
     <label>{{ t('phone') }}<input name="telephone"></label>
+    <div><button class="btn">{{ t('add') }}</button></div>
+  </form>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>{{ t('pieces_title') }}</h2>
+  <table>
+    <tbody>
+    {% for p in pieces %}
+      <tr><td>{{ p.type_label }}</td><td><a href="/pieces/{{ p.id }}">{{ p.nom }}</a></td><td>{{ (p.taille / 1024) | round | int }} Ko</td><td>{{ p.created_at.strftime('%d/%m/%Y') }}</td>
+        {% if user.can_manage_members %}<td><form method="post" action="/pieces/{{ p.id }}/supprimer" class="inline"><button class="link danger">{{ t('delete') }}</button></form></td>{% endif %}</tr>
+    {% else %}<tr><td class="muted">{{ t('none') }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% if user.can_manage_members %}
+  <form method="post" action="/faitieres/{{ item.id }}/pieces" enctype="multipart/form-data" class="grid">
+    <label>{{ t('piece_type') }}<select name="type">{% for k, v in piece_types.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+    <label>{{ t('piece_file') }}<input type="file" name="fichier" accept="application/pdf,image/jpeg,image/png,image/webp" required></label>
     <div><button class="btn">{{ t('add') }}</button></div>
   </form>
   {% endif %}
