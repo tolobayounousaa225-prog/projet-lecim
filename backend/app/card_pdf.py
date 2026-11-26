@@ -613,40 +613,59 @@ def _add_recto_eleve(pdf: FPDF, carte, photo_bytes: bytes | None, ecole_logo_byt
     pdf.set_draw_color(*GREEN_DARK)
     pdf.rect(photo_x, photo_y, photo_w, photo_h)
 
-    qr_payload = f"{settings.public_base_url}/verify-eleve/{carte.matricule or ''}"
-    qr_img = qrcode.make(qr_payload, border=1)
-    qr_size = 12.0
-    qr_x = CARD_W - 4 - qr_size
-    qr_y = CARD_H - 3 - qr_size - 1
-    pdf.image(qr_img.get_image() if hasattr(qr_img, "get_image") else qr_img, x=qr_x, y=qr_y, w=qr_size, h=qr_size)
-
+    # QR deplace au verso (meme principe que la carte membre) : le recto porte
+    # l'identite de l'eleve et l'authentification LECIM (signature+cachet),
+    # le verso porte la verification.
     info_x = photo_x + photo_w + 4
-    info_w = qr_x - 2 - info_x
+    info_w_top = CARD_W - info_x - 4
+    # Largeur reduite pour les lignes du bas, qui partagent l'espace avec la
+    # signature+cachet ancree en bas-droite.
+    info_w_bottom = 64 - info_x
 
+    # Nom sur une seule ligne (meme technique que la carte membre) : des
+    # positions fixes en dessous (classe/annee/naissance) plutot qu'un
+    # enchainement via get_y() evitent qu'un nom long sur 2 lignes ne pousse
+    # ces blocs les uns dans les autres.
     pdf.set_text_color(*GREEN_DARK)
-    pdf.set_font("Helvetica", "B", 10)
+    nom_text = _safe_text(carte.eleve_nom)
+    nom_size = 10.0
+    pdf.set_font("Helvetica", "B", nom_size)
+    while nom_size > 6.5 and pdf.get_string_width(nom_text) > info_w_top:
+        nom_size -= 0.3
+        pdf.set_font("Helvetica", "B", nom_size)
     pdf.set_xy(info_x, 19)
-    pdf.multi_cell(info_w, 4.3, carte.eleve_nom, align="L")
+    pdf.cell(info_w_top, 4.3, nom_text, align="L")
 
     pdf.set_text_color(80, 80, 80)
     pdf.set_font("Helvetica", "", 7.2)
-    pdf.set_xy(info_x, pdf.get_y() + 0.5)
-    pdf.multi_cell(info_w, 3.4, f"Classe : {carte.classe}", align="L")
+    pdf.set_xy(info_x, 24.0)
+    pdf.cell(info_w_top, 3.4, f"Classe : {carte.classe}", align="L")
 
     pdf.set_font("Helvetica", "", 6.3)
-    pdf.set_xy(info_x, pdf.get_y() + 0.5)
-    pdf.cell(info_w, 3.2, f"Annee scolaire {carte.annee_scolaire}", align="L")
+    pdf.set_xy(info_x, 28.0)
+    pdf.cell(info_w_top, 3.2, f"Annee scolaire {carte.annee_scolaire}", align="L")
+
+    if carte.eleve_date_naissance:
+        pdf.set_font("Helvetica", "", 6.3)
+        pdf.set_xy(info_x, 32.0)
+        pdf.cell(info_w_top, 3.2, f"Ne(e) le : {_date_internationale(carte.eleve_date_naissance)}", align="L")
 
     pdf.set_font("Helvetica", "B", 6.8)
     pdf.set_text_color(*GREEN)
     pdf.set_xy(info_x, CARD_H - 12)
-    pdf.cell(info_w, 3.6, f"Mat. {carte.matricule or '-'}", align="L")
+    pdf.cell(info_w_bottom, 3.6, f"Mat. {carte.matricule or '-'}", align="L")
 
     pdf.set_font("Helvetica", "", 6)
     pdf.set_text_color(80, 80, 80)
     pdf.set_xy(info_x, CARD_H - 8)
-    validite = carte.date_validite.strftime("%d/%m/%Y") if carte.date_validite else "-"
-    pdf.cell(info_w, 3.4, f"Valable jusqu'au {validite}", align="L")
+    validite = _date_internationale(carte.date_validite) if carte.date_validite else "-"
+    pdf.cell(info_w_bottom, 3.4, f"Valable jusqu'au {validite}", align="L")
+
+    # Signature + cachet du president : authentification LECIM, meme principe
+    # que sur les cartes de membre (demande explicite). bottom_edge remonte
+    # par rapport aux cartes membre pour laisser la place au bandeau de pied
+    # de page propre a la carte scolaire (absent des cartes membre).
+    _draw_president_signature_mini(pdf, CARD_W - 3.5, CARD_H - 3.8, 14)
 
     pdf.set_fill_color(*GREEN_DARK)
     pdf.rect(0, CARD_H - 3, CARD_W, 3, style="F")
@@ -685,9 +704,16 @@ def _add_verso_eleve(pdf: FPDF, carte) -> None:
     pdf.set_xy(4, pdf.get_y() + 2)
     pdf.cell(CARD_W - 8, 3.2, "Contact : lecimnational@gmail.com", align="L")
 
-    if carte.eleve_date_naissance:
-        pdf.set_xy(4, pdf.get_y() + 4)
-        pdf.cell(CARD_W - 8, 3.2, f"Ne(e) le : {carte.eleve_date_naissance.strftime('%d/%m/%Y')}", align="L")
+    # QR de verification publique (deplace du recto, qui porte desormais la
+    # signature+cachet du president) — meme principe que la carte membre.
+    qr_payload = f"{settings.public_base_url}/verify-eleve/{carte.matricule or ''}"
+    qr_img = qrcode.make(qr_payload, border=1)
+    qr_size = 14.0
+    qr_x = CARD_W - 4 - qr_size
+    qr_y = 24.0
+    pdf.set_fill_color(255, 255, 255)
+    pdf.rect(qr_x - 0.8, qr_y - 0.8, qr_size + 1.6, qr_size + 1.6, style="F", round_corners=True, corner_radius=1)
+    pdf.image(qr_img.get_image() if hasattr(qr_img, "get_image") else qr_img, x=qr_x, y=qr_y, w=qr_size, h=qr_size)
 
     sig_y = CARD_H - 14
     pdf.set_draw_color(120, 120, 120)
