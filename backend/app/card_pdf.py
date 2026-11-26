@@ -44,6 +44,34 @@ _SIGNATURE_RATIO = 599 / 411
 PRESIDENT_NOM = "Ahmed SYLLA"
 
 
+_MOIS_FR = [
+    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
+]
+
+
+def _mois_annee_fr(date) -> str:
+    """Formate une date en "Mois AAAA" (ex. "Avril 2028") sans dependre de la
+    locale du serveur — la carte n'affiche que l'echeance, pas le jour exact."""
+    return f"{_MOIS_FR[date.month - 1]} {date.year}"
+
+
+def _draw_qr_mini(pdf: FPDF, carte, right_edge: float, bottom_edge: float, size: float, caption: bool = True) -> None:
+    """QR de vérification au verso, avec fond blanc arrondi — meme principe
+    d'alignement sur son coin bas-droit que _draw_president_signature_mini."""
+    qr_payload = f"{settings.public_base_url}/verify/{carte.numero_carte or ''}"
+    qr_img = qrcode.make(qr_payload, border=1)
+    qr_x, qr_y = right_edge - size, bottom_edge - size
+    pdf.set_fill_color(255, 255, 255)
+    pdf.rect(qr_x - 0.8, qr_y - 0.8, size + 1.6, size + 1.6, style="F", round_corners=True, corner_radius=1)
+    pdf.image(qr_img.get_image() if hasattr(qr_img, "get_image") else qr_img, x=qr_x, y=qr_y, w=size, h=size)
+    if caption:
+        pdf.set_font("Helvetica", "", 3.6)
+        pdf.set_text_color(130, 130, 130)
+        pdf.set_xy(qr_x - 5, qr_y - 4)
+        pdf.cell(size + 10, 2.8, "Scanner pour verifier", align="C")
+
+
 def _draw_president_signature_mini(pdf: FPDF, right_edge: float, bottom_edge: float, width: float) -> None:
     """Version miniature de la signature + cachet du president pour le verso
     des cartes (espace tres restreint) — alignee sur son bord droit/bas.
@@ -187,16 +215,21 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
     pdf.set_xy(info_x, info_y + 12.3)
     pdf.cell(info_w, 3.4, fonction_text, align="L")
 
-    # QR de verification (remplace le code-barres decoratif du modele : un
-    # visuel non fonctionnel n'aurait aucune valeur de securite)
-    qr_payload = f"{settings.public_base_url}/verify/{carte.numero_carte or ''}"
-    qr_img = qrcode.make(qr_payload, border=1)
-    qr_size = 11.0
-    qr_x = CARD_W - 3.5 - qr_size
-    qr_y = CARD_H - 3.5 - qr_size
-    pdf.set_fill_color(255, 255, 255)
-    pdf.rect(qr_x - 0.8, qr_y - 0.8, qr_size + 1.6, qr_size + 1.6, style="F", round_corners=True, corner_radius=1)
-    pdf.image(qr_img.get_image() if hasattr(qr_img, "get_image") else qr_img, x=qr_x, y=qr_y, w=qr_size, h=qr_size)
+    naissance_bits = []
+    if carte.date_naissance:
+        naissance_bits.append(f"Ne(e) le {carte.date_naissance.strftime('%d/%m/%Y')}")
+    if carte.lieu_naissance:
+        naissance_bits.append(f"a {_safe_text(carte.lieu_naissance)}")
+    if naissance_bits:
+        pdf.set_text_color(70, 70, 70)
+        pdf.set_font("Helvetica", "", 4.8)
+        pdf.set_xy(5.56, 42.3)
+        pdf.cell(55, 3, " ".join(naissance_bits), align="L")
+
+    # Signature + cachet du president (remplace le QR, deplace au verso —
+    # demande explicite : le recto porte l'identite du titulaire et son
+    # authentification, le verso porte la verification).
+    _draw_president_signature_mini(pdf, CARD_W - 3.5, CARD_H - 2.5, 17)
 
     pdf.set_font("Helvetica", "B", 6.2)
     pdf.set_text_color(*GREEN)
@@ -205,8 +238,8 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
     pdf.set_font("Helvetica", "", 5.3)
     pdf.set_text_color(80, 80, 80)
     pdf.set_xy(3.5, CARD_H - 6)
-    validite = carte.date_validite.strftime("%d/%m/%Y") if carte.date_validite else "-"
-    pdf.cell(30, 3, f"Valable jusqu'au {validite}", align="L")
+    validite = _mois_annee_fr(carte.date_validite) if carte.date_validite else "-"
+    pdf.cell(30, 3, f"Valable jusqu'a {validite}", align="L")
 
 
 def _add_verso(pdf: FPDF, carte) -> None:
@@ -245,9 +278,10 @@ def _add_verso(pdf: FPDF, carte) -> None:
     # Volontairement rien d'autre d'identifiant ici (ni N. CNI, ni contact
     # d'urgence, ni numero de carte) : le verso doit rester un texte generique,
     # identique sur toutes les cartes. Les informations propres au titulaire
-    # (nom, fonction, numero, QR) restent uniquement au recto.
+    # (nom, fonction, numero, naissance) restent au recto ; le QR de
+    # verification est ici, la signature+cachet du president est au recto.
 
-    _draw_president_signature_mini(pdf, CARD_W - 5, CARD_H - 2, 20)
+    _draw_qr_mini(pdf, carte, CARD_W - 5, CARD_H - 3, 17)
 
     pdf.set_text_color(130, 130, 130)
     pdf.set_font("Helvetica", "", 5.3)
@@ -356,14 +390,8 @@ def _add_recto_delegation(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
         pdf.set_xy(6, 39.3)
         pdf.cell(63, 3, " ".join(naissance_bits), align="L")
 
-    qr_payload = f"{settings.public_base_url}/verify/{carte.numero_carte or ''}"
-    qr_img = qrcode.make(qr_payload, border=1)
-    qr_size = 11.0
-    qr_x = CARD_W - 3.2 - qr_size
-    qr_y = CARD_H - 3.2 - qr_size
-    pdf.set_fill_color(255, 255, 255)
-    pdf.rect(qr_x - 0.8, qr_y - 0.8, qr_size + 1.6, qr_size + 1.6, style="F", round_corners=True, corner_radius=1)
-    pdf.image(qr_img.get_image() if hasattr(qr_img, "get_image") else qr_img, x=qr_x, y=qr_y, w=qr_size, h=qr_size)
+    # Signature + cachet du president (remplace le QR, deplace au verso).
+    _draw_president_signature_mini(pdf, CARD_W - 3.2, CARD_H - 2.5, 15)
 
     pdf.set_font("Helvetica", "B", 6.0)
     pdf.set_text_color(*GREEN)
@@ -372,8 +400,8 @@ def _add_recto_delegation(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
     pdf.set_font("Helvetica", "", 5.0)
     pdf.set_text_color(80, 80, 80)
     pdf.set_xy(6, CARD_H - 6)
-    validite = carte.date_validite.strftime("%d/%m/%Y") if carte.date_validite else "-"
-    pdf.cell(60, 3, f"Valable jusqu'au {validite}", align="L")
+    validite = _mois_annee_fr(carte.date_validite) if carte.date_validite else "-"
+    pdf.cell(60, 3, f"Valable jusqu'a {validite}", align="L")
 
 
 def _add_verso_delegation(pdf: FPDF, carte) -> None:
@@ -421,7 +449,7 @@ def _add_verso_delegation(pdf: FPDF, carte) -> None:
         pdf.set_xy(cx, val_y + 2.2)
         pdf.cell(col_w, 3, label, align="C")
 
-    _draw_president_signature_mini(pdf, CARD_W - 5, CARD_H - 2, 12)
+    _draw_qr_mini(pdf, carte, CARD_W - 5, CARD_H - 2, 11, caption=False)
 
     pdf.set_text_color(130, 130, 130)
     pdf.set_font("Helvetica", "", 5.3)

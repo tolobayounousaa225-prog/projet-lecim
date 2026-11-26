@@ -68,15 +68,15 @@ def _carte_field_too_long(**champs: str) -> str | None:
     return None
 
 
-CARTE_VALIDITE_ANNEES = 3
+# Echeance commune a toutes les cartes (pas un decompte de N annees depuis la
+# delivrance) — alignee sur le prochain cycle de renouvellement de la LECIM.
+# N'affiche que le mois et l'annee sur la carte (voir card_pdf.py), cette date
+# precise ne sert qu'a la comparaison d'expiration (verify.py).
+CARTE_DATE_VALIDITE = datetime.date(2028, 4, 30)
 
 
-def _validite_dans_n_ans(depuis: datetime.date, annees: int) -> datetime.date:
-    try:
-        return depuis.replace(year=depuis.year + annees)
-    except ValueError:
-        # 29 fevrier sur une annee non bissextile
-        return depuis.replace(month=2, day=28, year=depuis.year + annees)
+def _date_validite_carte() -> datetime.date:
+    return CARTE_DATE_VALIDITE
 
 
 # ---------- Espace personnel : ma carte ----------
@@ -296,7 +296,7 @@ async def carte_new_create(
         status="validee",
         numero_carte=_next_numero_carte(db),
         date_validation=datetime.datetime.utcnow(),
-        date_validite=_validite_dans_n_ans(datetime.date.today(), CARTE_VALIDITE_ANNEES),
+        date_validite=_date_validite_carte(),
         validated_by_id=user.id,
     )
     db.add(carte)
@@ -419,7 +419,7 @@ async def carte_delegation_new_create(
         status="validee",
         numero_carte=_next_numero_carte(db, is_delegation=True),
         date_validation=datetime.datetime.utcnow(),
-        date_validite=_validite_dans_n_ans(datetime.date.today(), CARTE_VALIDITE_ANNEES),
+        date_validite=_date_validite_carte(),
         validated_by_id=user.id,
     )
     db.add(carte)
@@ -501,7 +501,7 @@ def carte_valider(
     if carte and carte.status == "soumise":
         carte.status = "validee"
         carte.date_validation = datetime.datetime.utcnow()
-        carte.date_validite = _validite_dans_n_ans(datetime.date.today(), CARTE_VALIDITE_ANNEES)
+        carte.date_validite = _date_validite_carte()
         carte.validated_by_id = user.id
         if not carte.numero_carte:
             carte.numero_carte = _next_numero_carte(db, is_delegation=bool(carte.user.delegation_id))
