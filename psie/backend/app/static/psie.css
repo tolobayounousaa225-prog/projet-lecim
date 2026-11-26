@@ -73,3 +73,10 @@ label.check input { width: auto; }
 /* Éditeur du contenu du site */
 fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin: 0; min-width: 0; }
 legend { font-weight: 600; padding: 0 6px; }
+
+/* Pages de connexion : uniquement la fenêtre de connexion, sans menu */
+main.bare { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 16px; }
+.auth-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; text-align: center; }
+.auth-brand .brand-text { color: var(--muted); font-size: 14px; max-width: 220px; }
+main.bare .card.narrow { margin: 16px auto; width: 100%; }
+.auth-lang { display: flex; gap: 12px; margin: 8px 0 0; }

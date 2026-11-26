@@ -80,3 +80,23 @@ def test_data_labels_follow_language(db):
     client.cookies.set("lang", "ar")
     page = client.get("/faitieres").text
     assert "عضو مؤسس" in page and "Membre fondateur" not in page
+
+
+def test_login_pages_show_only_the_login_window(anon):
+    for url in ("/login",):
+        page = anon.get(url).text
+        for link in ('href="/apropos"', 'href="/membres"', 'href="/actualites"', 'href="/adhesion"', 'class="topbar"'):
+            assert link not in page, (url, link)
+        assert 'name="email"' in page and 'name="password"' in page and "PSIE" in page
+        assert 'href="/lang/ar"' in page                       # le choix de langue reste disponible
+
+
+def test_two_factor_page_is_bare_too(anon):
+    anon.cookies.set("two_factor_pending", "x")
+    page = anon.get("/login/verification").text
+    assert 'name="code"' in page and 'class="topbar"' not in page and 'href="/apropos"' not in page
+
+
+def test_public_pages_keep_their_menu(anon):
+    page = anon.get("/apropos").text
+    assert 'class="topbar"' in page and 'href="/membres"' in page
