@@ -59,8 +59,8 @@
 {% if show_dues %}
 <section class="card">
   <div class="row"><h2>{{ t('nav_dues') }}</h2><a href="/faitieres/{{ item.id }}/releve.pdf" target="_blank">{{ t('statement_pdf') }}</a></div>
-  <table>
-    <thead><tr><th>{{ t('name') }}</th><th>{{ t('due') }}</th><th>{{ t('paid') }}</th><th>{{ t('deadline') }}</th><th>{{ t('status') }}</th><th></th></tr></thead>
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ t('name') }}</th><th>{{ t('due') }}</th><th>{{ t('paid') }}</th><th>{{ t('deadline') }}</th><th>{{ t('status') }}</th><th><span class="sr-only">{{ t('a11y_actions') }}</span></th></tr></thead>
     <tbody>
     {% for e in echeances %}
       <tr><td><a href="/echeances/{{ e.id }}">{{ e.libelle }}</a></td><td>{{ fcfa(e.montant_du) }}</td><td>{{ fcfa(e.montant_paye) }}</td>
@@ -68,14 +68,14 @@
         <td>{% if e.type == 'annuelle' and e.solde <= 0 %}<a href="/faitieres/{{ item.id }}/attestation.pdf?annee={{ e.annee }}" target="_blank">{{ t('attestation') }}</a>{% endif %}</td></tr>
     {% else %}<tr><td colspan="6" class="muted">{{ t('none') }}</td></tr>{% endfor %}
     </tbody>
-  </table>
+  </table></div>
 </section>
 {% endif %}
 
 <section class="card">
   <h2>{{ t('mandates_of') }}</h2>
-  <table>
-    <thead><tr><th>{{ t('full_name') }}</th><th>{{ t('organ') }}</th><th>{{ t('function') }}</th><th>{{ t('start_date') }}</th><th>{{ t('end_date') }}</th>{% if user.can_manage_members %}<th></th>{% endif %}</tr></thead>
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ t('full_name') }}</th><th>{{ t('organ') }}</th><th>{{ t('function') }}</th><th>{{ t('start_date') }}</th><th>{{ t('end_date') }}</th>{% if user.can_manage_members %}<th><span class="sr-only">{{ t('a11y_actions') }}</span></th>{% endif %}</tr></thead>
     <tbody>
     {% for m in item.mandats if m.echeance != 'expire' %}
       <tr>
@@ -92,18 +92,18 @@
       <tr><td colspan="6" class="muted">{{ t('none') }}</td></tr>
     {% endfor %}
     </tbody>
-  </table>
+  </table></div>
 
   {% set past = item.mandats | selectattr('echeance', 'equalto', 'expire') | list %}
   {% if past %}
   <h3>{{ t('mandates_history') }}</h3>
-  <table class="muted">
+  <div class="table-wrap"><table class="muted">
     <tbody>
     {% for m in past %}
       <tr><td>{{ m.full_name }}</td><td>{{ lbl('organe', m.organe) }}</td><td>{{ m.fonction or '—' }}</td><td>{{ m.date_debut or '—' }} → {{ m.date_fin or '—' }}</td></tr>
     {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   {% endif %}
 
   {% if user.can_manage_members %}
@@ -124,14 +124,14 @@
 
 <section class="card">
   <h2>{{ t('pieces_title') }}</h2>
-  <table>
+  <div class="table-wrap"><table>
     <tbody>
     {% for p in pieces %}
       <tr><td>{{ p.type_label }}</td><td><a href="/pieces/{{ p.id }}">{{ p.nom }}</a></td><td>{{ (p.taille / 1024) | round | int }} Ko</td><td>{{ p.created_at.strftime('%d/%m/%Y') }}</td>
         {% if user.can_manage_members %}<td><form method="post" action="/pieces/{{ p.id }}/supprimer" class="inline"><button class="link danger">{{ t('delete') }}</button></form></td>{% endif %}</tr>
     {% else %}<tr><td class="muted">{{ t('none') }}</td></tr>{% endfor %}
     </tbody>
-  </table>
+  </table></div>
   {% if user.can_manage_members %}
   <form method="post" action="/faitieres/{{ item.id }}/pieces" enctype="multipart/form-data" class="grid">
     <label>{{ t('piece_type') }}<select name="type">{% for k, v in piece_types.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>

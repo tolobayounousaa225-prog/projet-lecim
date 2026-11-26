@@ -17,12 +17,22 @@
   {% if show_dues %}<div class="tile"><div class="num">{{ t('e_up_to_date') if row.a_jour else t('e_not_up_to_date') }}</div><div>{{ t('nav_dues') }} {{ annee }}</div></div>{% endif %}
 </div>
 <section class="card">
+  <h2>{{ t('e_charts') }} — {{ t('e_average') }}</h2>
+  <div class="two">
+    <div>{{ charts.bars([(f.sigle, row.eleves), (t('e_average'), avg.eleves)], t('e_pupils')) }}
+         {{ charts.bars([(f.sigle, row.personnel), (t('e_average'), avg.personnel)], t('e_staff_total')) }}</div>
+    <div>{{ charts.stacked([(t('e_admin'), [row.admin_francophone, row.admin_arabisant]), (t('e_teachers'), [row.ens_francophone, row.ens_arabisant])],
+                           [t('e_francophone'), t('e_arabisant')], t('e_staff_breakdown')) }}
+         {% if row.taux is not none %}{{ charts.bars([(f.sigle, row.taux), (t('e_average'), avg.taux or 0)], t('e_pass_rate'), ' %') }}{% endif %}</div>
+  </div>
+</section>
+<section class="card">
   <h2>{{ t('e_staff_breakdown') }}</h2>
-  <table><thead><tr><th></th><th>{{ t('e_francophone') }}</th><th>{{ t('e_arabisant') }}</th><th>{{ t('e_total') }}</th></tr></thead><tbody>
+  <div class="table-wrap"><table><thead><tr><th><span class="sr-only">{{ t('a11y_actions') }}</span></th><th>{{ t('e_francophone') }}</th><th>{{ t('e_arabisant') }}</th><th>{{ t('e_total') }}</th></tr></thead><tbody>
     <tr><td>{{ t('e_admin') }}</td><td>{{ row.admin_francophone }}</td><td>{{ row.admin_arabisant }}</td><td>{{ row.admin }}</td></tr>
     <tr><td>{{ t('e_teachers') }}</td><td>{{ row.ens_francophone }}</td><td>{{ row.ens_arabisant }}</td><td>{{ row.enseignants }}</td></tr>
     <tr><th>{{ t('e_total') }}</th><th>{{ row.francophones }}</th><th>{{ row.arabisants }}</th><th>{{ row.personnel }}</th></tr>
-  </tbody></table>
+  </tbody></table></div>
   <p class="muted">{{ t('e_census_progress') }} : {{ row.recensees }} / {{ row.ecoles }} · {{ t('e_reports_valid') }} : {{ row.bilans_valides }} / {{ row.ecoles }}</p>
 </section>
 {% include "_stats_blocks.html" %}

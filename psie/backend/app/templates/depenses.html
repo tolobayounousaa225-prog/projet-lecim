@@ -2,7 +2,7 @@
 {% block title %}{{ t('f_expenses') }}{% endblock %}
 {% block content %}
 <h1>{{ t('f_expenses') }}</h1>
-<table>
+<div class="table-wrap"><table data-filterable data-filter-label="{{ t('d_search') }}">
   <thead><tr><th>{{ t('date') }}</th><th>{{ t('call_title') }}</th><th>{{ t('category') }}</th><th>{{ t('amount') }}</th><th>{{ t('status') }}</th></tr></thead>
   <tbody>
   {% for d in items %}
@@ -10,7 +10,7 @@
       <td>{{ fcfa(d.montant) }}</td><td><span class="badge {{ {'a_valider': 'partiel', 'validee': 'actif', 'payee': 'paye', 'annulee': 'radie'}[d.statut] }}">{{ d.statut_label }}</span></td></tr>
   {% else %}<tr><td colspan="5" class="muted">{{ t('none') }}</td></tr>{% endfor %}
   </tbody>
-</table>
+</table></div>
 {% if user.can_write_finances %}
 <section class="card">
   <h2>{{ t('f_new_expense') }}</h2>

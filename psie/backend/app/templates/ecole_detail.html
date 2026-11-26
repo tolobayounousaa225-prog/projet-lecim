@@ -48,7 +48,7 @@
 <section class="card">
   <h2>{{ t('e_exams') }}</h2>
   <div class="table-wrap"><table>
-    <thead><tr><th>{{ t('e_year') }}</th><th>{{ t('e_exam') }}</th><th>{{ t('e_candidates') }}</th><th>{{ t('e_passed') }}</th><th>{{ t('e_rate') }}</th><th></th></tr></thead>
+    <thead><tr><th>{{ t('e_year') }}</th><th>{{ t('e_exam') }}</th><th>{{ t('e_candidates') }}</th><th>{{ t('e_passed') }}</th><th>{{ t('e_rate') }}</th><th><span class="sr-only">{{ t('a11y_actions') }}</span></th></tr></thead>
     <tbody>
     {% for r in e.resultats %}<tr><td>{{ r.annee }}</td><td>{{ lbl('examen', r.examen) }}</td><td>{{ r.inscrits }}</td><td>{{ r.admis }}</td><td>{{ r.taux }} %</td>
       <td>{% if can_write %}<form method="post" action="/faitieres/{{ f.id }}/ecoles/{{ e.id }}/examens/{{ r.id }}/supprimer" class="inline"><button class="link danger">{{ t('delete') }}</button></form>{% endif %}</td></tr>

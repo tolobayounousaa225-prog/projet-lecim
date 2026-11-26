@@ -68,6 +68,15 @@ ECOLES_TEXTS = {
     "i_import_members": _t("Importer des organisations (CSV)", "استيراد منظمات (CSV)"),
     "i_members_help": _t("Colonnes : sigle ; nom ; catégorie (fondateur, ordinaire, honneur) ; e-mail ; téléphone ; siège.",
                          "الأعمدة: الاختصار ؛ الاسم ؛ الفئة ؛ البريد ؛ الهاتف ؛ المقر."),
+    "gs_placeholder": _t("Rechercher… ( / )", "بحث… ( / )"), "gs_title": _t("Recherche", "بحث"),
+    "gs_short": _t("Tapez au moins 2 caractères.", "اكتبوا حرفين على الأقل."), "gs_none": _t("Aucun résultat.", "لا توجد نتائج."),
+    "gs_members": _t("Organisations", "المنظمات"), "gs_mandates": _t("Représentants", "الممثلون"), "gs_schools": _t("Écoles", "المدارس"),
+    "gs_applications": _t("Demandes d'adhésion", "طلبات الانخراط"), "gs_documents": _t("Documents", "الوثائق"),
+    "gs_mail": _t("Courrier", "المراسلات"), "gs_agreements": _t("Conventions", "الاتفاقيات"), "gs_users": _t("Comptes", "الحسابات"),
+    "gs_announcements": _t("Annonces", "الإعلانات"),
+    "e_charts": _t("Graphiques", "رسوم بيانية"),
+    "e_chart_need_two_years": _t("Les courbes apparaissent dès que deux années sont renseignées.", "تظهر المنحنيات عند إدخال سنتين."),
+    "a11y_actions": _t("Actions", "إجراءات"),
     "dash_sec_ecoles": _t("Écoles et suivi des faîtières", "المدارس ومتابعة المنظمات"),
 }
 

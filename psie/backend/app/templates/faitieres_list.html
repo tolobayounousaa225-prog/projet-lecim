@@ -5,7 +5,7 @@
   <span><a href="/registre-membres.pdf" target="_blank">{{ t('register_pdf') }}</a>
   {% if user.can_manage_members %}<a class="btn" href="/faitieres/new">{{ t('new_member') }}</a>{% endif %}</span>
 </div>
-<table>
+<div class="table-wrap"><table data-filterable data-filter-label="{{ t('d_search') }}">
   <thead><tr><th>{{ t('acronym') }}</th><th>{{ t('name') }}</th><th>{{ t('category') }}</th><th>{{ t('status') }}</th></tr></thead>
   <tbody>
   {% for f in items %}
@@ -18,7 +18,7 @@
     <tr><td colspan="4" class="muted">{{ t('none') }}</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% if user.can_manage_members %}
 <section class="card">
   <h2>{{ t('i_import_members') }}</h2><p class="muted">{{ t('i_members_help') }}</p>

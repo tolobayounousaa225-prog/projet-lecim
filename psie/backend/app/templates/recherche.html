@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ t('gs_title') }}{% endblock %}
+{% block content %}
+<h1>{{ t('gs_title') }}</h1>
+<form method="get" action="/recherche" class="card search-page"><input type="search" name="q" value="{{ q }}" maxlength="80" autofocus aria-label="{{ t('gs_placeholder') }}"><button class="btn">OK</button></form>
+{% if short %}<p class="muted">{{ t('gs_short') }}</p>{% endif %}
+<div class="results">
+{% for key, rows in groups %}
+  <section class="card"><h2>{{ t(key) }} <small>{{ rows|length }}</small></h2>
+  <ul>{% for link, title, detail in rows %}<li><a href="{{ link }}">{{ title }}</a>{% if detail %} <span class="muted">— {{ detail }}</span>{% endif %}</li>{% endfor %}</ul></section>
+{% else %}{% if q and not short %}<p class="card muted">{{ t('gs_none') }}</p>{% endif %}{% endfor %}
+</div>
+{% endblock %}

@@ -14,7 +14,7 @@
     {% if appel.motif %}<dt>{{ t('call_reason') }}</dt><dd>{{ appel.motif }}</dd>{% endif %}
   </dl>
 </section>
-<table>
+<div class="table-wrap"><table>
   <thead><tr><th>{{ t('acronym') }}</th><th>{{ t('due') }}</th><th>{{ t('paid') }}</th><th>{{ t('balance') }}</th><th>{{ t('deadline') }}</th><th>{{ t('status') }}</th></tr></thead>
   <tbody>
   {% for e in appel.echeances %}
@@ -23,6 +23,6 @@
       <td>{{ e.date_limite or '—' }}</td><td><span class="badge {{ e.statut }}">{{ t('st_' ~ e.statut) }}</span></td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 <p><a href="/appels">{{ t('back') }}</a></p>
 {% endblock %}

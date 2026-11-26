@@ -20,8 +20,8 @@
 
 <section class="card">
   <div class="row"><h2>{{ t('e_list') }}</h2><a href="/faitieres/{{ f.id }}/export-ecoles.csv?annee={{ annee }}">{{ t('e_export') }}</a></div>
-  <div class="table-wrap"><table>
-    <thead><tr><th>{{ t('name') }}</th><th>{{ t('e_level') }}</th><th>{{ t('e_locality') }}</th><th>DRENA</th><th>{{ t('e_pupils') }}</th><th>{{ t('e_staff_total') }}</th><th></th></tr></thead>
+  <div class="table-wrap"><table data-filterable data-filter-label="{{ t('d_search') }}">
+    <thead><tr><th>{{ t('name') }}</th><th>{{ t('e_level') }}</th><th>{{ t('e_locality') }}</th><th>DRENA</th><th>{{ t('e_pupils') }}</th><th>{{ t('e_staff_total') }}</th><th><span class="sr-only">{{ t('a11y_actions') }}</span></th></tr></thead>
     <tbody>
     {% for e in ecoles %}{% set r = recs.get(e.id) %}
       <tr><td><a href="/faitieres/{{ f.id }}/ecoles/{{ e.id }}">{{ e.nom }}</a></td><td>{{ lbl('niveau', e.niveau) if e.niveau else '—' }}</td>

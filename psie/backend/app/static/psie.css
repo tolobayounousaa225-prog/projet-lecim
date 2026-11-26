@@ -91,7 +91,7 @@ h3 { font-size: 15px; margin: 18px 0 8px; color: var(--muted); text-transform: u
 .tile .num { font-size: 30px; font-weight: 800; line-height: 1.1; color: var(--primary); }
 .tile .num a { color: inherit; text-decoration: none; }
 .tile > div:last-child { color: var(--muted); font-size: 14px; margin-top: 4px; }
-.table-wrap { overflow-x: auto; margin: 12px 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+.table-wrap { position: relative; overflow-x: auto; margin: 12px 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
 .table-wrap table { border: 0; border-radius: 0; }
 table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 12px 0; }
 .card table { margin: 8px 0; box-shadow: none; }
@@ -202,3 +202,31 @@ main.bare.wide .auth-brand, main.bare.wide .auth-lang { align-self: center; }
 
 tr.sensitive td { background: #fff7e0; }
 .pager { display: flex; gap: 12px; align-items: center; }
+
+.global-search input { width: 220px; max-width: 40vw; padding: 7px 12px; border-radius: 999px; }
+.table-filter { display: flex; gap: 12px; align-items: center; margin: 8px 0; }
+.table-filter input { max-width: 320px; }
+tr[hidden] { display: none; }
+.results h2 { margin-top: 18px; }
+.results ul { list-style: none; padding: 0; }
+.results li { padding: 8px 0; border-bottom: 1px solid var(--line, #e3e8e5); }
+@media (max-width: 640px) { .global-search input { width: 120px; } }
+
+figure.chart { margin: 12px 0; }
+figure.chart svg { width: 100%; height: auto; max-width: 720px; }
+.chart .ct { font-size: 12px; fill: var(--text, #1b2a22); }
+.chart .c1 { fill: #14532d; } .chart .c2 { fill: #c9a24b; } .chart .c3 { fill: #5b7fa6; }
+.chart .ln { fill: none; stroke: #14532d; stroke-width: 2.5; }
+.chart .axis { stroke: #9aa8a0; stroke-width: 1; }
+@media (prefers-color-scheme: dark) { .chart .c1 { fill: #5fbf8a; } .chart .ln { stroke: #5fbf8a; } .chart .ct { fill: #e6efe9; } }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media (max-width: 640px) {
+  .appbar { gap: 6px; padding-left: 8px; padding-right: 8px; }
+  .global-search { display: none; }
+  .user-menu .who { display: none; }
+  .user-menu-panel { right: 0; left: auto; max-width: calc(100vw - 16px); }
+}
+
+form.search-page { display: flex; gap: 8px; align-items: center; }
+form.search-page input { flex: 1; min-width: 0; }

@@ -48,7 +48,8 @@ def test_app_refuses_to_start_with_unsafe_production_config(monkeypatch):
 def test_security_headers_and_hsts(monkeypatch):
     client = TestClient(app)
     headers = client.get("/login").headers
-    assert "script-src 'none'" in headers["content-security-policy"]
+    csp = headers["content-security-policy"]
+    assert "script-src 'self'" in csp and "unsafe-inline" not in csp.split("style-src")[0] and "unsafe-eval" not in csp
     assert "frame-ancestors 'none'" in headers["content-security-policy"]
     assert headers["x-frame-options"] == "DENY" and "strict-transport-security" not in headers
     monkeypatch.setattr(settings, "cookie_secure", True)

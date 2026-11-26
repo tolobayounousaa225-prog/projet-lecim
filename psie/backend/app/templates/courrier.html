@@ -8,7 +8,7 @@
   <label>{{ t('status') }} <select name="statut"><option value="">{{ t('d_all') }}</option>{% for k in statuts %}<option value="{{ k }}"{% if k == statut %} selected{% endif %}>{{ lbl('courrier_statut', k) }}</option>{% endfor %}</select></label>
   <button class="btn">OK</button>
 </form>
-<div class="table-wrap"><table>
+<div class="table-wrap"><table data-filterable data-filter-label="{{ t('d_search') }}">
   <thead><tr><th>{{ t('m_number') }}</th><th>{{ t('m_date') }}</th><th>{{ t('m_correspondent') }}</th><th>{{ t('m_subject') }}</th><th>{{ t('status') }}</th><th>{{ t('m_deadline') }}</th></tr></thead>
   <tbody>{% for c in items %}
     <tr><td><a href="/courrier/{{ c.id }}">{{ c.numero }}</a></td><td>{{ c.date_courrier.strftime('%d/%m/%Y') }}</td><td>{{ c.correspondant }}</td><td>{{ c.objet }}</td>

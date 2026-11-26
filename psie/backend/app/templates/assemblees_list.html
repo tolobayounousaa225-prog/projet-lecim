@@ -2,7 +2,7 @@
 {% block title %}{{ t('nav_assemblies') }}{% endblock %}
 {% block content %}
 <h1>{{ t('nav_assemblies') }}</h1>
-<table>
+<div class="table-wrap"><table>
   <thead><tr><th>{{ t('date') }}</th><th>{{ t('g_type') }}</th><th>{{ t('g_place') }}</th><th>{{ t('status') }}</th></tr></thead>
   <tbody>
   {% for a in items %}
@@ -10,7 +10,7 @@
       <td><span class="badge">{{ a.statut_label }}</span></td></tr>
   {% else %}<tr><td colspan="4" class="muted">{{ t('none') }}</td></tr>{% endfor %}
   </tbody>
-</table>
+</table></div>
 {% if user.can_write_assemblees %}
 <section class="card">
   <h2>{{ t('g_new_assembly') }}</h2>

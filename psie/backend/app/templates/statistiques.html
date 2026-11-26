@@ -17,6 +17,15 @@
   <div class="tile"><div class="num">{{ (total.taux ~ ' %') if total.taux is not none else '—' }}</div><div>{{ t('e_pass_rate') }}</div></div>
 </div>
 <section class="card">
+  <h2>{{ t('e_charts') }} — {{ t('e_by_federation') }}</h2>
+  <div class="two">
+    <div>{{ charts.bars_from(rows, 'sigle', 'eleves', t('e_pupils')) }}
+         {{ charts.bars_from(rows, 'sigle', 'taux', t('e_pass_rate'), ' %', true) }}</div>
+    <div>{{ charts.stacked_from(rows, 'sigle', ['francophones', 'arabisants'], [t('e_francophone'), t('e_arabisant')], t('e_staff_breakdown')) }}
+         {% if show_dues and total.a_jour %}{{ charts.bars_from(rows, 'sigle', 'a_jour_n', t('nav_dues') ~ ' (1 = ' ~ t('e_up_to_date') ~ ')') }}{% endif %}</div>
+  </div>
+</section>
+<section class="card">
   <h2>{{ t('e_by_federation') }}</h2>
   <div class="table-wrap"><table>
     <thead><tr><th>{{ t('nav_members') }}</th><th>{{ t('e_schools_count') }}</th><th>{{ t('e_pupils') }}</th><th>{{ t('e_admin') }}</th><th>{{ t('e_teachers') }}</th><th>{{ t('e_staff_total') }}</th><th>{{ t('e_francophone') }}</th><th>{{ t('e_arabisant') }}</th><th>{{ t('e_pass_rate') }}</th><th>{{ t('e_reports_valid') }}</th>{% if show_dues %}<th>{{ t('nav_dues') }}</th>{% endif %}</tr></thead>
