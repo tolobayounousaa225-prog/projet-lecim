@@ -37,6 +37,9 @@ DOCUMENTS_TEXTS = {
 }
 
 DOCUMENTS_LABELS = {
+    "session_statut": {"ouverte": _t("Inscriptions ouvertes", "التسجيل مفتوح"), "cloturee": _t("Inscriptions closes", "التسجيل مغلق"),
+                       "terminee": _t("Terminée", "منتهية"), "annulee": _t("Annulée", "ملغاة")},
+    "inscription_statut": {"inscrit": _t("Inscrit", "مسجل"), "present": _t("Présent", "حاضر"), "absent": _t("Absent", "غائب"), "annule": _t("Annulé", "ملغى")},
     "doc_cat": {
         "statuts": _t("Statuts et règlement", "النظام الأساسي واللائحة"), "decision": _t("Décisions et notes", "قرارات ومذكرات"),
         "convention": _t("Conventions et partenariats", "اتفاقيات وشراكات"), "rapport": _t("Rapports", "تقارير"),

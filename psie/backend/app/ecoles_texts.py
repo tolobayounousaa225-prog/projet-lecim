@@ -92,6 +92,16 @@ ECOLES_TEXTS = {
     "sg_changed_help": _t("Le document actuel ne correspond plus à celui qui a été signé. Demandez la version signée à la PSIE.", "الوثيقة الحالية لا تطابق الموقعة."),
     "sg_document": _t("Document", "الوثيقة"), "sg_signer": _t("Signataire", "الموقّع"), "sg_role": _t("Fonction", "الصفة"), "sg_date": _t("Date", "التاريخ"),
     "sg_sign_doc": _t("Signer", "توقيع"),
+    "nav_training": _t("Formation", "التكوين"), "fm_title": _t("Formations", "التكوينات"), "fm_audience": _t("Public visé", "الفئة المستهدفة"),
+    "fm_duration": _t("Durée", "المدة"), "fm_places": _t("Places", "المقاعد"), "fm_registered": _t("inscrit", "مسجل"),
+    "fm_open": _t("Ouvrir", "فتح"), "fm_deadline": _t("Inscriptions jusqu'au", "التسجيل حتى"), "fm_add_session": _t("Ajouter la session", "إضافة الدورة"),
+    "fm_new": _t("Nouvelle formation", "تكوين جديد"), "fm_registered_count": _t("inscrit(s)", "مسجل"), "fm_cancel": _t("Annuler l'inscription", "إلغاء التسجيل"),
+    "fm_present": _t("Présent", "حاضر"), "fm_finish": _t("Terminer la session et délivrer les certificats", "إنهاء الدورة وتسليم الشهادات"),
+    "fm_finish_help": _t("Cochez les présents : un certificat est délivré à chacun. Possible dès le début de la session.", "ضعوا علامة على الحاضرين: تسلّم شهادة لكل منهم."),
+    "fm_enroll": _t("Inscrire une personne", "تسجيل شخص"), "fm_enroll_btn": _t("Inscrire", "تسجيل"),
+    "fm_closed_info": _t("Les inscriptions ne sont plus ouvertes pour cette session.", "انتهى التسجيل لهذه الدورة."),
+    "fm_verification": _t("Vérification de certificat", "التحقق من الشهادة"), "fm_valid": _t("Certificat authentique", "شهادة أصلية"),
+    "fm_beneficiary": _t("Bénéficiaire", "المستفيد"), "fm_training": _t("Formation", "التكوين"), "fm_cert_number": _t("Certificat n°", "رقم الشهادة"),
     "dash_sec_ecoles": _t("Écoles et suivi des faîtières", "المدارس ومتابعة المنظمات"),
 }
 

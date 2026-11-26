@@ -1280,6 +1280,86 @@ class CodeSignature(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
 
 
+SESSION_STATUTS = {"ouverte": "Inscriptions ouvertes", "cloturee": "Inscriptions closes", "terminee": "Terminée", "annulee": "Annulée"}
+INSCRIPTION_STATUTS = {"inscrit": "Inscrit", "present": "Présent", "absent": "Absent", "annule": "Annulé"}
+
+
+class Formation(Base):
+    """Une formation proposée par le secrétariat Formation (ex. « Gestion d'un établissement »)."""
+
+    __tablename__ = "formations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    public_cible: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    duree: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    sessions = relationship("SessionFormation", cascade="all, delete-orphan", order_by="SessionFormation.date_debut.desc()")
+
+
+class SessionFormation(Base):
+    """Une date de la formation : lieu, places, limite d'inscription."""
+
+    __tablename__ = "sessions_formation"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    formation_id: Mapped[int] = mapped_column(ForeignKey("formations.id", ondelete="CASCADE"), index=True, nullable=False)
+    date_debut: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    date_fin: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    lieu: Mapped[str] = mapped_column(String(255), nullable=False)
+    places: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    limite_inscription: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    statut: Mapped[str] = mapped_column(String(20), default="ouverte", nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    formation = relationship("Formation", overlaps="sessions")
+    inscriptions = relationship("InscriptionFormation", cascade="all, delete-orphan", order_by="InscriptionFormation.id")
+
+    @property
+    def statut_label(self) -> str:
+        return SESSION_STATUTS.get(self.statut, self.statut)
+
+    @property
+    def inscrits_actifs(self) -> int:
+        return sum(1 for i in self.inscriptions if i.statut != "annule")
+
+    @property
+    def complete(self) -> bool:
+        return self.places is not None and self.inscrits_actifs >= self.places
+
+    @property
+    def ouverte_aux_inscriptions(self) -> bool:
+        return (self.statut == "ouverte" and not self.complete
+                and (self.limite_inscription is None or self.limite_inscription >= datetime.date.today()))
+
+
+class InscriptionFormation(Base):
+    """Une personne du personnel d'une faîtière inscrite à une session ; devient un certificat si elle a été présente."""
+
+    __tablename__ = "inscriptions_formation"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("sessions_formation.id", ondelete="CASCADE"), index=True, nullable=False)
+    faitiere_id: Mapped[int] = mapped_column(ForeignKey("faitieres.id", ondelete="CASCADE"), index=True, nullable=False)
+    nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    fonction: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    telephone: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    statut: Mapped[str] = mapped_column(String(20), default="inscrit", nullable=False)
+    certificat_numero: Mapped[str | None] = mapped_column(String(20), unique=True, nullable=True)
+    certificat_token: Mapped[str | None] = mapped_column(String(40), unique=True, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    faitiere = relationship("Faitiere")
+    session = relationship("SessionFormation", overlaps="inscriptions")
+
+    @property
+    def statut_label(self) -> str:
+        return INSCRIPTION_STATUTS.get(self.statut, self.statut)
+
+
 class ReinitialisationMdp(Base):
     """Lien « mot de passe oublié » : seul l'empreinte du jeton est conservée, jamais le jeton."""
 

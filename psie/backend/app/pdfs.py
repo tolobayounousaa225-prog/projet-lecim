@@ -160,6 +160,27 @@ def signature_certificate_pdf(sig: models.Signature, verify_url: str) -> bytes:
     return bytes(pdf.output())
 
 
+def formation_certificate_pdf(i: models.InscriptionFormation, verify_url: str) -> bytes:
+    s, f = i.session, i.session.formation
+    pdf = _new_pdf()
+    _header(pdf, "CERTIFICAT DE FORMATION", "شهادة تكوين")
+    _row(pdf, "Bénéficiaire", i.nom[:34], "المستفيد")
+    _row(pdf, "Organisation", i.faitiere.sigle, "المنظمة")
+    _row(pdf, "Formation", f.titre[:34], "التكوين")
+    period = f"{s.date_debut:%d/%m/%Y}" + (f" → {s.date_fin:%d/%m/%Y}" if s.date_fin and s.date_fin != s.date_debut else "")
+    _row(pdf, "Période", period, "الفترة")
+    _row(pdf, "Lieu", s.lieu[:34], "المكان")
+    _row(pdf, "Certificat n°", i.certificat_numero or "—", "رقم الشهادة")
+    pdf.set_xy(15, 140)
+    pdf.set_font("dv", "", 10)
+    pdf.multi_cell(180, 6, f"La PSIE certifie que {i.nom} a suivi la formation « {f.titre} ».")
+    pdf.set_x(15)
+    pdf.multi_cell(180, 6, f"تشهد المنصة بأن {i.nom} قد تابع/ت التكوين «{f.titre}».", align="R")
+    _footer(pdf, verify_url, "Scannez pour vérifier l'authenticité de ce certificat.", "امسح الرمز للتحقق من صحة هذه الشهادة.",
+            signer=("Le Secrétariat Formation", "أمانة التكوين"))
+    return bytes(pdf.output())
+
+
 def membership_certificate_pdf(demande: models.DemandeAdhesion, verify_url: str) -> bytes:
     f = demande.faitiere
     pdf = _new_pdf()

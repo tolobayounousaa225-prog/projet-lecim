@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% set bare = true %}
+{% block title %}{{ t('fm_verification') }}{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>{{ t('fm_verification') }}</h1>
+  <p><span class="badge actif">{{ t('fm_valid') }}</span></p>
+  <dl>
+    <dt>{{ t('fm_beneficiary') }}</dt><dd>{{ i.nom }}</dd><dt>{{ t('nav_members') }}</dt><dd>{{ i.faitiere.sigle }}</dd>
+    <dt>{{ t('fm_training') }}</dt><dd>{{ f.titre }}</dd>
+    <dt>{{ t('m_date') }}</dt><dd>{{ s.date_debut.strftime('%d/%m/%Y') }}{% if s.date_fin and s.date_fin != s.date_debut %} → {{ s.date_fin.strftime('%d/%m/%Y') }}{% endif %}</dd>
+    <dt>{{ t('fm_cert_number') }}</dt><dd>{{ i.certificat_numero }}</dd>
+  </dl>
+</section>
+{% endblock %}

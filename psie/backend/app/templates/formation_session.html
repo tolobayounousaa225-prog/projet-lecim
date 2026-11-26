@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ s.formation.titre }}{% endblock %}
+{% block content %}
+<p><a href="/formations">← {{ t('fm_title') }}</a></p>
+<h1>{{ s.formation.titre }} <small>{{ s.date_debut.strftime('%d/%m/%Y') }} — {{ s.lieu }}</small></h1>
+<p><span class="badge {{ s.statut }}">{{ lbl('session_statut', s.statut) }}</span> {{ s.inscrits_actifs }}{% if s.places %} / {{ s.places }}{% endif %} {{ t('fm_registered_count') }}</p>
+<section class="card">
+  {% if can_write and s.statut not in ('terminee', 'annulee') %}<form id="attendance" method="post" action="/formations/sessions/{{ s.id }}/terminer"></form>{% endif %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ t('name') }}</th><th>{{ t('function') }}</th><th>{{ t('nav_members') }}</th><th>{{ t('status') }}</th><th><span class="sr-only">{{ t('a11y_actions') }}</span></th></tr></thead>
+    <tbody>
+    {% for i in rows %}
+      <tr><td>{{ i.nom }}</td><td>{{ i.fonction or '—' }}</td><td>{{ i.faitiere.sigle }}</td><td>{{ lbl('inscription_statut', i.statut) }}</td>
+        <td>{% if i.certificat_token %}<a href="/formations/inscriptions/{{ i.id }}/certificat.pdf" target="_blank">{{ t('sg_certificate') }}</a>{% endif %}
+          {% if i.statut == 'inscrit' and s.statut != 'terminee' and s.statut != 'annulee' %}<form method="post" action="/formations/inscriptions/{{ i.id }}/annuler" class="inline"><button class="link danger">{{ t('fm_cancel') }}</button></form>{% endif %}
+          {% if can_write and i.statut == 'inscrit' and s.statut not in ('terminee', 'annulee') %}<label class="inline"><input type="checkbox" name="present" value="{{ i.id }}" form="attendance"> {{ t('fm_present') }}</label>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="5" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+  {% if can_write and s.statut not in ('terminee', 'annulee') %}
+  <p><button class="btn" form="attendance"{% if s.date_debut > today %} disabled{% endif %}>{{ t('fm_finish') }}</button> <small class="muted">{{ t('fm_finish_help') }}</small></p>
+  <form method="post" action="/formations/sessions/{{ s.id }}/statut" class="inline">
+    <select name="statut" aria-label="{{ t('status') }}">{% for k in ['ouverte', 'cloturee', 'annulee'] %}<option value="{{ k }}"{% if s.statut == k %} selected{% endif %}>{{ lbl('session_statut', k) }}</option>{% endfor %}</select>
+    <button class="btn secondary">{{ t('save') }}</button></form>
+  {% endif %}
+</section>
+{% if s.ouverte_aux_inscriptions and (can_write or user.faitiere_id) %}
+<section class="card"><h2>{{ t('fm_enroll') }}</h2>
+  <form method="post" action="/formations/sessions/{{ s.id }}/inscrire" class="grid">
+    {% if can_write %}<label>{{ t('nav_members') }} *<select name="faitiere_id" required>{% for f in faitieres %}<option value="{{ f.id }}">{{ f.sigle }}</option>{% endfor %}</select></label>{% endif %}
+    <label>{{ t('name') }} *<input name="nom" required></label><label>{{ t('function') }}<input name="fonction"></label>
+    <label>{{ t('email') }}<input type="email" name="email"></label><label>{{ t('phone') }}<input name="telephone"></label>
+    <div><button class="btn">{{ t('fm_enroll_btn') }}</button></div>
+  </form></section>
+{% elif s.statut == 'ouverte' %}<p class="muted">{{ t('fm_closed_info') }}</p>{% endif %}
+{% endblock %}
