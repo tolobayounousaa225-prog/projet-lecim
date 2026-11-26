@@ -4,6 +4,7 @@ Les traductions arabes sont une première version à faire relire par un locuteu
 avant mise en ligne. Une clé absente retombe sur le français, puis sur la clé elle-même.
 """
 
+from .ecoles_texts import ECOLES_LABELS, ECOLES_TEXTS
 from .public_texts import PUBLIC_TEXTS
 
 SUPPORTED_LANGS = ("fr", "ar")
@@ -65,6 +66,38 @@ TEXTS: dict[str, dict[str, str]] = {
     "dash_assemblies": {"fr": "Prochaines assemblées", "ar": "الجمعيات القادمة"},
     "annexes_title": {"fr": "Documents de l'assemblée", "ar": "وثائق الجمعية"},
     "annex_title": {"fr": "Titre du document", "ar": "عنوان الوثيقة"},
+    "nav_access": {"fr": "Accès par rubrique", "ar": "الوصول حسب الأقسام"},
+    "access_help": {"fr": "Réglez, pour chaque rôle, ce que ses membres voient et peuvent modifier. Chaque secrétariat ne voit par défaut que ce qui le concerne ; vous pouvez étendre ou réduire ses accès. Les cases modifiées sont surlignées.",
+                    "ar": "حدّدوا لكل دور ما يراه أعضاؤه وما يمكنهم تعديله. يرى كل أمانة افتراضيا ما يخصها فقط، ويمكنكم توسيع وصولها أو تقليصه. تُميَّز الخانات المعدلة."},
+    "access_saved": {"fr": "Réglages enregistrés : ils s'appliquent dès la prochaine page ouverte.", "ar": "حُفظت الإعدادات وتسري فورا."},
+    "access_section": {"fr": "Rubrique", "ar": "القسم"},
+    "access_reset": {"fr": "Revenir aux réglages par défaut", "ar": "العودة إلى الإعدادات الافتراضية"},
+    "access_rules_title": {"fr": "À savoir", "ar": "للعلم"},
+    "access_rule_1": {"fr": "Une rubrique à « Aucun accès » disparaît du menu et ses adresses sont refusées, même saisies à la main.",
+                      "ar": "القسم ذو «لا وصول» يختفي من القائمة وتُرفض عناوينه حتى لو أُدخلت يدويا."},
+    "access_rule_2": {"fr": "Certains pouvoirs restent liés à la fonction définie par les Statuts et ne se délèguent pas ici : avis écrit du CA, double signature des dépenses (DEN et secrétaire aux finances), rapports des commissaires aux comptes.",
+                      "ar": "تبقى بعض الصلاحيات مرتبطة بالمهمة التي تحددها القوانين ولا تُفوَّض هنا: رأي المجلس، التوقيع المزدوج للنفقات، تقارير مفوضي الحسابات."},
+    "access_rule_3": {"fr": "Les comptes, le journal d'audit et cette page sont réservés à l'administrateur. L'administrateur n'a pas accès aux finances par défaut.",
+                      "ar": "الحسابات وسجل المراجعة وهذه الصفحة مخصصة للمسؤول. وليس له وصول إلى المالية افتراضيا."},
+    "access_person_help": {"fr": "Une exception remplace le réglage du rôle pour cette seule personne. « Comme son rôle » retire l'exception.",
+                           "ar": "الاستثناء يعوّض إعداد الدور لهذا الشخص وحده. «مثل دوره» يزيل الاستثناء."},
+    "access_role_level": {"fr": "Selon son rôle", "ar": "حسب دوره"},
+    "access_person_level": {"fr": "Pour cette personne", "ar": "لهذا الشخص"},
+    "access_as_role": {"fr": "Comme son rôle", "ar": "مثل دوره"},
+    "nav_menu": {"fr": "Menu", "ar": "القائمة"},
+    "nav_group_overview": {"fr": "Vue d'ensemble", "ar": "نظرة عامة"},
+    "nav_group_members": {"fr": "Membres", "ar": "الأعضاء"},
+    "nav_group_life": {"fr": "Vie statutaire", "ar": "الحياة النظامية"},
+    "nav_group_finance": {"fr": "Finances", "ar": "المالية"},
+    "nav_group_site": {"fr": "Site vitrine", "ar": "الموقع التعريفي"},
+    "nav_group_admin": {"fr": "Administration", "ar": "الإدارة"},
+    "nav_group_my_space": {"fr": "Mon espace", "ar": "فضائي"},
+    "hello": {"fr": "Bonjour", "ar": "مرحبا"},
+    "dash_welcome_sub": {"fr": "Voici ce qui concerne votre secrétariat.", "ar": "إليكم ما يخص أمانتكم."},
+    "dash_nothing": {"fr": "Aucune rubrique de gestion n'est encore ouverte à votre compte. L'administrateur peut vous en ouvrir depuis « Accès par rubrique ».",
+                     "ar": "لم تُفتح لحسابكم بعد أقسام تسيير. يمكن للمسؤول فتحها من «الوصول حسب الأقسام»."},
+    "dash_shortcuts": {"fr": "Accès rapides", "ar": "اختصارات"},
+    "dash_open_requests": {"fr": "Demandes d'adhésion ouvertes", "ar": "طلبات انخراط مفتوحة"},
     "nav_dashboard": {"fr": "Tableau de bord", "ar": "لوحة القيادة"},
     "nav_members": {"fr": "Membres", "ar": "الأعضاء"},
     "nav_mandates": {"fr": "Mandats", "ar": "الانتدابات"},
@@ -193,6 +226,7 @@ TEXTS: dict[str, dict[str, str]] = {
 
 
 TEXTS.update(PUBLIC_TEXTS)
+TEXTS.update(ECOLES_TEXTS)
 
 
 def translate(key: str, lang: str) -> str:
@@ -241,6 +275,8 @@ LABELS: dict[str, dict[str, dict[str, str]]] = {
         "faitiere": {"fr": "Représentant de faîtière", "ar": "ممثل منظمة"},
     },
 }
+
+LABELS.update(ECOLES_LABELS)
 
 
 def label(kind: str, key: str, lang: str) -> str:

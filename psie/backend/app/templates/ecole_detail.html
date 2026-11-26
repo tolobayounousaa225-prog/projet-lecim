@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ e.nom }}{% endblock %}
+{% block content %}
+<p><a href="/faitieres/{{ f.id }}/ecoles">← {{ t('space_schools') }} — {{ f.sigle }}</a></p>
+<h1>{{ e.nom }} <small>{{ f.sigle }}</small></h1>
+
+<section class="card">
+  {% if can_write %}
+  <form method="post" action="/faitieres/{{ f.id }}/ecoles/{{ e.id }}/modifier" class="grid">
+    <label>{{ t('name') }} *<input name="nom" value="{{ e.nom }}" required></label>
+    <label>{{ t('e_level') }}<select name="niveau"><option value="">—</option>{% for k in niveaux %}<option value="{{ k }}"{% if e.niveau == k %} selected{% endif %}>{{ lbl('niveau', k) }}</option>{% endfor %}</select></label>
+    <label>{{ t('e_locality') }}<input name="localite" value="{{ e.localite or '' }}"></label>
+    <label>DRENA<input name="drena" value="{{ e.drena or '' }}"></label>
+    <label>{{ t('e_director') }}<input name="directeur" value="{{ e.directeur or '' }}"></label>
+    <label>{{ t('phone') }}<input name="telephone" value="{{ e.telephone or '' }}"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+  {% else %}
+  <dl><dt>{{ t('e_level') }}</dt><dd>{{ lbl('niveau', e.niveau) if e.niveau else '—' }}</dd>
+    <dt>{{ t('e_locality') }}</dt><dd>{{ e.localite or '—' }}</dd><dt>DRENA</dt><dd>{{ e.drena or '—' }}</dd>
+    <dt>{{ t('e_director') }}</dt><dd>{{ e.directeur or '—' }}</dd><dt>{{ t('phone') }}</dt><dd>{{ e.telephone or '—' }}</dd></dl>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>{{ t('e_census') }}</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ t('e_year') }}</th><th>{{ t('e_pupils') }}</th><th>{{ t('e_admin_fr') }}</th><th>{{ t('e_admin_ar') }}</th><th>{{ t('e_teach_fr') }}</th><th>{{ t('e_teach_ar') }}</th><th>{{ t('e_staff_total') }}</th></tr></thead>
+    <tbody>
+    {% for r in e.recensements %}<tr><td>{{ r.annee }}</td><td>{{ r.eleves }}</td><td>{{ r.admin_francophone }}</td><td>{{ r.admin_arabisant }}</td><td>{{ r.ens_francophone }}</td><td>{{ r.ens_arabisant }}</td><td><strong>{{ r.personnel_total }}</strong></td></tr>
+    {% else %}<tr><td colspan="7" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+  {% if can_write %}
+  <form method="post" action="/faitieres/{{ f.id }}/ecoles/{{ e.id }}/recensement" class="grid">
+    <label>{{ t('e_year') }}<input type="number" name="annee" value="{{ year }}" min="1990" required></label>
+    <label>{{ t('e_pupils') }}<input type="number" name="eleves" value="0" min="0"></label>
+    <label>{{ t('e_admin_fr') }}<input type="number" name="admin_francophone" value="0" min="0"></label>
+    <label>{{ t('e_admin_ar') }}<input type="number" name="admin_arabisant" value="0" min="0"></label>
+    <label>{{ t('e_teach_fr') }}<input type="number" name="ens_francophone" value="0" min="0"></label>
+    <label>{{ t('e_teach_ar') }}<input type="number" name="ens_arabisant" value="0" min="0"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+  <p class="muted">{{ t('e_census_help') }}</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>{{ t('e_exams') }}</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ t('e_year') }}</th><th>{{ t('e_exam') }}</th><th>{{ t('e_candidates') }}</th><th>{{ t('e_passed') }}</th><th>{{ t('e_rate') }}</th><th></th></tr></thead>
+    <tbody>
+    {% for r in e.resultats %}<tr><td>{{ r.annee }}</td><td>{{ lbl('examen', r.examen) }}</td><td>{{ r.inscrits }}</td><td>{{ r.admis }}</td><td>{{ r.taux }} %</td>
+      <td>{% if can_write %}<form method="post" action="/faitieres/{{ f.id }}/ecoles/{{ e.id }}/examens/{{ r.id }}/supprimer" class="inline"><button class="link danger">{{ t('delete') }}</button></form>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="6" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+  {% if can_write %}
+  <form method="post" action="/faitieres/{{ f.id }}/ecoles/{{ e.id }}/examens" class="grid">
+    <label>{{ t('e_year') }}<input type="number" name="annee" value="{{ year }}" min="1990" required></label>
+    <label>{{ t('e_exam') }}<select name="examen">{% for k in examens %}<option value="{{ k }}">{{ lbl('examen', k) }}</option>{% endfor %}</select></label>
+    <label>{{ t('e_candidates') }}<input type="number" name="inscrits" min="1" required></label>
+    <label>{{ t('e_passed') }}<input type="number" name="admis" min="0" required></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>{{ t('e_reports') }}</h2>
+  {% for b in e.bilans %}
+  <article class="card">
+    <div class="row"><h3>{{ b.annee }}</h3><span class="badge {{ b.statut }}">{{ lbl('bilan', b.statut) }}</span></div>
+    <p><strong>{{ t('e_summary') }}</strong><br>{{ b.resume }}</p>
+    {% if b.difficultes %}<p><strong>{{ t('e_difficulties') }}</strong><br>{{ b.difficultes }}</p>{% endif %}
+    {% if b.perspectives %}<p><strong>{{ t('e_outlook') }}</strong><br>{{ b.perspectives }}</p>{% endif %}
+    {% if b.avis %}<p class="muted"><strong>{{ t('e_opinion') }}</strong><br>{{ b.avis }}</p>{% endif %}
+    {% if can_review and b.statut == 'soumis' %}
+    <form method="post" action="/faitieres/{{ f.id }}/ecoles/{{ e.id }}/bilans/{{ b.id }}/decision" class="stack">
+      <label>{{ t('e_opinion') }}<textarea name="avis" rows="2"></textarea></label>
+      <div><button class="btn" name="decision" value="valider">{{ t('e_validate') }}</button>
+        <button class="btn secondary" name="decision" value="a_corriger">{{ t('e_to_fix') }}</button></div>
+    </form>
+    {% endif %}
+  </article>
+  {% else %}<p class="muted">{{ t('none') }}</p>{% endfor %}
+  {% if can_write %}
+  <h3>{{ t('e_propose_report') }}</h3>
+  <form method="post" action="/faitieres/{{ f.id }}/ecoles/{{ e.id }}/bilans" class="stack">
+    <label>{{ t('e_year') }}<input type="number" name="annee" value="{{ year }}" min="1990" required></label>
+    <label>{{ t('e_summary') }} *<textarea name="resume" rows="4" required></textarea></label>
+    <label>{{ t('e_difficulties') }}<textarea name="difficultes" rows="3"></textarea></label>
+    <label>{{ t('e_outlook') }}<textarea name="perspectives" rows="3"></textarea></label>
+    <div><button class="btn secondary" name="action" value="brouillon">{{ t('e_save_draft') }}</button>
+      <button class="btn" name="action" value="soumettre">{{ t('e_submit') }}</button></div>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

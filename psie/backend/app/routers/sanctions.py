@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from .. import gouvernance, models, pdfs
 from ..audit import log_action
 from ..database import get_db
-from ..deps import require_internal, require_member_manager
+from ..deps import require_internal, require_sanctions_write
 from ..web import parse_date, render
 
 router = APIRouter()
@@ -23,7 +23,7 @@ def sanctions_list(request: Request, user: models.User = Depends(require_interna
 @router.post("/sanctions")
 def sanction_create(faitiere_id: int = Form(...), type: str = Form(...), motif: str = Form(""),
                     reference: str = Form(""), date_decision: str = Form(""),
-                    user: models.User = Depends(require_member_manager), db: Session = Depends(get_db)):
+                    user: models.User = Depends(require_sanctions_write), db: Session = Depends(get_db)):
     faitiere = db.get(models.Faitiere, faitiere_id)
     if not faitiere:
         raise HTTPException(status_code=400, detail="Organisation inconnue")
@@ -34,7 +34,7 @@ def sanction_create(faitiere_id: int = Form(...), type: str = Form(...), motif: 
 
 
 @router.post("/sanctions/{sanction_id}/notifier")
-def sanction_notify(sanction_id: int, user: models.User = Depends(require_member_manager), db: Session = Depends(get_db)):
+def sanction_notify(sanction_id: int, user: models.User = Depends(require_sanctions_write), db: Session = Depends(get_db)):
     s = db.get(models.Sanction, sanction_id)
     if not s:
         raise HTTPException(status_code=404, detail="Sanction introuvable")
@@ -45,7 +45,7 @@ def sanction_notify(sanction_id: int, user: models.User = Depends(require_member
 
 
 @router.post("/sanctions/{sanction_id}/lever")
-def sanction_lift(sanction_id: int, motif: str = Form(""), user: models.User = Depends(require_member_manager),
+def sanction_lift(sanction_id: int, motif: str = Form(""), user: models.User = Depends(require_sanctions_write),
                   db: Session = Depends(get_db)):
     s = db.get(models.Sanction, sanction_id)
     if not s:

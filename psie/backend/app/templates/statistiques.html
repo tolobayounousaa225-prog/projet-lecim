@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_stats') }}{% endblock %}
+{% block content %}
+<div class="row">
+  <h1>{{ t('nav_stats') }} <small>{{ annee }}</small></h1>
+  <form method="get" class="inline">
+    <label>{{ t('e_year') }} <select name="annee">{% for y in years %}<option value="{{ y }}"{% if y == annee %} selected{% endif %}>{{ y }}</option>{% endfor %}</select></label>
+    <button class="btn">OK</button> <a href="/statistiques.csv?annee={{ annee }}">{{ t('e_export') }}</a>
+  </form>
+</div>
+<div class="tiles">
+  <div class="tile"><div class="num">{{ total.ecoles }}</div><div>{{ t('e_schools_count') }}</div></div>
+  <div class="tile"><div class="num">{{ total.eleves }}</div><div>{{ t('e_pupils') }}</div></div>
+  <div class="tile"><div class="num">{{ total.personnel }}</div><div>{{ t('e_staff_total') }}</div></div>
+  <div class="tile"><div class="num">{{ total.francophones }}</div><div>{{ t('e_francophone') }}</div></div>
+  <div class="tile"><div class="num">{{ total.arabisants }}</div><div>{{ t('e_arabisant') }}</div></div>
+  <div class="tile"><div class="num">{{ (total.taux ~ ' %') if total.taux is not none else '—' }}</div><div>{{ t('e_pass_rate') }}</div></div>
+</div>
+<section class="card">
+  <h2>{{ t('e_by_federation') }}</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ t('nav_members') }}</th><th>{{ t('e_schools_count') }}</th><th>{{ t('e_pupils') }}</th><th>{{ t('e_admin') }}</th><th>{{ t('e_teachers') }}</th><th>{{ t('e_staff_total') }}</th><th>{{ t('e_francophone') }}</th><th>{{ t('e_arabisant') }}</th><th>{{ t('e_pass_rate') }}</th><th>{{ t('e_reports_valid') }}</th>{% if show_dues %}<th>{{ t('nav_dues') }}</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr><td><a href="/faitieres/{{ r.id }}/statistiques?annee={{ annee }}">{{ r.sigle }}</a></td><td>{{ r.ecoles }}</td><td>{{ r.eleves }}</td><td>{{ r.admin }}</td><td>{{ r.enseignants }}</td><td><strong>{{ r.personnel }}</strong></td>
+        <td>{{ r.francophones }}</td><td>{{ r.arabisants }}</td><td>{{ (r.taux ~ ' %') if r.taux is not none else '—' }}</td><td>{{ r.bilans_valides }} / {{ r.ecoles }}</td>
+        {% if show_dues %}<td><span class="badge {{ 'paye' if r.a_jour else 'en_retard' }}">{{ t('e_up_to_date') if r.a_jour else t('e_not_up_to_date') }}</span></td>{% endif %}</tr>
+    {% else %}<tr><td colspan="11" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+    </tbody>
+    <tfoot><tr><th>{{ t('e_total') }}</th><th>{{ total.ecoles }}</th><th>{{ total.eleves }}</th><th>{{ total.admin }}</th><th>{{ total.enseignants }}</th><th>{{ total.personnel }}</th><th>{{ total.francophones }}</th><th>{{ total.arabisants }}</th><th>{{ (total.taux ~ ' %') if total.taux is not none else '—' }}</th><th>{{ total.bilans_valides }}</th>{% if show_dues %}<th>{{ total.a_jour }} / {{ rows|length }}</th>{% endif %}</tr></tfoot>
+  </table></div>
+</section>
+{% include "_stats_blocks.html" %}
+{% endblock %}

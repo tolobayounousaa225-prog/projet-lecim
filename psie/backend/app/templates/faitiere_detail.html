@@ -5,6 +5,33 @@
   <h1>{{ item.sigle }} <small>{{ item.nom }}</small></h1>
   {% if user.can_manage_members %}<a class="btn" href="/faitieres/{{ item.id }}/edit">{{ t('edit') }}</a>{% endif %}
 </div>
+{% if dash %}
+<section class="card">
+  <h2>{{ t('e_dashboard') }} <small>{{ annee }}</small></h2>
+  <div class="tiles">
+    <div class="tile"><div class="num"><a href="/faitieres/{{ item.id }}/ecoles">{{ dash.row.ecoles }}</a></div><div>{{ t('e_schools_count') }}</div></div>
+    <div class="tile"><div class="num">{{ dash.row.eleves }}</div><div>{{ t('e_pupils') }}</div></div>
+    <div class="tile"><div class="num">{{ dash.row.personnel }}</div><div>{{ t('e_staff_total') }}</div></div>
+    <div class="tile"><div class="num">{{ (dash.row.taux ~ ' %') if dash.row.taux is not none else '—' }}</div><div>{{ t('e_pass_rate') }}</div></div>
+    {% if show_dues %}<div class="tile"><div class="num">{{ t('e_up_to_date') if dash.row.a_jour else t('e_not_up_to_date') }}</div><div>{{ t('nav_dues') }}</div></div>{% endif %}
+  </div>
+  <div class="two">
+    <div>
+      <h3>{{ t('e_dossier') }} — {{ dash.percent }} %</h3>
+      <progress max="{{ dash.total }}" value="{{ dash.done }}">{{ dash.percent }} %</progress>
+      <ul class="linklist">{% for key, ok, url in dash.steps %}<li>{{ '✔' if ok else '○' }} <a href="{{ url }}">{{ t(key) }}</a></li>{% endfor %}</ul>
+    </div>
+    <div>
+      <h3>{{ t('e_next_events') }}</h3>
+      <ul>{% for a in prochains %}<li><a href="/assemblees/{{ a.id }}">{{ a.type_label }}</a> — {{ a.date_assemblee.strftime('%d/%m/%Y') }}, {{ a.lieu }}</li>
+      {% else %}<li class="muted">{{ t('none') }}</li>{% endfor %}</ul>
+      <h3><a href="/annonces">{{ t('nav_announcements') }}</a></h3>
+      <ul>{% for a in annonces %}<li>{{ a.titre }} <small class="muted">{{ a.created_at.strftime('%d/%m/%Y') }}</small></li>{% else %}<li class="muted">{{ t('none') }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+</section>
+{% endif %}
+
 <section class="card">
   <dl>
     <dt>{{ t('category') }}</dt><dd>{{ lbl('categorie', item.categorie) }}</dd>
@@ -24,6 +51,8 @@
   <ul class="linklist">
     <li><a href="/faitieres/{{ item.id }}/delegues">{{ t('space_delegates') }}</a></li>
     <li><a href="/faitieres/{{ item.id }}/ecoles">{{ t('space_schools') }}</a></li>
+    {% if dash %}<li><a href="/faitieres/{{ item.id }}/statistiques">{{ t('nav_stats') }}</a></li>{% endif %}
+    {% if not user.is_internal %}<li><a href="/annonces">{{ t('nav_announcements') }}</a></li><li><a href="/demandes">{{ t('nav_requests') }}</a></li>{% endif %}
   </ul>
 </section>
 

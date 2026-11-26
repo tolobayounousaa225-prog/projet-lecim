@@ -48,10 +48,12 @@ def test_internal_bodies_can_read_and_only_den_and_secretariat_can_correct(db, t
     a, _ = two
     add(client_for("rep-a@psie.ci"), a, "delegues", nom="Koné Ali", drena="Abidjan 1")
     make_user(db, "exam@psie.ci", "examens")
+    make_user(db, "fin@psie.ci", "finances")
     make_user(db, "den@psie.ci", "den")
-    exam, den = client_for("exam@psie.ci"), client_for("den@psie.ci")
-    assert "Koné Ali" in exam.get(f"/faitieres/{a.id}/delegues").text
-    assert add(exam, a, "delegues", nom="X", drena="Y").status_code == 403
+    exam, fin, den = client_for("exam@psie.ci"), client_for("fin@psie.ci"), client_for("den@psie.ci")
+    assert exam.get(f"/faitieres/{a.id}/delegues").status_code == 403                    # hors de son secrétariat
+    assert "Koné Ali" in fin.get(f"/faitieres/{a.id}/delegues").text                     # lecture seule pour les finances
+    assert add(fin, a, "delegues", nom="X", drena="Y").status_code == 403
     assert add(den, a, "delegues", nom="Corrigé", drena="Bouaké").status_code == 303
 
 

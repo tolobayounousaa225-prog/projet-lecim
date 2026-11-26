@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from .. import finance, gouvernance, media, models, pdfs
 from ..audit import log_action
 from ..database import get_db
-from ..deps import get_current_user, require_internal, require_member_manager
+from ..deps import get_current_user, require_assemblees_write, require_internal
 from ..web import parse_date, render
 
 router = APIRouter()
@@ -44,7 +44,7 @@ def assemblees_list(request: Request, user: models.User = Depends(get_current_us
 @router.post("/assemblees")
 def assemblee_create(type: str = Form(...), date_assemblee: str = Form(...), heure: str = Form(""),
                      lieu: str = Form(...), ordre_du_jour: str = Form(...), mode_vote: str = Form("organisation"),
-                     demande_age: str = Form(""), user: models.User = Depends(require_member_manager),
+                     demande_age: str = Form(""), user: models.User = Depends(require_assemblees_write),
                      db: Session = Depends(get_db)):
     when = parse_date(date_assemblee)
     if not when:
@@ -90,7 +90,7 @@ def assemblee_avis(assemblee_id: int, reference: str = Form(""), user: models.Us
 
 
 @router.post("/assemblees/{assemblee_id}/convoquer")
-def assemblee_convoquer(assemblee_id: int, user: models.User = Depends(require_member_manager),
+def assemblee_convoquer(assemblee_id: int, user: models.User = Depends(require_assemblees_write),
                         db: Session = Depends(get_db)):
     a = _get(db, assemblee_id)
     gouvernance.send_convocation(db, user, a)
@@ -106,7 +106,7 @@ def convocation_pdf(assemblee_id: int, user: models.User = Depends(require_inter
 
 
 @router.post("/assemblees/{assemblee_id}/ouvrir")
-def assemblee_ouvrir(assemblee_id: int, user: models.User = Depends(require_member_manager),
+def assemblee_ouvrir(assemblee_id: int, user: models.User = Depends(require_assemblees_write),
                      db: Session = Depends(get_db)):
     a = _get(db, assemblee_id)
     gouvernance.open_session(db, user, a)
@@ -115,7 +115,7 @@ def assemblee_ouvrir(assemblee_id: int, user: models.User = Depends(require_memb
 
 
 @router.post("/assemblees/{assemblee_id}/emargement")
-async def assemblee_emargement(assemblee_id: int, request: Request, user: models.User = Depends(require_member_manager),
+async def assemblee_emargement(assemblee_id: int, request: Request, user: models.User = Depends(require_assemblees_write),
                                db: Session = Depends(get_db)):
     a = _get(db, assemblee_id)
     form = await request.form()
@@ -127,7 +127,7 @@ async def assemblee_emargement(assemblee_id: int, request: Request, user: models
 
 @router.post("/assemblees/{assemblee_id}/resolutions")
 def resolution_create(assemblee_id: int, intitule: str = Form(...), texte: str = Form(""), regle: str = Form("majorite"),
-                      user: models.User = Depends(require_member_manager), db: Session = Depends(get_db)):
+                      user: models.User = Depends(require_assemblees_write), db: Session = Depends(get_db)):
     a = _get(db, assemblee_id)
     gouvernance.add_resolution(db, user, a, intitule, texte, regle)
     db.commit()
@@ -136,7 +136,7 @@ def resolution_create(assemblee_id: int, intitule: str = Form(...), texte: str =
 
 @router.post("/assemblees/{assemblee_id}/resolutions/{resolution_id}/votes")
 async def resolution_votes(assemblee_id: int, resolution_id: int, request: Request,
-                           user: models.User = Depends(require_member_manager), db: Session = Depends(get_db)):
+                           user: models.User = Depends(require_assemblees_write), db: Session = Depends(get_db)):
     a = _get(db, assemblee_id)
     r = _get_resolution(db, a, resolution_id)
     form = await request.form()
@@ -148,7 +148,7 @@ async def resolution_votes(assemblee_id: int, resolution_id: int, request: Reque
 
 @router.post("/assemblees/{assemblee_id}/resolutions/{resolution_id}/cloturer")
 def resolution_cloturer(assemblee_id: int, resolution_id: int, consensus: str = Form(""),
-                        user: models.User = Depends(require_member_manager), db: Session = Depends(get_db)):
+                        user: models.User = Depends(require_assemblees_write), db: Session = Depends(get_db)):
     a = _get(db, assemblee_id)
     r = _get_resolution(db, a, resolution_id)
     gouvernance.close_scrutin(db, user, a, r, consensus=bool(consensus))
@@ -158,7 +158,7 @@ def resolution_cloturer(assemblee_id: int, resolution_id: int, consensus: str = 
 
 @router.post("/assemblees/{assemblee_id}/cloturer")
 def assemblee_cloturer(assemblee_id: int, president: str = Form(""), assesseur1: str = Form(""),
-                       assesseur2: str = Form(""), user: models.User = Depends(require_member_manager),
+                       assesseur2: str = Form(""), user: models.User = Depends(require_assemblees_write),
                        db: Session = Depends(get_db)):
     a = _get(db, assemblee_id)
     gouvernance.close_assemblee(db, user, a, president, assesseur1, assesseur2)
@@ -178,7 +178,7 @@ def minutes(assemblee_id: int, user: models.User = Depends(require_internal), db
 # ---------- Annexes (rapports, budget, états financiers, projets de résolution) ----------
 
 @router.post("/assemblees/{assemblee_id}/annexes")
-async def annexe_upload(assemblee_id: int, request: Request, user: models.User = Depends(require_member_manager),
+async def annexe_upload(assemblee_id: int, request: Request, user: models.User = Depends(require_assemblees_write),
                         db: Session = Depends(get_db)):
     a = _get(db, assemblee_id)
     if a.statut == "close":
@@ -217,7 +217,7 @@ def annexe_download(annexe_id: int, user: models.User = Depends(get_current_user
 
 
 @router.post("/annexes/{annexe_id}/supprimer")
-def annexe_delete(annexe_id: int, user: models.User = Depends(require_member_manager), db: Session = Depends(get_db)):
+def annexe_delete(annexe_id: int, user: models.User = Depends(require_assemblees_write), db: Session = Depends(get_db)):
     annexe = db.get(models.AnnexeAssemblee, annexe_id)
     if not annexe:
         raise HTTPException(status_code=404, detail="Document introuvable")

@@ -39,7 +39,8 @@ def test_read_only_roles_cannot_write(db):
     for role in ("commissaire", "administrateur_ca", "finances"):
         make_user(db, f"{role}@psie.local", role)
         client = client_for(f"{role}@psie.local")
-        assert client.get("/faitieres").status_code == 200
+        # le commissaire aux comptes ne fait pas partie des rôles qui voient l'annuaire
+        assert client.get("/faitieres").status_code == (403 if role == "commissaire" else 200)
         assert client.post("/faitieres/new", data=NEW).status_code == 403
         assert client.post(f"/faitieres/{f.id}/edit", data=NEW).status_code == 403
         assert client.post("/mandats", data={"organe": "CA", "full_name": "Z"}).status_code == 403

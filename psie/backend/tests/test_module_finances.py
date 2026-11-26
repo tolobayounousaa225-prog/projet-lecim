@@ -155,8 +155,8 @@ def test_account_statement_access_rules(db, setup, anon):
         assert client_for(f"{who}@psie.ci").get(f"/faitieres/{lecim.id}/releve.pdf").status_code == 200, who
     assert client_for("rep-a@psie.ci").get(f"/faitieres/{lecim.id}/releve.pdf").status_code == 200       # sa propre faîtière
     assert client_for("rep-b@psie.ci").get(f"/faitieres/{lecim.id}/releve.pdf").status_code == 404       # jamais une autre
-    for who in ("sec", "exam"):                                                         # organes sans accès aux finances
-        assert client_for(f"{who}@psie.ci").get(f"/faitieres/{lecim.id}/releve.pdf").status_code == 404, who
+    for who in ("sec", "exam"):                                                         # secrétariats sans accès aux finances
+        assert client_for(f"{who}@psie.ci").get(f"/faitieres/{lecim.id}/releve.pdf").status_code == 403, who
     assert anon.get(f"/faitieres/{lecim.id}/releve.pdf").status_code == 303
     assert client_for("fin@psie.ci").get("/faitieres/9999/releve.pdf").status_code == 404
     assert "releve.pdf" in client_for("fin@psie.ci").get(f"/faitieres/{lecim.id}").text

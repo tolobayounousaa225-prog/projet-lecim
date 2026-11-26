@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ a.type_label }}{% endblock %}
 {% block content %}
-{% set manager = user.can_manage_members %}
+{% set manager = user.can_write_assemblees %}
 <div class="row"><h1>{{ a.type_label }} <small>{{ a.date_assemblee }}</small></h1><span class="badge">{{ a.statut_label }}</span></div>
 
 <section class="card">

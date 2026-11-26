@@ -17,7 +17,6 @@ router = APIRouter()
 # type -> (modèle, champs du formulaire, titre)
 KINDS = {
     "delegues": (models.DelegueRegional, ("nom", "drena", "telephone", "email"), "Délégués régionaux"),
-    "ecoles": (models.Ecole, ("nom", "localite", "drena", "telephone"), "Écoles"),
 }
 REQUIRED = {"nom"}
 LABELS = {"nom": "Nom", "drena": "DRENA", "telephone": "Téléphone", "email": "E-mail", "localite": "Localité"}

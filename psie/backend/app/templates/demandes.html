@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_requests') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav_requests') }}</h1>
+{% for d in items %}
+<article class="card">
+  <div class="row"><h2>{{ d.objet }}</h2><span class="badge {{ d.statut }}">{{ lbl('demande_statut', d.statut) }}</span></div>
+  <p class="muted">{{ lbl('demande_type', d.type) }} · {{ d.created_at.strftime('%d/%m/%Y') }}{% if user.is_internal %} · {{ d.faitiere.sigle }}{% endif %}</p>
+  {% if d.message %}<p>{{ d.message }}</p>{% endif %}
+  {% if d.reponse %}<p><strong>{{ t('r_answer') }}</strong><br>{{ d.reponse }}</p>{% endif %}
+  {% if user.can_manage_members %}
+  <form method="post" action="/demandes/{{ d.id }}/traiter" class="grid">
+    <label>{{ t('status') }}<select name="statut">{% for k in statuts %}<option value="{{ k }}"{% if d.statut == k %} selected{% endif %}>{{ lbl('demande_statut', k) }}</option>{% endfor %}</select></label>
+    <label>{{ t('r_answer') }}<textarea name="reponse" rows="2">{{ d.reponse or '' }}</textarea></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+  {% endif %}
+</article>
+{% else %}<p class="card muted">{{ t('none') }}</p>{% endfor %}
+{% if not user.is_internal %}
+<section class="card">
+  <h2>{{ t('r_new_request') }}</h2>
+  <form method="post" action="/demandes" class="stack">
+    <label>{{ t('r_type') }}<select name="type">{% for k in types %}<option value="{{ k }}">{{ lbl('demande_type', k) }}</option>{% endfor %}</select></label>
+    <label>{{ t('r_subject') }} *<input name="objet" required maxlength="255"></label>
+    <label>{{ t('r_message') }}<textarea name="message" rows="4"></textarea></label>
+    <div><button class="btn">{{ t('r_send') }}</button></div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

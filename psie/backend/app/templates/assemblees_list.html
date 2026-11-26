@@ -11,7 +11,7 @@
   {% else %}<tr><td colspan="4" class="muted">{{ t('none') }}</td></tr>{% endfor %}
   </tbody>
 </table>
-{% if user.can_manage_members %}
+{% if user.can_write_assemblees %}
 <section class="card">
   <h2>{{ t('g_new_assembly') }}</h2>
   <form method="post" action="/assemblees" class="stack">

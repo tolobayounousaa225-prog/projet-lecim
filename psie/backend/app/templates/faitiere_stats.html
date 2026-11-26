@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_stats') }} — {{ f.sigle }}{% endblock %}
+{% block content %}
+<p><a href="/faitieres/{{ f.id }}">← {{ f.sigle }}</a></p>
+<div class="row">
+  <h1>{{ t('nav_stats') }} <small>{{ f.sigle }} · {{ annee }}</small></h1>
+  <form method="get" class="inline">
+    <label>{{ t('e_year') }} <select name="annee">{% for y in years %}<option value="{{ y }}"{% if y == annee %} selected{% endif %}>{{ y }}</option>{% endfor %}</select></label>
+    <button class="btn">OK</button>
+  </form>
+</div>
+<div class="tiles">
+  <div class="tile"><div class="num">{{ row.ecoles }}</div><div>{{ t('e_schools_count') }}</div><small class="muted">{{ t('e_average') }} : {{ avg.ecoles }}</small></div>
+  <div class="tile"><div class="num">{{ row.eleves }}</div><div>{{ t('e_pupils') }}</div><small class="muted">{{ t('e_average') }} : {{ avg.eleves }}</small></div>
+  <div class="tile"><div class="num">{{ row.personnel }}</div><div>{{ t('e_staff_total') }}</div><small class="muted">{{ t('e_average') }} : {{ avg.personnel }}</small></div>
+  <div class="tile"><div class="num">{{ (row.taux ~ ' %') if row.taux is not none else '—' }}</div><div>{{ t('e_pass_rate') }}</div><small class="muted">{{ t('e_average') }} : {{ (avg.taux ~ ' %') if avg.taux is not none else '—' }}</small></div>
+  {% if show_dues %}<div class="tile"><div class="num">{{ t('e_up_to_date') if row.a_jour else t('e_not_up_to_date') }}</div><div>{{ t('nav_dues') }} {{ annee }}</div></div>{% endif %}
+</div>
+<section class="card">
+  <h2>{{ t('e_staff_breakdown') }}</h2>
+  <table><thead><tr><th></th><th>{{ t('e_francophone') }}</th><th>{{ t('e_arabisant') }}</th><th>{{ t('e_total') }}</th></tr></thead><tbody>
+    <tr><td>{{ t('e_admin') }}</td><td>{{ row.admin_francophone }}</td><td>{{ row.admin_arabisant }}</td><td>{{ row.admin }}</td></tr>
+    <tr><td>{{ t('e_teachers') }}</td><td>{{ row.ens_francophone }}</td><td>{{ row.ens_arabisant }}</td><td>{{ row.enseignants }}</td></tr>
+    <tr><th>{{ t('e_total') }}</th><th>{{ row.francophones }}</th><th>{{ row.arabisants }}</th><th>{{ row.personnel }}</th></tr>
+  </tbody></table>
+  <p class="muted">{{ t('e_census_progress') }} : {{ row.recensees }} / {{ row.ecoles }} · {{ t('e_reports_valid') }} : {{ row.bilans_valides }} / {{ row.ecoles }}</p>
+</section>
+{% include "_stats_blocks.html" %}
+{% endblock %}
