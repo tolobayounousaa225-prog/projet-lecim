@@ -58,6 +58,7 @@ from .routers import (
     admin_projets,
     admin_publications,
     admin_ressources,
+    admin_ressources_membres,
     admin_ressources_officielles,
     admin_resultats_examens,
     admin_reunions,
@@ -84,6 +85,7 @@ from .routers import (
     delegation_portal,
     delegations_public,
     dons_public,
+    espace_membre,
     etablissement_portal,
     etablissement_ressources,
     etablissements_public,
@@ -397,6 +399,8 @@ app.include_router(site_content.router)
 app.include_router(admin_sondages.router)
 app.include_router(admin_sondages_express.router)
 app.include_router(admin_temoignages.router)
+app.include_router(admin_ressources_membres.router)
+app.include_router(espace_membre.router)
 app.include_router(admin_taches.router)
 app.include_router(admin_videos.router)
 app.include_router(admin_visio.router)

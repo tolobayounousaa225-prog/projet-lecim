@@ -93,6 +93,13 @@
 <priority>0.5</priority>
 </url>
 <url>
+<loc>https://lecim-ci.org/espace-membre.html</loc>
+<xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/espace-membre.html"/>
+<xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/espace-membre.html"/>
+<changefreq>yearly</changefreq>
+<priority>0.5</priority>
+</url>
+<url>
 <loc>https://lecim-ci.org/adhesion.html</loc>
 <xhtml:link rel="alternate" hreflang="fr" href="https://lecim-ci.org/adhesion.html"/>
 <xhtml:link rel="alternate" hreflang="ar" href="https://lecim-ci.org/ar/adhesion.html"/>

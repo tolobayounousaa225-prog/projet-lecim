@@ -17,6 +17,8 @@ document.addEventListener("DOMContentLoaded", function () {
   initAdhesionFormProgress();
   initContactForm();
   initDiplomeVerifForm();
+  initEspaceMembreForm();
+  loadAnnuaireDelegations();
   initAdhesionForm();
   initPartenariatForm();
   initDonForm();
@@ -1664,6 +1666,154 @@ function initDiplomeVerifForm() {
         btn.textContent = original;
       });
   });
+}
+
+function initEspaceMembreForm() {
+  var form = document.getElementById("espace-membre-form");
+  if (!form) return;
+
+  var resultBox = document.getElementById("espace-membre-result");
+  var ressourcesSection = document.getElementById("ressources-membres");
+  var ressourcesBox = document.getElementById("espace-membre-ressources");
+  var ACTIVE_STATUSES = ["validee", "imprimee", "disponible"];
+
+  function statusLabel(data) {
+    if (data.status === "soumise") return { text: "Demande en cours de traitement", ok: false };
+    if (data.status === "rejetee") return { text: "Demande rejetée", ok: false };
+    if (ACTIVE_STATUSES.indexOf(data.status) !== -1) {
+      return data.expiree ? { text: "Carte expirée", ok: false } : { text: "Carte valide", ok: true };
+    }
+    return { text: "Statut inconnu", ok: false };
+  }
+
+  function renderCarte(data, numero, naissance) {
+    if (!data.found) {
+      resultBox.innerHTML =
+        '<div class="diplome-verif-badge diplome-verif-badge-ko">✗ Aucune carte ne correspond à ces informations.</div>' +
+        '<p class="diplome-verif-hint">Vérifiez le numéro et la date de naissance, ou contactez le secrétariat de la LECIM.</p>';
+      ressourcesSection.style.display = "none";
+      return;
+    }
+    var label = statusLabel(data);
+    resultBox.innerHTML =
+      '<div class="diplome-verif-badge ' + (label.ok ? "diplome-verif-badge-ok" : "diplome-verif-badge-ko") + '">' +
+      (label.ok ? "✓ " : "✗ ") + escapeHtml(label.text) + '</div>' +
+      '<div class="diplome-verif-details">' +
+      '<h3>' + escapeHtml(data.nom_complet) + '</h3>' +
+      (data.fonction ? '<p class="diplome-verif-sub">' + escapeHtml(data.fonction) + '</p>' : '') +
+      '<dl>' +
+      '<div><dt>N° de carte</dt><dd>' + escapeHtml(data.numero_carte || '-') + '</dd></div>' +
+      (data.date_validite ? '<div><dt>Valable jusqu\'au</dt><dd>' + escapeHtml(data.date_validite) + '</dd></div>' : '') +
+      (data.delegation ? '<div><dt>Délégation</dt><dd>' + escapeHtml(data.delegation) + '</dd></div>' : '') +
+      '</dl></div>';
+
+    if (ACTIVE_STATUSES.indexOf(data.status) !== -1) {
+      loadRessources(numero, naissance);
+    } else {
+      ressourcesSection.style.display = "none";
+    }
+  }
+
+  function loadRessources(numero, naissance) {
+    var params = new URLSearchParams();
+    params.set("numero_carte", numero);
+    params.set("date_naissance", naissance);
+    fetch(API_BASE + "/api/espace-membre/ressources?" + params.toString())
+      .then(function (res) {
+        if (!res.ok) throw new Error("Erreur");
+        return res.json();
+      })
+      .then(function (data) {
+        var items = data.results || [];
+        if (!items.length) {
+          ressourcesBox.innerHTML = '<p class="diplome-verif-hint">Aucune ressource disponible pour le moment.</p>';
+        } else {
+          ressourcesBox.innerHTML = items.map(function (r) {
+            var dlParams = new URLSearchParams();
+            dlParams.set("numero_carte", numero);
+            dlParams.set("date_naissance", naissance);
+            var href = API_BASE + "/api/espace-membre/ressources/" + r.id + "/fichier?" + dlParams.toString();
+            return (
+              '<div class="espace-membre-ressource-item">' +
+              '<h4>' + escapeHtml(r.titre) + '</h4>' +
+              (r.description ? '<p>' + escapeHtml(r.description) + '</p>' : '') +
+              '<a href="' + href + '" class="btn btn-outline btn-sm">Télécharger</a>' +
+              '</div>'
+            );
+          }).join("");
+        }
+        ressourcesSection.style.display = "";
+      })
+      .catch(function () {
+        ressourcesSection.style.display = "none";
+      });
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var numero = valueOf(form, "#em-numero");
+    var naissance = valueOf(form, "#em-naissance");
+    if (!numero || !naissance) return;
+
+    var btn = form.querySelector("button[type=submit]");
+    var original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Vérification…";
+    resultBox.innerHTML = "";
+
+    var params = new URLSearchParams();
+    params.set("numero_carte", numero);
+    params.set("date_naissance", naissance);
+
+    fetch(API_BASE + "/api/espace-membre/ma-carte?" + params.toString())
+      .then(function (res) {
+        if (!res.ok) throw new Error("Erreur de vérification");
+        return res.json();
+      })
+      .then(function (data) {
+        renderCarte(data, numero, naissance);
+      })
+      .catch(function () {
+        resultBox.innerHTML =
+          '<div class="diplome-verif-badge diplome-verif-badge-ko">✗ Vérification momentanément indisponible, merci de réessayer.</div>';
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.textContent = original;
+      });
+  });
+}
+
+function loadAnnuaireDelegations() {
+  var box = document.getElementById("espace-membre-annuaire");
+  if (!box) return;
+
+  fetch(API_BASE + "/api/delegations")
+    .then(function (res) {
+      if (!res.ok) throw new Error("Erreur");
+      return res.json();
+    })
+    .then(function (delegations) {
+      if (!delegations.length) {
+        box.innerHTML = '<p class="diplome-verif-hint">Aucune délégation régionale enregistrée pour le moment.</p>';
+        return;
+      }
+      box.innerHTML = delegations.map(function (d) {
+        return (
+          '<div class="espace-membre-delegation-card">' +
+          '<h3>' + escapeHtml(d.nom) + '</h3>' +
+          (d.region ? '<p class="espace-membre-delegation-region">' + escapeHtml(d.region) + '</p>' : '') +
+          (d.responsable_nom
+            ? '<p><strong>' + escapeHtml(d.responsable_nom) + '</strong>' +
+              (d.responsable_fonction ? ' — ' + escapeHtml(d.responsable_fonction) : '') + '</p>'
+            : '<p class="diplome-verif-hint">Responsable non renseigné</p>') +
+          '</div>'
+        );
+      }).join("");
+    })
+    .catch(function () {
+      box.innerHTML = '';
+    });
 }
 
 function initAdhesionForm() {
