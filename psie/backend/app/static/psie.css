@@ -235,3 +235,15 @@ form.search-page input { flex: 1; min-width: 0; }
 .bell-count { position: absolute; top: -2px; right: -4px; min-width: 18px; padding: 0 5px; border-radius: 999px; background: #b42318; color: #fff; font-size: 11px; line-height: 18px; text-align: center; }
 .notif-list { list-style: none; padding: 0; }
 .notif-list li.unread { border-inline-start: 4px solid #c9a24b; }
+
+/* Pastilles de statut : fonds opaques et textes foncés (contraste ≥ 6:1, y compris en arabe et en mode sombre) */
+.badge.actif, .badge.paye, .badge.a_jour { background: #dff3e6; color: #0b5d2e; }
+.badge.suspendu, .badge.demissionnaire, .badge.partiel { background: #fdf0d5; color: #7a4b00; }
+.badge.en_retard, .badge.radie { background: #fde4e1; color: #8f1d14; }
+.badge.exonere { background: #dcefe4; color: #14532d; }
+@media (prefers-color-scheme: dark) {
+  .badge.actif, .badge.paye, .badge.a_jour { background: #173a28; color: #8fe0b0; }
+  .badge.suspendu, .badge.demissionnaire, .badge.partiel { background: #4a3510; color: #f3cf86; }
+  .badge.en_retard, .badge.radie { background: #4d1f1b; color: #ffb4ab; }
+  .badge.exonere { background: #1d3a2b; color: #a8dcc0; }
+}
