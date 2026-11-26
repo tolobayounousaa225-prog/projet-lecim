@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% set bare = true %}
+{% block title %}{{ t('reset_title') }}{% endblock %}
+{% block content %}
+<section class="card narrow auth-card">
+  <h1>{{ t('reset_title') }}</h1>
+  {% if invalid %}
+    <p class="alert">{{ t('reset_invalid') }}</p>
+    <p class="auth-links"><a class="btn" href="/mot-de-passe-oublie">{{ t('reset_new_link') }}</a></p>
+  {% else %}
+    {% if error %}<p class="alert">{{ t(error) }}</p>{% endif %}
+    {% if error_text %}<p class="alert">{{ error_text }}</p>{% endif %}
+    <form method="post" action="/mot-de-passe-oublie/{{ token }}" class="stack">
+      <label>{{ t('new_password') }}<input type="password" name="new" required autofocus autocomplete="new-password"></label>
+      <label>{{ t('confirm_password') }}<input type="password" name="confirm" required autocomplete="new-password"></label>
+      <button class="btn">{{ t('reset_save') }}</button>
+    </form>
+  {% endif %}
+  <p class="auth-links"><a href="/login">{{ t('back_to_login') }}</a></p>
+</section>
+{% endblock %}

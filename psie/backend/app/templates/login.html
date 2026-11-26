@@ -2,13 +2,21 @@
 {% set bare = true %}
 {% block title %}{{ t('login_title') }}{% endblock %}
 {% block content %}
-<section class="card narrow">
-  <h1>{{ t('login_title') }}</h1>
+<section class="card narrow auth-card">
+  <nav class="space-switch" aria-label="{{ t('login_title') }}">
+    <a href="/login/faitiere" class="{% if space == 'faitiere' %}on{% endif %}"{% if space == 'faitiere' %} aria-current="page"{% endif %}>{{ t('login_space_faitiere') }}</a>
+    <a href="/login" class="{% if space != 'faitiere' %}on{% endif %}"{% if space != 'faitiere' %} aria-current="page"{% endif %}>{{ t('login_space_bureau') }}</a>
+  </nav>
+  <h1>{{ t('login_faitiere_title') if space == 'faitiere' else t('login_bureau_title') }}</h1>
+  <p class="muted auth-sub">{{ t('login_faitiere_sub') if space == 'faitiere' else t('login_bureau_sub') }}</p>
+  {% if notice %}<p class="notice">{{ t('login_reinit_done') }}</p>{% endif %}
   {% if error %}<p class="alert">{{ t(error) }}</p>{% endif %}
-  <form method="post" action="/login" class="stack">
+  <form method="post" action="{{ '/login/faitiere' if space == 'faitiere' else '/login' }}" class="stack">
+    {% if space != 'faitiere' %}<input type="hidden" name="espace" value="bureau">{% endif %}
     <label>{{ t('email') }}<input type="email" name="email" required autofocus autocomplete="username"></label>
     <label>{{ t('password') }}<input type="password" name="password" required autocomplete="current-password"></label>
     <button class="btn">{{ t('sign_in') }}</button>
   </form>
+  <p class="auth-links"><a href="/mot-de-passe-oublie">{{ t('forgot_password') }}</a></p>
 </section>
 {% endblock %}
