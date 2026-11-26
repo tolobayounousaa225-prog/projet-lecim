@@ -5,6 +5,18 @@
 # Le jeton GitHub est saisi ICI, en caché : il n'est jamais affiché, jamais envoyé dans une conversation.
 set -euo pipefail
 cd "$(dirname "$0")"
+# Lit .env ligne par ligne SANS l'exécuter : une valeur avec des espaces (ex. « Administrateur PSIE ») ne pose aucun problème.
+load_env() {
+  local line key val
+  [ -f .env ] || return 0
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in ''|\#*) continue ;; esac
+    key="${line%%=*}"; val="${line#*=}"
+    [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+    val="${val%\"}"; val="${val#\"}"
+    export "$key=$val"
+  done < .env
+}
 ONLY_ENV=0
 for a in "$@"; do
   case "$a" in
@@ -42,7 +54,7 @@ set_env GITHUB_DISPATCH_TOKEN "$PSIE_TOKEN"
 echo "✓ Jeton enregistré dans .env (copie de l'ancien .env : .env.avant-site)"
 [ "$ONLY_ENV" = 1 ] && exit 0
 
-set -a; . ./.env; set +a
+load_env
 code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $GITHUB_DISPATCH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$SITE_REPO" || true)
 if [ "$code" != "200" ]; then
   echo "ERREUR : GitHub refuse ce jeton pour $SITE_REPO (code $code). Vérifiez le dépôt choisi et la permission « Contents : Read and write »." >&2

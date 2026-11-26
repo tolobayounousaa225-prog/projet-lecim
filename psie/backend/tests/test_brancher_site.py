@@ -51,3 +51,24 @@ def test_malformed_tokens_are_refused_and_env_untouched(tmp_path, bad):
 def test_bad_repository_name_is_refused(tmp_path):
     r, _ = run(tmp_path, SITE_REPO="pas un depot")
     assert r.returncode == 2 and "dépôt invalide" in r.stderr
+
+
+def test_env_values_with_spaces_do_not_break_the_scripts(tmp_path):
+    """Régression : « ADMIN_BOOTSTRAP_NAME=Administrateur PSIE » faisait échouer la lecture de .env par bash."""
+    text = "SECRET_KEY=abc\nADMIN_BOOTSTRAP_NAME=Administrateur PSIE\nSMTP_FROM=PSIE <psie@gmail.com>\nPSIE_PORT=8100\n"
+    folder = tmp_path / "d"
+    folder.mkdir()
+    for name in ("backup.sh", "sauvegardes-auto.sh", "restore.sh", "brancher-site.sh"):
+        shutil.copy(DEPLOY / name, folder / name)
+    (folder / ".env").write_text(text)
+    script = ('set -e; source <(sed -n "/^load_env()/,/^}/p" brancher-site.sh); load_env; '
+              'echo "[$ADMIN_BOOTSTRAP_NAME][$SMTP_FROM][$PSIE_PORT]"')
+    r = subprocess.run(["bash", "-c", script], cwd=folder, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    assert "[Administrateur PSIE][PSIE <psie@gmail.com>][8100]" in r.stdout
+    assert "command not found" not in r.stderr
+    for name in ("backup.sh", "restore.sh", "sauvegardes-auto.sh", "brancher-site.sh"):       # plus aucun « source .env »
+        assert ". ./.env" not in (folder / name).read_text()
+    (tmp_path / "x").mkdir()
+    r2, f2 = run(tmp_path / "x", env_text=text)                                              # le script complet passe aussi
+    assert r2.returncode == 0, r2.stdout + r2.stderr
