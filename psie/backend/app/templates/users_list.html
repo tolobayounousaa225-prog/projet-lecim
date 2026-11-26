@@ -16,6 +16,7 @@
       <td>{{ t('active') if u.is_active else t('disabled') }}</td>
       <td>{{ logins[u.id].strftime('%d/%m/%Y %H:%M') if u.id in logins else '—' }}</td>
       <td><a href="/users/{{ u.id }}/edit">{{ t('edit') }}</a>
+        {% if u.role != 'faitiere' %}<a href="/users/{{ u.id }}/acces">{{ t('nav_access') }}</a>{% endif %}
         {% if u.is_active %}<form method="post" action="/users/{{ u.id }}/lien-mdp" class="inline"><button class="link">{{ t('send_link') }}</button></form>{% endif %}
         {% if u.id != user.id %}<form method="post" action="/users/{{ u.id }}/toggle" class="inline"><button class="link">{{ t('toggle') }}</button></form>{% endif %}
         <form method="post" action="/users/{{ u.id }}/password" class="inline"><input type="password" name="password" placeholder="{{ t('new_password') }}" required autocomplete="new-password" style="width:11em"> <button class="link">{{ t('reset_password') }}</button></form></td></tr>

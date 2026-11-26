@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_access') }} — {{ target.full_name }}{% endblock %}
+{% block content %}
+<p><a href="/users">← {{ t('back') }}</a></p>
+<div class="page-head"><h1>{{ target.full_name }} <small>{{ lbl('role', target.role) }}</small></h1></div>
+<p class="muted">{{ t('access_person_help') }}</p>
+{% if saved %}<p class="notice">{{ t('access_saved') }}</p>{% endif %}
+<form method="post" action="/users/{{ target.id }}/acces" class="card">
+  <table>
+    <thead><tr><th>{{ t('access_section') }}</th><th>{{ t('access_role_level') }}</th><th>{{ t('access_person_level') }}</th></tr></thead>
+    <tbody>
+    {% for key, s in sections.items() %}
+      <tr><th scope="row">{{ s[1] if lang == 'ar' else s[0] }}</th>
+        <td>{{ levels[role_levels.get(key, 0)] }}</td>
+        <td><select name="n__{{ key }}" aria-label="{{ s[0] }}">
+          <option value="">{{ t('access_as_role') }}</option>
+          {% for n, label in levels.items() %}<option value="{{ n }}" {% if key in mine and mine[key] == n %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="actions"><button class="btn">{{ t('save') }}</button></p>
+</form>
+{% endblock %}

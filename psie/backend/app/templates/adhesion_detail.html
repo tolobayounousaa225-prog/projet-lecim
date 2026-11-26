@@ -30,7 +30,7 @@
 </section>
 
 {% if d.is_open %}
-{% if user.can_manage_members %}
+{% if user.can_write_adhesions %}
 <section class="card"><h2>{{ t('adh_en_examen') }}</h2>
   <form method="post" action="/adhesions/{{ d.id }}/examen" class="stack">
     <label>{{ t('notes') }}<textarea name="notes" rows="2">{{ d.notes_examen or '' }}</textarea></label>
@@ -45,7 +45,7 @@
     <div><button class="btn">{{ t('save') }}</button></div>
   </form></section>
 {% endif %}
-{% if user.can_manage_members %}
+{% if user.can_write_adhesions %}
 <section class="card"><h2>Décision de l'Assemblée Générale</h2>
   <form method="post" action="/adhesions/{{ d.id }}/decision" class="grid">
     <label>Décision<select name="decision"><option value="accepter">Accepter</option><option value="refuser">Refuser</option></select></label>

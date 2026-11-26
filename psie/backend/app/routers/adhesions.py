@@ -9,7 +9,7 @@ from .. import adhesion, models, pdfs
 from ..audit import log_action
 from ..config import settings
 from ..database import get_db
-from ..deps import get_current_user, require_internal, require_member_manager
+from ..deps import get_current_user, require_adhesions_write, require_content_editor, require_internal
 from ..web import clean, parse_date, render
 
 router = APIRouter()
@@ -53,7 +53,7 @@ def adhesion_piece(demande_id: int, piece_id: int, user: models.User = Depends(r
 
 
 @router.post("/adhesions/{demande_id}/examen")
-def adhesion_examen(demande_id: int, notes: str = Form(""), user: models.User = Depends(require_member_manager),
+def adhesion_examen(demande_id: int, notes: str = Form(""), user: models.User = Depends(require_adhesions_write),
                     db: Session = Depends(get_db)):
     d = _get(db, demande_id)
     adhesion.start_examen(db, user, d, notes)
@@ -75,7 +75,7 @@ def adhesion_avis(demande_id: int, avis: str = Form(...), motif: str = Form(""),
 @router.post("/adhesions/{demande_id}/decision")
 def adhesion_decision(demande_id: int, decision: str = Form(...), reference: str = Form(""),
                       date_decision: str = Form(""), motif: str = Form(""), droit_adhesion: str = Form(""),
-                      user: models.User = Depends(require_member_manager), db: Session = Depends(get_db)):
+                      user: models.User = Depends(require_adhesions_write), db: Session = Depends(get_db)):
     if decision not in ("accepter", "refuser"):
         raise HTTPException(status_code=400, detail="Décision invalide")
     montant = droit_adhesion.strip().replace(" ", "")
@@ -93,7 +93,7 @@ def adhesion_decision(demande_id: int, decision: str = Form(...), reference: str
 def certificate_pdf(demande_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     d = _get(db, demande_id)
     own = not user.is_internal and d.faitiere_id is not None and user.can_view_faitiere(d.faitiere_id)
-    if not (user.can_manage_members or own) or d.etat != "acceptee" or not d.faitiere or not d.cert_token:
+    if not (user.can('adhesions') or own) or d.etat != "acceptee" or not d.faitiere or not d.cert_token:
         raise HTTPException(status_code=404, detail="Certificat introuvable")
     url = f"{settings.public_base_url.rstrip('/')}/verifier/adhesion/{d.cert_token}"
     return Response(pdfs.membership_certificate_pdf(d, url), media_type="application/pdf",
@@ -103,7 +103,7 @@ def certificate_pdf(demande_id: int, user: models.User = Depends(get_current_use
 # ---------- Actualités (vitrine) ----------
 
 @router.get("/gestion/actualites")
-def news_admin(request: Request, user: models.User = Depends(require_member_manager), db: Session = Depends(get_db)):
+def news_admin(request: Request, user: models.User = Depends(require_content_editor), db: Session = Depends(get_db)):
     items = db.query(models.Actualite).order_by(models.Actualite.id.desc()).all()
     return render(request, "actualites_admin.html", user, items=items, item=None)
 
@@ -122,7 +122,7 @@ def _news_fields(titre_fr, titre_ar, contenu_fr, contenu_ar, publie, date_public
 @router.post("/gestion/actualites")
 def news_create(titre_fr: str = Form(""), titre_ar: str = Form(""), contenu_fr: str = Form(""),
                 contenu_ar: str = Form(""), publie: str = Form(""), date_publication: str = Form(""),
-                user: models.User = Depends(require_member_manager), db: Session = Depends(get_db)):
+                user: models.User = Depends(require_content_editor), db: Session = Depends(get_db)):
     item = models.Actualite(created_by_id=user.id,
                             **_news_fields(titre_fr, titre_ar, contenu_fr, contenu_ar, publie, date_publication))
     db.add(item)
@@ -133,7 +133,7 @@ def news_create(titre_fr: str = Form(""), titre_ar: str = Form(""), contenu_fr: 
 
 
 @router.get("/gestion/actualites/{item_id}/edit")
-def news_edit_form(item_id: int, request: Request, user: models.User = Depends(require_member_manager),
+def news_edit_form(item_id: int, request: Request, user: models.User = Depends(require_content_editor),
                    db: Session = Depends(get_db)):
     item = db.get(models.Actualite, item_id)
     if not item:
@@ -144,7 +144,7 @@ def news_edit_form(item_id: int, request: Request, user: models.User = Depends(r
 @router.post("/gestion/actualites/{item_id}/edit")
 def news_edit(item_id: int, titre_fr: str = Form(""), titre_ar: str = Form(""), contenu_fr: str = Form(""),
               contenu_ar: str = Form(""), publie: str = Form(""), date_publication: str = Form(""),
-              user: models.User = Depends(require_member_manager), db: Session = Depends(get_db)):
+              user: models.User = Depends(require_content_editor), db: Session = Depends(get_db)):
     item = db.get(models.Actualite, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Actualité introuvable")
@@ -156,7 +156,7 @@ def news_edit(item_id: int, titre_fr: str = Form(""), titre_ar: str = Form(""), 
 
 
 @router.post("/gestion/actualites/{item_id}/delete")
-def news_delete(item_id: int, user: models.User = Depends(require_member_manager), db: Session = Depends(get_db)):
+def news_delete(item_id: int, user: models.User = Depends(require_content_editor), db: Session = Depends(get_db)):
     item = db.get(models.Actualite, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Actualité introuvable")

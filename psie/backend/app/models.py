@@ -3,6 +3,7 @@ import datetime
 from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, LargeBinary, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from . import acces
 from .database import Base
 
 # --- Rôles (alignés sur les organes des Statuts, art. 10) ---------------------
@@ -199,21 +200,45 @@ class User(Base):
     def is_internal(self) -> bool:
         return self.role in INTERNAL_ROLES
 
+    # --- Accès par rubrique (voir acces.py) : le niveau est calculé une fois par requête et posé sur l'utilisateur ---
+    @property
+    def perms(self) -> dict[str, int]:
+        cached = getattr(self, "_perms", None)
+        return cached if cached is not None else acces.defaults_for(self.role)
+
+    def level(self, section: str) -> int:
+        return self.perms.get(section, 0)
+
+    def can(self, section: str, write: bool = False) -> bool:
+        return self.level(section) >= (acces.ECRITURE if write else acces.LECTURE)
+
     @property
     def can_manage_members(self) -> bool:
-        return self.role in MEMBER_MANAGER_ROLES
+        return self.can("membres", True)
+
+    @property
+    def can_write_adhesions(self) -> bool:
+        return self.can("adhesions", True)
+
+    @property
+    def can_write_assemblees(self) -> bool:
+        return self.can("assemblees", True)
+
+    @property
+    def can_write_sanctions(self) -> bool:
+        return self.can("sanctions", True)
 
     @property
     def can_edit_site_content(self) -> bool:
-        return self.role in CONTENT_EDITOR_ROLES
+        return self.can("contenu", True)
 
     @property
     def can_view_finances(self) -> bool:
-        return self.role in FINANCE_READ_ROLES
+        return self.can("finances")
 
     @property
     def can_write_finances(self) -> bool:
-        return self.role in FINANCE_WRITE_ROLES
+        return self.can("finances", True)
 
     @property
     def requires_two_factor(self) -> bool:
@@ -1019,3 +1044,27 @@ class AnnexeAssemblee(Base):
     contenu: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+class AccesRole(Base):
+    """Réglage de l'administrateur : niveau d'un rôle pour une rubrique, quand il diffère de la valeur par défaut."""
+
+    __tablename__ = "acces_roles"
+    __table_args__ = (UniqueConstraint("role", "section", name="uq_acces_role_section"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    role: Mapped[str] = mapped_column(String(30), nullable=False)
+    section: Mapped[str] = mapped_column(String(20), nullable=False)
+    niveau: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class AccesUtilisateur(Base):
+    """Exception personnelle : niveau d'une personne pour une rubrique, à la place de celui de son rôle."""
+
+    __tablename__ = "acces_utilisateurs"
+    __table_args__ = (UniqueConstraint("user_id", "section", name="uq_acces_user_section"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    section: Mapped[str] = mapped_column(String(20), nullable=False)
+    niveau: Mapped[int] = mapped_column(Integer, nullable=False)

@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -11,9 +11,9 @@ from sqlalchemy import text
 
 from .config import production_problems, settings, vitrine_origin_list
 from .database import engine
-from .deps import NotAuthenticatedException
+from .deps import NotAuthenticatedException, visibility_guard
 from . import scheduler
-from .routers import admin, adhesions, appels, assemblees, auth, compta, contenu, cotisations, espace, membres, public, reinitialisation, sanctions
+from .routers import admin, adhesions, appels, assemblees, auth, compta, contenu, acces as acces_router, cotisations, espace, membres, public, reinitialisation, sanctions
 from .web import BASE_DIR, render
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
@@ -33,6 +33,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="PSIE",
     lifespan=lifespan,
+    dependencies=[Depends(visibility_guard)],
     docs_url="/docs" if settings.debug else None,
     redoc_url=None,
     openapi_url="/openapi.json" if settings.debug else None,
@@ -113,6 +114,7 @@ app.include_router(auth.router)
 app.include_router(reinitialisation.router)
 app.include_router(admin.router)
 app.include_router(membres.router)
+app.include_router(acces_router.router)
 app.include_router(cotisations.router)
 app.include_router(appels.router)
 app.include_router(adhesions.router)
