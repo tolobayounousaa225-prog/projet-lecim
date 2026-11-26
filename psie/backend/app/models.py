@@ -932,3 +932,16 @@ class Ecole(Base):
     drena: Mapped[str | None] = mapped_column(String(80), nullable=True)
     telephone: Mapped[str | None] = mapped_column(String(40), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+class ReinitialisationMdp(Base):
+    """Lien « mot de passe oublié » : seul l'empreinte du jeton est conservée, jamais le jeton."""
+
+    __tablename__ = "reinitialisations_mdp"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    expires_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
+    used_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)

@@ -13,7 +13,7 @@ from .config import production_problems, settings, vitrine_origin_list
 from .database import engine
 from .deps import NotAuthenticatedException
 from . import scheduler
-from .routers import admin, adhesions, appels, assemblees, auth, compta, contenu, cotisations, espace, public, sanctions
+from .routers import admin, adhesions, appels, assemblees, auth, compta, contenu, cotisations, espace, public, reinitialisation, sanctions
 from .web import BASE_DIR, render
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
@@ -110,6 +110,7 @@ def health_db():
 
 
 app.include_router(auth.router)
+app.include_router(reinitialisation.router)
 app.include_router(admin.router)
 app.include_router(cotisations.router)
 app.include_router(appels.router)

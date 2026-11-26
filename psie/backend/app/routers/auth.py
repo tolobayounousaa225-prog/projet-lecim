@@ -25,19 +25,48 @@ def home_for(user: models.User) -> str:
     return "/admin" if user.is_internal else "/portail"
 
 
+def _login_page(request: Request, space: str, **ctx):
+    return render(request, "login.html", space=space, **ctx)
+
+
 @router.get("/login")
 def login_page(request: Request):
-    return render(request, "login.html")
+    return _login_page(request, "bureau", notice=bool(request.query_params.get("reinit")))
+
+
+@router.get("/login/faitiere")
+def login_page_faitiere(request: Request):
+    return _login_page(request, "faitiere", notice=bool(request.query_params.get("reinit")))
 
 
 @router.post("/login")
-def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+def login(request: Request, email: str = Form(...), password: str = Form(...), espace: str = Form(""),
+          db: Session = Depends(get_db)):
+    # « espace » est renseigné par le formulaire de la page de connexion du bureau ; une requête sans ce champ
+    # (anciens clients) n'est pas restreinte.
+    return _do_login(request, db, email, password, "bureau" if espace == "bureau" else None)
+
+
+@router.post("/login/faitiere")
+def login_faitiere(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    return _do_login(request, db, email, password, "faitiere")
+
+
+def _do_login(request: Request, db: Session, email: str, password: str, space: str | None):
+    shown = space or "bureau"
     try:
         user = authenticate_user(db, email, password)
     except AccountLockedError:
-        return render(request, "login.html", status_code=429, error="login_locked")
+        return _login_page(request, shown, status_code=429, error="login_locked")
     if not user:
-        return render(request, "login.html", status_code=401, error="login_error")
+        return _login_page(request, shown, status_code=401, error="login_error")
+    # Identifiants corrects mais mauvais espace : message utile, aucune session ouverte
+    if space == "bureau" and not user.is_internal:
+        db.commit()
+        return _login_page(request, shown, status_code=403, error="login_wrong_space_faitiere")
+    if space == "faitiere" and user.is_internal:
+        db.commit()
+        return _login_page(request, shown, status_code=403, error="login_wrong_space_bureau")
     if user.requires_two_factor and settings.two_factor_enabled:
         code = generate_otp_code()
         sent = send_email(
@@ -46,7 +75,7 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
         )
         if not sent:
             db.commit()
-            return render(request, "login.html", status_code=503, error="login_2fa_unavailable")
+            return _login_page(request, shown, status_code=503, error="login_2fa_unavailable")
         db.commit()
         response = RedirectResponse("/login/verification", status_code=303)
         _set_cookie(response, "two_factor_pending", create_two_factor_token(user.email, hash_otp_code(code)), 300)
