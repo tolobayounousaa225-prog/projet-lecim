@@ -228,6 +228,8 @@ class DelegationPublicOut(BaseModel):
     ecoles_count: int
     reunions_count: int
     membres_count: int
+    responsable_nom: str | None = None
+    responsable_fonction: str | None = None
 
 
 class FaqOut(BaseModel):

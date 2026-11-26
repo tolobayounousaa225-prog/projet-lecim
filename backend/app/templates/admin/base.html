@@ -99,6 +99,7 @@
         {% if admin.can_manage_publications %}<a href="/admin/faq" class="{{ 'active' if active == 'faq' else '' }}">FAQ</a>{% endif %}
         {% if admin.can_manage_publications %}<a href="/admin/objectifs-principes-moyens" class="{{ 'active' if active == 'opm' else '' }}">Objectifs, principes &amp; moyens</a>{% endif %}
         {% if admin.can_manage_publications %}<a href="/admin/temoignages" class="{{ 'active' if active == 'temoignages' else '' }}">Témoignages</a>{% endif %}
+        {% if admin.can_manage_publications %}<a href="/admin/ressources-membres" class="{{ 'active' if active == 'ressources_membres' else '' }}">Ressources membres</a>{% endif %}
         {% if admin.can_manage_publications %}<a href="/admin/sondages-express" class="{{ 'active' if active == 'sondages_express' else '' }}">Sondages express</a>{% endif %}
         {% if admin.can_manage_publications %}<a href="/admin/newsletter" class="{{ 'active' if active == 'newsletter' else '' }}">Newsletter</a>{% endif %}
         {% if admin.can_manage_publications %}<a href="/admin/ressources-pedagogiques" class="{{ 'active' if active == 'ressources' else '' }}">Bibliothèque pédagogique{% if pending.ressources %}<span class="nav-badge">{{ pending.ressources }}</span>{% endif %}</a>{% endif %}

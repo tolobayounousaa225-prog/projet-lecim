@@ -1283,6 +1283,37 @@ section { padding: 80px 0; }
 .diplome-verif-details dd { margin: 0; font-weight: 600; color: var(--text-dark); text-align: right; }
 .diplome-verif-sep { border: none; border-top: 1px dashed var(--border); margin: 18px 0; }
 
+.espace-membre-ressources {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.espace-membre-ressource-item {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 12px);
+  padding: 18px;
+}
+.espace-membre-ressource-item h4 { margin: 0 0 6px; color: var(--green-dark); }
+.espace-membre-ressource-item p { margin: 0 0 12px; font-size: 0.88rem; color: var(--text-muted); }
+
+.espace-membre-annuaire {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.espace-membre-delegation-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 12px);
+  padding: 18px;
+}
+.espace-membre-delegation-card h3 { margin: 0 0 4px; color: var(--green-dark); font-size: 1.05rem; }
+.espace-membre-delegation-region { margin: 0 0 10px; font-size: 0.85rem; color: var(--text-muted); }
+.espace-membre-delegation-card p { margin: 0; font-size: 0.9rem; }
+
 .map-embed {
   border-radius: var(--radius);
   overflow: hidden;

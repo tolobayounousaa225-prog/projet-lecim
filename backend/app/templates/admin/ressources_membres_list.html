@@ -1,0 +1,44 @@
+{% extends "admin/base.html" %}
+{% block title %}Ressources membres{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0">Ressources réservées aux membres</h1>
+  <a href="/admin/ressources-membres/new" class="btn btn-primary">+ Ajouter un document</a>
+</div>
+<p style="margin-top:-12px; color:var(--text-muted); font-size:0.9rem;">
+  Visible uniquement par les titulaires d'une carte de membre validée, depuis l'Espace Membre du site
+  (vérification par numéro de carte + date de naissance).
+</p>
+
+{% if items %}
+<table>
+  <thead>
+    <tr><th>Titre</th><th>Description</th><th>Fichier</th><th>Visibilité</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.titre }}</td>
+      <td style="max-width:320px;">{{ (item.description or "")[:100] }}{% if item.description and item.description|length > 100 %}…{% endif %}</td>
+      <td>{{ item.original_filename }}</td>
+      <td>
+        {% if item.is_published %}<span class="pill pill-green">Publié</span>
+        {% else %}<span class="pill pill-muted">Brouillon</span>{% endif %}
+      </td>
+      <td class="actions-cell">
+        <a href="/admin/ressources-membres/{{ item.id }}/edit" class="btn btn-outline btn-sm">Modifier</a>
+        <form method="post" action="/admin/ressources-membres/{{ item.id }}/toggle">
+          <button type="submit" class="btn btn-outline btn-sm">{{ "Dépublier" if item.is_published else "Publier" }}</button>
+        </form>
+        <form method="post" action="/admin/ressources-membres/{{ item.id }}/delete" onsubmit="return confirm('Supprimer ce document ?');">
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">Aucun document ajouté pour le moment.</div>
+{% endif %}
+{% endblock %}

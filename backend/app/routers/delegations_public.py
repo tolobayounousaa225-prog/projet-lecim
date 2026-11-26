@@ -14,20 +14,29 @@ router = APIRouter(prefix="/api/delegations", tags=["delegations-public"])
 @router.get("", response_model=list[schemas.DelegationPublicOut])
 def list_delegations(db: Session = Depends(get_db)):
     delegations = db.query(models.Delegation).order_by(models.Delegation.nom).all()
-    return [
-        schemas.DelegationPublicOut(
-            id=d.id,
-            nom=d.nom,
-            region=d.region,
-            ecoles_count=db.query(models.Etablissement)
-            .filter(models.Etablissement.delegation_id == d.id)
-            .count(),
-            reunions_count=db.query(models.Reunion)
-            .filter(models.Reunion.delegation_id == d.id)
-            .count(),
-            membres_count=db.query(models.Membre)
-            .filter(models.Membre.delegation_id == d.id)
-            .count(),
+    out = []
+    for d in delegations:
+        titulaire = (
+            db.query(models.User)
+            .filter(models.User.delegation_id == d.id, models.User.is_delegation_titulaire.is_(True))
+            .first()
         )
-        for d in delegations
-    ]
+        out.append(
+            schemas.DelegationPublicOut(
+                id=d.id,
+                nom=d.nom,
+                region=d.region,
+                ecoles_count=db.query(models.Etablissement)
+                .filter(models.Etablissement.delegation_id == d.id)
+                .count(),
+                reunions_count=db.query(models.Reunion)
+                .filter(models.Reunion.delegation_id == d.id)
+                .count(),
+                membres_count=db.query(models.Membre)
+                .filter(models.Membre.delegation_id == d.id)
+                .count(),
+                responsable_nom=titulaire.full_name if titulaire else None,
+                responsable_fonction=(titulaire.role_local or "Président du Bureau Local") if titulaire else None,
+            )
+        )
+    return out

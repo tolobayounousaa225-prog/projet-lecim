@@ -2172,6 +2172,25 @@ class Delegation(Base):
     )
 
 
+class RessourceMembre(Base):
+    """Document réservé aux membres du BEN (compte-rendu, circulaire, support de
+    formation) — déposé par le BEN, accessible depuis l'Espace Membre public après
+    vérification carte + date de naissance (pas un compte séparé)."""
+
+    __tablename__ = "ressources_membres"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    file_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=False)
+    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+
 # ---------- Calendrier scolaire national ----------
 
 class CalendrierScolaireEntry(Base):

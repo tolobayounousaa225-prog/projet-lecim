@@ -1,0 +1,30 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Modifier" if item else "Nouveau" }} document membre{% endblock %}
+{% block content %}
+<h1>{{ "Modifier le document" if item else "Ajouter un document" }}</h1>
+<div class="form-card">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <form method="post" action="{{ '/admin/ressources-membres/' ~ item.id ~ '/edit' if item else '/admin/ressources-membres/new' }}" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="titre">Titre</label>
+      <input type="text" id="titre" name="titre" required value="{{ item.titre if item else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="description">Description (optionnelle)</label>
+      <textarea id="description" name="description" rows="3">{{ item.description if item else '' }}</textarea>
+    </div>
+    <div class="form-group">
+      <label for="file">Fichier{% if not item %} (PDF, Word...){% endif %}</label>
+      <input type="file" id="file" name="file" {% if not item %}required{% endif %}>
+      {% if item %}<p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Fichier actuel : {{ item.original_filename }}. Laissez vide pour le conserver.</p>{% endif %}
+    </div>
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="is_published" name="is_published" value="true"
+             {% if item and item.is_published %}checked{% endif %}>
+      <label for="is_published" style="margin:0">Visible dans l'Espace Membre</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/admin/ressources-membres" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}
