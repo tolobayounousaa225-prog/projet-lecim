@@ -72,6 +72,11 @@ PUBLIC_TEXTS: dict[str, dict[str, str]] = {
     "f_rep_name": {"fr": "Nom du représentant légal", "ar": "اسم الممثل القانوني"},
     "f_rep_function": {"fr": "Fonction du représentant", "ar": "وظيفة الممثل"},
     "f_nb_structures": {"fr": "Nombre de structures affiliées", "ar": "عدد الهياكل المنتسبة"},
+    "f_documents": {"fr": "Documents du dossier", "ar": "وثائق الملف"},
+    "f_documents_help": {"fr": "Joignez si possible vos statuts et votre récépissé de déclaration (PDF ou image, 15 Mo maximum chacun). Ils accélèrent l'examen de votre demande.",
+                         "ar": "أرفقوا إن أمكن نظامكم الأساسي ووصل التصريح (PDF أو صورة، 15 ميغابايت كحد أقصى لكل ملف). يسرّع ذلك دراسة طلبكم."},
+    "f_doc_statuts": {"fr": "Statuts de l'organisation", "ar": "النظام الأساسي للمنظمة"},
+    "f_doc_recepisse": {"fr": "Récépissé de déclaration", "ar": "وصل التصريح"},
     "f_message": {"fr": "Message (facultatif)", "ar": "رسالة (اختياري)"},
     "f_accept_statutes": {"fr": "Nous approuvons les statuts de la PSIE.", "ar": "نوافق على النظام الأساسي للمنصة."},
     "f_accept_dues": {

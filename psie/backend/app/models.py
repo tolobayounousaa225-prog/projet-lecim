@@ -985,3 +985,37 @@ class RappelLog(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     cle: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     sent_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+class PieceDemande(Base):
+    """Pièce jointe par un organisme à sa demande d'adhésion (statuts, récépissé) : examinée par la DEN, puis
+    reversée à la fiche du membre si l'adhésion est acceptée."""
+
+    __tablename__ = "pieces_demande"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    demande_id: Mapped[int] = mapped_column(ForeignKey("demandes_adhesion.id", ondelete="CASCADE"), index=True, nullable=False)
+    type: Mapped[str] = mapped_column(String(20), nullable=False)
+    nom: Mapped[str] = mapped_column(String(120), nullable=False)
+    mime: Mapped[str] = mapped_column(String(60), nullable=False)
+    extension: Mapped[str] = mapped_column(String(5), nullable=False)
+    taille: Mapped[int] = mapped_column(Integer, nullable=False)
+    contenu: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+class AnnexeAssemblee(Base):
+    """Document joint à une assemblée (rapport, budget, états financiers, projet de résolutions…)."""
+
+    __tablename__ = "annexes_assemblee"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    assemblee_id: Mapped[int] = mapped_column(ForeignKey("assemblees.id", ondelete="CASCADE"), index=True, nullable=False)
+    titre: Mapped[str] = mapped_column(String(200), nullable=False)
+    nom: Mapped[str] = mapped_column(String(120), nullable=False)
+    mime: Mapped[str] = mapped_column(String(60), nullable=False)
+    extension: Mapped[str] = mapped_column(String(5), nullable=False)
+    taille: Mapped[int] = mapped_column(Integer, nullable=False)
+    contenu: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)

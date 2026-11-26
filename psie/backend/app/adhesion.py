@@ -8,9 +8,11 @@ from email_validator import EmailNotValidError, validate_email
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from . import finance, models
+from . import finance, media, models, password_reset
 from .audit import log_action
+from .config import settings
 from .emailing import send_email
+from .security import hash_password
 
 _CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"  # sans caractères ambigus (0/O, 1/I/L)
 _PHONE_RE = re.compile(r"^[0-9+()./ -]{6,30}$")
@@ -61,13 +63,63 @@ def submit_demande(db: Session, *, nom: str, sigle: str, representant_nom: str, 
     return demande
 
 
+DEMANDE_PIECES = {"statuts": "Statuts de l'organisation", "recepisse": "Récépissé de déclaration"}
+
+
+def attach_pieces(db: Session, demande: models.DemandeAdhesion, uploads: dict[str, tuple[str, bytes]]) -> int:
+    """Joint à la demande les fichiers déposés par l'organisme : {type: (nom du fichier, contenu)}.
+    Même nettoyage que partout (en-tête PDF vérifié, images ré-encodées sans métadonnées). Fichier vide ignoré."""
+    added = 0
+    for kind, (filename, raw) in uploads.items():
+        if kind not in DEMANDE_PIECES or not raw:
+            continue
+        try:
+            data, mime, ext, _ = media.process(raw, "pdf" if raw.startswith(b"%PDF-") else "image")
+        except media.MediaError as e:
+            raise HTTPException(status_code=400, detail=f"{DEMANDE_PIECES[kind]} : {e}")
+        db.add(models.PieceDemande(demande_id=demande.id, type=kind, nom=media.safe_name(filename), mime=mime,
+                                   extension=ext, taille=len(data), contenu=data))
+        added += 1
+    if added:
+        db.flush()
+        log_action(db, None, "pieces", "demande_adhesion", demande.id, f"{added} pièce(s)")
+    return added
+
+
+def _transfer_pieces(db: Session, demande: models.DemandeAdhesion, faitiere: models.Faitiere) -> None:
+    """À l'acceptation, les pièces du dossier rejoignent la fiche du nouveau membre."""
+    for p in db.query(models.PieceDemande).filter_by(demande_id=demande.id).all():
+        db.add(models.PieceFaitiere(faitiere_id=faitiere.id, type=p.type, nom=p.nom, mime=p.mime, extension=p.extension,
+                                    taille=p.taille, contenu=p.contenu))
+
+
+def create_representative_account(db: Session, demande: models.DemandeAdhesion, faitiere: models.Faitiere) -> str | None:
+    """Crée le compte du représentant (espace de la faîtière) et retourne le lien pour choisir son mot de passe,
+    valable une semaine. Aucun mot de passe n'est jamais transmis. Si l'adresse a déjà un compte : None."""
+    if db.query(models.User).filter(models.User.email == demande.email.lower()).first():
+        return None
+    user = models.User(email=demande.email.lower(), full_name=demande.representant_nom, role="faitiere",
+                       faitiere_id=faitiere.id, hashed_password=hash_password(secrets.token_urlsafe(32)))
+    db.add(user)
+    db.flush()
+    token = password_reset.issue(db, user, minutes=password_reset.INVITATION_MINUTES)
+    log_action(db, None, "creation", "user", user.id, f"{user.email} (faitiere, invitation)")
+    return f"{settings.public_base_url.rstrip('/')}/mot-de-passe-oublie/{token}" if token else None
+
+
 def start_examen(db: Session, user, demande: models.DemandeAdhesion, notes: str | None) -> None:
     if demande.etat not in ("nouvelle", "en_examen"):
         raise HTTPException(status_code=409, detail="La demande est déjà traitée")
+    first_time = demande.etat == "nouvelle"
     demande.etat = "en_examen"
     if notes is not None:
         demande.notes_examen = notes.strip() or None
     log_action(db, user, "examen", "demande_adhesion", demande.id, demande.sigle)
+    if first_time:                      # le demandeur sait que son dossier est pris en charge
+        send_email(demande.email, f"PSIE — Demande d'adhésion {demande.code} : en cours d'examen",
+                   f"Votre demande d'adhésion ({demande.code}) est en cours d'examen par la Direction Exécutive Nationale. "
+                   f"Vous pouvez suivre son état avec ce code.\n\nطلب انخراطكم قيد الدراسة لدى الإدارة التنفيذية الوطنية. "
+                   f"يمكنكم متابعته برمز المتابعة.\n")
 
 
 def record_avis(db: Session, user, demande: models.DemandeAdhesion, avis: str, motif: str | None) -> None:
@@ -125,11 +177,13 @@ def decide(db: Session, user, demande: models.DemandeAdhesion, *, accepter: bool
     log_action(db, user, "acceptation", "demande_adhesion", demande.id, f"{demande.sigle} — {reference}")
     if droit_adhesion:
         finance.create_adhesion_echeance(db, user, faitiere, droit_adhesion, None, reference)
-    _notify(demande, accepted=True)
+    _transfer_pieces(db, demande, faitiere)
+    invitation = create_representative_account(db, demande, faitiere)
+    _notify(demande, accepted=True, invitation=invitation)
     return faitiere
 
 
-def _notify(demande: models.DemandeAdhesion, accepted: bool) -> None:
+def _notify(demande: models.DemandeAdhesion, accepted: bool, invitation: str | None = None) -> None:
     """E-mail au demandeur (au mieux : un échec d'envoi ne bloque pas la décision)."""
     if accepted:
         fr = f"Votre demande d'adhésion ({demande.code}) a été acceptée par l'Assemblée Générale."
@@ -137,5 +191,8 @@ def _notify(demande: models.DemandeAdhesion, accepted: bool) -> None:
     else:
         fr = f"Votre demande d'adhésion ({demande.code}) n'a pas été retenue."
         ar = "لم يتم قبول طلب انخراطكم."
+    if invitation:
+        fr += f"\n\nVotre espace faîtière est prêt. Choisissez votre mot de passe avec ce lien (valable 7 jours) :\n{invitation}"
+        ar += f"\n\nفضاء منظمتكم جاهز. اختاروا كلمة مروركم عبر هذا الرابط (صالح لمدة 7 أيام):\n{invitation}"
     send_email(demande.email, f"PSIE — Demande d'adhésion {demande.code}",
                f"{fr}\n\n{ar}\n\nPlateforme des Structures Islamiques d'Éducation (PSIE)\n")

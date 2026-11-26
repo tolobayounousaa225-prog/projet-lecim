@@ -6,7 +6,7 @@ import datetime
 
 from sqlalchemy.orm import Session
 
-from . import models
+from . import gouvernance, models
 from .emailing import send_email
 
 MANDAT_SEUILS = (90, 30, 7, 0)          # jours avant la fin d'un mandat
@@ -14,6 +14,9 @@ MANDAT_OUBLI_JOURS = 30                 # un mandat expiré depuis plus longtemp
 RAPPORT_AVANT_FIN_SEMESTRE_JOURS = 15
 ETATS_AVANT_AG_JOURS = 15               # Statuts art. 36 : états financiers à disposition quinze jours avant l'assemblée
 ETATS_ALERTE_AVANT_AG_JOURS = 20        # on prévient 5 jours avant la date limite de mise à disposition
+DEMANDE_A_EXAMINER_JOURS = 7            # demande d'adhésion restée sans examen
+DEMANDE_AVIS_CA_JOURS = 15              # demande dont l'avis écrit du CA se fait attendre
+AG_RAPPEL_JOURS = 3                     # rappel aux convoqués
 
 
 def _emails(db: Session, roles: set[str]) -> list[str]:
@@ -80,9 +83,41 @@ def etats_avant_ag(db: Session, today: datetime.date, sender) -> int:
     return sent
 
 
+def demandes_en_attente(db: Session, today: datetime.date, sender) -> int:
+    lines = []
+    for d in db.query(models.DemandeAdhesion).all():
+        if not d.is_open:
+            continue
+        age = (today - d.created_at.date()).days
+        if d.etat == "nouvelle" and age >= DEMANDE_A_EXAMINER_JOURS and _claim(db, f"demande-examen:{d.id}"):
+            lines.append(f"- {d.sigle} ({d.code}) : demande reçue il y a {age} jours, pas encore examinée")
+        if d.avis_ca is None and age >= DEMANDE_AVIS_CA_JOURS and _claim(db, f"demande-avis:{d.id}"):
+            lines.append(f"- {d.sigle} ({d.code}) : avis écrit du CA attendu depuis {age} jours (Statuts art. 18)")
+    if not lines:
+        return 0
+    body = "Demandes d'adhésion en attente :\n\n" + "\n".join(lines) + "\n\nElles se traitent dans « Adhésions ».\n"
+    return _send_all(_emails(db, {"den", "secretaire"}), "PSIE — Demandes d'adhésion en attente", body, sender)
+
+
+def rappel_assemblee(db: Session, today: datetime.date, sender) -> int:
+    sent = 0
+    for a in db.query(models.Assemblee).filter_by(statut="convoquee").all():
+        days = (a.date_assemblee - today).days
+        if not 0 <= days <= AG_RAPPEL_JOURS or not _claim(db, f"ag-rappel:{a.id}"):
+            continue
+        quand = "aujourd'hui" if days == 0 else f"dans {days} jour(s)"
+        heure = f" à {a.heure}" if a.heure else ""
+        body = (f"Rappel : {a.type_label} {quand}, le {a.date_assemblee:%d/%m/%Y}{heure}, {a.lieu}.\n\n"
+                "Les documents de l'assemblée sont disponibles dans votre espace PSIE.\n\n"
+                f"تذكير: {a.type_label} بتاريخ {a.date_assemblee:%d/%m/%Y}، {a.lieu}.\n")
+        sent += _send_all(gouvernance.convocation_recipients(db, a), f"PSIE — Rappel : {a.type_label}", body, sender)
+    return sent
+
+
 def send_regulatory_reminders(db: Session, today: datetime.date | None = None, sender=None) -> int:
     today = today or datetime.date.today()
     sender = sender or send_email          # résolu à l'appel : remplaçable dans les tests
-    sent = (mandats_a_echeance(db, today, sender) + rapport_semestriel(db, today, sender) + etats_avant_ag(db, today, sender))
+    sent = (mandats_a_echeance(db, today, sender) + rapport_semestriel(db, today, sender) + etats_avant_ag(db, today, sender)
+            + demandes_en_attente(db, today, sender) + rappel_assemblee(db, today, sender))
     db.commit()
     return sent

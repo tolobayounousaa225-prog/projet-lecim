@@ -3,7 +3,7 @@
 {% block content %}
 <h1>{{ t('join_title') }}</h1>
 <section class="card"><p>{{ t('join_conditions') }}</p></section>
-<form method="post" action="/adhesion" class="card stack">
+<form method="post" action="/adhesion" enctype="multipart/form-data" class="card stack">
   <div class="grid">
     <label>{{ t('f_org_name') }}<input name="nom" required maxlength="255"></label>
     <label>{{ t('acronym') }}<input name="sigle" required maxlength="50"></label>
@@ -19,6 +19,11 @@
   <label>{{ t('f_message') }}<textarea name="message" rows="3" maxlength="3000"></textarea></label>
   <div class="hp" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
   <label class="check"><input type="checkbox" name="accepte_statuts" required> {{ t('f_accept_statutes') }}</label>
+  <fieldset class="stack"><legend>{{ t('f_documents') }}</legend>
+    <p class="muted">{{ t('f_documents_help') }}</p>
+    <label>{{ t('f_doc_statuts') }}<input type="file" name="statuts_file" accept="application/pdf,image/jpeg,image/png,image/webp"></label>
+    <label>{{ t('f_doc_recepisse') }}<input type="file" name="recepisse_file" accept="application/pdf,image/jpeg,image/png,image/webp"></label>
+  </fieldset>
   <label class="check"><input type="checkbox" name="accepte_cotisations" required> {{ t('f_accept_dues') }}</label>
   <div><button class="btn">{{ t('f_submit') }}</button> <a href="/adhesion/suivi">{{ t('track_title') }}</a></div>
 </form>

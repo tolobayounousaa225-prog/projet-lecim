@@ -16,6 +16,22 @@
   {% if a.statut != 'preparation' %}<p><a href="/assemblees/{{ a.id }}/convocation.pdf" target="_blank">{{ t('g_convocation_pdf') }}</a></p>{% endif %}
 </section>
 
+<section class="card">
+  <h2>{{ t('annexes_title') }}</h2>
+  <ul>
+  {% for x in annexes %}<li><a href="/annexes/{{ x.id }}">{{ x.titre }}</a> <span class="muted">({{ x.nom }}, {{ (x.taille / 1024) | round | int }} Ko)</span>
+    {% if manager and a.statut != 'close' %}<form method="post" action="/annexes/{{ x.id }}/supprimer" class="inline"><button class="link danger">{{ t('delete') }}</button></form>{% endif %}</li>
+  {% else %}<li class="muted">{{ t('none') }}</li>{% endfor %}
+  </ul>
+  {% if manager and a.statut != 'close' %}
+  <form method="post" action="/assemblees/{{ a.id }}/annexes" enctype="multipart/form-data" class="grid">
+    <label>{{ t('annex_title') }}<input name="titre" required maxlength="200"></label>
+    <label>{{ t('piece_file') }}<input type="file" name="fichier" accept="application/pdf,image/jpeg,image/png,image/webp" required></label>
+    <div><button class="btn">{{ t('add') }}</button></div>
+  </form>
+  {% endif %}
+</section>
+
 {% if a.statut == 'preparation' %}
 <section class="card"><h2>{{ t('g_prepare') }}</h2>
   {% if a.requires_ca_opinion and user.role in ('administrateur_ca', 'den', 'secretaire') %}
