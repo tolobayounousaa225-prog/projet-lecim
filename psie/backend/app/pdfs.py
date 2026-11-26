@@ -338,6 +338,38 @@ def registre_membres_pdf(faitieres: list[models.Faitiere]) -> bytes:
     return bytes(pdf.output())
 
 
+def registre_deliberations_pdf(registre: str, entries: list, intact: bool) -> bytes:
+    """Registre légal des délibérations d'un organe : entrées numérotées, chaînées par empreinte."""
+    from fpdf.fonts import FontFace
+
+    from .i18n import label
+
+    pdf = _new_pdf()
+    pdf.set_auto_page_break(True, margin=18)
+    _header(pdf, f"REGISTRE DES DÉLIBÉRATIONS — {registre}", "سجل المداولات")
+    pdf.set_x(15)
+    pdf.set_font("dv", "", 9)
+    pdf.set_text_color(*GREY)
+    pdf.cell(180, 6, f"{label('organe', registre, 'fr')} — édité le {datetime.date.today():%d/%m/%Y} — {len(entries)} entrée(s)",
+             new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(180, 6, "Intégrité de la chaîne : vérifiée" if intact else "ATTENTION : la chaîne d'empreintes est rompue",
+             new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(2)
+    pdf.set_fill_color(255, 255, 255)
+    pdf.set_font("dv", "", 8)
+    with pdf.table(col_widths=(10, 22, 40, 78, 30), text_align="LEFT", line_height=5, padding=1.2,
+                   headings_style=FontFace(emphasis="BOLD", color=(0, 0, 0), fill_color=(222, 236, 228)), borders_layout="ALL") as table:
+        head = table.row()
+        for h in ("N°", "Date", "Objet", "Résumé", "Empreinte"):
+            head.cell(h)
+        for e in entries:
+            row = table.row()
+            for v in (str(e.numero), f"{e.date_acte:%d/%m/%Y}", e.titre, e.resume, e.empreinte[:16] + "…"):
+                row.cell(v)
+    return bytes(pdf.output())
+
+
 def releve_pdf(faitiere: models.Faitiere, echeances: list[models.Echeance]) -> bytes:
     """Relevé de compte d'une faîtière : échéances (dû, payé, solde) puis paiements, reçus annulés signalés."""
     from fpdf.fonts import FontFace

@@ -21,6 +21,12 @@
       {% if user.can('adhesions') %}{{ nav_item('/adhesions', t('nav_adhesions'), '/adhesions') }}{% endif %}
     </div>
     {% endif %}
+    {% if user.can('documents') %}
+    <div class="nav-group"><h2>{{ t('nav_group_docs') }}</h2>
+      {{ nav_item('/documents', t('nav_documents'), '/documents') }}{{ nav_item('/courrier', t('nav_mail'), '/courrier') }}
+      {{ nav_item('/conventions', t('nav_agreements'), '/conventions') }}{{ nav_item('/registres', t('nav_registers'), '/registres') }}
+    </div>
+    {% endif %}
     {% if user.can('ecoles') or user.can('membres') %}
     <div class="nav-group"><h2>{{ t('nav_group_federations') }}</h2>
       {% if user.can('ecoles') %}{{ nav_item('/statistiques', t('nav_stats'), '/statistiques') }}{% endif %}

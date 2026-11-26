@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_registers') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav_registers') }}</h1>
+<p class="muted">{{ t('r_help') }}</p>
+<div class="tiles">{% for k in keys %}
+  <a class="tile" href="/registres/{{ k }}"><div class="num">{{ counts.get(k, 0) }}</div><div>{{ lbl('organe', k) }}</div></a>
+{% endfor %}</div>
+{% endblock %}
