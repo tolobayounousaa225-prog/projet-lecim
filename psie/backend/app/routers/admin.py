@@ -5,7 +5,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .. import finance, gouvernance, models
+from .. import acces, finance, gouvernance, models
 from ..audit import log_action
 from ..database import get_db
 from ..deps import get_current_user, require_admin, require_internal, require_member_manager
@@ -23,31 +23,37 @@ def _redirect(url: str) -> RedirectResponse:
 
 @router.get("/admin")
 def dashboard(request: Request, user: models.User = Depends(require_internal), db: Session = Depends(get_db)):
-    faitieres = db.query(models.Faitiere).all()
-    mandats = db.query(models.Mandat).all()
-    sit = finance.situation(db, datetime.date.today().year) if user.can_view_finances else None
+    """Tableau de bord : seulement ce qui concerne les rubriques ouvertes à cette personne."""
     today = datetime.date.today()
-    appels = [a for a in db.query(models.AppelExceptionnel).all() if any(e.solde > 0 and not e.exoneree for e in a.echeances)] \
-        if user.can_view_finances else []
-    a_signer = (db.query(models.Depense).filter_by(statut="a_valider").count()
-                if user.role in models.SIGNATAIRE_ROLES else None)
-    assemblees = (db.query(models.Assemblee).filter(models.Assemblee.date_assemblee >= today,
-                                                    models.Assemblee.statut != "close")
-                  .order_by(models.Assemblee.date_assemblee).limit(3).all())
-    return render(
-        request,
-        "dashboard.html",
-        user,
-        total=len(faitieres),
-        actifs=sum(1 for f in faitieres if f.is_membre_actif),
-        par_categorie={k: sum(1 for f in faitieres if f.categorie == k) for k in models.CATEGORIES},
-        expirent=[m for m in mandats if m.echeance == "bientot"],
-        expires=[m for m in mandats if m.echeance == "expire"],
-        sit=sit,
-        fcfa=finance.fcfa,
-        composition=gouvernance.composition_organes(db),
-        appels=appels, a_signer=a_signer, assemblees=assemblees,
-    )
+    ctx: dict = {"fcfa": finance.fcfa}
+    if user.can("membres"):
+        faitieres = db.query(models.Faitiere).all()
+        mandats = db.query(models.Mandat).all()
+        ctx.update(
+            total=len(faitieres), actifs=sum(1 for f in faitieres if f.is_membre_actif),
+            par_categorie={k: sum(1 for f in faitieres if f.categorie == k) for k in models.CATEGORIES},
+            expirent=[m for m in mandats if m.echeance == "bientot"],
+            expires=[m for m in mandats if m.echeance == "expire"],
+            composition=gouvernance.composition_organes(db),
+        )
+    if user.can_view_finances:
+        ctx["sit"] = finance.situation(db, today.year)
+        ctx["appels"] = [a for a in db.query(models.AppelExceptionnel).all()
+                         if any(e.solde > 0 and not e.exoneree for e in a.echeances)]
+        if user.role in models.SIGNATAIRE_ROLES:
+            ctx["a_signer"] = db.query(models.Depense).filter_by(statut="a_valider").count()
+    if user.can("assemblees"):
+        ctx["assemblees"] = (db.query(models.Assemblee).filter(models.Assemblee.date_assemblee >= today,
+                                                               models.Assemblee.statut != "close")
+                             .order_by(models.Assemblee.date_assemblee).limit(3).all())
+    if user.can("adhesions"):
+        ctx["demandes_ouvertes"] = sum(1 for d in db.query(models.DemandeAdhesion).all() if d.is_open)
+    sections = [(key, acces.SECTIONS[key], URL_OF[key]) for key in acces.SECTIONS if user.can(key)]
+    return render(request, "dashboard.html", user, sections=sections, **ctx)
+
+
+URL_OF = {"membres": "/faitieres", "adhesions": "/adhesions", "assemblees": "/assemblees", "sanctions": "/sanctions",
+          "finances": "/cotisations", "interets": "/interets", "contenu": "/gestion/contenu"}
 
 
 # ---------- Membres (faîtières) ----------

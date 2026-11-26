@@ -1,35 +1,32 @@
 {% extends "base.html" %}
 {% block title %}{{ t('nav_dashboard') }}{% endblock %}
 {% block content %}
-<h1>{{ t('nav_dashboard') }}</h1>
+<section class="welcome">
+  <span class="avatar" aria-hidden="true">{{ user.full_name[:1] | upper }}</span>
+  <div><h1>{{ t('hello') }} {{ user.full_name }}</h1><p>{{ lbl('role', user.role) }} — {{ t('dash_welcome_sub') }}</p></div>
+</section>
+
+{% if not sections %}
+<p class="card">{{ t('dash_nothing') }}</p>
+{% endif %}
+
+{# ---- Chiffres : une ligne par rubrique ouverte ---- #}
+{% if actifs is defined %}
 <div class="tiles">
   <div class="tile"><div class="num">{{ actifs }}</div><div>{{ t('members_active') }}</div></div>
   <div class="tile"><div class="num">{{ total }}</div><div>{{ t('members_total') }}</div></div>
-  {% for key in categories %}
-  <div class="tile"><div class="num">{{ par_categorie[key] }}</div><div>{{ lbl('categorie', key) }}</div></div>
-  {% endfor %}
+  {% for key in categories %}{% if par_categorie[key] %}<div class="tile"><div class="num">{{ par_categorie[key] }}</div><div>{{ lbl('categorie', key) }}</div></div>{% endif %}{% endfor %}
 </div>
-
+{% endif %}
+{% if demandes_ouvertes is defined or appels is defined or a_signer is defined %}
 <div class="tiles">
-  {% if user.can_view_finances %}<div class="tile"><div class="num"><a href="/appels">{{ appels | length }}</a></div><div>{{ t('dash_calls') }}</div></div>{% endif %}
-  {% if a_signer is not none %}<div class="tile"><div class="num"><a href="/depenses">{{ a_signer }}</a></div><div>{{ t('dash_to_sign') }}</div></div>{% endif %}
+  {% if demandes_ouvertes is defined %}<div class="tile"><div class="num"><a href="/adhesions">{{ demandes_ouvertes }}</a></div><div>{{ t('dash_open_requests') }}</div></div>{% endif %}
+  {% if appels is defined %}<div class="tile"><div class="num"><a href="/appels">{{ appels | length }}</a></div><div>{{ t('dash_calls') }}</div></div>{% endif %}
+  {% if a_signer is defined %}<div class="tile"><div class="num"><a href="/depenses">{{ a_signer }}</a></div><div>{{ t('dash_to_sign') }}</div></div>{% endif %}
 </div>
-{% if assemblees %}
-<section class="card">
-  <h2>{{ t('dash_assemblies') }}</h2>
-  <ul>{% for a in assemblees %}<li><a href="/assemblees/{{ a.id }}">{{ a.type_label }}</a> — {{ a.date_assemblee.strftime('%d/%m/%Y') }}, {{ a.lieu }} ({{ a.statut_label }})</li>{% endfor %}</ul>
-</section>
 {% endif %}
 
-<section class="card">
-  <h2>{{ t('g_composition') }}</h2>
-  <div class="tiles">
-  {% for c in composition %}
-    <div class="tile"><div class="num">{{ c.reel }} / {{ c.attendu }}</div><div>{{ lbl('organe', c.organe) }}</div></div>
-  {% endfor %}
-  </div>
-</section>
-{% if sit %}
+{% if sit is defined and sit %}
 <section class="card">
   <h2><a href="/cotisations">{{ t('nav_dues') }} {{ sit.annee }}</a></h2>
   <div class="tiles">
@@ -40,16 +37,43 @@
   </div>
 </section>
 {% endif %}
+
+{% if assemblees %}
 <section class="card">
-  <h2>{{ t('mandates_expiring') }}</h2>
-  {% if expirent %}
-    <ul>{% for m in expirent %}<li>{{ m.full_name }} — {{ lbl('organe', m.organe) }}{% if m.faitiere %} ({{ m.faitiere.sigle }}){% endif %} · {{ m.date_fin }}</li>{% endfor %}</ul>
-  {% else %}<p class="muted">{{ t('none') }}</p>{% endif %}
+  <h2>{{ t('dash_assemblies') }}</h2>
+  <ul>{% for a in assemblees %}<li><a href="/assemblees/{{ a.id }}">{{ a.type_label }}</a> — {{ a.date_assemblee.strftime('%d/%m/%Y') }}, {{ a.lieu }} ({{ a.statut_label }})</li>{% endfor %}</ul>
 </section>
+{% endif %}
+
+{% if composition is defined %}
 <section class="card">
-  <h2>{{ t('mandates_expired') }}</h2>
-  {% if expires %}
-    <ul>{% for m in expires %}<li>{{ m.full_name }} — {{ lbl('organe', m.organe) }}{% if m.faitiere %} ({{ m.faitiere.sigle }}){% endif %} · {{ m.date_fin }}</li>{% endfor %}</ul>
-  {% else %}<p class="muted">{{ t('none') }}</p>{% endif %}
+  <h2>{{ t('g_composition') }}</h2>
+  <div class="tiles">
+  {% for c in composition %}
+    <div class="tile"><div class="num">{{ c.reel }} / {{ c.attendu }}</div><div>{{ lbl('organe', c.organe) }}</div></div>
+  {% endfor %}
+  </div>
 </section>
+<div class="two">
+  <section class="card">
+    <h2>{{ t('mandates_expiring') }}</h2>
+    {% if expirent %}<ul>{% for m in expirent %}<li>{{ m.full_name }} — {{ lbl('organe', m.organe) }}{% if m.faitiere %} ({{ m.faitiere.sigle }}){% endif %} · {{ m.date_fin }}</li>{% endfor %}</ul>
+    {% else %}<p class="muted">{{ t('none') }}</p>{% endif %}
+  </section>
+  <section class="card">
+    <h2>{{ t('mandates_expired') }}</h2>
+    {% if expires %}<ul>{% for m in expires %}<li>{{ m.full_name }} — {{ lbl('organe', m.organe) }}{% if m.faitiere %} ({{ m.faitiere.sigle }}){% endif %} · {{ m.date_fin }}</li>{% endfor %}</ul>
+    {% else %}<p class="muted">{{ t('none') }}</p>{% endif %}
+  </section>
+</div>
+{% endif %}
+
+{% if sections %}
+<h2 class="section-title">{{ t('dash_shortcuts') }}</h2>
+<div class="shortcuts">
+  {% for key, s, url in sections %}
+  <a class="shortcut" href="{{ url }}"><strong>{{ s[1] if lang == 'ar' else s[0] }}</strong><span>{{ s[2] }}</span></a>
+  {% endfor %}
+</div>
+{% endif %}
 {% endblock %}

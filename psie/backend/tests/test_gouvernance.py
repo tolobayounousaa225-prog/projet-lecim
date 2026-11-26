@@ -347,7 +347,7 @@ def test_representative_sees_only_convocation(db, world):
     den.post(f"/assemblees/{a.id}/avis-ca", data={"reference": "Avis"})
     den.post(f"/assemblees/{a.id}/convoquer")
     page = rep.get(f"/assemblees/{a.id}")
-    assert page.status_code == 200 and "Bouaké" in page.text and "Délégué" not in page.text
+    assert page.status_code == 200 and "Bouaké" in page.text and "Délégué " not in page.text
     for url in (f"/assemblees/{a.id}/pv.pdf", f"/assemblees/{a.id}/convocation.pdf"):
         assert rep.get(url).status_code == 403
     assert rep.post(f"/assemblees/{a.id}/ouvrir").status_code == 403

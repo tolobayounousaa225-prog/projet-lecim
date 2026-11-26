@@ -14,7 +14,7 @@ from .database import engine
 from .deps import NotAuthenticatedException, visibility_guard
 from . import scheduler
 from .routers import admin, adhesions, appels, assemblees, auth, compta, contenu, acces as acces_router, cotisations, espace, membres, public, reinitialisation, sanctions
-from .web import BASE_DIR, render
+from .web import BASE_DIR, render, request_user
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
@@ -80,7 +80,7 @@ async def not_authenticated(request: Request, exc: NotAuthenticatedException):
 @app.exception_handler(HTTPException)
 async def http_error(request: Request, exc: HTTPException):
     if "text/html" in request.headers.get("accept", ""):
-        return render(request, "error.html", status_code=exc.status_code, message=exc.detail)
+        return render(request, "error.html", request_user(request), status_code=exc.status_code, message=exc.detail)
     return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
 
 
@@ -90,7 +90,7 @@ async def validation_error(request: Request, exc: RequestValidationError):
     fields = sorted({str(e["loc"][-1]) for e in exc.errors() if e.get("loc")})
     message = "Champ(s) manquant(s) ou invalide(s) : " + ", ".join(fields) if fields else "Requête invalide"
     if "text/html" in request.headers.get("accept", ""):
-        return render(request, "error.html", status_code=422, message=message)
+        return render(request, "error.html", request_user(request), status_code=422, message=message)
     return JSONResponse({"detail": message}, status_code=422)
 
 

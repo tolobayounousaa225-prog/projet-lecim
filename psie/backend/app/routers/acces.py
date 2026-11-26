@@ -28,7 +28,7 @@ def _level(value) -> int | None:
 def acces_page(request: Request, user: models.User = Depends(require_admin), db: Session = Depends(get_db)):
     matrix = {role: acces.role_defaults_with_overrides(db, role) for role in ROLES}
     defaults = {role: acces.defaults_for(role) for role in ROLES}
-    return render(request, "acces_matrice.html", user, sections=acces.SECTIONS, roles=ROLES, matrix=matrix,
+    return render(request, "acces_matrice.html", user, sections=acces.SECTIONS, matrix_roles=ROLES, matrix=matrix,
                   defaults=defaults, levels=acces.LEVELS, saved=bool(request.query_params.get("ok")))
 
 

@@ -7,11 +7,11 @@
 <form method="post" action="/acces">
 <div class="table-wrap">
 <table class="matrix">
-  <thead><tr><th>{{ t('access_section') }}</th>{% for r in roles %}<th>{{ lbl('role', r) }}</th>{% endfor %}</tr></thead>
+  <thead><tr><th>{{ t('access_section') }}</th>{% for r in matrix_roles %}<th>{{ lbl('role', r) }}</th>{% endfor %}</tr></thead>
   <tbody>
   {% for key, s in sections.items() %}
     <tr><th scope="row">{{ s[1] if lang == 'ar' else s[0] }}<small class="muted">{{ s[2] }}</small></th>
-      {% for r in roles %}
+      {% for r in matrix_roles %}
       <td class="{% if matrix[r].get(key, 0) != defaults[r].get(key, 0) %}changed{% endif %}">
         <select name="n__{{ r }}__{{ key }}" aria-label="{{ lbl('role', r) }} — {{ s[0] }}">
           {% for n, label in levels.items() %}<option value="{{ n }}" {% if matrix[r].get(key, 0) == n %}selected{% endif %}>{{ label }}</option>{% endfor %}

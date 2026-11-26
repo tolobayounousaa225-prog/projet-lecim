@@ -263,4 +263,7 @@ def test_the_dashboard_only_shows_what_the_user_may_see(db, people):
     den = client_for("den@psie.ci").get("/admin").text
     assert "Membres actifs" in den and "Composition des organes" in den and "Appels exceptionnels en cours" in den
     fin = client_for("finances@psie.ci").get("/admin").text
-    assert "Appels exceptionnels en cours" in fin and "Composition des organes" not in fin   # finances ne gère pas les organes
+    assert "Appels exceptionnels en cours" in fin and "Composition des organes" in fin       # les finances lisent aussi les membres
+    exam = client_for("examens@psie.ci").get("/admin").text
+    assert "Composition des organes" not in exam and "Appels exceptionnels en cours" not in exam
+    assert "Aucune rubrique de gestion n" in exam or "Déclarations d&#39;intérêts" in exam
