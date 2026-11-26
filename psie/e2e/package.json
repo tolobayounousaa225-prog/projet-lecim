@@ -1,0 +1,7 @@
+{
+  "name": "psie-e2e",
+  "private": true,
+  "description": "Tests de navigateur de la plateforme PSIE (parcours clés, accessibilité, mobile)",
+  "scripts": { "test": "node run.js" },
+  "dependencies": { "axe-core": "4.10.2", "playwright": "1.49.1" }
+}

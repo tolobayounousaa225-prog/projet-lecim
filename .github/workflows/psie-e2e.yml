@@ -1,0 +1,32 @@
+name: psie-e2e
+
+# Tests de navigateur de la plateforme PSIE : parcours clés, accessibilité (axe), mise en page mobile.
+# Ne se déclenche que pour les modifications du dossier psie/ (le projet LECIM n'est pas concerné).
+on:
+  pull_request:
+    paths: ["psie/**", ".github/workflows/psie-e2e.yml"]
+  push:
+    branches: [main]
+    paths: ["psie/**", ".github/workflows/psie-e2e.yml"]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r psie/backend/requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Installer Playwright et axe-core
+        working-directory: psie/e2e
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Parcours de navigateur
+        working-directory: psie/e2e
+        run: node run.js
