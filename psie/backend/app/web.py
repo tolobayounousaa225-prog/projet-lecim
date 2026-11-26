@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import HTTPException, Request
 from fastapi.templating import Jinja2Templates
 
+from .config import settings
 from . import models
 from .i18n import label, normalize_lang, translate
 
@@ -31,6 +32,7 @@ def render(request: Request, name: str, user: "models.User | None" = None, statu
         statuts=models.STATUTS_MEMBRE,
         organes=models.ORGANES,
         roles=models.ROLES,
+        vitrine_url=settings.vitrine_url.rstrip("/"),
     )
     return templates.TemplateResponse(request, name, ctx, status_code=status_code)
 
