@@ -1703,7 +1703,7 @@ function initEspaceMembreForm() {
       (data.fonction ? '<p class="diplome-verif-sub">' + escapeHtml(data.fonction) + '</p>' : '') +
       '<dl>' +
       '<div><dt>N° de carte</dt><dd>' + escapeHtml(data.numero_carte || '-') + '</dd></div>' +
-      (data.date_validite ? '<div><dt>Valable jusqu\'au</dt><dd>' + escapeHtml(data.date_validite) + '</dd></div>' : '') +
+      (data.date_validite ? '<div><dt>Valable jusqu\'au</dt><dd>' + escapeHtml(formatDateFr(data.date_validite)) + '</dd></div>' : '') +
       (data.delegation ? '<div><dt>Délégation</dt><dd>' + escapeHtml(data.delegation) + '</dd></div>' : '') +
       '</dl></div>';
 
