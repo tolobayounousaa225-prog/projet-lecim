@@ -102,6 +102,7 @@ def _validate(db: Session, col: sc.Collection, values: dict, upload_errors: list
 
 
 def _published(db: Session, background: BackgroundTasks) -> None:
+    sc.purge_unused_media(db)                 # une photo ou un PDF supprimé disparaît aussi de la base et du site
     db.commit()
     background.add_task(publish.trigger_rebuild)
 
