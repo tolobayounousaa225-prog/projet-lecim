@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_site_content') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav_site_content') }}</h1>
+<p class="muted">Chaque modification est publiée tout de suite sur le site vitrine{% if not auto_publish %} (la reconstruction automatique du site n'est pas encore configurée : le site se met à jour à sa prochaine reconstruction){% else %} : le site se reconstruit seul en une à deux minutes{% endif %}.</p>
+<div class="grid">
+  {% for c in collections %}
+  <section class="card">
+    <h2><a href="/gestion/contenu/{{ c.key }}">{{ c.titre }}</a></h2>
+    <p class="muted">{{ c.aide }}</p>
+    <p>{% if c.singleton %}{{ 'Renseigné' if counts[c.key] else 'À renseigner' }}{% else %}{{ counts[c.key] }} élément(s){% endif %}</p>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

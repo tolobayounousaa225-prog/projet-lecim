@@ -1,0 +1,14 @@
+<div class="two">
+  <section class="card">
+    <h2>{{ t('e_exams') }} {{ annee }}</h2>
+    {% if exams %}<div class="table-wrap"><table><thead><tr><th>{{ t('e_exam') }}</th><th>{{ t('e_candidates') }}</th><th>{{ t('e_passed') }}</th><th>{{ t('e_rate') }}</th></tr></thead><tbody>
+    {% for x in exams %}<tr><td>{{ x.examen }}</td><td>{{ x.inscrits }}</td><td>{{ x.admis }}</td><td>{{ x.taux }} %</td></tr>{% endfor %}</tbody></table></div>
+    {% else %}<p class="muted">{{ t('none') }}</p>{% endif %}
+  </section>
+  <section class="card">
+    <h2>{{ t('e_evolution') }}</h2>
+    {% if evolution %}<div class="table-wrap"><table><thead><tr><th>{{ t('e_year') }}</th><th>{{ t('e_pupils') }}</th><th>{{ t('e_staff_total') }}</th><th>{{ t('e_pass_rate') }}</th></tr></thead><tbody>
+    {% for x in evolution %}<tr><td>{{ x.annee }}</td><td>{{ x.eleves }}</td><td>{{ x.personnel }}</td><td>{{ (x.taux ~ ' %') if x.taux is not none else '—' }}</td></tr>{% endfor %}</tbody></table></div>
+    {% else %}<p class="muted">{{ t('none') }}</p>{% endif %}
+  </section>
+</div>

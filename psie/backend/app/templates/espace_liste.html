@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — {{ f.sigle }}{% endblock %}
+{% block content %}
+<p><a href="/faitieres/{{ f.id }}">← {{ f.sigle }}</a></p>
+<h1>{{ title }} <small>{{ f.sigle }}</small></h1>
+<table>
+  <thead><tr>{% for name in fields %}<th>{{ labels[name] }}</th>{% endfor %}<th></th></tr></thead>
+  <tbody>
+  {% for it in items %}
+    <tr>{% for name in fields %}<td>{{ it[name] or '—' }}</td>{% endfor %}
+      <td>{% if can_write %}<form method="post" action="/faitieres/{{ f.id }}/{{ kind }}/{{ it.id }}/supprimer" class="inline"><button class="link danger">{{ t('delete') }}</button></form>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="{{ fields|length + 1 }}" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% if can_write %}
+<section class="card">
+  <h2>{{ t('add') }}</h2>
+  <form method="post" action="/faitieres/{{ f.id }}/{{ kind }}" class="stack">
+    {% for name in fields %}<label>{{ labels[name] }}{% if name == 'nom' or (kind == 'delegues' and name == 'drena') %} *{% endif %}<input name="{{ name }}"></label>{% endfor %}
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

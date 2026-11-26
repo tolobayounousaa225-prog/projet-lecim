@@ -1,0 +1,65 @@
+# Production PSIE (fichier détecté automatiquement par Docker). À lancer depuis ce dossier :  docker compose --env-file .env up -d --build
+# Deux modes (voir DEPLOIEMENT.md) :
+#  - serveur partagé avec un reverse proxy déjà en place : on ne lance PAS le profil « caddy »
+#    et on branche le proxy existant sur 127.0.0.1:${PSIE_PORT} ;
+#  - serveur dédié : docker compose --profile caddy ... lance aussi Caddy (HTTPS automatique).
+name: psie
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-psie}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?définir POSTGRES_PASSWORD dans .env}
+      POSTGRES_DB: ${POSTGRES_DB:-psie}
+    volumes:
+      - psie_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-psie} -d ${POSTGRES_DB:-psie}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    networks: [internal]
+    # Aucun port publié : la base n'est joignable que par l'application.
+
+  api:
+    build: ../backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-psie}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-psie}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      # Uniquement en local sur le serveur : le reverse proxy fait le lien avec Internet.
+      - "127.0.0.1:${PSIE_PORT:-8100}:8000"
+    networks: [internal, web]
+
+  caddy:
+    profiles: ["caddy"]
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    networks: [web]
+
+networks:
+  internal:
+    internal: true   # la base n'a aucun accès à Internet
+  web:
+
+volumes:
+  psie_db_data:
+  caddy_data:
+  caddy_config:

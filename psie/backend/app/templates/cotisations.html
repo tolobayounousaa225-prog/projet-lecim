@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_dues') }}{% endblock %}
+{% block content %}
+<div class="row">
+  <h1>{{ t('nav_dues') }} {{ annee }}</h1>
+  <form method="get" class="inline"><input type="number" name="annee" value="{{ annee }}" min="2000" max="2100" style="width:6em"> <button class="btn">OK</button></form>
+</div>
+
+<div class="tiles">
+  <div class="tile"><div class="num">{{ fcfa(data.total_du) }}</div><div>{{ t('total_due') }}</div></div>
+  <div class="tile"><div class="num">{{ fcfa(data.total_paye) }}</div><div>{{ t('total_paid') }}</div></div>
+  <div class="tile"><div class="num">{{ data.taux }} %</div><div>{{ t('recovery_rate') }}</div></div>
+  <div class="tile"><div class="num">{{ data.nb_retard }}</div><div>{{ t('late_count') }}</div></div>
+</div>
+
+<section class="card">
+  <h2>{{ t('annual_amount') }}</h2>
+  {% if bareme %}
+    <p><strong>{{ fcfa(bareme.montant) }}</strong> · {{ t('deadline') }} : {{ bareme.date_limite or '—' }}
+      {% if bareme.reference_decision %}· {{ bareme.reference_decision }}{% endif %}</p>
+  {% else %}<p class="muted">{{ t('no_amount') }}</p>{% endif %}
+  {% if user.can_write_finances %}
+  <form method="post" action="/cotisations/bareme" class="grid">
+    <input type="hidden" name="annee" value="{{ annee }}">
+    <label>{{ t('amount') }} (FCFA)<input type="number" name="montant" min="1" required value="{{ bareme.montant if bareme else '' }}"></label>
+    <label>{{ t('deadline') }}<input type="date" name="date_limite" value="{{ bareme.date_limite or '' if bareme else '' }}"></label>
+    <label>{{ t('decision_ref') }}<input name="reference_decision" value="{{ bareme.reference_decision or '' if bareme else '' }}"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+  {% if bareme %}
+  <form method="post" action="/cotisations/ouvrir" class="row" style="margin-top:12px">
+    <input type="hidden" name="annee" value="{{ annee }}">
+    <span class="muted">{{ manquantes }} {{ t('missing_dues') }}</span>
+    <button class="btn" {% if not manquantes %}disabled{% endif %}>{{ t('open_year') }}</button>
+  </form>
+  {% endif %}
+  {% endif %}
+</section>
+
+<div class="row"><h2>{{ t('situation') }}</h2><a href="/cotisations/export.csv?annee={{ annee }}">{{ t('export_csv') }}</a></div>
+<table>
+  <thead><tr><th>{{ t('acronym') }}</th><th>{{ t('due') }}</th><th>{{ t('paid') }}</th><th>{{ t('balance') }}</th><th>{{ t('deadline') }}</th><th>{{ t('status') }}</th></tr></thead>
+  <tbody>
+  {% for e in data.rows %}
+    <tr><td><a href="/echeances/{{ e.id }}">{{ e.faitiere.sigle }}</a></td>
+      <td>{{ fcfa(e.montant_du) }}</td><td>{{ fcfa(e.montant_paye) }}</td><td>{{ fcfa(e.solde) }}</td>
+      <td>{{ e.date_limite or '—' }}</td>
+      <td><span class="badge {{ e.statut }}">{{ t('st_' ~ e.statut) }}</span></td></tr>
+  {% else %}<tr><td colspan="6" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+
+{% if user.can_write_finances %}
+<section class="card">
+  <h2>{{ t('adhesion_fee') }}</h2>
+  <form method="post" action="/echeances/adhesion" class="grid">
+    <label>{{ t('organisation') }}<select name="faitiere_id">{% for f in faitieres %}<option value="{{ f.id }}">{{ f.sigle }}</option>{% endfor %}</select></label>
+    <label>{{ t('amount') }} (FCFA)<input type="number" name="montant" min="1" required></label>
+    <label>{{ t('deadline') }}<input type="date" name="date_limite"></label>
+    <label>{{ t('decision_ref') }}<input name="reference_decision"></label>
+    <div><button class="btn">{{ t('add') }}</button></div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

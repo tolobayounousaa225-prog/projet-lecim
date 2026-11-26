@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ c.numero }}{% endblock %}
+{% block content %}
+<p><a href="/courrier">← {{ t('nav_mail') }}</a></p>
+<h1>{{ c.numero }} <small>{{ lbl('courrier_sens', c.sens) }}</small></h1>
+<section class="card"><dl>
+  <dt>{{ t('m_subject') }}</dt><dd>{{ c.objet }}</dd><dt>{{ t('m_correspondent') }}</dt><dd>{{ c.correspondant }}</dd>
+  <dt>{{ t('m_date') }}</dt><dd>{{ c.date_courrier.strftime('%d/%m/%Y') }}</dd>
+  <dt>{{ t('m_reference') }}</dt><dd>{{ c.reference_externe or '—' }}</dd>
+  <dt>{{ t('status') }}</dt><dd><span class="badge {{ c.statut }}">{{ lbl('courrier_statut', c.statut) }}</span></dd>
+  <dt>{{ t('m_owner') }}</dt><dd>{{ c.responsable.full_name if c.responsable else '—' }}</dd>
+  <dt>{{ t('m_deadline') }}</dt><dd>{{ c.echeance.strftime('%d/%m/%Y') if c.echeance else '—' }}</dd>
+  {% if c.note %}<dt>{{ t('m_note') }}</dt><dd>{{ c.note }}</dd>{% endif %}
+  {% if parent %}<dt>{{ t('m_reply_to') }}</dt><dd><a href="/courrier/{{ parent.id }}">{{ parent.numero }}</a></dd>{% endif %}
+  {% if has_file %}<dt>{{ t('d_file') }}</dt><dd><a href="/courrier/{{ c.id }}/fichier">{{ c.nom }}</a></dd>{% endif %}
+</dl></section>
+{% if replies %}<section class="card"><h2>{{ t('m_replies') }}</h2><ul>{% for r in replies %}<li><a href="/courrier/{{ r.id }}">{{ r.numero }}</a> — {{ r.objet }}</li>{% endfor %}</ul></section>{% endif %}
+{% if can_write %}
+<section class="card"><h2>{{ t('m_follow') }}</h2>
+  <form method="post" action="/courrier/{{ c.id }}/suivi" class="grid">
+    <label>{{ t('status') }}<select name="statut">{% for k in statuts %}<option value="{{ k }}"{% if c.statut == k %} selected{% endif %}>{{ lbl('courrier_statut', k) }}</option>{% endfor %}</select></label>
+    <label>{{ t('m_owner') }}<select name="responsable_id"><option value="">—</option>{% for s in staff %}<option value="{{ s.id }}"{% if c.responsable_id == s.id %} selected{% endif %}>{{ s.full_name }}</option>{% endfor %}</select></label>
+    <label>{{ t('m_deadline') }}<input type="date" name="echeance" value="{{ c.echeance or '' }}"></label>
+    <label>{{ t('m_note') }}<input name="note" value="{{ c.note or '' }}"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+  {% if c.sens == 'arrivee' %}
+  <h3>{{ t('m_replies') }}</h3>
+  <form method="post" action="/courrier" enctype="multipart/form-data" class="grid">
+    <input type="hidden" name="sens" value="depart"><input type="hidden" name="reponse_a_id" value="{{ c.id }}">
+    <label>{{ t('m_correspondent') }} *<input name="correspondant" value="{{ c.correspondant }}" required></label>
+    <label>{{ t('m_subject') }} *<input name="objet" value="Réponse : {{ c.objet }}" required></label>
+    <label>{{ t('d_file') }}<input type="file" name="fichier" accept="application/pdf,image/jpeg,image/png,image/webp"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

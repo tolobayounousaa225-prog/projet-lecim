@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}{{ item.sigle }}{% endblock %}
+{% block content %}
+<div class="row">
+  <h1>{{ item.sigle }} <small>{{ item.nom }}</small></h1>
+  {% if user.can_manage_members %}<a class="btn" href="/faitieres/{{ item.id }}/edit">{{ t('edit') }}</a>{% endif %}
+</div>
+{% if dash %}
+<section class="card">
+  <h2>{{ t('e_dashboard') }} <small>{{ annee }}</small></h2>
+  <div class="tiles">
+    <div class="tile"><div class="num"><a href="/faitieres/{{ item.id }}/ecoles">{{ dash.row.ecoles }}</a></div><div>{{ t('e_schools_count') }}</div></div>
+    <div class="tile"><div class="num">{{ dash.row.eleves }}</div><div>{{ t('e_pupils') }}</div></div>
+    <div class="tile"><div class="num">{{ dash.row.personnel }}</div><div>{{ t('e_staff_total') }}</div></div>
+    <div class="tile"><div class="num">{{ (dash.row.taux ~ ' %') if dash.row.taux is not none else '—' }}</div><div>{{ t('e_pass_rate') }}</div></div>
+    {% if show_dues %}<div class="tile"><div class="num">{{ t('e_up_to_date') if dash.row.a_jour else t('e_not_up_to_date') }}</div><div>{{ t('nav_dues') }}</div></div>{% endif %}
+  </div>
+  <div class="two">
+    <div>
+      <h3>{{ t('e_dossier') }} — {{ dash.percent }} %</h3>
+      <progress max="{{ dash.total }}" value="{{ dash.done }}">{{ dash.percent }} %</progress>
+      <ul class="linklist">{% for key, ok, url in dash.steps %}<li>{{ '✔' if ok else '○' }} <a href="{{ url }}">{{ t(key) }}</a></li>{% endfor %}</ul>
+    </div>
+    <div>
+      <h3>{{ t('e_next_events') }}</h3>
+      <ul>{% for a in prochains %}<li><a href="/assemblees/{{ a.id }}">{{ a.type_label }}</a> — {{ a.date_assemblee.strftime('%d/%m/%Y') }}, {{ a.lieu }}</li>
+      {% else %}<li class="muted">{{ t('none') }}</li>{% endfor %}</ul>
+      <h3><a href="/annonces">{{ t('nav_announcements') }}</a></h3>
+      <ul>{% for a in annonces %}<li>{{ a.titre }} <small class="muted">{{ a.created_at.strftime('%d/%m/%Y') }}</small></li>{% else %}<li class="muted">{{ t('none') }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="card">
+  <dl>
+    <dt>{{ t('category') }}</dt><dd>{{ lbl('categorie', item.categorie) }}</dd>
+    <dt>{{ t('status') }}</dt><dd><span class="badge {{ item.statut }}">{{ lbl('statut', item.statut) }}</span></dd>
+    <dt>{{ t('created_on') }}</dt><dd>{{ item.date_creation or '—' }}</dd>
+    <dt>{{ t('joined_on') }}</dt><dd>{{ item.date_adhesion or '—' }}</dd>
+    <dt>{{ t('legal_status') }}</dt><dd>{{ item.statut_juridique or '—' }}</dd>
+    <dt>{{ t('seat') }}</dt><dd>{{ item.siege or '—' }}</dd>
+    <dt>{{ t('email') }}</dt><dd>{{ item.email or '—' }}</dd>
+    <dt>{{ t('phone') }}</dt><dd>{{ item.telephone or '—' }}</dd>
+    {% if item.notes %}<dt>{{ t('notes') }}</dt><dd>{{ item.notes }}</dd>{% endif %}
+  </dl>
+</section>
+
+<section class="card">
+  <h2>{{ t('space_title') }}</h2>
+  <ul class="linklist">
+    <li><a href="/faitieres/{{ item.id }}/delegues">{{ t('space_delegates') }}</a></li>
+    <li><a href="/faitieres/{{ item.id }}/ecoles">{{ t('space_schools') }}</a></li>
+    {% if dash %}<li><a href="/faitieres/{{ item.id }}/statistiques">{{ t('nav_stats') }}</a></li>{% endif %}
+    {% if not user.is_internal %}<li><a href="/annonces">{{ t('nav_announcements') }}</a></li><li><a href="/demandes">{{ t('nav_requests') }}</a></li>{% endif %}
+  </ul>
+</section>
+
+{% if show_dues %}
+<section class="card">
+  <div class="row"><h2>{{ t('nav_dues') }}</h2><a href="/faitieres/{{ item.id }}/releve.pdf" target="_blank">{{ t('statement_pdf') }}</a></div>
+  <table>
+    <thead><tr><th>{{ t('name') }}</th><th>{{ t('due') }}</th><th>{{ t('paid') }}</th><th>{{ t('deadline') }}</th><th>{{ t('status') }}</th><th></th></tr></thead>
+    <tbody>
+    {% for e in echeances %}
+      <tr><td><a href="/echeances/{{ e.id }}">{{ e.libelle }}</a></td><td>{{ fcfa(e.montant_du) }}</td><td>{{ fcfa(e.montant_paye) }}</td>
+        <td>{{ e.date_limite or '—' }}</td><td><span class="badge {{ e.statut }}">{{ t('st_' ~ e.statut) }}</span></td>
+        <td>{% if e.type == 'annuelle' and e.solde <= 0 %}<a href="/faitieres/{{ item.id }}/attestation.pdf?annee={{ e.annee }}" target="_blank">{{ t('attestation') }}</a>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="6" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>{{ t('mandates_of') }}</h2>
+  <table>
+    <thead><tr><th>{{ t('full_name') }}</th><th>{{ t('organ') }}</th><th>{{ t('function') }}</th><th>{{ t('start_date') }}</th><th>{{ t('end_date') }}</th>{% if user.can_manage_members %}<th></th>{% endif %}</tr></thead>
+    <tbody>
+    {% for m in item.mandats if m.echeance != 'expire' %}
+      <tr>
+        <td>{{ m.full_name }}</td><td>{{ lbl('organe', m.organe) }}</td><td>{{ m.fonction or '—' }}</td>
+        <td>{{ m.date_debut or '—' }}</td>
+        <td class="{{ m.echeance or '' }}">{{ m.date_fin or '—' }}</td>
+        {% if user.can_manage_members %}
+        <td><a href="/mandats/{{ m.id }}/edit">{{ t('edit') }}</a>
+          <form method="post" action="/mandats/{{ m.id }}/terminer" class="inline">
+          <input type="hidden" name="next" value="/faitieres/{{ item.id }}"><button class="link">{{ t('end_mandate') }}</button></form></td>
+        {% endif %}
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="muted">{{ t('none') }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  {% set past = item.mandats | selectattr('echeance', 'equalto', 'expire') | list %}
+  {% if past %}
+  <h3>{{ t('mandates_history') }}</h3>
+  <table class="muted">
+    <tbody>
+    {% for m in past %}
+      <tr><td>{{ m.full_name }}</td><td>{{ lbl('organe', m.organe) }}</td><td>{{ m.fonction or '—' }}</td><td>{{ m.date_debut or '—' }} → {{ m.date_fin or '—' }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if user.can_manage_members %}
+  <form method="post" action="/mandats" class="grid">
+    <input type="hidden" name="faitiere_id" value="{{ item.id }}">
+    <input type="hidden" name="next" value="/faitieres/{{ item.id }}">
+    <label>{{ t('full_name') }}<input name="full_name" required></label>
+    <label>{{ t('organ') }}<select name="organe">{% for k in organes %}<option value="{{ k }}">{{ lbl('organe', k) }}</option>{% endfor %}</select></label>
+    <label>{{ t('function') }}<input name="fonction"></label>
+    <label>{{ t('start_date') }}<input type="date" name="date_debut"></label>
+    <label>{{ t('end_date') }}<input type="date" name="date_fin"></label>
+    <label>{{ t('email') }}<input type="email" name="email"></label>
+    <label>{{ t('phone') }}<input name="telephone"></label>
+    <div><button class="btn">{{ t('add') }}</button></div>
+  </form>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>{{ t('pieces_title') }}</h2>
+  <table>
+    <tbody>
+    {% for p in pieces %}
+      <tr><td>{{ p.type_label }}</td><td><a href="/pieces/{{ p.id }}">{{ p.nom }}</a></td><td>{{ (p.taille / 1024) | round | int }} Ko</td><td>{{ p.created_at.strftime('%d/%m/%Y') }}</td>
+        {% if user.can_manage_members %}<td><form method="post" action="/pieces/{{ p.id }}/supprimer" class="inline"><button class="link danger">{{ t('delete') }}</button></form></td>{% endif %}</tr>
+    {% else %}<tr><td class="muted">{{ t('none') }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% if user.can_manage_members %}
+  <form method="post" action="/faitieres/{{ item.id }}/pieces" enctype="multipart/form-data" class="grid">
+    <label>{{ t('piece_type') }}<select name="type">{% for k, v in piece_types.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+    <label>{{ t('piece_file') }}<input type="file" name="fichier" accept="application/pdf,image/jpeg,image/png,image/webp" required></label>
+    <div><button class="btn">{{ t('add') }}</button></div>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

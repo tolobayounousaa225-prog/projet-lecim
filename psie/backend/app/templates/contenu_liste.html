@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ col.titre }}{% endblock %}
+{% block content %}
+<p><a href="/gestion/contenu">← {{ t('nav_site_content') }}</a></p>
+<h1>{{ col.titre }}</h1>
+<p class="muted">{{ col.aide }}</p>
+{% if request.query_params.get('ok') %}<p class="card">Enregistré. Le site se met à jour.</p>{% endif %}
+<p><a class="btn" href="/gestion/contenu/{{ col.key }}/nouveau">{{ t('add') }}</a></p>
+<table>
+  <tbody>
+  {% for item, title in entries %}
+    <tr>
+      <td>{{ title }}</td>
+      <td>
+        <a href="/gestion/contenu/{{ col.key }}/{{ item.id }}/modifier">{{ t('edit') }}</a>
+        {% if col.sort == 'position' %}
+        <form method="post" action="/gestion/contenu/{{ col.key }}/{{ item.id }}/haut" class="inline"><button class="link" aria-label="Monter">↑</button></form>
+        <form method="post" action="/gestion/contenu/{{ col.key }}/{{ item.id }}/bas" class="inline"><button class="link" aria-label="Descendre">↓</button></form>
+        {% endif %}
+        <form method="post" action="/gestion/contenu/{{ col.key }}/{{ item.id }}/supprimer" class="inline"><button class="link danger">{{ t('delete') }}</button></form>
+      </td>
+    </tr>
+  {% else %}<tr><td class="muted">{{ t('none') }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ t('f_expenses') }}{% endblock %}
+{% block content %}
+<h1>{{ t('f_expenses') }}</h1>
+<table>
+  <thead><tr><th>{{ t('date') }}</th><th>{{ t('call_title') }}</th><th>{{ t('category') }}</th><th>{{ t('amount') }}</th><th>{{ t('status') }}</th></tr></thead>
+  <tbody>
+  {% for d in items %}
+    <tr><td>{{ d.date_depense }}</td><td><a href="/depenses/{{ d.id }}">{{ d.libelle }}</a></td><td>{{ d.categorie_label }}</td>
+      <td>{{ fcfa(d.montant) }}</td><td><span class="badge {{ {'a_valider': 'partiel', 'validee': 'actif', 'payee': 'paye', 'annulee': 'radie'}[d.statut] }}">{{ d.statut_label }}</span></td></tr>
+  {% else %}<tr><td colspan="5" class="muted">{{ t('none') }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% if user.can_write_finances %}
+<section class="card">
+  <h2>{{ t('f_new_expense') }}</h2>
+  <form method="post" action="/depenses" class="grid">
+    <label>{{ t('call_title') }}<input name="libelle" required></label>
+    <label>{{ t('category') }}<select name="categorie">{% for k, v in categories.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+    <label>{{ t('amount') }} (FCFA)<input type="number" name="montant" min="1" required></label>
+    <label>{{ t('date') }}<input type="date" name="date_depense" required value="{{ today }}" max="{{ today }}"></label>
+    <label>{{ t('f_beneficiary') }}<input name="beneficiaire"></label>
+    <label>{{ t('f_mission_order') }}<input name="ordre_mission"></label>
+    <label>{{ t('f_ca_exception') }}<input name="derogation"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

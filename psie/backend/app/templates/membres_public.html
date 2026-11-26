@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ t('members_public_title') }}{% endblock %}
+{% block content %}
+<h1>{{ t('members_public_title') }}</h1>
+<p class="muted">{{ t('members_public_help') }}</p>
+<div class="tiles">
+  {% for m in members %}
+  <div class="tile"><div class="num">{{ m.sigle }}</div><div>{{ m.nom if m.nom != m.sigle else '' }}</div>
+    <div class="muted">{{ lbl('categorie', m.categorie) }}</div></div>
+  {% else %}<p class="muted">{{ t('none') }}</p>{% endfor %}
+</div>
+{% endblock %}

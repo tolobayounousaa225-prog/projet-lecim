@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="{{ lang }}" dir="{{ dir }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ t('app_name') }}{% endblock %} — {{ t('app_name') }}</title>
+  <link rel="icon" href="/static/logo.png">
+  <link rel="stylesheet" href="/static/psie.css">
+</head>
+<body{% if app_shell %} class="app"{% endif %}>
+{# ---- Menu de l'espace connecté : une seule définition, utilisée par la barre latérale et le menu mobile ---- #}
+{% macro nav_item(href, label, match=None) %}{% set path = request.url.path %}<a href="{{ href }}"{% if (match and path.startswith(match)) or path == href %} aria-current="page"{% endif %}>{{ label }}</a>{% endmacro %}
+{% macro nav_links() %}
+  {% if user and user.is_internal %}
+    <div class="nav-group"><h2>{{ t('nav_group_overview') }}</h2>
+      {{ nav_item('/admin', t('nav_dashboard')) }}
+    </div>
+    {% if user.can('membres') or user.can('adhesions') %}
+    <div class="nav-group"><h2>{{ t('nav_group_members') }}</h2>
+      {% if user.can('membres') %}{{ nav_item('/faitieres', t('nav_members'), '/faitieres') }}{{ nav_item('/mandats', t('nav_mandates'), '/mandats') }}{% endif %}
+      {% if user.can('adhesions') %}{{ nav_item('/adhesions', t('nav_adhesions'), '/adhesions') }}{% endif %}
+    </div>
+    {% endif %}
+    {% if user.can('documents') %}
+    <div class="nav-group"><h2>{{ t('nav_group_docs') }}</h2>
+      {{ nav_item('/documents', t('nav_documents'), '/documents') }}{{ nav_item('/courrier', t('nav_mail'), '/courrier') }}
+      {{ nav_item('/conventions', t('nav_agreements'), '/conventions') }}{{ nav_item('/registres', t('nav_registers'), '/registres') }}
+    </div>
+    {% endif %}
+    {% if user.can('ecoles') or user.can('membres') %}
+    <div class="nav-group"><h2>{{ t('nav_group_federations') }}</h2>
+      {% if user.can('ecoles') %}{{ nav_item('/statistiques', t('nav_stats'), '/statistiques') }}{% endif %}
+      {% if user.can('membres') %}{{ nav_item('/annonces', t('nav_announcements'), '/annonces') }}{{ nav_item('/demandes', t('nav_requests'), '/demandes') }}{% endif %}
+    </div>
+    {% endif %}
+    {% if user.can('assemblees') or user.can('sanctions') or user.can('interets') %}
+    <div class="nav-group"><h2>{{ t('nav_group_life') }}</h2>
+      {% if user.can('assemblees') %}{{ nav_item('/assemblees', t('nav_assemblies'), '/assemblees') }}{% endif %}
+      {% if user.can('sanctions') %}{{ nav_item('/sanctions', t('nav_sanctions'), '/sanctions') }}{% endif %}
+      {% if user.can('interets') %}{{ nav_item('/interets', t('nav_interests'), '/interets') }}{% endif %}
+    </div>
+    {% endif %}
+    {% if user.can('finances') %}
+    <div class="nav-group"><h2>{{ t('nav_group_finance') }}</h2>
+      {{ nav_item('/cotisations', t('nav_dues'), '/cotisations') }}
+      {{ nav_item('/appels', t('nav_calls'), '/appels') }}
+      {{ nav_item('/finances', t('nav_finances'), '/finances') }}
+    </div>
+    {% endif %}
+    {% if user.can('contenu') %}
+    <div class="nav-group"><h2>{{ t('nav_group_site') }}</h2>
+      {{ nav_item('/gestion/contenu', t('nav_site_content'), '/gestion/contenu') }}
+      {{ nav_item('/gestion/actualites', t('nav_news_admin'), '/gestion/actualites') }}
+    </div>
+    {% endif %}
+    {% if user.is_admin %}
+    <div class="nav-group"><h2>{{ t('nav_group_admin') }}</h2>
+      {{ nav_item('/users', t('nav_users'), '/users') }}
+      {{ nav_item('/acces', t('nav_access'), '/acces') }}
+      {{ nav_item('/audit', t('nav_audit'), '/audit') }}
+    </div>
+    {% endif %}
+  {% elif user and user.faitiere_id %}
+    <div class="nav-group"><h2>{{ t('nav_group_my_space') }}</h2>
+      {{ nav_item('/faitieres/%d' % user.faitiere_id, t('nav_my_org')) }}
+      {{ nav_item('/faitieres/%d/delegues' % user.faitiere_id, t('space_delegates'), '/faitieres/%d/delegues' % user.faitiere_id) }}
+      {{ nav_item('/faitieres/%d/ecoles' % user.faitiere_id, t('space_schools'), '/faitieres/%d/ecoles' % user.faitiere_id) }}
+      {{ nav_item('/faitieres/%d/statistiques' % user.faitiere_id, t('nav_stats'), '/faitieres/%d/statistiques' % user.faitiere_id) }}
+      {{ nav_item('/assemblees', t('nav_assemblies'), '/assemblees') }}
+      {{ nav_item('/annonces', t('nav_announcements'), '/annonces') }}
+      {{ nav_item('/demandes', t('nav_requests'), '/demandes') }}
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% set page_content %}{% block content %}{% endblock %}{% endset %}
+{% if app_shell %}
+<div class="shell">
+  <aside class="sidebar" aria-label="{{ t('nav_menu') }}">
+    <a class="brand" href="{{ '/admin' if user.is_internal else '/portail' }}">
+      <img src="/static/logo.png" alt="" width="40" height="40">
+      <span><strong>PSIE</strong><small>{{ t('app_full_name') }}</small></span>
+    </a>
+    <nav class="nav">{{ nav_links() }}</nav>
+  </aside>
+  <div class="main-col">
+    <header class="appbar">
+      <details class="mobile-menu">
+        <summary>{{ t('nav_menu') }}</summary>
+        <nav class="nav">{{ nav_links() }}</nav>
+      </details>
+      <span class="appbar-spacer"></span>
+      <a href="/lang/fr" class="lang {% if lang == 'fr' %}on{% endif %}">FR</a>
+      <a href="/lang/ar" class="lang {% if lang == 'ar' %}on{% endif %}">العربية</a>
+      <details class="user-menu">
+        <summary><span class="avatar" aria-hidden="true">{{ user.full_name[:1] | upper }}</span>
+          <span class="who"><strong>{{ user.full_name }}</strong><small>{{ lbl('role', user.role) }}</small></span></summary>
+        <div class="user-menu-panel">
+          <a href="/mot-de-passe">{{ t('nav_password') }}</a>
+          <form method="post" action="/logout"><button class="link">{{ t('logout') }}</button></form>
+        </div>
+      </details>
+    </header>
+    <main class="content">
+      {{ page_content }}
+    </main>
+  </div>
+</div>
+{% else %}
+{% if not bare %}
+<header class="topbar">
+  <a class="brand" href="/">
+    <img src="/static/logo.png" alt="" width="36" height="36">
+    <span class="brand-text">{{ t('app_full_name') }}</span>
+  </a>
+  <nav>
+    <a href="/">{{ t('nav_home') }}</a>
+    <a href="/apropos">{{ t('nav_about') }}</a>
+    <a href="/membres">{{ t('nav_public_members') }}</a>
+    <a href="/actualites">{{ t('nav_news') }}</a>
+    <a href="/adhesion">{{ t('nav_join') }}</a>
+  </nav>
+  <div class="tools">
+    <a href="/lang/fr" class="lang {% if lang == 'fr' %}on{% endif %}">FR</a>
+    <a href="/lang/ar" class="lang {% if lang == 'ar' %}on{% endif %}">العربية</a>
+    <a class="btn small" href="/login">{{ t('nav_login') }}</a>
+  </div>
+</header>
+{% endif %}
+<main{% if bare %} class="bare"{% endif %}>
+  {% if bare %}
+  <div class="auth-brand">
+    <img src="/static/logo.png" alt="PSIE" width="84" height="84">
+    <span class="brand-text">{{ t('app_full_name') }}</span>
+  </div>
+  {% endif %}
+  {{ page_content }}
+  {% if bare %}
+  <p class="auth-lang">
+    <a href="/lang/fr" class="lang {% if lang == 'fr' %}on{% endif %}">FR</a>
+    <a href="/lang/ar" class="lang {% if lang == 'ar' %}on{% endif %}">العربية</a>
+  </p>
+  {% endif %}
+</main>
+{% endif %}
+</body>
+</html>

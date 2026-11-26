@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% set bare = true %}
+{% block title %}{{ t('forgot_title') }}{% endblock %}
+{% block content %}
+<section class="card narrow auth-card">
+  <h1>{{ t('forgot_title') }}</h1>
+  {% if sent %}
+    <p class="notice">{{ t('forgot_sent') }}</p>
+  {% else %}
+    <p class="muted auth-sub">{{ t('forgot_help') }}</p>
+    <form method="post" action="/mot-de-passe-oublie" class="stack">
+      <label>{{ t('email') }}<input type="email" name="email" required autofocus autocomplete="username"></label>
+      <button class="btn">{{ t('forgot_send') }}</button>
+    </form>
+  {% endif %}
+  <p class="auth-links"><a href="/login">{{ t('back_to_login') }}</a></p>
+</section>
+{% endblock %}

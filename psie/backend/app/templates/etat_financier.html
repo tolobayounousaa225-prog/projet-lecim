@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ t('f_statement') }}{% endblock %}
+{% block content %}
+<div class="row"><h1>{{ t('f_statement') }} — {{ e.periode_label }} {{ annee }}</h1>
+  <form method="get" class="inline"><input type="number" name="annee" value="{{ annee }}" min="2000" max="2100" style="width:6em">
+    <select name="periode">{% for k, v in periodes.items() %}<option value="{{ k }}" {% if k == periode %}selected{% endif %}>{{ v }}</option>{% endfor %}</select> <button class="btn">OK</button></form></div>
+<p class="muted">{{ e.debut }} → {{ e.fin }}</p>
+<div class="two">
+  <section class="card"><h2>{{ t('f_receipts') }}</h2>
+    <dl>{% for k, v in e.recettes.items() %}<dt>{{ k }}</dt><dd>{{ fcfa(v) }}</dd>{% endfor %}<dt><strong>Total</strong></dt><dd><strong>{{ fcfa(e.total_recettes) }}</strong></dd></dl></section>
+  <section class="card"><h2>{{ t('f_expenses') }}</h2>
+    <dl>{% for k, v in e.depenses.items() %}<dt>{{ k }}</dt><dd>{{ fcfa(v) }}</dd>{% endfor %}<dt><strong>Total</strong></dt><dd><strong>{{ fcfa(e.total_depenses) }}</strong></dd></dl></section>
+</div>
+<section class="card"><p><strong>{{ t('f_balance') }} : {{ fcfa(e.solde) }}</strong></p>
+  <p class="muted">{{ t('f_committed') }} : {{ fcfa(e.engagements_non_payes) }} · {{ t('f_in_kind') }} : {{ fcfa(e.dons_en_nature) }}</p></section>
+{% if e.comparaison %}
+<table><thead><tr><th>{{ t('f_budget') }}</th><th>{{ t('f_planned') }}</th><th>{{ t('f_actual') }}</th><th>{{ t('f_gap') }}</th></tr></thead><tbody>
+  {% for c in e.comparaison %}<tr><td>{{ t('f_receipts') if c.sens == 'recette' else t('f_expenses') }} — {{ c.categorie }}</td><td>{{ fcfa(c.prevu) }}</td><td>{{ fcfa(c.reel) }}</td><td>{{ fcfa(c.ecart) }}</td></tr>{% endfor %}
+</tbody></table>{% endif %}
+<p><a class="btn" href="/etat-financier.pdf?annee={{ annee }}&periode={{ periode }}" target="_blank">PDF</a>
+  <a href="/etat-financier.csv?annee={{ annee }}&periode={{ periode }}">CSV</a></p>
+{% endblock %}

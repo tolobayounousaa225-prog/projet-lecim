@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_home') }}{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>{{ t('app_full_name') }}</h1>
+  <p class="lead">{{ t('home_tagline') }}</p>
+  <p>{{ t('home_intro') }}</p>
+  <p><a class="btn" href="/adhesion">{{ t('join_cta') }}</a></p>
+</section>
+<section class="card">
+  <h2>{{ t('missions_title') }}</h2>
+  <ul>{% for i in range(1, 6) %}<li>{{ t('mission_' ~ i) }}</li>{% endfor %}</ul>
+</section>
+<div class="two">
+  <section class="card"><h2>{{ t('principles_title') }}</h2><p>{{ t('principles_list') }}</p></section>
+  <section class="card"><h2>{{ t('organs_title') }}</h2><p>{{ t('organs_list') }}</p></section>
+</div>
+<section class="card">
+  <h2>{{ t('contact_title') }}</h2>
+  <p>{{ t('contact_address') }}</p><p>{{ t('contact_phones') }}</p>
+</section>
+{% endblock %}

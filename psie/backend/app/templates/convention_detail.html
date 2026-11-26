@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ c.titre }}{% endblock %}
+{% block content %}
+<p><a href="/conventions">← {{ t('nav_agreements') }}</a></p>
+<h1>{{ c.titre }} <span class="badge {{ c.statut }}">{{ lbl('convention_statut', c.statut) }}</span></h1>
+<section class="card"><dl>
+  <dt>{{ t('c_partner') }}</dt><dd>{{ c.partenaire }}</dd><dt>{{ t('m_subject') }}</dt><dd>{{ c.objet or '—' }}</dd>
+  <dt>{{ t('c_amount') }}</dt><dd>{{ fcfa(c.montant) if c.montant is not none else '—' }}</dd>
+  <dt>{{ t('c_start') }}</dt><dd>{{ c.date_debut or '—' }}</dd><dt>{{ t('c_end') }}</dt><dd>{{ c.date_fin or '—' }}</dd>
+  {% if has_file %}<dt>{{ t('d_file') }}</dt><dd><a href="/conventions/{{ c.id }}/fichier">{{ c.nom }}</a></dd>{% endif %}
+</dl></section>
+<section class="card"><h2>{{ t('c_circuit') }}</h2>
+  {% if can_prepare or can_opine or can_sign %}
+  <form method="post" action="/conventions/{{ c.id }}/action" class="stack">
+    <label>{{ t('c_comment') }}<textarea name="commentaire" rows="2"></textarea></label>
+    <div>
+      {% if can_prepare %}<button class="btn" name="action" value="soumettre">{{ t('c_submit') }}</button>{% endif %}
+      {% if can_opine %}<button class="btn" name="action" value="avis_favorable">{{ t('c_favourable') }}</button>
+        <button class="btn secondary" name="action" value="avis_defavorable">{{ t('c_unfavourable') }}</button>{% endif %}
+      {% if can_sign %}<button class="btn" name="action" value="signer">{{ t('c_sign') }}</button>{% endif %}
+    </div>
+  </form>
+  {% endif %}
+  <h3>{{ t('c_history') }}</h3>
+  <ul>{% for e in c.etapes %}<li>{{ e.created_at.strftime('%d/%m/%Y %H:%M') }} — <strong>{{ lbl('convention_action', e.action) }}</strong> — {{ e.par }} ({{ lbl('role', e.role) }}){% if e.commentaire %}<br><small class="muted">{{ e.commentaire }}</small>{% endif %}</li>{% endfor %}</ul>
+</section>
+{% endblock %}

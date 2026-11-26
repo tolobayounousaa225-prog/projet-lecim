@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ t('edit') }} — {{ m.full_name }}{% endblock %}
+{% block content %}
+<p><a href="{{ '/faitieres/%d' % m.faitiere_id if m.faitiere_id else '/mandats' }}">← {{ t('back') }}</a></p>
+<h1>{{ t('edit') }} : {{ m.full_name }}</h1>
+<section class="card">
+  <form method="post" action="/mandats/{{ m.id }}/edit" class="grid">
+    <label>{{ t('full_name') }}<input name="full_name" value="{{ m.full_name }}" required></label>
+    <label>{{ t('organ') }}<select name="organe">{% for k in organes %}<option value="{{ k }}" {% if m.organe == k %}selected{% endif %}>{{ lbl('organe', k) }}</option>{% endfor %}</select></label>
+    <label>{{ t('function') }}<input name="fonction" value="{{ m.fonction or '' }}"></label>
+    <label>{{ t('organisation') }}<select name="faitiere_id"><option value="">{{ t('none_organisation') }}</option>{% for f in faitieres %}<option value="{{ f.id }}" {% if m.faitiere_id == f.id %}selected{% endif %}>{{ f.sigle }}</option>{% endfor %}</select></label>
+    <label>{{ t('start_date') }}<input type="date" name="date_debut" value="{{ m.date_debut or '' }}"></label>
+    <label>{{ t('end_date') }}<input type="date" name="date_fin" value="{{ m.date_fin or '' }}"></label>
+    <label>{{ t('email') }}<input type="email" name="email" value="{{ m.email or '' }}"></label>
+    <label>{{ t('phone') }}<input name="telephone" value="{{ m.telephone or '' }}"></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+</section>
+{% endblock %}

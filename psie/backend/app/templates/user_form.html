@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ t('edit') }} — {{ target.full_name }}{% endblock %}
+{% block content %}
+<p><a href="/users">← {{ t('back') }}</a></p>
+<h1>{{ t('edit') }} : {{ target.full_name }}</h1>
+<section class="card">
+  <p class="muted">{{ lbl('role', target.role) }}</p>
+  <form method="post" action="/users/{{ target.id }}/edit" class="stack">
+    <label>{{ t('full_name') }}<input name="full_name" value="{{ target.full_name }}" required></label>
+    <label>{{ t('email') }}<input type="email" name="email" value="{{ target.email }}" required></label>
+    <div><button class="btn">{{ t('save') }}</button></div>
+  </form>
+</section>
+{% endblock %}
