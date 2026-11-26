@@ -5,6 +5,7 @@ import pytest
 from PIL import Image
 
 from app import models, publish
+from app import site_content as sc
 from app.config import settings
 
 from .conftest import client_for, make_faitiere, make_user
@@ -361,3 +362,28 @@ def test_admin_can_create_an_account_for_each_secretariat(db):
                                        "password": "Motdepasse1"})
         assert r.status_code == 303, (role, r.text)
         assert db.query(models.User).filter_by(email=f"{role}@psie.ci").one().role == role
+
+
+def test_a_removed_photo_is_deleted_from_the_database_and_no_longer_downloadable(db, editor, anon, monkeypatch):
+    """Une photo supprimée ne doit rester ni publiée ni téléchargeable à son ancienne adresse."""
+    monkeypatch.setattr(sc, "MEDIA_GRACE_SECONDS", 0)
+    upload(editor, "a.png", png(), "image/png")
+    m = db.query(models.MediaSite).one()
+    url = f"/medias/{m.id}.{m.extension}"
+    assert anon.get(url).status_code == 200
+    editor.post("/gestion/contenu/president/unique", data={"nom": "N", "fonction__fr": "", "fonction__ar": "", "message__fr": "",
+                                                           "message__ar": "", "photo__id": str(m.id), "photo__clear": "1"})
+    db.expire_all()
+    assert db.query(models.MediaSite).count() == 0
+    assert anon.get(url).status_code == 404
+
+
+def test_a_file_still_in_use_or_just_uploaded_is_never_purged(db, editor, monkeypatch):
+    upload(editor, "a.png", png(), "image/png")                      # utilisé par le président
+    monkeypatch.setattr(sc, "MEDIA_GRACE_SECONDS", 0)
+    editor.post("/gestion/contenu/president/unique", data={"nom": "Autre", "fonction__fr": "", "fonction__ar": "", "message__fr": "",
+                                                           "message__ar": "", "photo__id": str(db.query(models.MediaSite).one().id)})
+    assert db.query(models.MediaSite).count() == 1                    # toujours référencé : conservé
+    monkeypatch.setattr(sc, "MEDIA_GRACE_SECONDS", 3600)
+    upload(editor, "b.png", png(color=(1, 2, 3)), "image/png")        # remplace la photo, mais l'ancienne est trop récente
+    assert db.query(models.MediaSite).count() == 2
