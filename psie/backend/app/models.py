@@ -122,6 +122,14 @@ class Faitiere(Base):
         return self.categorie in ("fondateur", "ordinaire") and self.statut == "actif"
 
 
+MEMBRE_PIECE_TYPES = {
+    "statuts": "Statuts de l'organisation",
+    "recepisse": "Récépissé de déclaration",
+    "pv_designation": "PV ou courrier de désignation des représentants",
+    "autre": "Autre pièce",
+}
+
+
 class Mandat(Base):
     """Mandat d'une personne dans un organe de la PSIE (délégué à l'AG, administrateur,
     membre de la DEN, commissaire aux comptes, membre de commission)."""
@@ -945,3 +953,24 @@ class ReinitialisationMdp(Base):
     expires_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
     used_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+class PieceFaitiere(Base):
+    """Pièce justificative d'un membre (statuts, récépissé, PV de désignation), conservée en base."""
+
+    __tablename__ = "pieces_faitiere"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    faitiere_id: Mapped[int] = mapped_column(ForeignKey("faitieres.id", ondelete="CASCADE"), index=True, nullable=False)
+    type: Mapped[str] = mapped_column(String(20), nullable=False)
+    nom: Mapped[str] = mapped_column(String(120), nullable=False)
+    mime: Mapped[str] = mapped_column(String(60), nullable=False)
+    extension: Mapped[str] = mapped_column(String(5), nullable=False)
+    taille: Mapped[int] = mapped_column(Integer, nullable=False)
+    contenu: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+    @property
+    def type_label(self) -> str:
+        return MEMBRE_PIECE_TYPES.get(self.type, self.type)

@@ -112,8 +112,9 @@ def faitiere_detail(faitiere_id: int, request: Request, user: models.User = Depe
         db.query(models.Echeance).filter_by(faitiere_id=item.id).order_by(models.Echeance.annee.desc()).all()
         if show_dues else []
     )
+    pieces = db.query(models.PieceFaitiere).filter_by(faitiere_id=item.id).order_by(models.PieceFaitiere.id).all()
     return render(request, "faitiere_detail.html", user, item=item, show_dues=show_dues,
-                  echeances=echeances, fcfa=finance.fcfa)
+                  echeances=echeances, fcfa=finance.fcfa, pieces=pieces, piece_types=models.MEMBRE_PIECE_TYPES)
 
 
 @router.get("/faitieres/{faitiere_id}/edit")
@@ -219,7 +220,9 @@ def mandat_delete(mandat_id: int, next: str = Form("/mandats"),
 def users_list(request: Request, user: models.User = Depends(require_admin), db: Session = Depends(get_db)):
     items = db.query(models.User).order_by(models.User.role, models.User.email).all()
     faitieres = db.query(models.Faitiere).order_by(models.Faitiere.sigle).all()
-    return render(request, "users_list.html", user, items=items, faitieres=faitieres)
+    from .membres import last_logins
+    return render(request, "users_list.html", user, items=items, faitieres=faitieres, logins=last_logins(db),
+                  sent=bool(request.query_params.get("lien")))
 
 
 @router.post("/users")

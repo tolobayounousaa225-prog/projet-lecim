@@ -294,3 +294,45 @@ def etat_financier_pdf(e: dict) -> bytes:
     _line(pdf, "Comptabilité de caisse : les recettes sont comptées à l'encaissement et les dépenses au paiement. "
                "Document à mettre à disposition du CA et des commissaires aux comptes au moins 15 jours avant l'AG.", h=5)
     return bytes(pdf.output())
+
+
+def registre_membres_pdf(faitieres: list[models.Faitiere]) -> bytes:
+    """Registre des membres exigé par la loi (Règlement Intérieur, art. 39) : une ligne par organisation,
+    avec ses représentants en fonction. Produit à la volée : il est toujours à jour."""
+    today = datetime.date.today()
+    pdf = _new_pdf()
+    pdf.set_auto_page_break(True, margin=18)
+    _header(pdf, "REGISTRE DES MEMBRES", "سجل الأعضاء")
+    pdf.set_x(15)
+    pdf.set_font("dv", "", 9)
+    pdf.set_text_color(*GREY)
+    pdf.cell(180, 6, f"Édité le {today:%d/%m/%Y} — {len(faitieres)} organisation(s)", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(2)
+    from .i18n import label
+
+    from fpdf.fonts import FontFace
+
+    pdf.set_fill_color(255, 255, 255)                       # le bandeau d'en-tête a laissé le vert actif
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("dv", "", 8)
+    with pdf.table(col_widths=(8, 22, 44, 26, 18, 22, 40), text_align=("CENTER", "LEFT", "LEFT", "LEFT", "LEFT", "LEFT", "LEFT"),
+                   line_height=5, padding=1.2, headings_style=FontFace(emphasis="BOLD", color=(0, 0, 0), fill_color=(222, 236, 228)),
+                   borders_layout="ALL") as table:
+        head = table.row()
+        for h in ("N°", "Sigle", "Dénomination", "Catégorie", "Statut", "Adhésion", "Représentants en fonction"):
+            head.cell(h)
+        for i, f in enumerate(faitieres, 1):
+            actifs = [m for m in f.mandats if m.echeance != "expire"]
+            reps = "\n".join(f"{m.full_name} ({m.organe})" for m in actifs) or "—"
+            row = table.row()
+            for value in (str(i), f.sigle, f.nom, f"{label('categorie', f.categorie, 'fr')}\n{label('categorie', f.categorie, 'ar')}",
+                          label("statut", f.statut, "fr"), f"{f.date_adhesion:%d/%m/%Y}" if f.date_adhesion else "—", reps):
+                row.cell(value)
+    pdf.ln(4)
+    pdf.set_x(15)
+    pdf.set_font("dv", "", 8)
+    pdf.set_text_color(*GREY)
+    pdf.multi_cell(180, 4.5, "Registre tenu en application du Règlement Intérieur de la PSIE (art. 39). "
+                   "Les représentants dont le mandat est expiré n'apparaissent plus.")
+    return bytes(pdf.output())
