@@ -12,6 +12,7 @@
     <tr><td><strong>{{ d.titre }}</strong>{% if d.restreint %} <span class="badge">🔒</span>{% endif %}{% if d.description %}<br><small class="muted">{{ d.description }}</small>{% endif %}</td>
       <td>{{ lbl('doc_cat', d.categorie) }}</td><td>{{ d.created_at.strftime('%d/%m/%Y') }}</td>
       <td><a href="/documents/{{ d.id }}/fichier">{{ t('d_download') }}</a>
+        {% if can_write %}· <a href="/signatures/document/{{ d.id }}">{{ t('sg_sign_doc') }}</a>{% endif %}
         {% if can_write %}<form method="post" action="/documents/{{ d.id }}/supprimer" class="inline"><button class="link danger">{{ t('delete') }}</button></form>{% endif %}</td></tr>
   {% else %}<tr><td colspan="4" class="muted">{{ t('none') }}</td></tr>{% endfor %}</tbody>
 </table></div>

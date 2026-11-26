@@ -14,7 +14,7 @@ from .config import production_problems, settings, vitrine_origin_list
 from .database import engine
 from .deps import NotAuthenticatedException, visibility_guard
 from . import scheduler
-from .routers import admin, adhesions, appels, assemblees, auth, compta, contenu, acces as acces_router, cotisations, documents as documents_router, notifications as notifications_router, recherche as recherche_router, ecoles as ecoles_router, espace, membres, public, reinitialisation, relation, sanctions, statistiques
+from .routers import admin, adhesions, appels, assemblees, auth, compta, contenu, acces as acces_router, cotisations, documents as documents_router, signatures as signatures_router, notifications as notifications_router, recherche as recherche_router, ecoles as ecoles_router, espace, membres, public, reinitialisation, relation, sanctions, statistiques
 from .web import BASE_DIR, render, request_user
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
@@ -123,6 +123,7 @@ app.include_router(compta.router)
 app.include_router(assemblees.router)
 app.include_router(sanctions.router)
 app.include_router(documents_router.router)
+app.include_router(signatures_router.router)
 app.include_router(recherche_router.router)
 app.include_router(notifications_router.router)
 app.include_router(statistiques.router)

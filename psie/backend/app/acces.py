@@ -56,7 +56,7 @@ _PREFIXES = (
     ("/finances", "finances"), ("/depenses", "finances"), ("/justificatifs", "finances"), ("/recettes", "finances"),
     ("/dons", "finances"), ("/budget", "finances"), ("/etat-financier", "finances"), ("/rapports-cc", "finances"),
     ("/statistiques", "ecoles"), ("/ecoles", "ecoles"), ("/bilans", "ecoles"),
-    ("/documents", "documents"), ("/courrier", "documents"), ("/conventions", "documents"), ("/registres", "documents"),
+    ("/documents", "documents"), ("/courrier", "documents"), ("/conventions", "documents"), ("/registres", "documents"), ("/signatures", "documents"),
     ("/annonces", "membres"), ("/demandes", "membres"),
     ("/interets", "interets"),
     ("/gestion", "contenu"),

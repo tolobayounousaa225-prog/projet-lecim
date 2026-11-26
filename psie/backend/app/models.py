@@ -1244,6 +1244,42 @@ class Notification(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, index=True)
 
 
+SIGNABLE = {"convention": "Convention", "document": "Document", "registre": "Entrée de registre"}
+
+
+class Signature(Base):
+    """Signature électronique simple et traçable : personne authentifiée + code reçu par e-mail + empreinte du document
+    au moment de la signature + horodatage. Vérifiable publiquement par QR code (et on voit si le document a changé depuis)."""
+
+    __tablename__ = "signatures"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    doc_type: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    doc_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    doc_titre: Mapped[str] = mapped_column(String(255), nullable=False)
+    doc_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    signer_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    signer_nom: Mapped[str] = mapped_column(String(255), nullable=False)
+    signer_role: Mapped[str] = mapped_column(String(30), nullable=False)
+    token: Mapped[str] = mapped_column(String(40), unique=True, index=True, nullable=False)
+    signed_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+class CodeSignature(Base):
+    """Code à usage unique (6 chiffres, 10 minutes, 5 essais) envoyé par e-mail pour confirmer une signature."""
+
+    __tablename__ = "codes_signature"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    doc_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    doc_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    code_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    expires_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
 class ReinitialisationMdp(Base):
     """Lien « mot de passe oublié » : seul l'empreinte du jeton est conservée, jamais le jeton."""
 

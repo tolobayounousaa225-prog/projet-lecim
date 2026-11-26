@@ -141,6 +141,25 @@ def attestation_pdf(faitiere: models.Faitiere, annee: int, echeance: models.Eche
     return bytes(pdf.output())
 
 
+def signature_certificate_pdf(sig: models.Signature, verify_url: str) -> bytes:
+    """Certificat de signature électronique : qui, quand, quoi (empreinte), avec QR de vérification publique."""
+    from .i18n import label
+
+    pdf = _new_pdf()
+    _header(pdf, "CERTIFICAT DE SIGNATURE ÉLECTRONIQUE", "شهادة التوقيع الإلكتروني")
+    _row(pdf, "Document", sig.doc_titre[:34], "الوثيقة")
+    _row(pdf, "Signataire", sig.signer_nom[:34], "الموقّع")
+    _row(pdf, "Fonction", label("role", sig.signer_role, "fr")[:34], "الصفة")
+    _row(pdf, "Signé le", f"{sig.signed_at:%d/%m/%Y à %H:%M} (UTC)", "تاريخ التوقيع")
+    _row(pdf, "Empreinte SHA-256", sig.doc_sha256[:32] + "…", "البصمة")
+    pdf.set_xy(15, 140)
+    pdf.set_font("dv", "", 10)
+    pdf.multi_cell(180, 6, "Signature simple : personne authentifiée, confirmée par un code reçu par e-mail. L'empreinte permet de vérifier "
+                           "que le document n'a pas changé depuis la signature.")
+    _footer(pdf, verify_url, "Scannez pour vérifier cette signature et l'intégrité du document.", "امسح الرمز للتحقق من هذا التوقيع.")
+    return bytes(pdf.output())
+
+
 def membership_certificate_pdf(demande: models.DemandeAdhesion, verify_url: str) -> bytes:
     f = demande.faitiere
     pdf = _new_pdf()

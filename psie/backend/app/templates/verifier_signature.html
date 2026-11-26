@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% set bare = true %}
+{% block title %}{{ t('sg_verification') }}{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>{{ t('sg_verification') }}</h1>
+  <p><span class="badge {{ 'actif' if intact else 'radie' }}">{{ t('sg_intact') if intact else t('sg_changed') }}</span></p>
+  <dl>
+    <dt>{{ t('sg_document') }}</dt><dd>{{ sig.doc_titre }} <small class="muted">({{ kind }})</small></dd>
+    <dt>{{ t('sg_signer') }}</dt><dd>{{ sig.signer_nom }}</dd>
+    <dt>{{ t('sg_role') }}</dt><dd>{{ lbl('role', sig.signer_role) }}</dd>
+    <dt>{{ t('sg_date') }}</dt><dd>{{ sig.signed_at.strftime('%d/%m/%Y %H:%M') }} UTC</dd>
+    <dt>SHA-256</dt><dd><code>{{ sig.doc_sha256[:24] }}…</code></dd>
+  </dl>
+  {% if not intact %}<p class="alert">{{ t('sg_changed_help') }}</p>{% endif %}
+</section>
+{% endblock %}

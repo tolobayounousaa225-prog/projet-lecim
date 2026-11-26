@@ -263,7 +263,6 @@ CIRCUIT = {
     "soumettre": (("brouillon", "rejetee"), "soumise", None),
     "avis_favorable": (("soumise",), "approuvee", "administrateur_ca"),
     "avis_defavorable": (("soumise",), "rejetee", "administrateur_ca"),
-    "signer": (("approuvee",), "signee", "den"),
 }
 
 
@@ -354,7 +353,11 @@ def registre_page(registre: str, request: Request, user: models.User = Depends(_
         if user.can("documents", True) else []
     assemblees = db.query(models.Assemblee).order_by(models.Assemblee.date_assemblee.desc()).limit(50).all() \
         if user.can("documents", True) else []
-    return render(request, "registre.html", user, registre=registre, entries=entries, broken=verify_registre(entries),
+    sigs: dict[int, list] = {}
+    for sg in db.query(models.Signature).filter(models.Signature.doc_type == "registre",
+                                                models.Signature.doc_id.in_([e.id for e in entries] or [0])).order_by(models.Signature.id):
+        sigs.setdefault(sg.doc_id, []).append(sg)
+    return render(request, "registre.html", user, registre=registre, entries=entries, broken=verify_registre(entries), sigs=sigs,
                   can_write=user.can("documents", True), docs=docs, assemblees=assemblees,
                   docs_by_id={d.id: d for d in db.query(models.Document).filter(models.Document.id.in_([e.document_id for e in entries if e.document_id] or [0]))})
 
