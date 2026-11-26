@@ -207,14 +207,23 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
     pdf.set_xy(info_x, info_y)
     pdf.cell(info_w, 3, "Nom complet", align="L")
     pdf.set_text_color(10, 10, 10)
-    pdf.set_font("Helvetica", "B", 8.2)
+    # Reste sur une seule ligne (comme "Fonction" plus bas) : un nom compose
+    # long qui passerait sur 2 lignes deborderait sur le bloc naissance,
+    # desormais rapproche juste en dessous.
+    nom_text = _safe_text(carte.full_name_snapshot)
+    nom_size = 8.2
+    pdf.set_font("Helvetica", "B", nom_size)
+    while nom_size > 5.5 and pdf.get_string_width(nom_text) > info_w:
+        nom_size -= 0.3
+        pdf.set_font("Helvetica", "B", nom_size)
     pdf.set_xy(info_x, info_y + 3)
-    pdf.multi_cell(info_w, 3.6, _safe_text(carte.full_name_snapshot), align="L")
+    pdf.cell(info_w, 3.6, nom_text, align="L")
 
     # Naissance juste apres le nom, avant la fonction — suit l'ordre logique
     # de lecture d'une identite (qui, ne quand/ou, puis quel role) plutot que
     # de la faire figurer tout en bas comme une information secondaire.
-    naissance_y = info_y + 9.5
+    # Interligne resserre entre nom/naissance/fonction (demande explicite).
+    naissance_y = info_y + 7.8
     if carte.date_naissance:
         pdf.set_text_color(*GREEN)
         pdf.set_font("Helvetica", "", 4.3)
@@ -234,7 +243,13 @@ def _add_recto(pdf: FPDF, carte, photo_bytes: bytes | None) -> None:
         pdf.set_xy(info_x + 19, naissance_y + 2.6)
         pdf.cell(19, 3, _safe_text(carte.lieu_naissance), align="L")
 
-    fonction_y = naissance_y + 7.3
+    fonction_y = naissance_y + 6.2
+    # Le bandeau decoratif arabe de l'image de fond passe juste ici : un
+    # rectangle de la meme teinte que le fond (echantillonnee sur le modele)
+    # le masque localement pour que "Fonction" reste net, sans avoir a
+    # comprimer le reste du bloc identite pour l'eviter.
+    pdf.set_fill_color(243, 242, 240)
+    pdf.rect(info_x - 1, fonction_y - 0.5, info_w + 2, 6.8, style="F")
     pdf.set_text_color(*GREEN)
     pdf.set_font("Helvetica", "", 5.8)
     pdf.set_xy(info_x, fonction_y)
