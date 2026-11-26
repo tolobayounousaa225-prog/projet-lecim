@@ -36,6 +36,12 @@ ask() {   # ask "Question" "valeur par défaut"  (une variable d'environnement d
   fi
   printf '%s' "$value"
 }
+ask_secret() {   # comme ask, mais la saisie ne s'affiche pas à l'écran
+  local var="$1" question="$2" value
+  value="${!var:-}"
+  if [ -z "$value" ] && [ -t 0 ]; then read -r -s -p "$question : " value; echo; fi
+  printf '%s' "$value"
+}
 port_busy() { (ss -tln 2>/dev/null || netstat -tln 2>/dev/null) | grep -qE "[:.]$1[[:space:]]"; }
 
 say "1/5 Vérifications"
@@ -78,7 +84,7 @@ else
     [ -n "$SMTP_HOST" ] || fail "Sans serveur e-mail, la double authentification bloque la connexion. Voir DEPLOIEMENT.md, section e-mail (ou --essai)."
     SMTP_PORT=$(ask SMTP_PORT "Port SMTP" 587)
     SMTP_USER=$(ask SMTP_USER "Utilisateur SMTP")
-    SMTP_PASSWORD=$(ask SMTP_PASSWORD "Mot de passe SMTP")
+    SMTP_PASSWORD=$(ask_secret SMTP_PASSWORD "Mot de passe SMTP (ne s'affiche pas pendant la saisie)")
     SMTP_FROM=$(ask SMTP_FROM "Adresse d'expédition" "no-reply@$DOMAINE")
   fi
   ADMIN_EMAIL=$(ask ADMIN_EMAIL "E-mail du premier administrateur" "admin@psie.local")
