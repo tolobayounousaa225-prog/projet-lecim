@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session
 
-from .. import models, stats
+from .. import imports, models, stats
 from ..audit import log_action
 from ..database import get_db
 from ..deps import get_current_user
@@ -297,3 +297,27 @@ def bilan_decision(faitiere_id: int, ecole_id: int, bilan_id: int, decision: str
     log_action(db, user, "bilan_" + b.statut, "ecoles", e.id, f"{e.nom} {b.annee}")
     db.commit()
     return _back(f, e)
+
+
+# ---------- Imports en lot : recensement du personnel et résultats d'examens (CSV d'Excel) ----------
+
+IMPORTS = {"recensement": imports.recensement, "examens": imports.examens}
+
+
+@router.post("/faitieres/{faitiere_id}/import-{kind}")
+async def bulk_import(faitiere_id: int, kind: str, request: Request, fichier: UploadFile = File(...), simuler: str = Form(""),
+                      user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if kind not in IMPORTS:
+        raise HTTPException(status_code=404, detail="Import inconnu")
+    f = _faitiere(db, user, faitiere_id, write=True)
+    raw = await fichier.read(imports.MAX_BYTES + 1)
+    try:
+        report = IMPORTS[kind](db, f, raw, apply=not simuler)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    applied = bool(report.clean and not simuler)
+    if applied:
+        log_action(db, user, "import", "ecoles", f.id, f"{kind} : {len(report.ok)} ligne(s)")
+    db.commit()
+    return render(request, "import_rapport.html", user, report=report, applied=applied, back=f"/faitieres/{f.id}/ecoles",
+                  status_code=200 if report.clean else 400)

@@ -114,10 +114,28 @@ def rappel_assemblee(db: Session, today: datetime.date, sender) -> int:
     return sent
 
 
+def audit_sensible(db: Session, today: datetime.date, sender) -> int:
+    """Résumé quotidien, à l'administrateur, des actions sensibles de la veille (droits, comptes, suppressions…)."""
+    from . import audit
+
+    since = datetime.datetime.combine(today - datetime.timedelta(days=1), datetime.time.min)
+    entries = [a for a in db.query(models.AuditLog).filter(models.AuditLog.created_at >= since,
+                                                           models.AuditLog.created_at < datetime.datetime.combine(today, datetime.time.min))
+               .order_by(models.AuditLog.id) if audit.is_sensitive(a)]
+    if not entries or not _claim(db, f"audit:{today.isoformat()}"):
+        return 0
+    lines = [f"- {a.created_at:%H:%M} {a.user_email or 'système'} : {a.action} {a.entity}"
+             f"{' #' + str(a.entity_id) if a.entity_id else ''}{' — ' + a.detail if a.detail else ''}" for a in entries[:100]]
+    body = (f"Actions sensibles du {today - datetime.timedelta(days=1):%d/%m/%Y} ({len(entries)}) :\n\n" + "\n".join(lines) +
+            "\n\nLe détail complet et l'export se trouvent dans le Journal d'audit de la plateforme.\n")
+    return _send_all(_emails(db, {"admin"}), "PSIE — Actions sensibles de la veille", body, sender)
+
+
 def send_regulatory_reminders(db: Session, today: datetime.date | None = None, sender=None) -> int:
     today = today or datetime.date.today()
     sender = sender or send_email          # résolu à l'appel : remplaçable dans les tests
     sent = (mandats_a_echeance(db, today, sender) + rapport_semestriel(db, today, sender) + etats_avant_ag(db, today, sender)
-            + demandes_en_attente(db, today, sender) + rappel_assemblee(db, today, sender))
+            + demandes_en_attente(db, today, sender) + rappel_assemblee(db, today, sender)
+            + audit_sensible(db, today, sender))
     db.commit()
     return sent

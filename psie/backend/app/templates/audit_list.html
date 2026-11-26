@@ -1,14 +1,28 @@
 {% extends "base.html" %}
 {% block title %}{{ t('nav_audit') }}{% endblock %}
 {% block content %}
-<h1>{{ t('nav_audit') }}</h1>
-<table>
+<div class="row"><h1>{{ t('nav_audit') }} <small>{{ total }}</small></h1><a class="btn" href="/audit.csv?{{ qs }}">{{ t('e_export') }}</a></div>
+<form method="get" class="card grid">
+  <label>{{ t('d_search') }}<input name="q" value="{{ f.q or '' }}"></label>
+  <label>{{ t('user') }}<input name="personne" value="{{ f.personne or '' }}" placeholder="@"></label>
+  <label>{{ t('action') }}<select name="action"><option value="">{{ t('d_all') }}</option>{% for a in actions %}<option{% if f.action == a %} selected{% endif %}>{{ a }}</option>{% endfor %}</select></label>
+  <label>{{ t('a_entity') }}<select name="entity"><option value="">{{ t('d_all') }}</option>{% for e in entities %}<option{% if f.entity == e %} selected{% endif %}>{{ e }}</option>{% endfor %}</select></label>
+  <label>{{ t('a_from') }}<input type="date" name="debut" value="{{ f.debut or '' }}"></label>
+  <label>{{ t('a_to') }}<input type="date" name="fin" value="{{ f.fin or '' }}"></label>
+  <label><input type="checkbox" name="sensibles" value="1"{% if f.sensibles %} checked{% endif %}> {{ t('a_sensitive_only') }}</label>
+  <div><button class="btn">OK</button> <a href="/audit">{{ t('a_reset') }}</a></div>
+</form>
+<div class="table-wrap"><table>
   <thead><tr><th>{{ t('date') }}</th><th>{{ t('user') }}</th><th>{{ t('action') }}</th><th>{{ t('detail') }}</th></tr></thead>
   <tbody>
   {% for a in items %}
-    <tr><td>{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</td><td>{{ a.user_email or '—' }}</td>
-      <td>{{ a.action }} · {{ a.entity }}{% if a.entity_id %} #{{ a.entity_id }}{% endif %}</td><td>{{ a.detail or '' }}</td></tr>
+    <tr{% if is_sensitive(a) %} class="sensitive"{% endif %}><td>{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</td><td>{{ a.user_email or '—' }}</td>
+      <td>{% if is_sensitive(a) %}<span class="badge partiel" title="{{ t('a_sensitive') }}">!</span> {% endif %}{{ a.action }} · {{ a.entity }}{% if a.entity_id %} #{{ a.entity_id }}{% endif %}</td><td>{{ a.detail or '' }}</td></tr>
   {% else %}<tr><td colspan="4" class="muted">{{ t('none') }}</td></tr>{% endfor %}
   </tbody>
-</table>
+</table></div>
+{% if pages > 1 %}
+<p class="pager">{% if page > 1 %}<a href="/audit?{{ qs }}&page={{ page - 1 }}">←</a>{% endif %} {{ page }} / {{ pages }}
+  {% if page < pages %}<a href="/audit?{{ qs }}&page={{ page + 1 }}">→</a>{% endif %}</p>
+{% endif %}
 {% endblock %}
