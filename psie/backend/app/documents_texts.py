@@ -6,7 +6,7 @@ def _t(fr: str, ar: str) -> dict[str, str]:
 
 
 DOCUMENTS_TEXTS = {
-    "nav_group_docs": _t("Documents et registres", "الوثائق والسجلات"),
+    "nav_group_docs": _t("Documents et courrier", "الوثائق والمراسلات"),
     "nav_documents": _t("Documents", "الوثائق"), "nav_mail": _t("Courrier", "المراسلات"),
     "nav_agreements": _t("Conventions", "الاتفاقيات"), "nav_registers": _t("Registres légaux", "السجلات القانونية"),
     "d_title": _t("Titre", "العنوان"), "d_category": _t("Catégorie", "الفئة"), "d_description": _t("Description", "الوصف"),

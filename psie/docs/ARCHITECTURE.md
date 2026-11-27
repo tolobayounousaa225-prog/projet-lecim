@@ -4,7 +4,7 @@
 | Élément | Où | Rôle |
 |---|---|---|
 | **Site vitrine** | dépôt GitHub `PSIE` → GitHub Pages (`https://<compte>.github.io/PSIE/`) | Site public statique (accueil, à propos, membres, guide, vérification…). Reconstruit par GitHub Actions. |
-| **Application** | dépôt `projet-lecim`, dossier `psie/backend` → serveur Contabo | Espace connecté (membres, finances, assemblées, écoles, documents…) + API publique. |
+| **Application** | dépôt `projet-lecim`, dossier `psie/backend` → serveur Contabo | Espace connecté (membres, finances, écoles, documents…) + API publique. |
 | **Serveur** | VPS Contabo, Docker Compose, projet `psie` (`docker compose -p psie …`) | Trois conteneurs : `db` (PostgreSQL 16), `api` (FastAPI), `caddy` (HTTPS automatique). |
 
 > Le dossier `psie/` du dépôt `projet-lecim` cohabite avec le projet LECIM (dossier `backend/` à la racine) : **ne jamais toucher aux fichiers hors `psie/`** depuis une modification PSIE.
@@ -20,7 +20,7 @@
 - **FastAPI + SQLAlchemy 2 + Alembic** ; pages rendues côté serveur (Jinja2) ; PostgreSQL en production, SQLite pour les tests.
 - `app/main.py` : assemblage, en-têtes de sécurité (CSP), gestionnaires d'erreurs, tâches planifiées.
 - `app/models.py` : toutes les tables. `migrations/versions/` : une migration par évolution (0001 → …), appliquées automatiquement au démarrage.
-- `app/routers/` : un fichier par domaine — `membres`, `adhesions`, `assemblees`, `sanctions`, `cotisations`/`appels`/`compta` (finances), `ecoles`/`statistiques`/`relation` (espace faîtière), `documents` (documents, courrier, conventions, registres), `contenu` (site vitrine), `acces` (droits), `auth`/`reinitialisation`, `public`.
+- `app/routers/` : un fichier par domaine — `membres`, `adhesions`, `cotisations`/`appels`/`compta` (finances), `ecoles`/`statistiques`/`relation` (espace faîtière), `documents` (documents, courrier, conventions, registres), `contenu` (site vitrine), `acces` (droits), `auth`/`reinitialisation`, `public`.
 - `app/acces.py` : **droits par rubrique** (niveaux aucun / lecture / modification, par rôle puis par personne). `deps.visibility_guard` l'applique à *toutes* les adresses.
 - `app/notifier.py` : notifications (cloche + e-mail + canaux branchables). `app/signatures.py` : signature électronique simple (code e-mail + empreinte + vérification publique). `app/routers/formations.py` : formations, sessions, présence, certificats. `app/routers/supervision.py` : consultation d'un compte en lecture seule (jeton signé `view_as`, résolu dans `deps.py`, écritures refusées, audit attribué au superviseur). `app/charts.py` : graphiques SVG générés par le serveur. `static/psie.js` : seul script de l'application (filtres, raccourci de recherche) ; la CSP n'autorise que `script-src 'self'`.
 - `app/i18n.py` (+ `*_texts.py`) : textes français et arabe ; une clé absente retombe sur le français.
@@ -34,3 +34,9 @@ Mots de passe bcrypt ; cookie de session HTTPS ; double authentification par e-m
 ## Tests
 - **Navigateur** (parcours clés, accessibilité axe, mobile) : `cd psie/e2e && npm install && npx playwright install chromium && node run.js` (aussi en CI : workflow `psie-e2e`).
 `cd psie/backend && python -m pytest -q` (≈ 10 min). La CI GitHub exécute la suite sur SQLite et sur PostgreSQL, et construit l'image Docker.
+
+## Retraits et ajouts récents
+- **Vie statutaire retirée** : assemblées, sanctions, déclarations d'intérêts et registres légaux ne sont plus dans l'application (pages, routes, menus, droits, rappels). Les tables correspondantes restent en base (aucune donnée perdue) : elles peuvent être supprimées plus tard par une migration si besoin.
+- **Pages et textes** (`app/site_texts.py`, `app/site_defaults.json`) : les textes des pages de la vitrine se modifient dans `/gestion/contenu`. Voir `deploy/CONTENU_SITE.md`.
+- **Catalogue de formations** (`app/formations_catalogue.py`) : 14 formations prêtes à charger depuis la page Formation.
+- **Aperçu des portails par rôle** (`/supervision`) : l'administrateur et le DEN voient le portail de chaque rôle et de chaque faîtière, même sans compte créé, en lecture seule (personne virtuelle jamais enregistrée en base).

@@ -249,16 +249,6 @@ def add_rapport_cc(db: Session, user, annee: int, titre: str, texte: str) -> mod
     return r
 
 
-def declare_interet(db: Session, user, objet: str) -> models.DeclarationInteret:
-    if not objet.strip():
-        raise HTTPException(status_code=400, detail="Décrivez l'intérêt déclaré")
-    d = models.DeclarationInteret(user_id=user.id, declarant_nom=user.full_name, objet=objet.strip())
-    db.add(d)
-    db.flush()
-    log_action(db, user, "declaration_interet", "declaration", d.id, None)
-    return d
-
-
 # ---------- États financiers ----------
 
 PERIODES = {"annee": "Exercice complet", "s1": "1er semestre (janvier–juin)", "s2": "2e semestre (juillet–décembre)"}

@@ -348,7 +348,7 @@ def test_each_secretariat_has_its_own_account_and_space(db, role, label):
     client = client_for(f"{role}@psie.ci")
     assert client.get("/admin").status_code == 200                             # tableau de bord de la PSIE
     assert client.get("/faitieres").status_code == 403                         # rubrique « membres » hors de leur secrétariat
-    assert client.get("/interets").status_code == 200
+    assert client.get("/documents").status_code == 200
     assert client.get("/finances").status_code == 403                          # pas d'accès aux finances
     assert client.get("/users").status_code == 403                             # ni à l'administration des comptes
     assert (client.get("/gestion/contenu").status_code == 200) == (role == "communication")

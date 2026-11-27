@@ -45,7 +45,7 @@ def test_faitiere_accounts_cannot_reach_the_module(db, staff):
     f = make_faitiere(db, "LECIM")
     make_user(db, "rep@psie.ci", "faitiere", faitiere_id=f.id)
     rep = client_for("rep@psie.ci")
-    for url in ("/documents", "/courrier", "/conventions", "/registres", "/registres/CA"):
+    for url in ("/documents", "/courrier", "/conventions"):
         assert rep.get(url).status_code == 403, url
     assert rep.post("/courrier", data={"sens": "arrivee", "correspondant": "x", "objet": "y"}).status_code == 403
 
@@ -103,35 +103,12 @@ def test_agreement_circuit_follows_the_statutes(db, staff, monkeypatch):
     assert [e.action for e in db.get(models.Convention, c.id).etapes] == ["creation", "soumettre", "avis_defavorable", "soumettre", "avis_favorable", "signer"]
 
 
-def test_legal_register_is_chained_and_tamper_evident(db, staff):
-    den = client_for("den@psie.ci")
-    today = datetime.date.today().isoformat()
-    for i in range(3):
-        assert den.post("/registres/CA", data={"date_acte": today, "titre": f"Délibération {i}", "resume": "Adoptée"}).status_code == 303
-    entries = db.query(models.RegistreEntree).order_by(models.RegistreEntree.numero).all()
-    assert [e.numero for e in entries] == [1, 2, 3] and entries[1].precedent == entries[0].empreinte
-    assert "Intégrité vérifiée" in den.get("/registres/CA").text
-    pdf = den.get("/registres/CA.pdf")
-    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
-    future = (datetime.date.today() + datetime.timedelta(days=3)).isoformat()
-    assert den.post("/registres/CA", data={"date_acte": future, "titre": "x", "resume": "y"}).status_code == 400
-    assert den.get("/registres/INCONNU").status_code == 404
-    # il n'existe aucune route de modification ni de suppression
-    assert den.post("/registres/CA/1/supprimer").status_code in (404, 405)
-    # une altération directe en base est détectée et bloque les nouvelles entrées
-    entries[1].resume = "Résumé falsifié"
-    db.commit()
-    page = den.get("/registres/CA").text
-    assert "chaîne est rompue" in page and "entrée n°2" in page
-    assert den.post("/registres/CA", data={"date_acte": today, "titre": "x", "resume": "y"}).status_code == 409
-    assert client_for("com@psie.ci").post("/registres/DEN", data={"date_acte": today, "titre": "x", "resume": "y"}).status_code == 403
-
 
 def test_access_grid_controls_the_module(db, staff):
     com = client_for("com@psie.ci")
     assert com.get("/documents").status_code == 200
     page = com.get("/admin").text
-    assert "/documents" in page and "/registres" in page
+    assert "/documents" in page
     cc = client_for("cc@psie.ci")
     assert cc.get("/courrier").status_code == 200 and cc.post("/courrier", data={"sens": "arrivee", "correspondant": "x", "objet": "y"}).status_code == 403
     adm = client_for("adm@psie.ci")
