@@ -2,7 +2,7 @@
 {% block title %}{{ t('nav_adhesions') }}{% endblock %}
 {% block content %}
 <h1>{{ t('nav_adhesions') }}</h1>
-<table>
+<div class="table-wrap"><table data-filterable data-filter-label="{{ t('d_search') }}">
   <thead><tr><th>{{ t('tracking_code') }}</th><th>{{ t('acronym') }}</th><th>{{ t('name') }}</th><th>{{ t('date') }}</th><th>{{ t('status') }}</th></tr></thead>
   <tbody>
   {% for d in items %}
@@ -10,5 +10,5 @@
       <td>{{ d.created_at.strftime('%Y-%m-%d') }}</td><td>{{ t('adh_' ~ d.etat) }}{% if d.avis_ca %} · CA : {{ d.avis_ca }}{% endif %}</td></tr>
   {% else %}<tr><td colspan="5" class="muted">{{ t('none') }}</td></tr>{% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endblock %}

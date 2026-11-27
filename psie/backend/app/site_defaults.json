@@ -1,0 +1,894 @@
+{
+ "txt_accueil": {
+  "hero_kicker": {
+   "fr": "Fédération nationale",
+   "ar": "اتحاد وطني"
+  },
+  "hero_title_a": {
+   "fr": "Ensemble pour une éducation islamique",
+   "ar": "معا من أجل تعليم إسلامي"
+  },
+  "hero_title_hl": {
+   "fr": "structurée, moderne et citoyenne",
+   "ar": "منظم وعصري ومواطن"
+  },
+  "hero_intro": {
+   "fr": "La PSIE coordonne et représente les organisations nationales islamiques d'éducation auprès de l'État de Côte d'Ivoire et des partenaires techniques et financiers de l'éducation.",
+   "ar": "تنسق المنصة وتمثل المنظمات الوطنية للتعليم الإسلامي لدى دولة كوت ديفوار والشركاء التقنيين والماليين في مجال التعليم."
+  },
+  "cta_title": {
+   "fr": "Votre structure éduque des enfants ?",
+   "ar": "هل تربي هيكلكم أطفالا؟"
+  },
+  "cta_text": {
+   "fr": "Rejoignez la fédération qui porte la voix de l'éducation islamique en Côte d'Ivoire.",
+   "ar": "انضموا إلى الاتحاد الذي يحمل صوت التعليم الإسلامي في كوت ديفوار."
+  },
+  "footer_tag": {
+   "fr": "Coordonner, représenter, élever la qualité de l'éducation islamique en Côte d'Ivoire.",
+   "ar": "التنسيق والتمثيل والارتقاء بجودة التعليم الإسلامي في كوت ديفوار."
+  }
+ },
+ "txt_apropos": {
+  "about_lead": {
+   "fr": "Une fédération née de la volonté des organisations islamiques d'éducation de parler d'une seule voix.",
+   "ar": "اتحاد وُلد من إرادة المنظمات الإسلامية للتعليم في التحدث بصوت واحد."
+  },
+  "story": {
+   "fr": "Le 3 septembre 2021, les organisations et associations islamiques d'éducation de Côte d'Ivoire se sont réunies en Assemblée Générale Constitutive. Elles ont décidé de créer une structure associative à vocation fédérative pour l'orientation et la coordination des organisations islamiques d'éducation.\nLes statuts ont été révisés en 2026 pour renforcer la gouvernance : Conseil d'Administration, Direction Exécutive Nationale, Commissariat aux Comptes et commissions techniques permanentes.",
+   "ar": "في 3 سبتمبر 2021 اجتمعت المنظمات والجمعيات الإسلامية للتعليم في كوت ديفوار في جمعية عامة تأسيسية، وقررت إنشاء هيكل جمعوي ذي طابع اتحادي لتوجيه وتنسيق المنظمات الإسلامية للتعليم.\nتمت مراجعة النظام الأساسي سنة 2026 لتعزيز الحوكمة: مجلس الإدارة والمديرية التنفيذية الوطنية ومفوضية الحسابات واللجان التقنية الدائمة."
+  },
+  "object": {
+   "fr": "Coordonner et représenter les organisations nationales islamiques d'éducation dans leurs relations avec l'État de Côte d'Ivoire et les partenaires techniques et financiers de l'éducation, en vue de la promotion d'un enseignement islamique structuré, moderne et conforme aux valeurs républicaines.",
+   "ar": "تنسيق وتمثيل المنظمات الوطنية للتعليم الإسلامي في علاقاتها مع دولة كوت ديفوار والشركاء التقنيين والماليين في مجال التعليم، من أجل ترقية تعليم إسلامي منظم وعصري ومتوافق مع القيم الجمهورية."
+  },
+  "timeline_lead": {
+   "fr": "Du cadre légal à la fédération d'aujourd'hui.",
+   "ar": "من الإطار القانوني إلى الاتحاد اليوم."
+  }
+ },
+ "txt_gouvernance": {
+  "gov_lead": {
+   "fr": "Quatre organes, deux commissions techniques et un réseau régional : une organisation collégiale, contrôlée et transparente.",
+   "ar": "أربع هيئات ولجنتان تقنيتان وشبكة جهوية: تنظيم جماعي خاضع للمراقبة وشفاف."
+  },
+  "regional": {
+   "fr": "La PSIE est représentée dans chaque Direction Régionale de l'Éducation Nationale par un délégué régional, actuellement dans 41 DRENA. Des délégués de circonscription assurent l'interface locale dans l'enseignement préscolaire et primaire.",
+   "ar": "تتمثل المنصة في كل مديرية جهوية للتربية الوطنية بمندوب جهوي، وهي حاليا في 41 مديرية. ويؤمن مندوبو الدوائر الواجهة المحلية في التعليم التحضيري والابتدائي."
+  }
+ },
+ "txt_adhesion": {
+  "join_lead": {
+   "fr": "Vous êtes une organisation en charge de structures islamiques d'éducation ? Rejoignez la fédération.",
+   "ar": "هل أنتم منظمة مسؤولة عن هياكل إسلامية للتعليم؟ انضموا إلى الاتحاد."
+  },
+  "conditions_intro": {
+   "fr": "Peuvent adhérer les organisations islamiques d'éducation légalement constituées qui :",
+   "ar": "يمكن للمنظمات الإسلامية للتعليم المؤسسة قانونا أن تنخرط إذا:"
+  },
+  "process_note": {
+   "fr": "Le montant du droit d'adhésion et des cotisations est fixé par les organes de la PSIE. Renseignez-vous auprès du secrétariat.",
+   "ar": "تحدد هيئات المنصة مبلغ رسم الانخراط والاشتراكات. يرجى الاستفسار لدى الأمانة."
+  }
+ },
+ "txt_contact": {
+  "contact_lead": {
+   "fr": "Pour toute information sur la PSIE ou sur l'adhésion, joignez le secrétariat.",
+   "ar": "للحصول على معلومات حول المنصة أو الانخراط، اتصلوا بالأمانة."
+  },
+  "contact_note": {
+   "fr": "Vous pouvez aussi déposer une demande d'adhésion directement en ligne.",
+   "ar": "يمكنكم أيضا تقديم طلب انخراط مباشرة عبر الإنترنت."
+  },
+  "address": {
+   "fr": "Mosquée AL FATH, Avenue 8, Rue 15, Treichville, Abidjan",
+   "ar": "مسجد الفتح، الشارع 8، الزقاق 15، تريشفيل، أبيدجان"
+  },
+  "phone1": "+225 07 07 83 63 73",
+  "phone2": "+225 07 07 80 54 54"
+ },
+ "txt_statuts": {
+  "rules_lead": {
+   "fr": "Les règles qui font fonctionner la PSIE, expliquées simplement.",
+   "ar": "القواعد التي تسير بها المنصة، موضحة ببساطة."
+  },
+  "rules_note": {
+   "fr": "Résumé pédagogique : seul le texte officiel des Statuts et du Règlement Intérieur fait foi.",
+   "ar": "ملخص تعليمي: النص الرسمي للنظام الأساسي والنظام الداخلي هو وحده المعتمد."
+  },
+  "rights_lead": {
+   "fr": "Ce que la PSIE apporte à chaque organisation membre, et ce qu'elle attend en retour.",
+   "ar": "ما تقدمه المنصة لكل منظمة عضو وما تنتظره منها في المقابل."
+  },
+  "rights_note": {
+   "fr": "Résumé pédagogique tiré des statuts, à faire relire par la PSIE : seul le texte officiel des Statuts et du Règlement Intérieur fait foi.",
+   "ar": "ملخص تعليمي مستخرج من النظام الأساسي، يلزم أن تراجعه المنصة: النص الرسمي للنظام الأساسي والنظام الداخلي هو وحده المعتمد."
+  }
+ },
+ "txt_guide": {
+  "guide_lead": {
+   "fr": "Tout ce que votre organisation peut faire en ligne, pas à pas.",
+   "ar": "كل ما يمكن لمنظمتكم فعله عبر الإنترنت، خطوة بخطوة."
+  },
+  "login_lead": {
+   "fr": "Chaque faîtière et chaque secrétariat de la PSIE dispose de son propre espace sécurisé.",
+   "ar": "لكل منظمة ولكل أمانة في المنصة فضاؤها الآمن الخاص."
+  },
+  "login_help": {
+   "fr": "Vous n'avez pas encore de compte ? Votre accès est créé par l'administrateur de la PSIE. Besoin d'aide ?",
+   "ar": "ليس لديكم حساب بعد؟ ينشئ مسؤول المنصة حساب الدخول. هل تحتاجون إلى مساعدة؟"
+  }
+ },
+ "txt_legal": {
+  "privacy_lead": {
+   "fr": "Ce site respecte votre vie privée : voici, en clair, ce qui se passe quand vous le visitez.",
+   "ar": "يحترم هذا الموقع خصوصيتكم: إليكم بوضوح ما يحدث عند زيارته."
+  }
+ },
+ "faq": [
+  {
+   "q": {
+    "fr": "Qu'est-ce que la PSIE ?",
+    "ar": "ما هي المنصة؟"
+   },
+   "a": {
+    "fr": "Une fédération qui coordonne et représente les organisations nationales islamiques d'éducation de Côte d'Ivoire auprès de l'État et des partenaires de l'éducation.",
+    "ar": "اتحاد ينسق ويمثل المنظمات الوطنية للتعليم الإسلامي في كوت ديفوار لدى الدولة وشركاء التعليم."
+   }
+  },
+  {
+   "q": {
+    "fr": "Qui peut adhérer ?",
+    "ar": "من يمكنه الانخراط؟"
+   },
+   "a": {
+    "fr": "Toute organisation islamique d'éducation légalement constituée qui approuve les statuts, s'acquitte du droit d'adhésion et s'engage à cotiser régulièrement.",
+    "ar": "كل منظمة إسلامية للتعليم مؤسسة قانونا توافق على النظام الأساسي وتسدد رسم الانخراط وتلتزم بالاشتراك بانتظام."
+   }
+  },
+  {
+   "q": {
+    "fr": "Comment adhérer ?",
+    "ar": "كيف أنخرط؟"
+   },
+   "a": {
+    "fr": "En déposant une demande en ligne. Elle est examinée par la Direction Exécutive Nationale, soumise à l'avis écrit du Conseil d'Administration, puis décidée par l'Assemblée Générale.",
+    "ar": "بتقديم طلب عبر الإنترنت. تدرسه المديرية التنفيذية الوطنية ويعرض على مجلس الإدارة لإبداء رأيه كتابة ثم تبت فيه الجمعية العامة."
+   }
+  },
+  {
+   "q": {
+    "fr": "Combien coûte l'adhésion ?",
+    "ar": "كم تبلغ تكلفة الانخراط؟"
+   },
+   "a": {
+    "fr": "Le droit d'adhésion et les cotisations sont fixés par les organes de la PSIE. Contactez le secrétariat pour connaître les montants en vigueur.",
+    "ar": "تحدد هيئات المنصة رسم الانخراط والاشتراكات. اتصلوا بالأمانة لمعرفة المبالغ المعمول بها."
+   }
+  },
+  {
+   "q": {
+    "fr": "Comment suivre ma demande ?",
+    "ar": "كيف أتابع طلبي؟"
+   },
+   "a": {
+    "fr": "Avec le code de suivi remis au dépôt de la demande, sur la page « Suivre ma demande ».",
+    "ar": "برمز المتابعة الذي تسلمتموه عند تقديم الطلب، في صفحة «متابعة طلبي»."
+   }
+  },
+  {
+   "q": {
+    "fr": "Comment vérifier un reçu ou un certificat ?",
+    "ar": "كيف أتحقق من إيصال أو شهادة؟"
+   },
+   "a": {
+    "fr": "En scannant son QR code : la page de vérification confirme l'authenticité du document.",
+    "ar": "بمسح رمزها المربع: تؤكد صفحة التحقق صحة الوثيقة."
+   }
+  },
+  {
+   "q": {
+    "fr": "Qui dirige la PSIE ?",
+    "ar": "من يدير المنصة؟"
+   },
+   "a": {
+    "fr": "Un Directeur Exécutif National et six secrétariats assurent l'exécution ; un Conseil d'Administration de treize membres les supervise ; deux commissaires aux comptes contrôlent les finances.",
+    "ar": "يتولى التنفيذ مدير تنفيذي وطني وست أمانات، ويشرف عليهم مجلس إدارة من ثلاثة عشر عضوا، ويراقب مفوضان الحسابات."
+   }
+  },
+  {
+   "q": {
+    "fr": "Où se trouve le siège ?",
+    "ar": "أين يوجد المقر؟"
+   },
+   "a": {
+    "fr": "À Abidjan, commune de Treichville, au sein de la mosquée AL FATH, Avenue 8, Rue 15.",
+    "ar": "في أبيدجان، بلدية تريشفيل، داخل مسجد الفتح، الشارع 8، الزقاق 15."
+   }
+  }
+ ],
+ "guide_faq": [
+  {
+   "q": {
+    "fr": "Qui peut se connecter ?",
+    "ar": "من يمكنه تسجيل الدخول؟"
+   },
+   "a": {
+    "fr": "Le représentant désigné par chaque organisation membre, et les responsables des organes de la PSIE selon leur rôle.",
+    "ar": "الممثل الذي تعينه كل منظمة عضو، ومسؤولو هيئات المنصة حسب أدوارهم."
+   }
+  },
+  {
+   "q": {
+    "fr": "J'ai oublié mon mot de passe.",
+    "ar": "نسيت كلمة المرور."
+   },
+   "a": {
+    "fr": "Contactez le secrétariat : un administrateur pourra vous aider.",
+    "ar": "اتصلوا بالأمانة: يمكن لأحد المسؤولين مساعدتكم."
+   }
+  },
+  {
+   "q": {
+    "fr": "Les autres organisations voient-elles mes informations ?",
+    "ar": "هل ترى المنظمات الأخرى معلوماتي؟"
+   },
+   "a": {
+    "fr": "Non. Chaque organisation ne voit que ses propres informations, et les connexions sont protégées.",
+    "ar": "لا. كل منظمة لا ترى إلا معلوماتها، وعمليات الدخول محمية."
+   }
+  },
+  {
+   "q": {
+    "fr": "Ma demande d'adhésion est-elle suivie ?",
+    "ar": "هل يمكن تتبع طلب الانخراط؟"
+   },
+   "a": {
+    "fr": "Oui : le code de suivi remis au dépôt permet de consulter l'état de la demande sans compte.",
+    "ar": "نعم: يتيح رمز المتابعة المسلّم عند الإيداع الاطلاع على حالة الطلب دون حساب."
+   }
+  }
+ ],
+ "glossaire": [
+  {
+   "term": {
+    "fr": "PSIE",
+    "ar": "PSIE"
+   },
+   "full": {
+    "fr": "Plateforme des Structures Islamiques d'Éducation",
+    "ar": "منصة الهياكل الإسلامية للتعليم"
+   },
+   "d": {
+    "fr": "La fédération qui coordonne et représente les organisations nationales islamiques d'éducation de Côte d'Ivoire.",
+    "ar": "الاتحاد الذي ينسق ويمثل المنظمات الوطنية للتعليم الإسلامي في كوت ديفوار."
+   }
+  },
+  {
+   "term": {
+    "fr": "Faîtière",
+    "ar": "الهيئة الجامعة"
+   },
+   "full": {
+    "fr": "Organisation nationale",
+    "ar": "منظمة وطنية"
+   },
+   "d": {
+    "fr": "Organisation qui regroupe plusieurs écoles ou structures d'éducation. La PSIE réunit six faîtières fondatrices.",
+    "ar": "منظمة تضم عدة مدارس أو هياكل تعليمية. تجمع المنصة ست هيئات مؤسسة."
+   }
+  },
+  {
+   "term": {
+    "fr": "AG",
+    "ar": "AG"
+   },
+   "full": {
+    "fr": "Assemblée Générale",
+    "ar": "الجمعية العامة"
+   },
+   "d": {
+    "fr": "L'organe suprême de la PSIE. Elle est annuelle, ordinaire (tous les trois ans) ou extraordinaire.",
+    "ar": "الهيئة العليا للمنصة. وقد تكون سنوية أو عادية (كل ثلاث سنوات) أو استثنائية."
+   }
+  },
+  {
+   "term": {
+    "fr": "AGA",
+    "ar": "AGA"
+   },
+   "full": {
+    "fr": "Assemblée Générale Annuelle",
+    "ar": "الجمعية العامة السنوية"
+   },
+   "d": {
+    "fr": "Elle examine chaque année les activités, les rapports et le budget.",
+    "ar": "تدرس كل سنة الأنشطة والتقارير والميزانية."
+   }
+  },
+  {
+   "term": {
+    "fr": "AGE",
+    "ar": "AGE"
+   },
+   "full": {
+    "fr": "Assemblée Générale Extraordinaire",
+    "ar": "الجمعية العامة الاستثنائية"
+   },
+   "d": {
+    "fr": "Elle décide des changements des statuts et de la dissolution.",
+    "ar": "تقرر تعديل النظام الأساسي والحل."
+   }
+  },
+  {
+   "term": {
+    "fr": "CA",
+    "ar": "CA"
+   },
+   "full": {
+    "fr": "Conseil d'Administration",
+    "ar": "مجلس الإدارة"
+   },
+   "d": {
+    "fr": "Treize administrateurs issus des six organisations fondatrices, pour un mandat de trois ans. Il supervise la gestion de la Direction Exécutive.",
+    "ar": "ثلاثة عشر عضوا من المنظمات الست المؤسسة، لولاية مدتها ثلاث سنوات. يشرف على تسيير الإدارة التنفيذية."
+   }
+  },
+  {
+   "term": {
+    "fr": "DEN",
+    "ar": "DEN"
+   },
+   "full": {
+    "fr": "Direction Exécutive Nationale",
+    "ar": "الإدارة التنفيذية الوطنية"
+   },
+   "d": {
+    "fr": "L'organe d'exécution, dirigé par le Directeur Exécutif National avec six secrétariats.",
+    "ar": "هيئة التنفيذ، يديرها المدير التنفيذي الوطني مع ست أمانات."
+   }
+  },
+  {
+   "term": {
+    "fr": "CC",
+    "ar": "CC"
+   },
+   "full": {
+    "fr": "Commissariat aux Comptes",
+    "ar": "مفوضية الحسابات"
+   },
+   "d": {
+    "fr": "Deux commissaires qui contrôlent les écritures, les pièces comptables et l'état de caisse.",
+    "ar": "مفوضان يراقبان القيود والوثائق المحاسبية وحالة الصندوق."
+   }
+  },
+  {
+   "term": {
+    "fr": "CNECI",
+    "ar": "CNECI"
+   },
+   "full": {
+    "fr": "Commission Nationale des Examens et Concours Islamiques",
+    "ar": "اللجنة الوطنية للامتحانات والمباريات الإسلامية"
+   },
+   "d": {
+    "fr": "Vérifie et valide les épreuves des examens islamiques, et propose les calendriers.",
+    "ar": "تتحقق من اختبارات الامتحانات الإسلامية وتصادق عليها، وتقترح الجداول."
+   }
+  },
+  {
+   "term": {
+    "fr": "CNVSP",
+    "ar": "CNVSP"
+   },
+   "full": {
+    "fr": "Commission Nationale de Validation des Manuels et du Suivi des Programmes",
+    "ar": "اللجنة الوطنية لاعتماد الكتب ومتابعة البرامج"
+   },
+   "d": {
+    "fr": "Contrôle, valide et publie la liste des manuels scolaires homologués.",
+    "ar": "تراقب الكتب المدرسية وتعتمدها وتنشر قائمتها."
+   }
+  },
+  {
+   "term": {
+    "fr": "DRENA",
+    "ar": "DRENA"
+   },
+   "full": {
+    "fr": "Direction Régionale de l'Éducation Nationale et de l'Alphabétisation",
+    "ar": "المديرية الجهوية للتربية الوطنية ومحو الأمية"
+   },
+   "d": {
+    "fr": "Le service régional de l'État. La PSIE est représentée auprès de chacune par un délégué régional.",
+    "ar": "المصلحة الجهوية للدولة. تتمثل المنصة لدى كل منها بمندوب جهوي."
+   }
+  },
+  {
+   "term": {
+    "fr": "Quorum",
+    "ar": "النصاب"
+   },
+   "full": {
+    "fr": "Présence minimale",
+    "ar": "الحد الأدنى للحضور"
+   },
+   "d": {
+    "fr": "Nombre minimal de membres présents pour que l'assemblée puisse décider : ici, les deux tiers.",
+    "ar": "العدد الأدنى من الأعضاء الحاضرين ليتمكن الاجتماع من اتخاذ القرار: هنا الثلثان."
+   }
+  },
+  {
+   "term": {
+    "fr": "Droit d'adhésion",
+    "ar": "رسم الانخراط"
+   },
+   "full": {
+    "fr": "",
+    "ar": ""
+   },
+   "d": {
+    "fr": "Somme versée une fois par une organisation qui rejoint la PSIE.",
+    "ar": "مبلغ يدفع مرة واحدة من المنظمة التي تنضم إلى المنصة."
+   }
+  },
+  {
+   "term": {
+    "fr": "Cotisation",
+    "ar": "الاشتراك"
+   },
+   "full": {
+    "fr": "Annuelle ou exceptionnelle",
+    "ar": "سنوي أو استثنائي"
+   },
+   "d": {
+    "fr": "Contribution des membres au fonctionnement de la fédération. Elle est annuelle ; une cotisation exceptionnelle peut être décidée par les organes.",
+    "ar": "مساهمة الأعضاء في تسيير الاتحاد. هو سنوي، ويمكن للهيئات تقرير اشتراك استثنائي."
+   }
+  },
+  {
+   "term": {
+    "fr": "Double signature",
+    "ar": "التوقيع المزدوج"
+   },
+   "full": {
+    "fr": "",
+    "ar": ""
+   },
+   "d": {
+    "fr": "Tout retrait de fonds exige la signature de deux responsables issus d'organisations différentes.",
+    "ar": "كل سحب للأموال يتطلب توقيع مسؤولين من منظمتين مختلفتين."
+   }
+  }
+ ],
+ "missions": [
+  {
+   "t": {
+    "fr": "Interlocuteur crédible",
+    "ar": "محاور موثوق"
+   },
+   "d": {
+    "fr": "Être l'interface des organisations islamiques d'éducation auprès de l'État et des partenaires techniques et financiers.",
+    "ar": "أن تكون الواجهة للمنظمات الإسلامية للتعليم لدى الدولة والشركاء التقنيين والماليين."
+   }
+  },
+  {
+   "t": {
+    "fr": "Intégration et capacités",
+    "ar": "الإدماج وبناء القدرات"
+   },
+   "d": {
+    "fr": "Conduire avec l'État les processus d'intégration et de renforcement de capacité des structures islamiques d'éducation.",
+    "ar": "قيادة مسارات الإدماج وبناء القدرات للهياكل الإسلامية للتعليم بالتعاون مع الدولة."
+   }
+  },
+  {
+   "t": {
+    "fr": "Qualité de l'éducation",
+    "ar": "جودة التعليم"
+   },
+   "d": {
+    "fr": "Promouvoir la qualité de l'éducation islamique par le respect de normes et le renforcement des ressources humaines.",
+    "ar": "ترقية جودة التعليم الإسلامي باحترام المعايير وتعزيز الموارد البشرية."
+   }
+  },
+  {
+   "t": {
+    "fr": "Cohésion et paix",
+    "ar": "التماسك والسلم"
+   },
+   "d": {
+    "fr": "Être un acteur social de cohésion, de paix et de développement.",
+    "ar": "أن تكون فاعلا اجتماعيا للتماسك والسلم والتنمية."
+   }
+  },
+  {
+   "t": {
+    "fr": "Défense des membres",
+    "ar": "الدفاع عن الأعضاء"
+   },
+   "d": {
+    "fr": "Défendre les intérêts de ses membres dans les limites fixées par les lois et les statuts.",
+    "ar": "الدفاع عن مصالح أعضائها في حدود ما تقرره القوانين والنظام الأساسي."
+   }
+  }
+ ],
+ "chronologie": [
+  {
+   "date": {
+    "fr": "17 septembre 2015",
+    "ar": "17 شتنبر 2015"
+   },
+   "t": {
+    "fr": "Scolarisation obligatoire",
+    "ar": "إلزامية التمدرس"
+   },
+   "d": {
+    "fr": "La loi n° 2015-635 rend l'école obligatoire : c'est dans cette politique que s'inscrit l'action de la PSIE.",
+    "ar": "القانون رقم 2015-635 يجعل التمدرس إلزاميا، وفي هذه السياسة يندرج عمل المنصة."
+   }
+  },
+  {
+   "date": {
+    "fr": "3 septembre 2021",
+    "ar": "3 شتنبر 2021"
+   },
+   "t": {
+    "fr": "Assemblée Générale Constitutive",
+    "ar": "الجمعية العامة التأسيسية"
+   },
+   "d": {
+    "fr": "Les organisations et associations islamiques d'éducation décident de créer une structure fédérative pour l'orientation et la coordination.",
+    "ar": "قررت المنظمات والجمعيات الإسلامية للتعليم إنشاء هيكل اتحادي للتوجيه والتنسيق."
+   }
+  },
+  {
+   "date": {
+    "fr": "12 juin 2024",
+    "ar": "12 يونيو 2024"
+   },
+   "t": {
+    "fr": "Ordonnance n° 2024-368",
+    "ar": "الأمر رقم 2024-368"
+   },
+   "d": {
+    "fr": "Le cadre légal qui régit la PSIE, organisation de la société civile à but non lucratif, apolitique et non sectaire.",
+    "ar": "الإطار القانوني الذي ينظم المنصة، وهي منظمة من المجتمع المدني غير ربحية وغير سياسية وغير طائفية."
+   }
+  },
+  {
+   "date": {
+    "fr": "2026",
+    "ar": "2026"
+   },
+   "t": {
+    "fr": "Révision des statuts",
+    "ar": "مراجعة النظام الأساسي"
+   },
+   "d": {
+    "fr": "Mise en place du Conseil d'Administration, de la Direction Exécutive Nationale, du Commissariat aux Comptes et des commissions techniques permanentes.",
+    "ar": "إحداث مجلس الإدارة والإدارة التنفيذية الوطنية ومفوضية الحسابات واللجان التقنية الدائمة."
+   }
+  }
+ ],
+ "statuts_points": [
+  {
+   "t": {
+    "fr": "Une fédération à but non lucratif",
+    "ar": "اتحاد غير ربحي"
+   },
+   "d": {
+    "fr": "La PSIE est une organisation de la société civile, apolitique et non sectaire, régie par l'Ordonnance n° 2024-368 du 12 juin 2024.",
+    "ar": "المنصة منظمة من المجتمع المدني، غير سياسية وغير طائفية، ينظمها الأمر رقم 2024-368 المؤرخ في 12 يونيو 2024."
+   }
+  },
+  {
+   "t": {
+    "fr": "Qui peut adhérer ?",
+    "ar": "من يمكنه الانخراط؟"
+   },
+   "d": {
+    "fr": "Les organisations islamiques d'éducation légalement constituées qui approuvent les statuts, paient le droit d'adhésion et leurs cotisations. La demande est examinée par la DEN, soumise à l'avis écrit du CA, puis décidée par l'AG.",
+    "ar": "المنظمات الإسلامية للتعليم المؤسسة قانونا التي توافق على النظام الأساسي وتدفع رسم الانخراط واشتراكاتها. تدرس الإدارة التنفيذية الوطنية الطلب، ثم يُعرض على رأي مجلس الإدارة الكتابي، وتقرر الجمعية العامة."
+   }
+  },
+  {
+   "t": {
+    "fr": "L'Assemblée Générale décide",
+    "ar": "الجمعية العامة تقرر"
+   },
+   "d": {
+    "fr": "Organe suprême : annuelle (activités, rapports, budget), ordinaire tous les trois ans (orientations, élection des organes) ou extraordinaire (statuts, dissolution).",
+    "ar": "الهيئة العليا: سنوية (الأنشطة والتقارير والميزانية)، أو عادية كل ثلاث سنوات (التوجهات وانتخاب الهيئات)، أو استثنائية (النظام الأساسي والحل)."
+   }
+  },
+  {
+   "t": {
+    "fr": "Convocation et quorum",
+    "ar": "الاستدعاء والنصاب"
+   },
+   "d": {
+    "fr": "L'assemblée est convoquée au moins quinze jours à l'avance et ne délibère valablement qu'en présence des deux tiers de ses membres.",
+    "ar": "تُستدعى الجمعية قبل خمسة عشر يوما على الأقل، ولا تتداول بصفة صحيحة إلا بحضور ثلثي أعضائها."
+   }
+  },
+  {
+   "t": {
+    "fr": "Un Conseil d'Administration de treize membres",
+    "ar": "مجلس إدارة من ثلاثة عشر عضوا"
+   },
+   "d": {
+    "fr": "Treize administrateurs issus des six organisations fondatrices (deux par structure), pour un mandat de trois ans. Il donne un avis écrit sur les admissions et les suspensions.",
+    "ar": "ثلاثة عشر عضوا من المنظمات الست المؤسسة (اثنان عن كل هيكل)، لولاية مدتها ثلاث سنوات. يبدي رأيا كتابيا في القبول والتعليق."
+   }
+  },
+  {
+   "t": {
+    "fr": "Une Direction Exécutive pour agir",
+    "ar": "إدارة تنفيذية للعمل"
+   },
+   "d": {
+    "fr": "Dirigée par le Directeur Exécutif National avec six secrétariats, elle administre, forme, organise les examens, mobilise les ressources et communique.",
+    "ar": "يديرها المدير التنفيذي الوطني بمعية ست أمانات، وتتولى التسيير والتكوين وتنظيم الامتحانات وتعبئة الموارد والتواصل."
+   }
+  },
+  {
+   "t": {
+    "fr": "Des comptes contrôlés",
+    "ar": "حسابات خاضعة للمراقبة"
+   },
+   "d": {
+    "fr": "Deux commissaires aux comptes, élus pour trois ans, ont accès à toutes les écritures et pièces. Ils peuvent convoquer une Assemblée Générale Extraordinaire en cas de gestion de fait.",
+    "ar": "مفوضان للحسابات منتخبان لثلاث سنوات، يطلعان على جميع القيود والوثائق، ويمكنهما استدعاء جمعية عامة استثنائية في حال التسيير الفعلي غير القانوني."
+   }
+  },
+  {
+   "t": {
+    "fr": "L'argent sous double signature",
+    "ar": "الأموال بتوقيعين"
+   },
+   "d": {
+    "fr": "L'exercice va du 1er janvier au 31 décembre. Tout retrait de fonds exige la signature de deux responsables issus d'organisations différentes, et les états financiers sont mis à disposition quinze jours avant l'assemblée.",
+    "ar": "تمتد السنة المالية من فاتح يناير إلى 31 دجنبر. كل سحب للأموال يتطلب توقيع مسؤولين من منظمتين مختلفتين، وتوضع البيانات المالية رهن الإشارة قبل الجمعية بخمسة عشر يوما."
+   }
+  },
+  {
+   "t": {
+    "fr": "Dons et intérêts : la transparence",
+    "ar": "الهبات والمصالح: الشفافية"
+   },
+   "d": {
+    "fr": "Un registre des dons indique le donateur, la date, la nature et le montant, avec un engagement contre le blanchiment de capitaux. Les responsables déclarent leurs conflits d'intérêts et exercent leurs fonctions à titre bénévole.",
+    "ar": "سجل للهبات يبين المتبرع والتاريخ والطبيعة والمبلغ، مع التزام بمحاربة غسل الأموال. يصرح المسؤولون بتضارب المصالح ويمارسون مهامهم تطوعا."
+   }
+  },
+  {
+   "t": {
+    "fr": "Discipline et dissolution",
+    "ar": "الانضباط والحل"
+   },
+   "d": {
+    "fr": "Les sanctions sont graduées : avertissement, blâme, suspension, radiation. La dissolution ne peut être décidée qu'en Assemblée Générale Extraordinaire, à la majorité des quatre cinquièmes.",
+    "ar": "العقوبات متدرجة: إنذار، توبيخ، تعليق، شطب. ولا يمكن تقرير الحل إلا في جمعية عامة استثنائية بأغلبية أربعة أخماس."
+   }
+  }
+ ],
+ "droits": [
+  {
+   "t": {
+    "fr": "Être représentée",
+    "ar": "أن تكون ممثَّلة"
+   },
+   "d": {
+    "fr": "La PSIE porte la voix de ses membres auprès de l'État et des partenaires techniques et financiers de l'éducation.",
+    "ar": "تحمل المنصة صوت أعضائها لدى الدولة والشركاء التقنيين والماليين في مجال التعليم."
+   }
+  },
+  {
+   "t": {
+    "fr": "Voter à l'Assemblée Générale",
+    "ar": "التصويت في الجمعية العامة"
+   },
+   "d": {
+    "fr": "Chaque membre participe à l'organe suprême, qui approuve les rapports et le budget et élit les organes.",
+    "ar": "يشارك كل عضو في الهيئة العليا التي تصادق على التقارير والميزانية وتنتخب الهيئات."
+   }
+  },
+  {
+   "t": {
+    "fr": "Siéger au Conseil d'Administration",
+    "ar": "التمثيل في مجلس الإدارة"
+   },
+   "d": {
+    "fr": "Les six organisations fondatrices y disposent chacune de deux administrateurs.",
+    "ar": "لكل من المنظمات الست المؤسسة عضوان في المجلس."
+   }
+  },
+  {
+   "t": {
+    "fr": "Connaître les comptes",
+    "ar": "الاطلاع على الحسابات"
+   },
+   "d": {
+    "fr": "Les états financiers sont mis à disposition quinze jours avant l'assemblée, et deux commissaires contrôlent les écritures.",
+    "ar": "تُتاح البيانات المالية قبل خمسة عشر يوما من الجمعية، ويراقب مفوضان للحسابات القيود."
+   }
+  },
+  {
+   "t": {
+    "fr": "Être défendue",
+    "ar": "أن تكون مدافَعا عنها"
+   },
+   "d": {
+    "fr": "La PSIE défend les intérêts de ses membres dans les limites fixées par les lois et les statuts.",
+    "ar": "تدافع المنصة عن مصالح أعضائها في حدود القوانين والنظام الأساسي."
+   }
+  }
+ ],
+ "devoirs": [
+  {
+   "t": {
+    "fr": "Respecter les statuts",
+    "ar": "احترام النظام الأساسي"
+   },
+   "d": {
+    "fr": "Approuver les statuts et le règlement intérieur, et s'y conformer.",
+    "ar": "الموافقة على النظام الأساسي والنظام الداخلي والالتزام بهما."
+   }
+  },
+  {
+   "t": {
+    "fr": "Payer droit d'adhésion et cotisations",
+    "ar": "دفع رسم الانخراط والاشتراكات"
+   },
+   "d": {
+    "fr": "Acquitter le droit d'adhésion puis les cotisations prévues.",
+    "ar": "أداء رسم الانخراط ثم الاشتراكات المقررة."
+   }
+  },
+  {
+   "t": {
+    "fr": "Rester une organisation en règle",
+    "ar": "البقاء منظمة سليمة قانونيا"
+   },
+   "d": {
+    "fr": "Être légalement constituée et le rester tout au long de l'adhésion.",
+    "ar": "أن تكون مؤسسة قانونا وأن تبقى كذلك طوال مدة الانخراط."
+   }
+  },
+  {
+   "t": {
+    "fr": "Déclarer les conflits d'intérêts",
+    "ar": "التصريح بتضارب المصالح"
+   },
+   "d": {
+    "fr": "Les responsables déclarent leurs conflits d'intérêts et exercent à titre bénévole.",
+    "ar": "يصرح المسؤولون بتضارب مصالحهم ويمارسون مهامهم تطوعا."
+   }
+  },
+  {
+   "t": {
+    "fr": "Accepter la discipline",
+    "ar": "قبول الانضباط"
+   },
+   "d": {
+    "fr": "Les manquements peuvent mener à un avertissement, un blâme, une suspension ou une radiation.",
+    "ar": "قد تؤدي المخالفات إلى إنذار أو توبيخ أو تعليق أو شطب."
+   }
+  }
+ ],
+ "mentions": [
+  {
+   "t": {
+    "fr": "Éditeur du site",
+    "ar": "ناشر الموقع"
+   },
+   "p": {
+    "fr": "Plateforme des Structures Islamiques d'Éducation (PSIE), organisation de la société civile à but non lucratif régie par l'Ordonnance n° 2024-368 du 12 juin 2024.\nSiège : mosquée AL FATH, Avenue 8, Rue 15, Treichville, Abidjan. Directeur de la publication : le Directeur Exécutif National.",
+    "ar": "منصة الهياكل الإسلامية للتعليم، منظمة من المجتمع المدني غير ربحية يحكمها الأمر رقم 2024-368 المؤرخ في 12 يونيو 2024.\nالمقر: مسجد الفتح، الشارع 8، الزقاق 15، تريشفيل، أبيدجان. مدير النشر: المدير التنفيذي الوطني."
+   }
+  },
+  {
+   "t": {
+    "fr": "Hébergement",
+    "ar": "الاستضافة"
+   },
+   "p": {
+    "fr": "Le site est hébergé par GitHub Pages. L'application d'adhésion et d'administration est hébergée sur un serveur distinct.",
+    "ar": "يُستضاف الموقع على خدمة GitHub Pages. أما تطبيق الانخراط والإدارة فيُستضاف على خادم مستقل."
+   }
+  },
+  {
+   "t": {
+    "fr": "Cookies et mesure d'audience",
+    "ar": "ملفات تعريف الارتباط وقياس الجمهور"
+   },
+   "p": {
+    "fr": "Ce site ne dépose aucun cookie et n'utilise aucun outil de mesure d'audience ni de publicité.",
+    "ar": "لا يضع هذا الموقع أي ملف تعريف ارتباط ولا يستخدم أي أداة لقياس الجمهور أو للإعلانات."
+   }
+  },
+  {
+   "t": {
+    "fr": "Données personnelles",
+    "ar": "البيانات الشخصية"
+   },
+   "p": {
+    "fr": "Ce site ne collecte aucune donnée personnelle. Les informations saisies dans une demande d'adhésion le sont sur l'application de la PSIE et servent uniquement à instruire cette demande.\nLes listes de membres et d'actualités affichées proviennent de l'application et ne contiennent que des informations publiques.",
+    "ar": "لا يجمع هذا الموقع أي بيانات شخصية. المعلومات المدخلة في طلب الانخراط تدخل في تطبيق المنصة وتُستعمل فقط لدراسة هذا الطلب.\nقوائم الأعضاء والأخبار المعروضة قادمة من التطبيق ولا تتضمن إلا معلومات عامة."
+   }
+  },
+  {
+   "t": {
+    "fr": "Contenu",
+    "ar": "المحتوى"
+   },
+   "p": {
+    "fr": "Les textes présentent les statuts de la PSIE. En cas de divergence, les statuts font foi.",
+    "ar": "تعرض النصوص النظام الأساسي للمنصة. وعند أي اختلاف، يُعتمد النظام الأساسي."
+   }
+  }
+ ],
+ "confidentialite": [
+  {
+   "t": {
+    "fr": "Ce que nous ne collectons pas",
+    "ar": "ما لا نجمعه"
+   },
+   "p": {
+    "fr": "Le site ne vous demande aucun nom, aucune adresse e-mail, aucun mot de passe. Il ne dépose aucun cookie et n'affiche aucune publicité.",
+    "ar": "لا يطلب الموقع منكم أي اسم أو بريد إلكتروني أو كلمة مرور. ولا يضع أي ملف تعريف ارتباط ولا يعرض أي إعلان."
+   }
+  },
+  {
+   "t": {
+    "fr": "Les demandes d'adhésion",
+    "ar": "طلبات الانخراط"
+   },
+   "p": {
+    "fr": "Les informations d'une demande d'adhésion sont saisies sur l'application de la PSIE (et non sur ce site). Elles servent uniquement à instruire la demande.",
+    "ar": "تُدخل معلومات طلب الانخراط في تطبيق المنصة (وليس في هذا الموقع). وتُستعمل فقط للنظر في الطلب."
+   }
+  },
+  {
+   "t": {
+    "fr": "La carte des représentations régionales",
+    "ar": "خريطة التمثيليات الجهوية"
+   },
+   "p": {
+    "fr": "Pour afficher la carte, votre navigateur charge le fond de carte depuis OpenStreetMap, comme tout site utilisant cette carte. Votre adresse IP est alors visible de ce service. Aucun autre site n'est contacté.",
+    "ar": "لعرض الخريطة، يحمّل متصفحكم خلفية الخريطة من OpenStreetMap، كأي موقع يستعمل هذه الخريطة. ويظهر عندئذ عنوان IP الخاص بكم لهذه الخدمة. ولا يتم الاتصال بأي موقع آخر."
+   }
+  },
+  {
+   "t": {
+    "fr": "Liens vers d'autres sites",
+    "ar": "روابط نحو مواقع أخرى"
+   },
+   "p": {
+    "fr": "Les fiches des organisations membres peuvent renvoyer vers leurs propres sites. Leurs règles de confidentialité leur appartiennent.",
+    "ar": "قد تحيل صفحات المنظمات الأعضاء إلى مواقعها الخاصة، وسياسة الخصوصية فيها تخصها."
+   }
+  },
+  {
+   "t": {
+    "fr": "Hébergement",
+    "ar": "الاستضافة"
+   },
+   "p": {
+    "fr": "Le site est hébergé par GitHub Pages, qui conserve des journaux techniques de connexion selon sa propre politique.",
+    "ar": "يُستضاف الموقع لدى GitHub Pages، التي تحتفظ بسجلات اتصال تقنية وفق سياستها الخاصة."
+   }
+  },
+  {
+   "t": {
+    "fr": "Vos droits",
+    "ar": "حقوقكم"
+   },
+   "p": {
+    "fr": "Pour toute question sur vos données, écrivez au secrétariat (voir la page Contact). Vous pouvez demander l'accès, la correction ou la suppression des informations que la PSIE détient sur vous.",
+    "ar": "لأي سؤال حول بياناتكم، راسلوا الأمانة (انظر صفحة اتصل بنا). يمكنكم طلب الاطلاع على المعلومات التي تحتفظ بها المنصة عنكم أو تصحيحها أو حذفها."
+   }
+  }
+ ]
+}

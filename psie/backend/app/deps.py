@@ -3,7 +3,33 @@ from sqlalchemy.orm import Session
 
 from . import acces, models
 from .database import get_db
-from .security import decode_access_token
+from .security import decode_access_token, decode_view_as_token
+
+VIEW_AS_COOKIE = "view_as"
+# Adresses encore utilisables en mode consultation (sortir du mode, changer de langue, se déconnecter)
+VIEW_AS_EXEMPT = ("/supervision/quitter", "/logout")
+
+
+def _resolve_view_as(request: Request, db: Session, real: models.User, token: str | None) -> models.User:
+    """Mode supervision : une personne habilitée (rubrique « supervision » en modification) consulte l'espace d'un autre
+    compte EN LECTURE SEULE. Le jeton est signé, expire en une heure et n'est valable que pour cette personne."""
+    if not token:
+        return real
+    data = decode_view_as_token(token)
+    if not data or data[0] != real.email:
+        return real
+    real._perms = acces.effective(db, real)
+    if not real.is_internal or real.level("supervision") < acces.ECRITURE:
+        return real
+    target = db.get(models.User, data[1])
+    if not target or not target.is_active or target.id == real.id or (target.is_admin and not real.is_admin):
+        return real
+    if request.method not in ("GET", "HEAD", "OPTIONS") and request.url.path not in VIEW_AS_EXEMPT:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Mode consultation : lecture seule, aucune modification n'est possible. Quittez la consultation pour agir.")
+    target._perms = acces.effective(db, target)
+    target._real = real
+    return target
 
 
 class NotAuthenticatedException(Exception):
@@ -11,7 +37,9 @@ class NotAuthenticatedException(Exception):
 
 
 def get_current_user(
+    request: Request,
     access_token: str | None = Cookie(default=None),
+    view_as: str | None = Cookie(default=None),
     db: Session = Depends(get_db),
 ) -> models.User:
     if not access_token:
@@ -23,7 +51,7 @@ def get_current_user(
     if not user or not user.is_active:
         raise NotAuthenticatedException()
     user._perms = acces.effective(db, user)
-    return user
+    return _resolve_view_as(request, db, user, view_as)
 
 
 def require_internal(user: models.User = Depends(get_current_user)) -> models.User:
@@ -67,7 +95,9 @@ def require_admin(user: models.User = Depends(get_current_user)) -> models.User:
 
 
 def get_optional_user(
+    request: Request,
     access_token: str | None = Cookie(default=None),
+    view_as: str | None = Cookie(default=None),
     db: Session = Depends(get_db),
 ) -> models.User | None:
     """Utilisateur connecté s'il y en a un (pages publiques qui adaptent leur menu)."""
@@ -80,7 +110,7 @@ def get_optional_user(
     if not user or not user.is_active:
         return None
     user._perms = acces.effective(db, user)
-    return user
+    return _resolve_view_as(request, db, user, view_as)
 
 
 def visibility_guard(request: Request, user: models.User | None = Depends(get_optional_user)) -> None:
@@ -90,6 +120,8 @@ def visibility_guard(request: Request, user: models.User | None = Depends(get_op
     if user is None or not user.is_internal:
         return
     path = request.url.path
+    if path == "/supervision/quitter":
+        return                                   # on doit toujours pouvoir quitter le mode consultation
     if acces.is_admin_only(path):
         return                                   # les gardes de ces pages exigent déjà l'administrateur
     section = acces.section_for_path(path)

@@ -5,6 +5,9 @@
 <h1>{{ e.nom }} <small>{{ f.sigle }}</small></h1>
 
 <section class="card">
+  <p>{{ t('dir_status') }} : <strong>{{ t('dir_published') if e.publique else t('dir_hidden') }}</strong>
+  {% if can_write %}<form method="post" action="/faitieres/{{ f.id }}/ecoles/{{ e.id }}/annuaire" class="inline"><button class="btn secondary">{{ t('dir_hide') if e.publique else t('dir_publish') }}</button></form>{% endif %}</p>
+  <p class="muted">{{ t('dir_help') }}</p>
   {% if can_write %}
   <form method="post" action="/faitieres/{{ f.id }}/ecoles/{{ e.id }}/modifier" class="grid">
     <label>{{ t('name') }} *<input name="nom" value="{{ e.nom }}" required></label>
@@ -48,7 +51,7 @@
 <section class="card">
   <h2>{{ t('e_exams') }}</h2>
   <div class="table-wrap"><table>
-    <thead><tr><th>{{ t('e_year') }}</th><th>{{ t('e_exam') }}</th><th>{{ t('e_candidates') }}</th><th>{{ t('e_passed') }}</th><th>{{ t('e_rate') }}</th><th></th></tr></thead>
+    <thead><tr><th>{{ t('e_year') }}</th><th>{{ t('e_exam') }}</th><th>{{ t('e_candidates') }}</th><th>{{ t('e_passed') }}</th><th>{{ t('e_rate') }}</th><th><span class="sr-only">{{ t('a11y_actions') }}</span></th></tr></thead>
     <tbody>
     {% for r in e.resultats %}<tr><td>{{ r.annee }}</td><td>{{ lbl('examen', r.examen) }}</td><td>{{ r.inscrits }}</td><td>{{ r.admis }}</td><td>{{ r.taux }} %</td>
       <td>{% if can_write %}<form method="post" action="/faitieres/{{ f.id }}/ecoles/{{ e.id }}/examens/{{ r.id }}/supprimer" class="inline"><button class="link danger">{{ t('delete') }}</button></form>{% endif %}</td></tr>

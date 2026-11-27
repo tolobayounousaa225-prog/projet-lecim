@@ -11,7 +11,12 @@ def log_action(
     entity_id: int | None = None,
     detail: str | None = None,
 ) -> None:
-    """Ajoute une entrée au journal d'audit (au caller de committer)."""
+    """Ajoute une entrée au journal d'audit (au caller de committer). En mode consultation (supervision), l'action est
+    attribuée à la personne qui consulte, jamais au compte consulté."""
+    real = getattr(user, "_real", None)
+    if real is not None:
+        detail = f"[consultation de {user.email}] {detail or ''}".strip()
+        user = real
     db.add(
         models.AuditLog(
             user_id=user.id if user else None,
@@ -33,7 +38,7 @@ import io
 # Actions qui méritent un coup d'œil de l'administrateur : droits, comptes, suppressions, signatures, décisions.
 SENSITIVE_ACTIONS = {
     "suppression", "reinitialisation_mdp", "desactivation", "acces_roles", "acces_personne", "acces_reinitialisation",
-    "signature", "decision", "import", "recensement_supprime",
+    "signature", "decision", "import", "recensement_supprime", "consultation_compte",
 }
 SENSITIVE_ENTITIES_ON_CREATE = {"user"}          # la création d'un compte est toujours signalée
 PAGE_SIZE = 100

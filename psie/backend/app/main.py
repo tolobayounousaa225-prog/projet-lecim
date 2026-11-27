@@ -14,7 +14,7 @@ from .config import production_problems, settings, vitrine_origin_list
 from .database import engine
 from .deps import NotAuthenticatedException, visibility_guard
 from . import scheduler
-from .routers import admin, adhesions, appels, assemblees, auth, compta, contenu, acces as acces_router, cotisations, documents as documents_router, ecoles as ecoles_router, espace, membres, public, reinitialisation, relation, sanctions, statistiques
+from .routers import admin, adhesions, appels, assemblees, auth, compta, contenu, acces as acces_router, cotisations, documents as documents_router, supervision as supervision_router, formations as formations_router, signatures as signatures_router, notifications as notifications_router, recherche as recherche_router, ecoles as ecoles_router, espace, membres, public, reinitialisation, relation, sanctions, statistiques
 from .web import BASE_DIR, render, request_user
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
@@ -61,11 +61,11 @@ async def security_middleware(request: Request, call_next):
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "same-origin")
-    # Aucun JavaScript dans l'application : on interdit donc tout script, ce qui neutralise
-    # l'essentiel des attaques par injection de code même si un échappement venait à manquer.
+    # Seuls les petits scripts de la PSIE (dossier /static, sans aucun script dans les pages ni venant d'ailleurs) sont
+    # autorisés : une injection de code dans une page ne pourrait donc rien exécuter.
     response.headers.setdefault(
         "Content-Security-Policy",
-        "default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
         "frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'",
     )
     if settings.cookie_secure:
@@ -123,6 +123,11 @@ app.include_router(compta.router)
 app.include_router(assemblees.router)
 app.include_router(sanctions.router)
 app.include_router(documents_router.router)
+app.include_router(supervision_router.router)
+app.include_router(formations_router.router)
+app.include_router(signatures_router.router)
+app.include_router(recherche_router.router)
+app.include_router(notifications_router.router)
 app.include_router(statistiques.router)
 app.include_router(relation.router)
 app.include_router(ecoles_router.router)

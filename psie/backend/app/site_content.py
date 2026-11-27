@@ -55,6 +55,7 @@ class Collection:
     slug_max: int = 60
     sort: str = "position"            # « position » (ordre choisi) ou « date »
     title: tuple[str, ...] = ()       # champs affichés dans la liste (le premier non vide)
+    bloc: str = ""                    # « textes » : rubrique de « Pages et textes » (exportée sous cette clé)
 
 
 def _bi(name, label, **kw):
@@ -145,6 +146,29 @@ COLLECTIONS: dict[str, Collection] = {c.key: c for c in [
         Field("lon", "Longitude", "float", help="Entre -9,5 et -2,0."),
     ], title=("drena",)),
 ]}
+
+
+def _add_text_collections() -> None:
+    from . import site_texts as st
+
+    def mk(name, label, kind):
+        return Field(name, label, kind if kind in ("bi", "bilong") else "text")
+
+    for key, (titre, aide, fields) in st.BLOCS.items():
+        COLLECTIONS[key] = Collection(key, titre, aide, singleton=True, bloc=st.BLOC, title=(fields[0][0],), fields=[
+            Field(n, label, kind if kind in ("bi", "bilong") else "text", help=h) for n, label, kind, h in fields])
+    for key, (titre, aide, _tkey, fields, title) in st.LISTES.items():
+        COLLECTIONS[key] = Collection(key, titre, aide, bloc=st.BLOC, title=(title,),
+                                      fields=[mk(n, label, k) for n, label, k in fields])
+
+
+_add_text_collections()
+
+
+def default_values(col: Collection):
+    """Textes d'origine du site pour cette rubrique (dict pour un bloc, liste pour une liste), ou None."""
+    from . import site_texts as st
+    return st.defaults().get(col.key) if col.bloc else None
 
 
 class FormError(ValueError):
@@ -398,6 +422,13 @@ def export_site(db: Session) -> dict:
     result: dict = {}
     for key, col in COLLECTIONS.items():
         rows = items_of(db, key)
+        if col.bloc:                                    # « Pages et textes » : regroupé sous une seule clé
+            target = result.setdefault(col.bloc, {})
+            if col.singleton:
+                target[key] = load(rows[0]) if rows else {}
+            else:
+                target[key] = [load(r) for r in rows]
+            continue
         if col.singleton:
             result[key] = resolve(load(rows[0]), col) if rows else {}
             if key == "contact" and rows and not any(result[key]["message_partenariat"].values()):
@@ -413,6 +444,10 @@ def export_site(db: Session) -> dict:
                 item["slug"] = r.cle
             items.append(item)
         result[key] = items
+    result["annuaire"] = [
+        {"nom": e.nom, "niveau": e.niveau or "", "localite": e.localite or "", "drena": e.drena or "", "faitiere": f.sigle}
+        for e, f in db.query(models.Ecole, models.Faitiere).join(models.Faitiere, models.Ecole.faitiere_id == models.Faitiere.id)
+        .filter(models.Ecole.publique.is_(True)).order_by(models.Faitiere.sigle, models.Ecole.nom) if f.is_membre_actif]
     result["media"] = [{"path": media_path(m), "url": f"/medias/{m.id}.{m.extension}", "sha256": m.sha256,
                         "taille": m.taille} for m in sorted(used.values(), key=lambda m: m.id)]
     body = json.dumps({k: v for k, v in result.items()}, sort_keys=True, ensure_ascii=False)

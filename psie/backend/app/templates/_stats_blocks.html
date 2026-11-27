@@ -1,3 +1,13 @@
+<section class="card">
+  <h2>{{ t('e_charts') }}</h2>
+  <div class="two">
+    <div>{{ charts.line_from(evolution, 'annee', 'eleves', t('e_pupils') ~ ' — ' ~ t('e_evolution')) }}
+         {{ charts.line_from(evolution, 'annee', 'personnel', t('e_staff_total') ~ ' — ' ~ t('e_evolution')) }}</div>
+    <div>{{ charts.line_from(evolution, 'annee', 'taux', t('e_pass_rate') ~ ' — ' ~ t('e_evolution'), ' %') }}
+         {{ charts.bars_from(exams, 'examen', 'taux', t('e_exams') ~ ' ' ~ annee ~ ' — ' ~ t('e_rate'), ' %', true) }}</div>
+  </div>
+  {% if not evolution or evolution|length < 2 %}<p class="muted">{{ t('e_chart_need_two_years') }}</p>{% endif %}
+</section>
 <div class="two">
   <section class="card">
     <h2>{{ t('e_exams') }} {{ annee }}</h2>

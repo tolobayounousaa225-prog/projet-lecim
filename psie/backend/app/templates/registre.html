@@ -11,7 +11,8 @@
       <td><strong>{{ e.titre }}</strong><br>{{ e.resume }}
         {% if e.document_id and e.document_id in docs_by_id %}<br><a href="/documents/{{ e.document_id }}/fichier">{{ docs_by_id[e.document_id].titre }}</a>{% endif %}
         {% if e.assemblee_id %}<br><a href="/assemblees/{{ e.assemblee_id }}">{{ t('r_assembly') }}</a>{% endif %}</td>
-      <td>{{ e.auteur }}</td><td><code>{{ e.empreinte[:12] }}…</code></td></tr>
+      <td>{{ e.auteur }}{% if can_write %}<br><a href="/signatures/registre/{{ e.id }}">{{ t('sg_sign_doc') }}</a>{% endif %}
+        {% for sg in sigs.get(e.id, []) %}<br><small class="muted">✔ {{ sg.signer_nom }} — {{ sg.signed_at.strftime('%d/%m/%Y') }}</small>{% endfor %}</td><td><code>{{ e.empreinte[:12] }}…</code></td></tr>
   {% else %}<tr><td colspan="5" class="muted">{{ t('none') }}</td></tr>{% endfor %}</tbody>
 </table></div>
 {% if can_write and not broken %}

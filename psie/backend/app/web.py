@@ -12,6 +12,9 @@ from .i18n import label, normalize_lang, translate
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+from . import charts as _charts  # noqa: E402
+
+templates.env.globals["charts"] = _charts
 
 
 def current_lang(request: Request) -> str:
@@ -20,7 +23,14 @@ def current_lang(request: Request) -> str:
 
 def render(request: Request, name: str, user: "models.User | None" = None, status_code: int = 200, **ctx):
     lang = current_lang(request)
+    unread = 0
+    if user is not None:                                   # compteur de la cloche (une requête indexée par page)
+        from .database import SessionLocal
+
+        with SessionLocal() as s:
+            unread = s.query(models.Notification).filter_by(user_id=user.id, lue_at=None).count()
     ctx.update(
+        unread_notifications=unread,
         user=user,
         app_shell=user is not None,
         request=request,

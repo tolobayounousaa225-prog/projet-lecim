@@ -54,7 +54,7 @@ def dashboard(request: Request, user: models.User = Depends(require_internal), d
 
 
 URL_OF = {"membres": "/faitieres", "adhesions": "/adhesions", "assemblees": "/assemblees", "sanctions": "/sanctions",
-          "finances": "/cotisations", "ecoles": "/statistiques", "documents": "/documents", "interets": "/interets", "contenu": "/gestion/contenu"}
+          "finances": "/cotisations", "ecoles": "/statistiques", "documents": "/documents", "formation": "/formations", "supervision": "/supervision", "interets": "/interets", "contenu": "/gestion/contenu"}
 
 
 # ---------- Membres (faîtières) ----------

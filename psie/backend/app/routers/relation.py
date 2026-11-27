@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from .. import models
+from .. import models, notifier
 from ..audit import log_action
 from ..database import get_db
 from ..deps import get_current_user, require_member_manager
@@ -48,6 +48,10 @@ def annonce_add(titre: str = Form(""), texte: str = Form(""), cible: str = Form(
     db.add(a)
     db.flush()
     log_action(db, user, "creation", "annonces", a.id, titre)
+    if fid:
+        notifier.notify_faitiere(db, fid, f"Annonce : {titre}", texte=texte[:300], lien="/annonces", kind="annonce")
+    else:
+        notifier.notify_all_faitieres(db, f"Annonce : {titre}", texte=texte[:300], lien="/annonces", kind="annonce")
     db.commit()
     return RedirectResponse("/annonces", status_code=303)
 
@@ -85,6 +89,7 @@ def demande_add(type: str = Form(""), objet: str = Form(""), message: str = Form
     db.add(d)
     db.flush()
     log_action(db, user, "creation", "demandes", d.id, objet)
+    notifier.notify_roles(db, {"den", "secretaire"}, f"Nouvelle demande d'une faîtière : {objet}", texte=d.type_label, lien="/demandes", kind="demande")
     db.commit()
     return RedirectResponse("/demandes", status_code=303)
 
@@ -99,5 +104,6 @@ def demande_answer(demande_id: int, statut: str = Form(""), reponse: str = Form(
         raise HTTPException(status_code=400, detail="Statut inconnu")
     d.statut, d.reponse, d.updated_at = statut, clean(reponse), datetime.datetime.utcnow()
     log_action(db, user, "reponse", "demandes", d.id, statut)
+    notifier.notify_faitiere(db, d.faitiere_id, f"Réponse à votre demande : {d.objet}", texte=d.statut_label, lien="/demandes", kind="demande")
     db.commit()
     return RedirectResponse("/demandes", status_code=303)

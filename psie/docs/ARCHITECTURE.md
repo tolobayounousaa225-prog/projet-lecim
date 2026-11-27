@@ -22,6 +22,7 @@
 - `app/models.py` : toutes les tables. `migrations/versions/` : une migration par évolution (0001 → …), appliquées automatiquement au démarrage.
 - `app/routers/` : un fichier par domaine — `membres`, `adhesions`, `assemblees`, `sanctions`, `cotisations`/`appels`/`compta` (finances), `ecoles`/`statistiques`/`relation` (espace faîtière), `documents` (documents, courrier, conventions, registres), `contenu` (site vitrine), `acces` (droits), `auth`/`reinitialisation`, `public`.
 - `app/acces.py` : **droits par rubrique** (niveaux aucun / lecture / modification, par rôle puis par personne). `deps.visibility_guard` l'applique à *toutes* les adresses.
+- `app/notifier.py` : notifications (cloche + e-mail + canaux branchables). `app/signatures.py` : signature électronique simple (code e-mail + empreinte + vérification publique). `app/routers/formations.py` : formations, sessions, présence, certificats. `app/routers/supervision.py` : consultation d'un compte en lecture seule (jeton signé `view_as`, résolu dans `deps.py`, écritures refusées, audit attribué au superviseur). `app/charts.py` : graphiques SVG générés par le serveur. `static/psie.js` : seul script de l'application (filtres, raccourci de recherche) ; la CSP n'autorise que `script-src 'self'`.
 - `app/i18n.py` (+ `*_texts.py`) : textes français et arabe ; une clé absente retombe sur le français.
 - `app/scheduler.py` : tâches planifiées (voir EXPLOITATION.md). `app/rappels.py` : rappels réglementaires, chacun envoyé une seule fois.
 - `app/audit.py` : journal d'audit de toute écriture sensible.
@@ -31,4 +32,5 @@
 Mots de passe bcrypt ; cookie de session HTTPS ; double authentification par e-mail pour les rôles sensibles ; verrouillage après échecs ; limitation de débit ; liens de mot de passe à usage unique stockés sous forme d'empreinte ; téléversements contrôlés (PDF vérifiés, images ré-encodées, SVG refusé) ; cloisonnement strict d'une faîtière à ses données ; sauvegardes chiffrées AES-256.
 
 ## Tests
+- **Navigateur** (parcours clés, accessibilité axe, mobile) : `cd psie/e2e && npm install && npx playwright install chromium && node run.js` (aussi en CI : workflow `psie-e2e`).
 `cd psie/backend && python -m pytest -q` (≈ 10 min). La CI GitHub exécute la suite sur SQLite et sur PostgreSQL, et construit l'image Docker.

@@ -2,7 +2,7 @@
 {% block title %}{{ t('f_budget') }}{% endblock %}
 {% block content %}
 <div class="row"><h1>{{ t('f_budget') }} {{ annee }}</h1>
-  <form method="get" class="inline"><input type="number" name="annee" value="{{ annee }}" min="2000" max="2100" style="width:6em"> <button class="btn">OK</button></form></div>
+  <form method="get" class="inline"><input type="number" name="annee" value="{{ annee }}" min="2000" max="2100" style="width:6em" aria-label="{{ t('e_year') }}"> <button class="btn">OK</button></form></div>
 {% if b %}<p><span class="badge {{ 'actif' if b.statut == 'valide' else 'partiel' }}">{{ t('f_budget_validated') if b.statut == 'valide' else t('f_budget_draft') }}</span>
   {% if b.reference_validation %}{{ b.reference_validation }}{% endif %}</p>{% endif %}
 <form method="post" action="/budget/lignes">
