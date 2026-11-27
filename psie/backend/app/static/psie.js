@@ -41,6 +41,45 @@
     if (w.scrollWidth > w.clientWidth) { w.tabIndex = 0; }
   });
 
+  // Page « Accès par rubrique » : cellules colorées, profils en un clic par rôle, compteur de modifications non enregistrées.
+  var form = document.getElementById("access-form");
+  if (form) {
+    var selects = Array.prototype.slice.call(form.querySelectorAll("select.lvl"));
+    var bar = document.getElementById("save-bar"), pending = document.getElementById("pending-count");
+    var idle = pending ? pending.textContent : "";
+    var dirty = false;
+    form.querySelectorAll(".js-only").forEach(function (n) { n.hidden = false; });
+    function refresh() {
+      var changed = 0;
+      selects.forEach(function (sel) {
+        sel.className = "lvl lv" + sel.value;
+        if (sel.value !== sel.dataset.initial) changed++;
+        sel.parentNode.classList.toggle("changed", sel.value !== sel.dataset.default);
+      });
+      dirty = changed > 0;
+      if (bar) bar.classList.toggle("dirty", dirty);
+      if (pending) pending.textContent = dirty ? changed + " " + (pending.getAttribute("data-label") || "") : idle;
+      form.querySelectorAll("[data-count-role]").forEach(function (n) {
+        var role = n.getAttribute("data-count-role"), visible = selects.filter(function (s) { return s.dataset.role === role && s.value !== "0"; }).length;
+        n.textContent = visible + " / " + selects.filter(function (s) { return s.dataset.role === role; }).length;
+      });
+    }
+    form.addEventListener("change", refresh);
+    form.querySelectorAll("[data-preset]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var role = btn.dataset.role;
+        selects.forEach(function (sel) {
+          if (sel.dataset.role !== role) return;
+          sel.value = btn.dataset.preset === "default" ? sel.dataset.default : btn.dataset.preset;
+        });
+        refresh();
+      });
+    });
+    form.addEventListener("submit", function () { dirty = false; });
+    window.addEventListener("beforeunload", function (e) { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+    refresh();
+  }
+
   // Raccourci « / » : place le curseur dans la recherche globale.
   var global = document.getElementById("global-search");
   document.addEventListener("keydown", function (e) {

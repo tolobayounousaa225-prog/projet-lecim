@@ -28,8 +28,14 @@ def _level(value) -> int | None:
 def acces_page(request: Request, user: models.User = Depends(require_admin), db: Session = Depends(get_db)):
     matrix = {role: acces.role_defaults_with_overrides(db, role) for role in ROLES}
     defaults = {role: acces.defaults_for(role) for role in ROLES}
+    exceptions = {}
+    for row in db.query(models.AccesUtilisateur).all():
+        exceptions.setdefault(row.user_id, []).append(row)
+    people = {u.id: u for u in db.query(models.User).filter(models.User.id.in_(list(exceptions) or [0]))}
+    exc_rows = sorted(((people[uid], rows) for uid, rows in exceptions.items() if uid in people), key=lambda x: x[0].full_name)
     return render(request, "acces_matrice.html", user, sections=acces.SECTIONS, matrix_roles=ROLES, matrix=matrix,
-                  defaults=defaults, levels=acces.LEVELS, saved=bool(request.query_params.get("ok")))
+                  defaults=defaults, levels=acces.LEVELS, short={0: "—", 1: "Lire", 2: "Modifier"}, exc_rows=exc_rows,
+                  saved=bool(request.query_params.get("ok")))
 
 
 @router.post("/acces")

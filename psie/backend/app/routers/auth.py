@@ -132,6 +132,7 @@ def two_factor_verify(request: Request, code: str = Form(...), db: Session = Dep
 def logout():
     response = RedirectResponse("/login", status_code=303)
     response.delete_cookie("access_token")
+    response.delete_cookie("view_as")
     return response
 
 

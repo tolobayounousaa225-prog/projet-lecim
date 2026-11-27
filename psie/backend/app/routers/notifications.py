@@ -25,7 +25,7 @@ def notification_open(notif_id: int, user: models.User = Depends(get_current_use
     n = db.get(models.Notification, notif_id)
     if not n or n.user_id != user.id:                       # jamais la notification d'une autre personne
         raise HTTPException(status_code=404, detail="Notification introuvable")
-    if n.lue_at is None:
+    if n.lue_at is None and user.supervisor is None:        # en consultation, on ne touche à rien
         n.lue_at = datetime.datetime.utcnow()
         db.commit()
     link = n.lien if (n.lien or "").startswith("/") and not (n.lien or "").startswith("//") else "/notifications"

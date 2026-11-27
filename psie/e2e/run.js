@@ -100,6 +100,26 @@ async function axeViolations(page) {
       await ctx.close();
     }
 
+    // 2 bis. Supervision : le DEN consulte l'espace du secrétaire aux finances en lecture seule ; l'administrateur règle les accès en un clic
+    {
+      const { ctx, page, errors } = await login(browser, "den@psie.ci");
+      await page.goto(`${BASE}/supervision`);
+      await page.click("tr:has-text('fin@psie.ci') button:has-text('Voir son espace')");
+      await page.goto(`${BASE}/cotisations`);
+      check((await page.locator(".view-banner").count()) === 1, "supervision : bandeau « lecture seule » dans l'espace consulté");
+      const write = await page.evaluate(async () => (await fetch("/cotisations/bareme", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "annee=2027&montant=1" })).status);
+      check(write === 403, "supervision : aucune modification possible pendant la consultation");
+      await page.click(".view-banner button");
+      check((await page.locator(".view-banner").count()) === 0, "supervision : retour à son propre espace");
+      check(errors.filter((e) => !/403/.test(e)).length === 0, "supervision : aucune erreur JavaScript");
+      await ctx.close();
+      const adm = await login(browser, "admin@psie.ci");
+      await adm.page.goto(`${BASE}/acces`);
+      await adm.page.click("button[data-preset='1'][data-role='communication']");
+      check(/\d+ modification/.test(await adm.page.locator("#pending-count").innerText()), "accès par rubrique : profil « lecture » appliqué en un clic, modifications comptées");
+      await adm.ctx.close();
+    }
+
     // 3. Faîtière : ajoute une école, voit ses statistiques et reçoit l'annonce
     {
       const den = await login(browser, "den@psie.ci");

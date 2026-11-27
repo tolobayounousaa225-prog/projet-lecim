@@ -28,6 +28,9 @@
       {{ nav_item('/conventions', t('nav_agreements'), '/conventions') }}{{ nav_item('/registres', t('nav_registers'), '/registres') }}
     </div>
     {% endif %}
+    {% if user.can('supervision') and not user.supervisor %}
+    <div class="nav-group"><h2>{{ t('nav_supervision') }}</h2>{{ nav_item('/supervision', t('nav_supervision_accounts'), '/supervision') }}</div>
+    {% endif %}
     {% if user.can('formation') %}
     <div class="nav-group"><h2>{{ t('nav_training') }}</h2>{{ nav_item('/formations', t('fm_title'), '/formations') }}</div>
     {% endif %}
@@ -112,6 +115,12 @@
         </div>
       </details>
     </header>
+    {% if user.supervisor %}
+    <div class="view-banner" role="status">
+      <span>{{ t('sv_banner') }} <strong>{{ user.full_name }}</strong> ({{ lbl('role', user.role) }}) — {{ t('sv_readonly') }} · {{ user.supervisor.full_name }}</span>
+      <form method="post" action="/supervision/quitter"><button class="btn secondary">{{ t('sv_leave') }}</button></form>
+    </div>
+    {% endif %}
     <main class="content">
       {{ page_content }}
     </main>
