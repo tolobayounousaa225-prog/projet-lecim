@@ -2328,16 +2328,8 @@ var INSCRIPTION_LABELS = {
 };
 
 function loadActivities() {
-  var icsUrl = API_BASE + "/api/activities/calendar.ics";
   var subscribeLink = document.getElementById("calendar-subscribe-link");
-  if (subscribeLink) {
-    // webcal: (plutot que https:) declenche directement la boite de dialogue
-    // "S'abonner" dans Apple Calendrier/Outlook au lieu d'un simple
-    // telechargement ponctuel du fichier .ics.
-    subscribeLink.href = icsUrl.replace(/^https?:/, "webcal:");
-  }
-  var urlField = document.getElementById("calendar-subscribe-url");
-  if (urlField) urlField.value = icsUrl;
+  if (subscribeLink) subscribeLink.href = API_BASE + "/api/activities/calendar.ics";
 
   var container = document.querySelector(".timeline");
   if (!container) return;
