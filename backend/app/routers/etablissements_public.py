@@ -57,8 +57,10 @@ def etablissements_stats(db: Session = Depends(get_db)):
         )
         eleves = total_garcons + total_filles
 
+    membres = db.query(models.Membre).count()
+
     return schemas.EtablissementsStatsOut(
-        ecoles=ecoles, regions=regions, enseignants=enseignants, eleves=eleves
+        ecoles=ecoles, regions=regions, enseignants=enseignants, eleves=eleves, membres=membres
     )
 
 

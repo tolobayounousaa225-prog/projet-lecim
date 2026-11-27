@@ -549,9 +549,10 @@ function loadHeroStats() {
   var regionsEl = document.getElementById("hero-stat-regions");
   var enseignantsEl = document.getElementById("hero-stat-enseignants");
   var elevesEl = document.getElementById("hero-stat-eleves");
+  var membresEl = document.getElementById("hero-stat-membres");
   var badgeEcolesEl = document.getElementById("hero-badge-ecoles");
   var badgeRegionsEl = document.getElementById("hero-badge-regions");
-  if (!ecolesEl && !regionsEl && !enseignantsEl && !elevesEl && !badgeEcolesEl && !badgeRegionsEl) return;
+  if (!ecolesEl && !regionsEl && !enseignantsEl && !elevesEl && !membresEl && !badgeEcolesEl && !badgeRegionsEl) return;
 
   fetch(API_BASE + "/api/etablissements/stats")
     .then(function (res) {
@@ -569,6 +570,7 @@ function loadHeroStats() {
       if (regionsEl && stats.regions) animateCountUp(regionsEl, stats.regions, exactFormat);
       if (enseignantsEl && stats.enseignants) animateCountUp(enseignantsEl, stats.enseignants, plusFormat);
       if (elevesEl && stats.eleves) animateCountUp(elevesEl, stats.eleves, elevesFormat);
+      if (membresEl && stats.membres) animateCountUp(membresEl, stats.membres, plusFormat);
       if (badgeEcolesEl && stats.ecoles) animateCountUp(badgeEcolesEl, stats.ecoles, plusFormat);
       if (badgeRegionsEl && stats.regions) animateCountUp(badgeRegionsEl, stats.regions, exactFormat);
     })
