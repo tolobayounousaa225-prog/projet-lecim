@@ -180,4 +180,68 @@ SITE_CONTENT_FIELDS: dict[str, dict] = {
         "type": "text",
         "default": "© 2026 LECIM — Tous droits réservés.",
     },
+    "confidentialite_contenu": {
+        "group": "Politique de confidentialité",
+        "label": "Texte complet de la page (une ligne vide sépare les paragraphes)",
+        "type": "textarea",
+        "default": (
+            "La présente politique de confidentialité décrit comment la Ligue des Établissements "
+            "Confessionnels et Madrassas en Côte d'Ivoire (LECIM) collecte, utilise et protège les "
+            "données personnelles des visiteurs du site, des membres du Bureau Exécutif National, "
+            "des délégations régionales et des établissements affiliés.\n\n"
+            "1. Données collectées\n"
+            "Selon votre usage du site, nous pouvons collecter : nom, prénom, date et lieu de "
+            "naissance, photo, numéro de pièce d'identité et coordonnées (demande d'adhésion, carte "
+            "de membre ou carte scolaire) ; adresse e-mail (formulaire de contact, newsletter, "
+            "notifications) ; informations relatives à un établissement (nom, effectifs, résultats "
+            "aux examens, enseignants) lorsqu'elles sont déclarées par l'établissement lui-même.\n\n"
+            "2. Finalités du traitement\n"
+            "Ces données servent exclusivement à : instruire les demandes d'adhésion et délivrer les "
+            "cartes de membre et cartes scolaires ; assurer le suivi administratif et financier des "
+            "établissements membres (cotisations, résultats, effectifs) ; répondre aux demandes de "
+            "contact ; envoyer les communications auxquelles vous êtes abonné (newsletter, "
+            "notifications d'actualité urgente) ; établir des statistiques de fréquentation "
+            "anonymes du site (aucune adresse IP ni identifiant personnel n'est conservé pour ces "
+            "statistiques).\n\n"
+            "3. Conservation des données\n"
+            "Les données sont conservées le temps nécessaire aux finalités décrites ci-dessus, puis "
+            "archivées ou supprimées conformément aux obligations légales et administratives de la "
+            "LECIM.\n\n"
+            "4. Vos droits\n"
+            "Vous disposez d'un droit d'accès, de rectification et de suppression des données vous "
+            "concernant. Pour l'exercer, ou pour toute question sur cette politique, contactez le "
+            "secrétariat de la LECIM à l'adresse indiquée en pied de page.\n\n"
+            "5. Sécurité\n"
+            "L'accès aux espaces d'administration est protégé (authentification, droits d'accès "
+            "limités par fonction, et authentification à deux facteurs disponible). Les échanges "
+            "avec le site sont chiffrés (HTTPS).\n\n"
+            "6. Mise à jour\n"
+            "Cette politique peut être mise à jour ; la date de dernière modification est indiquée "
+            "en pied de page du site."
+        ),
+    },
+    "mentions_legales_contenu": {
+        "group": "Mentions légales",
+        "label": "Texte complet de la page (une ligne vide sépare les paragraphes)",
+        "type": "textarea",
+        "default": (
+            "Éditeur du site\n"
+            "Ligue des Établissements Confessionnels et Madrassas en Côte d'Ivoire (LECIM)\n"
+            "Abobo PK18, Abidjan — 13 BP 3130 Abidjan 13, Côte d'Ivoire\n"
+            "Contact : lecimnational@gmail.com — Tél/Fax : 27 24 51 38 20\n\n"
+            "Directeur de publication\n"
+            "Le Président de la LECIM.\n\n"
+            "Hébergement\n"
+            "Site vitrine : GitHub Pages (GitHub, Inc.).\n"
+            "Application et données : hébergées chez des prestataires d'infrastructure cloud "
+            "tiers, dans le respect des mesures de sécurité en vigueur.\n\n"
+            "Propriété intellectuelle\n"
+            "L'ensemble des contenus de ce site (textes, images, logos) est la propriété de la "
+            "LECIM ou de ses établissements membres, sauf mention contraire, et ne peut être "
+            "reproduit sans autorisation préalable.\n\n"
+            "Protection des données personnelles\n"
+            "Voir la Politique de confidentialité pour le détail des données collectées et de vos "
+            "droits."
+        ),
+    },
 }
