@@ -8,6 +8,7 @@ from fpdf import FPDF
 from PIL import Image, ImageDraw, ImageOps
 
 from .config import settings
+from .pdf_signing import sign_official_pdf
 
 GREEN_DARK = (11, 61, 46)
 GREEN = (15, 122, 76)
@@ -542,6 +543,7 @@ def generate_card_pdf(carte, photo_bytes: bytes | None) -> bytes:
         _add_recto(pdf, carte, photo_bytes)
         _add_verso(pdf, carte)
 
+    sign_official_pdf(pdf, reason="Carte de membre LECIM")
     return bytes(pdf.output())
 
 
@@ -555,6 +557,7 @@ def generate_card_pdf_recto(carte, photo_bytes: bytes | None) -> bytes:
         _add_recto_delegation(pdf, carte, photo_bytes)
     else:
         _add_recto(pdf, carte, photo_bytes)
+    sign_official_pdf(pdf, reason="Carte de membre LECIM")
     return bytes(pdf.output())
 
 
@@ -565,6 +568,7 @@ def generate_card_pdf_verso(carte) -> bytes:
         _add_verso_delegation(pdf, carte)
     else:
         _add_verso(pdf, carte)
+    sign_official_pdf(pdf, reason="Carte de membre LECIM")
     return bytes(pdf.output())
 
 
@@ -738,6 +742,7 @@ def generate_student_card_pdf(carte, photo_bytes: bytes | None, ecole_logo_bytes
     _add_recto_eleve(pdf, carte, photo_bytes, ecole_logo_bytes)
     _add_verso_eleve(pdf, carte)
 
+    sign_official_pdf(pdf, reason="Carte scolaire LECIM")
     return bytes(pdf.output())
 
 
@@ -745,6 +750,7 @@ def generate_student_card_pdf_recto(carte, photo_bytes: bytes | None, ecole_logo
     pdf = FPDF(orientation="L", unit="mm", format=(CARD_H, CARD_W))
     pdf.set_auto_page_break(auto=False)
     _add_recto_eleve(pdf, carte, photo_bytes, ecole_logo_bytes)
+    sign_official_pdf(pdf, reason="Carte scolaire LECIM")
     return bytes(pdf.output())
 
 
@@ -752,4 +758,5 @@ def generate_student_card_pdf_verso(carte) -> bytes:
     pdf = FPDF(orientation="L", unit="mm", format=(CARD_H, CARD_W))
     pdf.set_auto_page_break(auto=False)
     _add_verso_eleve(pdf, carte)
+    sign_official_pdf(pdf, reason="Carte scolaire LECIM")
     return bytes(pdf.output())

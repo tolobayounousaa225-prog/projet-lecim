@@ -438,6 +438,7 @@ class EtablissementsStatsOut(BaseModel):
     regions: int
     enseignants: int
     eleves: int
+    membres: int
 
 
 class PartenairePublicOut(BaseModel):
