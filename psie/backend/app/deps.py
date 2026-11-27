@@ -77,8 +77,6 @@ def require_write(section: str):
 
 
 require_adhesions_write = require_write("adhesions")
-require_assemblees_write = require_write("assemblees")
-require_sanctions_write = require_write("sanctions")
 
 
 def require_content_editor(user: models.User = Depends(get_current_user)) -> models.User:

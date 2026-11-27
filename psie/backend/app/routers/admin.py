@@ -53,8 +53,8 @@ def dashboard(request: Request, user: models.User = Depends(require_internal), d
     return render(request, "dashboard.html", user, sections=sections, **ctx)
 
 
-URL_OF = {"membres": "/faitieres", "adhesions": "/adhesions", "assemblees": "/assemblees", "sanctions": "/sanctions",
-          "finances": "/cotisations", "ecoles": "/statistiques", "documents": "/documents", "formation": "/formations", "supervision": "/supervision", "interets": "/interets", "contenu": "/gestion/contenu"}
+URL_OF = {"membres": "/faitieres", "adhesions": "/adhesions",
+          "finances": "/cotisations", "ecoles": "/statistiques", "documents": "/documents", "formation": "/formations", "supervision": "/supervision", "contenu": "/gestion/contenu"}
 
 
 # ---------- Membres (faîtières) ----------
@@ -149,10 +149,8 @@ def faitiere_detail(faitiere_id: int, request: Request, user: models.User = Depe
     dash = stats.dossier(db, item, stats.current_year()) if (not user.is_internal or user.can("ecoles")) else None
     annonces = db.query(models.Annonce).filter(or_(models.Annonce.faitiere_id.is_(None), models.Annonce.faitiere_id == item.id)) \
         .order_by(models.Annonce.id.desc()).limit(3).all() if dash else []
-    prochains = [a for a in db.query(models.Assemblee).order_by(models.Assemblee.date_assemblee).all()
-                 if a.date_assemblee >= datetime.date.today() and a.statut != "preparation"][:3] if dash else []
     return render(request, "faitiere_detail.html", user, item=item, show_dues=show_dues, dash=dash, annonces=annonces,
-                  prochains=prochains, annee=stats.current_year(),
+                  annee=stats.current_year(),
                   echeances=echeances, fcfa=finance.fcfa, pieces=pieces, piece_types=models.MEMBRE_PIECE_TYPES)
 
 

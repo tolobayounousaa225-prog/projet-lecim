@@ -38,13 +38,6 @@
 </section>
 {% endif %}
 
-{% if assemblees %}
-<section class="card">
-  <h2>{{ t('dash_assemblies') }}</h2>
-  <ul>{% for a in assemblees %}<li><a href="/assemblees/{{ a.id }}">{{ a.type_label }}</a> — {{ a.date_assemblee.strftime('%d/%m/%Y') }}, {{ a.lieu }} ({{ a.statut_label }})</li>{% endfor %}</ul>
-</section>
-{% endif %}
-
 {% if composition is defined %}
 <section class="card">
   <h2>{{ t('g_composition') }}</h2>

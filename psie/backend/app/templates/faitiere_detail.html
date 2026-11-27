@@ -22,9 +22,6 @@
       <ul class="linklist">{% for key, ok, url in dash.steps %}<li>{{ '✔' if ok else '○' }} <a href="{{ url }}">{{ t(key) }}</a></li>{% endfor %}</ul>
     </div>
     <div>
-      <h3>{{ t('e_next_events') }}</h3>
-      <ul>{% for a in prochains %}<li><a href="/assemblees/{{ a.id }}">{{ a.type_label }}</a> — {{ a.date_assemblee.strftime('%d/%m/%Y') }}, {{ a.lieu }}</li>
-      {% else %}<li class="muted">{{ t('none') }}</li>{% endfor %}</ul>
       <h3><a href="/annonces">{{ t('nav_announcements') }}</a></h3>
       <ul>{% for a in annonces %}<li>{{ a.titre }} <small class="muted">{{ a.created_at.strftime('%d/%m/%Y') }}</small></li>{% else %}<li class="muted">{{ t('none') }}</li>{% endfor %}</ul>
     </div>
