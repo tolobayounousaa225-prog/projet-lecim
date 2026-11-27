@@ -1,20 +1,39 @@
 {% extends "base.html" %}
 {% block title %}{{ t('nav_access') }}{% endblock %}
 {% block content %}
-<div class="page-head"><h1>{{ t('nav_access') }}</h1></div>
+<div class="page-head"><h1>{{ t('nav_access') }}</h1>
+  <a class="btn secondary" href="/supervision">{{ t('ax_see_as') }}</a></div>
 <p class="muted">{{ t('access_help') }}</p>
-{% if saved %}<p class="notice">{{ t('access_saved') }}</p>{% endif %}
-<form method="post" action="/acces">
-<div class="table-wrap">
-<table class="matrix">
-  <thead><tr><th>{{ t('access_section') }}</th>{% for r in matrix_roles %}<th>{{ lbl('role', r) }}</th>{% endfor %}</tr></thead>
+{% if saved %}<p class="notice" role="status">{{ t('access_saved') }}</p>{% endif %}
+<p class="legend"><span class="lv lv0">— {{ t('ax_none') }}</span> <span class="lv lv1">{{ t('ax_read') }}</span> <span class="lv lv2">{{ t('ax_write') }}</span>
+  · <span class="lv changed-demo">{{ t('ax_changed') }}</span></p>
+
+<form method="post" action="/acces" id="access-form">
+<div class="table-wrap access-wrap" tabindex="0">
+<table class="matrix access">
+  <thead>
+    <tr><th class="corner">{{ t('access_section') }}</th>
+      {% for r in matrix_roles %}
+      <th scope="col" class="role-col" data-role="{{ r }}">
+        <span class="role-name">{{ lbl('role', r) }}</span>
+        <span class="presets js-only" hidden>
+          <button type="button" class="chip" data-preset="default" data-role="{{ r }}" title="{{ t('ax_preset_default') }}">{{ t('ax_default') }}</button>
+          <button type="button" class="chip" data-preset="1" data-role="{{ r }}" title="{{ t('ax_preset_read') }}">{{ t('ax_read') }}</button>
+          <button type="button" class="chip" data-preset="0" data-role="{{ r }}" title="{{ t('ax_preset_none') }}">{{ t('ax_none') }}</button>
+        </span>
+        <span class="role-count muted" data-count-role="{{ r }}"></span>
+      </th>
+      {% endfor %}
+    </tr>
+  </thead>
   <tbody>
   {% for key, s in sections.items() %}
-    <tr><th scope="row">{{ s[1] if lang == 'ar' else s[0] }}<small class="muted">{{ s[2] }}</small></th>
-      {% for r in matrix_roles %}
-      <td class="{% if matrix[r].get(key, 0) != defaults[r].get(key, 0) %}changed{% endif %}">
-        <select name="n__{{ r }}__{{ key }}" aria-label="{{ lbl('role', r) }} — {{ s[0] }}">
-          {% for n, label in levels.items() %}<option value="{{ n }}" {% if matrix[r].get(key, 0) == n %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    <tr><th scope="row" class="row-head">{{ s[1] if lang == 'ar' else s[0] }}<small class="muted">{{ s[2] }}</small></th>
+      {% for r in matrix_roles %}{% set v = matrix[r].get(key, 0) %}{% set d = defaults[r].get(key, 0) %}
+      <td class="{% if v != d %}changed{% endif %}">
+        <select name="n__{{ r }}__{{ key }}" class="lvl lv{{ v }}" data-initial="{{ v }}" data-default="{{ d }}" data-role="{{ r }}"
+                aria-label="{{ lbl('role', r) }} — {{ s[0] }}">
+          {% for n, label in levels.items() %}<option value="{{ n }}" {% if v == n %}selected{% endif %}>{{ '—' if n == 0 else (t('ax_read') if n == 1 else t('ax_write')) }}</option>{% endfor %}
         </select>
       </td>
       {% endfor %}
@@ -23,15 +42,27 @@
   </tbody>
 </table>
 </div>
-<p class="actions"><button class="btn">{{ t('save') }}</button></p>
+<div class="save-bar" id="save-bar">
+  <span id="pending-count" class="muted" aria-live="polite" data-label="{{ t('ax_pending') }}">{{ t('ax_no_change') }}</span>
+  <button class="btn" id="save-btn">{{ t('save') }}</button>
+</div>
 </form>
+
+<section class="card">
+  <h2>{{ t('ax_exceptions') }}</h2>
+  {% if exc_rows %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ t('name') }}</th><th>{{ t('ax_role') }}</th><th>{{ t('ax_nb_exceptions') }}</th><th><span class="sr-only">{{ t('a11y_actions') }}</span></th></tr></thead>
+    <tbody>{% for u, rows in exc_rows %}<tr><td>{{ u.full_name }}<br><small class="muted">{{ u.email }}</small></td><td>{{ lbl('role', u.role) }}</td><td>{{ rows|length }}</td>
+      <td><a href="/users/{{ u.id }}/acces">{{ t('ax_edit') }}</a></td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="muted">{{ t('ax_no_exception') }}</p>{% endif %}
+  <p class="muted">{{ t('ax_exception_help') }} <a href="/users">{{ t('nav_users') }}</a></p>
+</section>
+
 <form method="post" action="/acces/reinitialiser" class="inline"><button class="link danger">{{ t('access_reset') }}</button></form>
 <section class="card">
   <h2>{{ t('access_rules_title') }}</h2>
-  <ul>
-    <li>{{ t('access_rule_1') }}</li>
-    <li>{{ t('access_rule_2') }}</li>
-    <li>{{ t('access_rule_3') }}</li>
-  </ul>
+  <ul><li>{{ t('access_rule_1') }}</li><li>{{ t('access_rule_2') }}</li><li>{{ t('access_rule_3') }}</li></ul>
 </section>
 {% endblock %}

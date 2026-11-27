@@ -36,6 +36,26 @@ def create_access_token(subject: str) -> str:
     return jwt.encode({"sub": subject, "exp": expire}, settings.secret_key, algorithm=settings.algorithm)
 
 
+VIEW_AS_PURPOSE = "view_as"
+VIEW_AS_MINUTES = 60
+
+
+def create_view_as_token(supervisor_email: str, target_id: int) -> str:
+    expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=VIEW_AS_MINUTES)
+    return jwt.encode({"sub": supervisor_email, "target": target_id, "purpose": VIEW_AS_PURPOSE, "exp": expire},
+                      settings.secret_key, algorithm=settings.algorithm)
+
+
+def decode_view_as_token(token: str) -> tuple[str, int] | None:
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    except JWTError:
+        return None
+    if payload.get("purpose") != VIEW_AS_PURPOSE or not isinstance(payload.get("target"), int):
+        return None
+    return payload.get("sub"), payload["target"]
+
+
 def decode_access_token(token: str) -> str | None:
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])

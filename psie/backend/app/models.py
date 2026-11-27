@@ -194,6 +194,11 @@ class User(Base):
         return ROLES.get(self.role, self.role)
 
     @property
+    def supervisor(self) -> "User | None":
+        """La personne qui consulte cet espace en lecture seule (mode supervision), sinon None."""
+        return getattr(self, "_real", None)
+
+    @property
     def is_admin(self) -> bool:
         return self.role == "admin"
 
