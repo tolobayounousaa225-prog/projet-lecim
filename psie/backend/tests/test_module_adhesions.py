@@ -40,7 +40,7 @@ def mails(monkeypatch):
         sent.append({"to": to, "subject": subject, "body": body})
         return True
 
-    for target in ("app.adhesion.send_email", "app.routers.public.send_email", "app.rappels.send_email", "app.gouvernance.send_email"):
+    for target in ("app.adhesion.send_email", "app.routers.public.send_email", "app.rappels.send_email"):
         monkeypatch.setattr(target, fake)
     return sent
 
