@@ -387,3 +387,40 @@ def test_a_file_still_in_use_or_just_uploaded_is_never_purged(db, editor, monkey
     monkeypatch.setattr(sc, "MEDIA_GRACE_SECONDS", 3600)
     upload(editor, "b.png", png(color=(1, 2, 3)), "image/png")        # remplace la photo, mais l'ancienne est trop récente
     assert db.query(models.MediaSite).count() == 2
+
+
+# ---------------------------------------------------------------- Pages et textes
+
+def test_page_texts_are_prefilled_saved_and_exported(db, editor, monkeypatch):
+    monkeypatch.setattr(publish, "trigger_rebuild", lambda: None)
+    index = editor.get("/gestion/contenu")
+    assert index.status_code == 200 and "Pages et textes" in index.text and "txt_accueil" in index.text
+    page = editor.get("/gestion/contenu/txt_accueil")                          # première ouverture : textes d'origine déjà dans le formulaire
+    assert page.status_code == 200 and "Ensemble pour une éducation islamique" in page.text
+    assert sc.export_site(db)["textes"]["txt_accueil"] == {}                   # tant qu'on n'enregistre pas : rien n'est exporté
+    values = sc.flatten(sc.COLLECTIONS["txt_accueil"], sc.default_values(sc.COLLECTIONS["txt_accueil"]))
+    values["hero_title_a__fr"] = "Un titre corrigé"
+    assert editor.post("/gestion/contenu/txt_accueil/unique", data=values).status_code in (200, 303)
+    assert sc.export_site(db)["textes"]["txt_accueil"]["hero_title_a"]["fr"] == "Un titre corrigé"
+    assert sc.export_site(db)["version"]
+
+
+def test_text_lists_import_the_current_texts_then_can_be_edited(db, editor, monkeypatch):
+    monkeypatch.setattr(publish, "trigger_rebuild", lambda: None)
+    assert "Importer les textes actuels" in editor.get("/gestion/contenu/faq").text
+    assert editor.post("/gestion/contenu/faq/importer").status_code in (200, 303)
+    faq = sc.export_site(db)["textes"]["faq"]
+    assert len(faq) >= 5 and faq[0]["q"]["fr"] and faq[0]["q"]["ar"]
+    assert "Importer les textes actuels" not in editor.get("/gestion/contenu/faq").text
+    assert editor.post("/gestion/contenu/faq/importer").status_code == 404      # on n'importe qu'une fois
+    r = editor.post("/gestion/contenu/faq/nouveau", data={"q__fr": "Nouvelle ?", "q__ar": "", "a__fr": "Oui.", "a__ar": ""})
+    assert r.status_code in (200, 303)
+    assert sc.export_site(db)["textes"]["faq"][-1]["q"]["fr"] == "Nouvelle ?"
+
+
+def test_every_default_text_matches_its_collection(db):
+    from app import site_texts as st
+    for key, (_t, _a, fields) in st.BLOCS.items():
+        assert set(st.defaults()[key]) == {n for n, *_ in fields}, key
+    for key, (_t, _a, _tk, fields, _ti) in st.LISTES.items():
+        assert st.defaults()[key] and all(set(row) == {n for n, *_ in fields} for row in st.defaults()[key]), key

@@ -3,12 +3,24 @@
 {% block content %}
 <h1>{{ t('nav_site_content') }}</h1>
 <p class="muted">Chaque modification est publiée tout de suite sur le site vitrine{% if not auto_publish %} (la reconstruction automatique du site n'est pas encore configurée : le site se met à jour à sa prochaine reconstruction){% else %} : le site se reconstruit seul en une à deux minutes{% endif %}.</p>
+<h2>Contenus</h2>
 <div class="grid">
-  {% for c in collections %}
+  {% for c in collections if not c.bloc %}
   <section class="card">
     <h2><a href="/gestion/contenu/{{ c.key }}">{{ c.titre }}</a></h2>
     <p class="muted">{{ c.aide }}</p>
     <p>{% if c.singleton %}{{ 'Renseigné' if counts[c.key] else 'À renseigner' }}{% else %}{{ counts[c.key] }} élément(s){% endif %}</p>
+  </section>
+  {% endfor %}
+</div>
+<h2>Pages et textes</h2>
+<p class="muted">Les textes des pages du site (accueil, À propos, FAQ, glossaire, statuts, mentions…). Un champ laissé vide garde le texte d'origine.</p>
+<div class="grid">
+  {% for c in collections if c.bloc %}
+  <section class="card">
+    <h3><a href="/gestion/contenu/{{ c.key }}">{{ c.titre }}</a></h3>
+    <p class="muted">{{ c.aide }}</p>
+    <p>{% if c.singleton %}{{ 'Personnalisé' if counts[c.key] else "Texte d'origine" }}{% else %}{{ counts[c.key] if counts[c.key] else "Texte d'origine" }}{% if counts[c.key] %} élément(s){% endif %}{% endif %}</p>
   </section>
   {% endfor %}
 </div>

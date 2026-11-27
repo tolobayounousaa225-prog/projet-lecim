@@ -5,6 +5,9 @@
 <h1>{{ col.titre }}</h1>
 <p class="muted">{{ col.aide }}</p>
 {% if request.query_params.get('ok') %}<p class="card">Enregistré. Le site se met à jour.</p>{% endif %}
+{% if can_import %}<form method="post" action="/gestion/contenu/{{ col.key }}/importer" class="card">
+  <p>Cette rubrique utilise encore les textes d'origine du site. Importez-les pour pouvoir les corriger, les réordonner ou en ajouter.</p>
+  <button class="btn">Importer les textes actuels pour les modifier</button></form>{% endif %}
 <p><a class="btn" href="/gestion/contenu/{{ col.key }}/nouveau">{{ t('add') }}</a></p>
 <div class="table-wrap"><table>
   <tbody>

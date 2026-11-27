@@ -120,9 +120,29 @@ def content_list(key: str, request: Request, user: models.User = Depends(require
     col = _col(key)
     rows = sc.items_of(db, key)
     if col.singleton:
+        if not rows and (d := sc.default_values(col)):          # première ouverture : textes actuels du site
+            return _form_page(request, user, db, col, values=sc.flatten(col, d))
         return _form_page(request, user, db, col, item=rows[0] if rows else None)
     entries = [(r, sc.title_of(col, sc.load(r))) for r in rows]
-    return render(request, "contenu_liste.html", user, col=col, entries=entries)
+    return render(request, "contenu_liste.html", user, col=col, entries=entries,
+                  can_import=bool(col.bloc and not rows and sc.default_values(col)))
+
+
+@router.post("/gestion/contenu/{key}/importer")
+def content_import_defaults(key: str, background: BackgroundTasks, user: models.User = Depends(require_content_editor),
+                            db: Session = Depends(get_db)):
+    """Crée les éléments d'une liste à partir des textes actuels du site, pour les corriger ensuite un par un."""
+    col = _col(key)
+    defaults = sc.default_values(col)
+    if col.singleton or not defaults or sc.items_of(db, key):
+        raise HTTPException(status_code=404, detail="Rubrique introuvable")
+    for i, d in enumerate(defaults):
+        row = models.ContenuSite(collection=key, position=i, data=json.dumps(d, ensure_ascii=False), updated_by_id=user.id)
+        db.add(row)
+    db.flush()
+    log_action(db, user, "creation", f"contenu:{key}", None, f"import des textes actuels ({len(defaults)})")
+    _published(db, background)
+    return _redirect(f"/gestion/contenu/{key}?ok=1")
 
 
 @router.get("/gestion/contenu/{key}/nouveau")
