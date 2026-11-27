@@ -342,7 +342,7 @@ def test_finance_pages_closed_to_representatives_and_anonymous(db, world, anon):
     make_user(db, "rep@psie.local", "faitiere", faitiere_id=world["LECIM"].id)
     rep = client_for("rep@psie.local")
     urls = ["/finances", "/depenses", "/recettes", "/dons", "/budget", "/etat-financier", "/etat-financier.pdf",
-            "/etat-financier.csv", "/rapports-cc", "/interets"]
+            "/etat-financier.csv", "/rapports-cc"]
     for url in urls:
         assert rep.get(url).status_code == 403, url
         assert anon.get(url).status_code == 303, url
@@ -362,15 +362,6 @@ def test_auditor_reports(db, world):
     for role in ("den", "finances", "administrateur_ca"):
         assert "Contrôle de caisse" in client_for(f"{emails[role]}@psie.local").get("/rapports-cc").text
 
-
-def test_conflict_of_interest_declarations(db, world):
-    den = client_for("den@psie.local")
-    assert den.post("/interets", data={"objet": "Mon cousin loue la salle de réunion"}).status_code == 303
-    assert den.post("/interets", data={"objet": " "}).status_code == 400
-    assert "cousin" in client_for("commissaire@psie.local").get("/interets").text
-    assert "cousin" not in client_for("secretaire@psie.local").get("/interets").text   # non lisible par tous
-    make_user(db, "rep@psie.local", "faitiere", faitiere_id=world["LECIM"].id)
-    assert client_for("rep@psie.local").post("/interets", data={"objet": "x"}).status_code == 403
 
 
 # ---------- Organisation d'origine ----------

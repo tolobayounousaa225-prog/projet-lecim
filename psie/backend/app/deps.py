@@ -10,6 +10,30 @@ VIEW_AS_COOKIE = "view_as"
 VIEW_AS_EXEMPT = ("/supervision/quitter", "/logout")
 
 
+def _preview_user(db: Session, real: models.User, spec: str, request: Request) -> models.User:
+    """Aperçu du portail d'un rôle, même si aucun compte n'existe encore : une personne virtuelle (jamais enregistrée en base)
+    avec les droits du rôle. Toujours en lecture seule."""
+    parts = spec.split(":")                                  # apercu:<rôle> ou apercu:faitiere:<n° de faîtière>
+    role = parts[1] if len(parts) > 1 else ""
+    if role not in models.ROLES or role == "admin":
+        return real
+    fid = None
+    if role == "faitiere":
+        fid = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else None
+        fa = db.get(models.Faitiere, fid) if fid else None
+        if not fa:
+            return real
+    if request.method not in ("GET", "HEAD", "OPTIONS") and request.url.path not in VIEW_AS_EXEMPT:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Mode consultation : lecture seule, aucune modification n'est possible. Quittez la consultation pour agir.")
+    label = models.ROLES[role] + (f" — {fa.sigle}" if fid else "")
+    ghost = models.User(id=-1, email=f"apercu-{role}@psie.invalid", hashed_password="!", full_name=f"Aperçu : {label}", role=role,
+                        faitiere_id=fid, is_active=True)
+    ghost._perms = acces.role_defaults_with_overrides(db, role)
+    ghost._real = real
+    return ghost
+
+
 def _resolve_view_as(request: Request, db: Session, real: models.User, token: str | None) -> models.User:
     """Mode supervision : une personne habilitée (rubrique « supervision » en modification) consulte l'espace d'un autre
     compte EN LECTURE SEULE. Le jeton est signé, expire en une heure et n'est valable que pour cette personne."""
@@ -21,6 +45,8 @@ def _resolve_view_as(request: Request, db: Session, real: models.User, token: st
     real._perms = acces.effective(db, real)
     if not real.is_internal or real.level("supervision") < acces.ECRITURE:
         return real
+    if isinstance(data[1], str):
+        return _preview_user(db, real, data[1], request)
     target = db.get(models.User, data[1])
     if not target or not target.is_active or target.id == real.id or (target.is_admin and not real.is_admin):
         return real
@@ -77,8 +103,6 @@ def require_write(section: str):
 
 
 require_adhesions_write = require_write("adhesions")
-require_assemblees_write = require_write("assemblees")
-require_sanctions_write = require_write("sanctions")
 
 
 def require_content_editor(user: models.User = Depends(get_current_user)) -> models.User:

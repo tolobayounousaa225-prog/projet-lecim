@@ -1,4 +1,4 @@
-"""Signature électronique simple (conventions, documents, entrées de registre).
+"""Signature électronique simple (conventions, documents).
 
 Règle : la personne est connectée, elle demande un code, le reçoit par e-mail, le saisit. Le serveur enregistre alors qui
 a signé, quand, et l'EMPREINTE du document à cet instant. Si le document change ensuite, la vérification publique le dit.
@@ -39,11 +39,6 @@ def document_fingerprint(db: Session, doc_type: str, doc_id: int) -> tuple[str, 
         if not d:
             raise SignatureError("Document introuvable")
         return d.titre, d.sha256
-    if doc_type == "registre":
-        e = db.get(models.RegistreEntree, doc_id)
-        if not e:
-            raise SignatureError("Entrée introuvable")
-        return f"{e.registre} n°{e.numero} — {e.titre}", e.empreinte
     raise SignatureError("Type de document inconnu")
 
 
@@ -119,7 +114,5 @@ def can_sign(user: models.User, db: Session, doc_type: str, doc_id: int) -> str 
         return None
     if not user.can("documents", True):
         return "Action non autorisée pour votre rôle"
-    if doc_type == "document":
-        d = db.get(models.Document, doc_id)
-        return None if d else "Document introuvable"
-    return None if db.get(models.RegistreEntree, doc_id) else "Entrée introuvable"
+    d = db.get(models.Document, doc_id)
+    return None if d else "Document introuvable"

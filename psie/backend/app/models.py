@@ -227,14 +227,6 @@ class User(Base):
         return self.can("adhesions", True)
 
     @property
-    def can_write_assemblees(self) -> bool:
-        return self.can("assemblees", True)
-
-    @property
-    def can_write_sanctions(self) -> bool:
-        return self.can("sanctions", True)
-
-    @property
     def can_edit_site_content(self) -> bool:
         return self.can("contenu", True)
 
@@ -1250,7 +1242,7 @@ class Notification(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, index=True)
 
 
-SIGNABLE = {"convention": "Convention", "document": "Document", "registre": "Entrée de registre"}
+SIGNABLE = {"convention": "Convention", "document": "Document"}
 
 
 class Signature(Base):

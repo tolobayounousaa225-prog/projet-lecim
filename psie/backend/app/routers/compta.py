@@ -283,17 +283,3 @@ def rapport_create(annee: int = Form(...), titre: str = Form(""), texte: str = F
     comptabilite.add_rapport_cc(db, user, annee, titre, texte)
     db.commit()
     return _redirect("/rapports-cc")
-
-
-@router.get("/interets")
-def interets_list(request: Request, user: models.User = Depends(require_internal), db: Session = Depends(get_db)):
-    items = db.query(models.DeclarationInteret).order_by(models.DeclarationInteret.id.desc()).all() \
-        if user.can_view_finances else []
-    return render(request, "interets.html", user, items=items)
-
-
-@router.post("/interets")
-def interet_create(objet: str = Form(""), user: models.User = Depends(require_internal), db: Session = Depends(get_db)):
-    comptabilite.declare_interet(db, user, objet)
-    db.commit()
-    return _redirect("/interets")

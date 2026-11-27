@@ -6,17 +6,14 @@ import datetime
 
 from sqlalchemy.orm import Session
 
-from . import gouvernance, models
+from . import models
 from .emailing import send_email
 
 MANDAT_SEUILS = (90, 30, 7, 0)          # jours avant la fin d'un mandat
 MANDAT_OUBLI_JOURS = 30                 # un mandat expiré depuis plus longtemps n'est plus signalé
 RAPPORT_AVANT_FIN_SEMESTRE_JOURS = 15
-ETATS_AVANT_AG_JOURS = 15               # Statuts art. 36 : états financiers à disposition quinze jours avant l'assemblée
-ETATS_ALERTE_AVANT_AG_JOURS = 20        # on prévient 5 jours avant la date limite de mise à disposition
 DEMANDE_A_EXAMINER_JOURS = 7            # demande d'adhésion restée sans examen
 DEMANDE_AVIS_CA_JOURS = 15              # demande dont l'avis écrit du CA se fait attendre
-AG_RAPPEL_JOURS = 3                     # rappel aux convoqués
 
 
 def _emails(db: Session, roles: set[str]) -> list[str]:
@@ -67,22 +64,6 @@ def rapport_semestriel(db: Session, today: datetime.date, sender) -> int:
     return 0
 
 
-def etats_avant_ag(db: Session, today: datetime.date, sender) -> int:
-    sent = 0
-    upcoming = (db.query(models.Assemblee).filter(models.Assemblee.statut.in_(("preparation", "convoquee")),
-                                                  models.Assemblee.type.in_(("AGA", "AGO"))).all())
-    for a in upcoming:
-        days = (a.date_assemblee - today).days
-        if not 0 <= days <= ETATS_ALERTE_AVANT_AG_JOURS or not _claim(db, f"etats-ag:{a.id}"):
-            continue
-        limite = a.date_assemblee - datetime.timedelta(days=ETATS_AVANT_AG_JOURS)
-        body = (f"{a.type_label} du {a.date_assemblee:%d/%m/%Y} ({a.lieu}).\n\nLes états financiers doivent être mis à "
-                f"disposition des membres au plus tard le {limite:%d/%m/%Y} (quinze jours avant l'assemblée, Statuts art. 36). "
-                "Ils se génèrent dans « Finances > État financier ».\n")
-        sent += _send_all(_emails(db, {"finances", "den"}), "PSIE — États financiers à préparer avant l'AG", body, sender)
-    return sent
-
-
 def demandes_en_attente(db: Session, today: datetime.date, sender) -> int:
     lines = []
     for d in db.query(models.DemandeAdhesion).all():
@@ -97,21 +78,6 @@ def demandes_en_attente(db: Session, today: datetime.date, sender) -> int:
         return 0
     body = "Demandes d'adhésion en attente :\n\n" + "\n".join(lines) + "\n\nElles se traitent dans « Adhésions ».\n"
     return _send_all(_emails(db, {"den", "secretaire"}), "PSIE — Demandes d'adhésion en attente", body, sender)
-
-
-def rappel_assemblee(db: Session, today: datetime.date, sender) -> int:
-    sent = 0
-    for a in db.query(models.Assemblee).filter_by(statut="convoquee").all():
-        days = (a.date_assemblee - today).days
-        if not 0 <= days <= AG_RAPPEL_JOURS or not _claim(db, f"ag-rappel:{a.id}"):
-            continue
-        quand = "aujourd'hui" if days == 0 else f"dans {days} jour(s)"
-        heure = f" à {a.heure}" if a.heure else ""
-        body = (f"Rappel : {a.type_label} {quand}, le {a.date_assemblee:%d/%m/%Y}{heure}, {a.lieu}.\n\n"
-                "Les documents de l'assemblée sont disponibles dans votre espace PSIE.\n\n"
-                f"تذكير: {a.type_label} بتاريخ {a.date_assemblee:%d/%m/%Y}، {a.lieu}.\n")
-        sent += _send_all(gouvernance.convocation_recipients(db, a), f"PSIE — Rappel : {a.type_label}", body, sender)
-    return sent
 
 
 def audit_sensible(db: Session, today: datetime.date, sender) -> int:
@@ -134,8 +100,8 @@ def audit_sensible(db: Session, today: datetime.date, sender) -> int:
 def send_regulatory_reminders(db: Session, today: datetime.date | None = None, sender=None) -> int:
     today = today or datetime.date.today()
     sender = sender or send_email          # résolu à l'appel : remplaçable dans les tests
-    sent = (mandats_a_echeance(db, today, sender) + rapport_semestriel(db, today, sender) + etats_avant_ag(db, today, sender)
-            + demandes_en_attente(db, today, sender) + rappel_assemblee(db, today, sender)
+    sent = (mandats_a_echeance(db, today, sender) + rapport_semestriel(db, today, sender)
+            + demandes_en_attente(db, today, sender)
             + audit_sensible(db, today, sender))
     db.commit()
     return sent

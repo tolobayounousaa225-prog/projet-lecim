@@ -25,7 +25,7 @@
     {% if user.can('documents') %}
     <div class="nav-group"><h2>{{ t('nav_group_docs') }}</h2>
       {{ nav_item('/documents', t('nav_documents'), '/documents') }}{{ nav_item('/courrier', t('nav_mail'), '/courrier') }}
-      {{ nav_item('/conventions', t('nav_agreements'), '/conventions') }}{{ nav_item('/registres', t('nav_registers'), '/registres') }}
+      {{ nav_item('/conventions', t('nav_agreements'), '/conventions') }}
     </div>
     {% endif %}
     {% if user.can('supervision') and not user.supervisor %}
@@ -38,13 +38,6 @@
     <div class="nav-group"><h2>{{ t('nav_group_federations') }}</h2>
       {% if user.can('ecoles') %}{{ nav_item('/statistiques', t('nav_stats'), '/statistiques') }}{% endif %}
       {% if user.can('membres') %}{{ nav_item('/annonces', t('nav_announcements'), '/annonces') }}{{ nav_item('/demandes', t('nav_requests'), '/demandes') }}{% endif %}
-    </div>
-    {% endif %}
-    {% if user.can('assemblees') or user.can('sanctions') or user.can('interets') %}
-    <div class="nav-group"><h2>{{ t('nav_group_life') }}</h2>
-      {% if user.can('assemblees') %}{{ nav_item('/assemblees', t('nav_assemblies'), '/assemblees') }}{% endif %}
-      {% if user.can('sanctions') %}{{ nav_item('/sanctions', t('nav_sanctions'), '/sanctions') }}{% endif %}
-      {% if user.can('interets') %}{{ nav_item('/interets', t('nav_interests'), '/interets') }}{% endif %}
     </div>
     {% endif %}
     {% if user.can('finances') %}
@@ -73,7 +66,6 @@
       {{ nav_item('/faitieres/%d/delegues' % user.faitiere_id, t('space_delegates'), '/faitieres/%d/delegues' % user.faitiere_id) }}
       {{ nav_item('/faitieres/%d/ecoles' % user.faitiere_id, t('space_schools'), '/faitieres/%d/ecoles' % user.faitiere_id) }}
       {{ nav_item('/faitieres/%d/statistiques' % user.faitiere_id, t('nav_stats'), '/faitieres/%d/statistiques' % user.faitiere_id) }}
-      {{ nav_item('/assemblees', t('nav_assemblies'), '/assemblees') }}
       {{ nav_item('/formations', t('fm_title'), '/formations') }}
       {{ nav_item('/annonces', t('nav_announcements'), '/annonces') }}
       {{ nav_item('/demandes', t('nav_requests'), '/demandes') }}

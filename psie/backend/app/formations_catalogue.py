@@ -1,0 +1,95 @@
+"""Catalogue de formations proposé à la PSIE : 14 formations prêtes à planifier (objectifs, programme, évaluation).
+
+Chargé en un clic depuis la page « Formation » (bouton réservé au secrétariat Formation). Chaque formation peut ensuite être
+corrigée ou complétée ; on y ajoute des sessions (dates, lieu, places) quand on veut les proposer aux faîtières.
+Les formations déjà présentes (même titre) ne sont jamais écrasées ni dupliquées."""
+
+# (titre, public visé, durée, objectifs, programme, évaluation)
+CATALOGUE = [
+    ("Gouvernance et vie statutaire d'une faîtière", "Présidents, secrétaires généraux et membres des bureaux des faîtières",
+     "2 jours",
+     ["Connaître les organes de la PSIE et leurs rôles (AG, CA, DEN, CC)", "Préparer et tenir une assemblée dans les règles", "Rédiger un procès-verbal et une résolution valables"],
+     ["Les Statuts et le Règlement Intérieur : ce que chacun doit savoir", "Les organes, leurs compétences et la durée des mandats",
+      "Convocation, quorum, vote : préparer une assemblée générale", "Rédiger un PV et tenir le registre des délibérations",
+      "Droits et devoirs d'une organisation membre", "Cas pratiques : conflit d'intérêts, sanction, renouvellement de mandat"],
+     "Étude de cas en groupe et QCM final. Certificat de présence."),
+    ("Gestion administrative et archivage", "Personnel administratif des faîtières et des écoles", "2 jours",
+     ["Organiser les dossiers de l'organisation (papier et numérique)", "Tenir le courrier arrivée et départ", "Retrouver un document en moins d'une minute"],
+     ["Les documents qu'une organisation doit conserver et pendant combien de temps", "Plan de classement et nommage des fichiers",
+      "Registre du courrier : numéroter, suivre, répondre dans les délais", "Archivage papier : conserver, protéger, éliminer",
+      "Sauvegarde et sécurité des fichiers numériques", "Atelier : classer un dossier réel"],
+     "Exercice pratique noté. Certificat de présence."),
+    ("Gestion financière et comptabilité simple d'une école", "Gestionnaires, trésoriers et directeurs d'école", "3 jours",
+     ["Tenir un livre de caisse et un budget annuel", "Suivre les cotisations et délivrer des reçus", "Préparer un état financier compréhensible"],
+     ["Notions de base : recettes, dépenses, solde, justificatifs", "Le livre de caisse jour après jour", "Élaborer un budget et le suivre chaque mois",
+      "Frais de scolarité, cotisations à la PSIE et reçus", "Séparation des fonctions et contrôle interne", "Présenter les comptes à l'assemblée : état financier simple",
+      "Atelier : saisir une année de comptes fictifs"],
+     "Exercice de comptabilité et QCM. Certificat de formation."),
+    ("Pédagogie par compétences et planification des cours", "Enseignants du primaire et du secondaire (français et arabe)", "3 jours",
+     ["Planifier une séquence en partant des compétences visées", "Varier les méthodes pour mobiliser tous les élèves", "Gérer une classe nombreuse"],
+     ["De l'objectif aux compétences : comprendre l'approche", "Préparer une fiche de séquence et une fiche de leçon", "Méthodes actives : travail de groupe, jeu, manipulation",
+      "Gestion d'une classe nombreuse et différenciation", "Tenir un cahier de textes et un journal de classe", "Micro-enseignement : chacun anime 10 minutes devant le groupe"],
+     "Observation d'une leçon préparée par le participant. Certificat de formation."),
+    ("Didactique de la langue arabe", "Enseignants d'arabe", "3 jours",
+     ["Enseigner la lecture, l'écriture et l'expression en arabe à des enfants", "Évaluer les acquis en langue", "Utiliser des supports simples et peu coûteux"],
+     ["Apprentissage de la lecture : de la lettre au texte", "Écriture et calligraphie : gestes et progression", "Vocabulaire, grammaire et expression orale",
+      "Lecture expliquée et compréhension de texte", "Évaluation : dictée, production écrite, oral", "Fabriquer ses supports : cartes, affiches, jeux de lettres"],
+     "Leçon d'application et grille d'évaluation. Certificat de formation."),
+    ("Enseignement du français et bilinguisme", "Enseignants de français et directeurs des études", "3 jours",
+     ["Renforcer l'enseignement du français dans les écoles franco-arabes", "Articuler les deux langues sans les opposer", "Préparer les élèves aux examens nationaux"],
+     ["Lecture et écriture au primaire : méthodes et erreurs fréquentes", "Grammaire, conjugaison, orthographe : démarches actives",
+      "Passerelles entre le français et l'arabe", "Préparer le CEPE et le BEPC : exercices types", "Remédiation pour les élèves en difficulté"],
+     "Production d'une séquence et QCM final. Certificat de formation."),
+    ("Harmoniser les programmes franco-arabes et islamiques", "Directeurs des études, responsables pédagogiques des faîtières", "2 jours",
+     ["Répartir le temps entre disciplines générales et enseignements islamiques", "Construire un emploi du temps cohérent", "Suivre l'avancement des programmes"],
+     ["Les programmes officiels et les enseignements propres aux écoles islamiques", "Volumes horaires et emploi du temps type par niveau",
+      "Coran, sciences islamiques et valeurs civiques : place et progression", "Outils de suivi : progression, cahier de textes, inspection interne",
+      "Atelier : bâtir l'emploi du temps d'une école de 6 classes"],
+     "Livrable : emploi du temps et plan de progression. Certificat de formation."),
+    ("Direction d'école et leadership", "Directeurs et promoteurs d'école", "3 jours",
+     ["Organiser une école : équipe, élèves, parents, locaux", "Conduire une équipe et résoudre les conflits", "Suivre les résultats et rendre compte"],
+     ["Rôle et responsabilités du directeur", "Recruter, accueillir et évaluer le personnel", "Règlement intérieur de l'école et vie scolaire",
+      "Relations avec les parents et la communauté", "Indicateurs de suivi : effectifs, présence, résultats", "Obligations vis-à-vis de l'administration scolaire (DRENA, inspection)"],
+     "Étude de cas et plan d'action de l'école à 3 mois. Certificat de formation."),
+    ("Protection de l'enfant et discipline positive", "Enseignants, surveillants et directeurs", "2 jours",
+     ["Garantir la sécurité physique et morale des élèves", "Remplacer les punitions humiliantes par des règles claires", "Savoir signaler une situation préoccupante"],
+     ["Les droits de l'enfant et le rôle de l'école", "Reconnaître les signes de maltraitance, de harcèlement ou de détresse",
+      "Discipline positive : règles, encouragements, sanctions éducatives", "Que faire et qui alerter : procédure de signalement",
+      "Charte de protection de l'école : la rédiger et l'appliquer"],
+     "Mise en situation et QCM. Certificat de formation."),
+    ("Examens et évaluation : organisation et résultats", "Responsables des examens des faîtières, directeurs d'école", "2 jours",
+     ["Organiser des évaluations fiables et équitables", "Saisir et exploiter les résultats", "Suivre les taux de réussite par école et par faîtière"],
+     ["Concevoir un sujet et un barème", "Surveillance, anonymat et correction", "Calculer moyennes et classements sans erreur",
+      "Saisir les résultats dans l'espace de la faîtière (import CSV)", "Lire les statistiques : taux de réussite, écarts, tendances", "Décider : remédiation, redoublement, orientation"],
+     "Exercice de saisie sur données fictives. Certificat de formation."),
+    ("Utiliser l'espace en ligne de la PSIE", "Représentants et personnel des faîtières", "1 jour",
+     ["Se connecter en toute sécurité", "Gérer ses écoles, son personnel et ses statistiques", "Suivre cotisations, reçus et demandes"],
+     ["Connexion, mot de passe, vérification en deux étapes", "Fiche de la faîtière, délégués et écoles", "Recensement du personnel (administratif, francophone, arabisant) et import par fichier",
+      "Statistiques et bilans : proposer, corriger, valider", "Cotisations : voir l'état, imprimer un reçu, vérifier un reçu par QR code",
+      "Demandes, annonces, formations : où les trouver", "Atelier libre : chacun traite un cas de son organisation"],
+     "Parcours pratique en autonomie. Certificat de présence."),
+    ("Outils numériques pour l'enseignant et l'administration", "Enseignants et personnel administratif", "3 jours",
+     ["Utiliser un ordinateur et un smartphone de façon efficace", "Rédiger, calculer et présenter avec des outils gratuits", "Protéger ses données et ses comptes"],
+     ["Bases : fichiers, dossiers, clés USB, impression", "Traitement de texte : lettre, rapport, mise en page", "Tableur : listes d'élèves, moyennes, graphiques",
+      "E-mail professionnel et messagerie sécurisée", "Recherche d'informations et ressources pédagogiques en ligne", "Mots de passe, hameçonnage, sauvegardes : les bons réflexes"],
+     "Exercices pratiques chronométrés. Certificat de formation."),
+    ("Santé, hygiène et sécurité à l'école", "Directeurs, enseignants, personnel d'entretien", "1 jour",
+     ["Prévenir les accidents et les maladies courantes", "Réagir aux premiers secours", "Maintenir des locaux sûrs et propres"],
+     ["Hygiène : eau, sanitaires, lavage des mains, restauration", "Prévention du paludisme et des maladies de saison", "Sécurité des bâtiments, évacuation, incendie",
+      "Gestes de premiers secours : plaie, brûlure, malaise, fracture", "Trousse de secours et registre des incidents"],
+     "Démonstration des gestes de secours. Certificat de présence."),
+    ("Communication, plaidoyer et mobilisation de ressources", "Responsables des faîtières, communicants, promoteurs", "2 jours",
+     ["Présenter l'action de son organisation de façon claire et convaincante", "Monter un dossier de partenariat", "Rendre compte aux partenaires et aux parents"],
+     ["Messages clés et valeurs de la PSIE", "Rédiger un communiqué, une actualité, un rapport d'activité", "Photos, réseaux sociaux et respect de la vie privée des élèves",
+      "Identifier des partenaires et construire une demande de soutien", "Rendre compte : transparence, rapport d'utilisation des fonds"],
+     "Livrable : une note de présentation et un plan de communication. Certificat de formation."),
+]
+
+
+def description(entry) -> str:
+    _titre, _public, _duree, objectifs, programme, evaluation = entry
+    out = ["Objectifs :"] + [f"• {o}" for o in objectifs] + ["", "Programme :"]
+    out += [f"{i}. {p}" for i, p in enumerate(programme, 1)] + ["", f"Évaluation : {evaluation}"]
+    text = "\n".join(out)
+    assert len(text) <= 3000, entry[0]
+    return text

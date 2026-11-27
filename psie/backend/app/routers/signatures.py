@@ -37,9 +37,6 @@ def _target(doc_type: str, doc_id: int, db: Session) -> str:
 def _back(doc_type: str, doc_id: int, db: Session) -> str:
     if doc_type == "convention":
         return f"/conventions/{doc_id}"
-    if doc_type == "registre":
-        e = db.get(models.RegistreEntree, doc_id)
-        return f"/registres/{e.registre}" if e else "/registres"
     return "/documents"
 
 

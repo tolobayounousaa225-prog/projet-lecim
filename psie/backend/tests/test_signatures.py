@@ -99,14 +99,3 @@ def test_public_verification_detects_a_document_changed_after_signing_and_pdf_ce
     db.commit()
     assert "a changé depuis la signature" in anon.get(f"/verifier/signature/{s.token}", headers={"accept": "text/html"}).text
     assert anon.get("/verifier/signature/inconnu").status_code == 404
-
-
-def test_registry_entries_can_be_signed_and_show_their_signatories(db, world):
-    den, mails, _ = world
-    import datetime
-    den.post("/registres/CA", data={"date_acte": datetime.date.today().isoformat(), "titre": "Délibération 1", "resume": "Adoptée"})
-    e = db.query(models.RegistreEntree).one()
-    den.post(f"/signatures/registre/{e.id}/code")
-    den.post(f"/signatures/registre/{e.id}/confirmer", data={"code": code_from(mails)})
-    assert db.query(models.Signature).filter_by(doc_type="registre").one().doc_sha256 == e.empreinte
-    assert "den@psie.ci" in den.get("/registres/CA").text

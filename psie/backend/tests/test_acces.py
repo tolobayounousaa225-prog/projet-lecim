@@ -10,8 +10,8 @@ from .conftest import client_for, make_faitiere, make_user
 
 ROLES = ("den", "secretaire", "finances", "communication", "formation", "examens", "ressources", "administrateur_ca", "commissaire")
 # une adresse typique de chaque rubrique
-URLS = {"membres": "/faitieres", "adhesions": "/adhesions", "assemblees": "/assemblees", "sanctions": "/sanctions",
-        "finances": "/cotisations", "interets": "/interets", "contenu": "/gestion/contenu"}
+URLS = {"membres": "/faitieres", "adhesions": "/adhesions", "formation": "/formations", "documents": "/documents",
+        "finances": "/cotisations", "contenu": "/gestion/contenu"}
 
 
 @pytest.fixture
@@ -51,9 +51,9 @@ def test_admin_pages_are_reserved_to_the_admin(people):
 
 def test_a_section_cannot_be_reached_by_typing_the_address(people):
     c = client_for("communication@psie.ci")
-    for url in ("/faitieres/1", "/faitieres/1/edit", "/mandats", "/adhesions/1", "/assemblees/1", "/sanctions/1/notification.pdf",
+    for url in ("/faitieres/1", "/faitieres/1/edit", "/mandats", "/adhesions/1",
                 "/depenses", "/etat-financier.pdf", "/paiements/1/recu.pdf", "/appels/1", "/registre-membres.pdf", "/pieces/1",
-                "/annexes/1", "/faitieres/1/releve.pdf", "/faitieres/1/attestation.pdf", "/cotisations/export.csv"):
+                "/faitieres/1/releve.pdf", "/faitieres/1/attestation.pdf", "/cotisations/export.csv"):
         assert c.get(url).status_code == 403, url
     assert c.post("/faitieres/new", data={"nom": "X", "sigle": "X"}).status_code == 403
 
@@ -67,7 +67,7 @@ def test_federation_accounts_are_not_affected_by_the_sections(db, people):
     f = db.query(models.Faitiere).one()
     make_user(db, "rep@psie.ci", "faitiere", faitiere_id=f.id)
     c = client_for("rep@psie.ci")
-    assert c.get(f"/faitieres/{f.id}").status_code == 200 and c.get("/assemblees").status_code == 200
+    assert c.get(f"/faitieres/{f.id}").status_code == 200 and c.get("/formations").status_code == 200
     assert c.get(f"/faitieres/{f.id}/releve.pdf").status_code == 200
     assert c.get("/cotisations").status_code == 403 and c.get("/users").status_code == 403
 
@@ -114,9 +114,9 @@ def test_granting_write_lets_the_role_change_things(db, people):
 
 
 def test_restricting_a_role_hides_what_it_saw_before(db, people):
-    assert status("secretaire@psie.ci", "/sanctions") == 200
-    client_for("admin@psie.ci").post("/acces", data=matrix_form(db, **{"n__secretaire__sanctions": 0}))
-    assert status("secretaire@psie.ci", "/sanctions") == 403
+    assert status("secretaire@psie.ci", "/formations") == 200
+    client_for("admin@psie.ci").post("/acces", data=matrix_form(db, **{"n__secretaire__formation": 0}))
+    assert status("secretaire@psie.ci", "/formations") == 403
     assert status("secretaire@psie.ci", "/adhesions") == 200
 
 
@@ -180,14 +180,14 @@ def test_a_personal_exception_beats_the_role(db, people):
 
 def test_a_personal_exception_can_also_remove_an_access(db, people):
     sec = db.query(models.User).filter_by(email="secretaire@psie.ci").one()
-    client_for("admin@psie.ci").post(f"/users/{sec.id}/acces", data={"n__sanctions": "0"})
-    assert status("secretaire@psie.ci", "/sanctions") == 403 and status("secretaire@psie.ci", "/adhesions") == 200
-    assert status("den@psie.ci", "/sanctions") == 200
+    client_for("admin@psie.ci").post(f"/users/{sec.id}/acces", data={"n__formation": "0"})
+    assert status("secretaire@psie.ci", "/formations") == 403 and status("secretaire@psie.ci", "/adhesions") == 200
+    assert status("den@psie.ci", "/formations") == 200
 
 
 def test_exception_equal_to_the_role_level_is_not_stored(db, people):
     sec = db.query(models.User).filter_by(email="secretaire@psie.ci").one()
-    client_for("admin@psie.ci").post(f"/users/{sec.id}/acces", data={"n__sanctions": "2"})       # déjà le niveau de son rôle
+    client_for("admin@psie.ci").post(f"/users/{sec.id}/acces", data={"n__formation": "2"})       # déjà le niveau de son rôle
     assert db.query(models.AccesUtilisateur).count() == 0
 
 
@@ -241,10 +241,10 @@ def menu_of(email):
 
 def test_the_menu_only_lists_allowed_sections(people):
     com = menu_of("communication@psie.ci")
-    assert "/gestion/contenu" in com and "/interets" in com and "/admin" in com
-    assert not ({"/faitieres", "/adhesions", "/assemblees", "/cotisations", "/users", "/acces", "/audit"} & com)
+    assert "/gestion/contenu" in com and "/documents" in com and "/admin" in com
+    assert not ({"/faitieres", "/adhesions", "/cotisations", "/users", "/acces", "/audit"} & com)
     fin = menu_of("finances@psie.ci")
-    assert {"/cotisations", "/appels", "/finances", "/faitieres", "/assemblees"} <= fin and "/adhesions" not in fin and "/users" not in fin
+    assert {"/cotisations", "/appels", "/finances", "/faitieres", "/documents"} <= fin and "/adhesions" not in fin and "/users" not in fin
     adm = menu_of("admin@psie.ci")
     assert {"/users", "/acces", "/audit", "/faitieres", "/gestion/contenu"} <= adm and "/cotisations" not in adm
 
@@ -266,4 +266,4 @@ def test_the_dashboard_only_shows_what_the_user_may_see(db, people):
     assert "Appels exceptionnels en cours" in fin and "Composition des organes" in fin       # les finances lisent aussi les membres
     exam = client_for("examens@psie.ci").get("/admin").text
     assert "Composition des organes" not in exam and "Appels exceptionnels en cours" not in exam
-    assert "Aucune rubrique de gestion n" in exam or "Déclarations d&#39;intérêts" in exam
+    assert "Documents et courrier" in exam and "Formation" in exam and "Adhésions" not in exam

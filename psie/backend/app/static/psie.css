@@ -294,3 +294,5 @@ form.inline:has(label), form.inline:has(select) { display: inline-flex; flex-wra
 /* Graphiques sur petit écran : taille de lecture conservée, défilement horizontal dans la zone (jamais dans la page) */
 figure.chart { overflow-x: auto; }
 figure.chart svg { min-width: 440px; }
+
+.multiline{white-space:pre-line}
