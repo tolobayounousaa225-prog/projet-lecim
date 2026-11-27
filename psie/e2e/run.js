@@ -154,6 +154,17 @@ async function axeViolations(page) {
             pages++;
             const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
             if (over > 2) problems.add(`débordement ${over}px : ${email} ${href} (${label}/${lang})`);
+            // Mise en page : un bloc décoré (carte, formulaire) affiché « en ligne » se casse sur plusieurs lignes
+            const broken = await page.evaluate(() => {
+              const out = [];
+              document.querySelectorAll("main form, main section, main article, main div").forEach((e) => {
+                const cs = getComputedStyle(e);
+                const decorated = parseFloat(cs.borderTopWidth) > 0 || cs.boxShadow !== "none";
+                if (cs.display === "inline" && decorated && e.querySelector("label, input, select, table, p, h2")) out.push(e.tagName.toLowerCase() + "." + String(e.className).split(" ")[0]);
+              });
+              return out;
+            });
+            for (const b of broken) problems.add(`mise en page (bloc décoré « en ligne ») ${b} : ${email} ${href} (${label}/${lang})`);
             if (w === 1280) for (const v of await axeViolations(page)) problems.add(`axe ${v} : ${email} ${href} (${lang})`);
           }
         }

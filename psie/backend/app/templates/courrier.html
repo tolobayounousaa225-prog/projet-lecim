@@ -3,7 +3,7 @@
 {% block content %}
 <h1>{{ t('nav_mail') }}</h1>
 {% if late %}<p class="card"><strong>{{ late }}</strong> {{ t('m_late') }}</p>{% endif %}
-<form method="get" class="inline card">
+<form method="get" class="card filters">
   <label>{{ t('m_direction') }} <select name="sens"><option value="">{{ t('d_all') }}</option>{% for k in sens_list %}<option value="{{ k }}"{% if k == sens %} selected{% endif %}>{{ lbl('courrier_sens', k) }}</option>{% endfor %}</select></label>
   <label>{{ t('status') }} <select name="statut"><option value="">{{ t('d_all') }}</option>{% for k in statuts %}<option value="{{ k }}"{% if k == statut %} selected{% endif %}>{{ lbl('courrier_statut', k) }}</option>{% endfor %}</select></label>
   <button class="btn">OK</button>
