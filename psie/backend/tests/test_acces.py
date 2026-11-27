@@ -261,6 +261,7 @@ def test_the_dashboard_only_shows_what_the_user_may_see(db, people):
         assert hidden not in com, hidden
     assert "Contenu du site" in com
     den = client_for("den@psie.ci").get("/admin").text
+    assert "As-salâmu ʿalaykum" in den and "Bonjour" not in den          # salutation islamique à la connexion
     assert "Membres actifs" in den and "Composition des organes" in den and "Appels exceptionnels en cours" in den
     fin = client_for("finances@psie.ci").get("/admin").text
     assert "Appels exceptionnels en cours" in fin and "Composition des organes" in fin       # les finances lisent aussi les membres
