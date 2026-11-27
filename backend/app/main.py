@@ -102,6 +102,7 @@ from .routers import (
     partenaires_public,
     partenariat_requests,
     password_reset,
+    pdf_signing_public,
     photos_public,
     presence_public,
     projets_public,
@@ -374,6 +375,7 @@ app.include_router(admin_ressources_officielles.router)
 app.include_router(verify.router)
 app.include_router(verify_eleve.router)
 app.include_router(verify_attestations.router)
+app.include_router(pdf_signing_public.router)
 app.include_router(admin_calendar.router)
 app.include_router(admin_delegations.router)
 app.include_router(admin_diplomes.router)

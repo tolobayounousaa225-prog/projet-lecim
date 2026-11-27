@@ -9,6 +9,7 @@ import qrcode
 from fpdf import FPDF
 
 from .config import settings
+from .pdf_signing import sign_official_pdf
 from .reports import pdf_safe
 
 GREEN_DARK = (11, 61, 46)
@@ -172,6 +173,7 @@ def generate_etablissement_attestation_pdf(etablissement) -> bytes:
     verify_url = f"{settings.public_base_url}/verify-etablissement/{etablissement.id}"
     _footer_qr_and_signature(pdf, verify_url, numero)
 
+    sign_official_pdf(pdf, reason="Attestation d'affiliation LECIM")
     return bytes(pdf.output())
 
 
@@ -206,6 +208,7 @@ def generate_membre_attestation_pdf(user) -> bytes:
     verify_url = f"{settings.public_base_url}/verify-membre/{user.id}"
     _footer_qr_and_signature(pdf, verify_url, numero)
 
+    sign_official_pdf(pdf, reason="Attestation d'appartenance LECIM")
     return bytes(pdf.output())
 
 
@@ -381,6 +384,7 @@ def generate_diplome_pdf(diplome) -> bytes:
     pdf.set_text_color(120, 120, 120)
     pdf.cell(pdf.w, 4, f"Reference : {diplome.numero_diplome}  -  Contact : lecimnational@gmail.com", align="C")
 
+    sign_official_pdf(pdf, reason="Diplome LECIM")
     return bytes(pdf.output())
 
 
