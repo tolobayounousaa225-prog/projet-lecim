@@ -79,3 +79,20 @@ def test_future_sessions_cannot_be_finished_and_closed_ones_refuse_enrollment(db
     assert form.post(f"/formations/sessions/{future.id}/statut", data={"statut": "terminee"}).status_code == 400
     form.post(f"/formations/sessions/{future.id}/statut", data={"statut": "annulee"})
     assert client_for("rep-a@psie.ci").get(f"/formations/sessions/{future.id}").status_code == 404     # une session annulée n'est plus proposée
+
+
+def test_proposed_catalogue_is_loaded_once_and_never_overwrites(db, world):
+    from app import formations_catalogue as cat
+    assert len(cat.CATALOGUE) == 14 and all(len(cat.description(e)) <= 3000 for e in cat.CATALOGUE)
+    assert len({e[0] for e in cat.CATALOGUE}) == 14
+    staff = client_for("form@psie.ci")
+    assert "Charger le catalogue" in staff.get("/formations").text
+    assert staff.post("/formations/catalogue").status_code == 303
+    assert db.query(models.Formation).count() == 15                       # la formation du décor + les 14 du catalogue
+    first = db.query(models.Formation).filter_by(titre=cat.CATALOGUE[0][0]).one()
+    first.description = "Texte corrigé à la main"
+    db.commit()
+    assert staff.post("/formations/catalogue").status_code == 303
+    assert db.query(models.Formation).count() == 15 and db.get(models.Formation, first.id).description == "Texte corrigé à la main"
+    assert "Gestion financière et comptabilité simple" in staff.get("/formations").text
+    assert client_for("com@psie.ci").post("/formations/catalogue").status_code == 403

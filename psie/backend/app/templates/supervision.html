@@ -3,6 +3,32 @@
 {% block content %}
 <h1>{{ t('sv_title') }}</h1>
 <p class="muted">{{ t('sv_help') }}</p>
+{% if can_view_as %}
+<section class="card" id="portails">
+  <h2>{{ t('sv_portals') }}</h2>
+  <p class="muted">{{ t('sv_portals_help') }}</p>
+  <div class="grid">
+    {% for k, label in previews %}
+    <form method="post" action="/supervision/apercu/{{ k }}" class="card">
+      <h3>{{ lbl('role', k) }}</h3>
+      <p class="muted">{{ counts.get(k, 0) }} {{ t('sv_accounts') }}</p>
+      <button class="btn secondary">{{ t('sv_view_portal') }}</button>
+    </form>
+    {% endfor %}
+  </div>
+  <h3>{{ t('sv_federation_portal') }}</h3>
+  <p class="muted">{{ t('sv_federation_portal_help') }}</p>
+  <div class="grid">
+    {% for f in faitieres %}
+    <form method="post" action="/supervision/apercu/faitiere/{{ f.id }}" class="card">
+      <h3>{{ f.sigle }}</h3>
+      <button class="btn secondary">{{ t('sv_view_portal') }}</button>
+    </form>
+    {% endfor %}
+  </div>
+</section>
+<h2>{{ t('sv_accounts_title') }}</h2>
+{% endif %}
 <form method="get" class="card filters">
   <label>{{ t('d_search') }} <input name="q" value="{{ q }}"></label>
   <label>{{ t('sv_role') }}<select name="role" data-autosubmit><option value="">{{ t('sv_all_roles') }}</option>{% for k in roles %}<option value="{{ k }}"{% if k == role %} selected{% endif %}>{{ lbl('role', k) }}</option>{% endfor %}</select></label>

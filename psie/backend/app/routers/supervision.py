@@ -55,8 +55,11 @@ def supervision_page(request: Request, role: str = "", q: str = "", user: models
                                                                                             models.AuditLog.action != "connexion").group_by(models.AuditLog.user_id))
     rows = [{"u": p, "login": last_login.get(p.id), "action": last_action.get(p.id), "week": weekly.get(p.id, 0), "can_view": _can_view_as(user, p)}
             for p in people]
+    counts = dict(db.query(models.User.role, func.count(models.User.id)).filter(models.User.is_active.is_(True)).group_by(models.User.role))
+    previews = [(k, v) for k, v in models.ROLES.items() if k not in ("admin", "faitiere")]
+    faitieres = db.query(models.Faitiere).order_by(models.Faitiere.sigle).all()
     return render(request, "supervision.html", user, rows=rows, role=role, q=q, roles=models.ROLES, now=now,
-                  can_view_as=user.can("supervision", True))
+                  can_view_as=user.can("supervision", True), previews=previews, counts=counts, faitieres=faitieres)
 
 
 @router.get("/supervision/{user_id}/activite")
@@ -99,6 +102,34 @@ def view_as(user_id: int, user: models.User = Depends(get_current_user), db: Ses
     response.set_cookie(VIEW_AS_COOKIE, create_view_as_token(user.email, target.id), httponly=True, samesite="lax",
                         secure=settings.cookie_secure, max_age=VIEW_AS_MINUTES * 60)
     return response
+
+
+def _start_preview(user: models.User, db: Session, spec: str, label: str, dest: str):
+    log_action(db, user, "consultation_compte", "apercu", None, label)
+    db.commit()
+    response = RedirectResponse(dest, status_code=303)
+    response.set_cookie(VIEW_AS_COOKIE, create_view_as_token(user.email, spec), httponly=True, samesite="lax",
+                        secure=settings.cookie_secure, max_age=VIEW_AS_MINUTES * 60)
+    return response
+
+
+@router.post("/supervision/apercu/faitiere/{faitiere_id}")
+def preview_faitiere(faitiere_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Aperçu du portail d'une faîtière (même sans compte de représentant), en lecture seule."""
+    _need(user, write=True)
+    f = db.get(models.Faitiere, faitiere_id)
+    if not f:
+        raise HTTPException(status_code=404, detail="Faîtière introuvable")
+    return _start_preview(user, db, f"apercu:faitiere:{f.id}", f"portail de la faîtière {f.sigle}", "/portail")
+
+
+@router.post("/supervision/apercu/{role}")
+def preview_role(role: str, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Aperçu du portail d'un secrétariat ou d'un organe (même sans compte créé), en lecture seule."""
+    _need(user, write=True)
+    if role not in models.ROLES or role in ("admin", "faitiere"):
+        raise HTTPException(status_code=404, detail="Rôle introuvable")
+    return _start_preview(user, db, f"apercu:{role}", f"portail du rôle {role}", "/admin")
 
 
 @router.post("/supervision/quitter")

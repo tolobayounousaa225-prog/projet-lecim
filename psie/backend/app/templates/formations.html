@@ -2,10 +2,16 @@
 {% block title %}{{ t('fm_title') }}{% endblock %}
 {% block content %}
 <h1>{{ t('fm_title') }}</h1>
+{% if can_write and not items %}
+<form method="post" action="/formations/catalogue" class="card">
+  <p>{{ t('fm_catalogue_help') }}</p>
+  <button class="btn">{{ t('fm_catalogue_load') }}</button>
+</form>
+{% endif %}
 {% for f in items %}
 <section class="card">
   <h2>{{ f.titre }}</h2>
-  {% if f.description %}<p>{{ f.description }}</p>{% endif %}
+  {% if f.description %}<p class="multiline">{{ f.description }}</p>{% endif %}
   <p class="muted">{% if f.public_cible %}{{ t('fm_audience') }} : {{ f.public_cible }}{% endif %}{% if f.public_cible and f.duree %} · {% endif %}{% if f.duree %}{{ t('fm_duration') }} : {{ f.duree }}{% endif %}</p>
   <div class="table-wrap"><table>
     <thead><tr><th>{{ t('m_date') }}</th><th>{{ t('e_locality') }}</th><th>{{ t('fm_places') }}</th><th>{{ t('status') }}</th><th><span class="sr-only">{{ t('a11y_actions') }}</span></th></tr></thead>
@@ -27,6 +33,7 @@
 </section>
 {% else %}<p class="card muted">{{ t('none') }}</p>{% endfor %}
 {% if can_write %}
+{% if items %}<form method="post" action="/formations/catalogue" class="card"><p class="muted">{{ t('fm_catalogue_help') }}</p><button class="btn secondary">{{ t('fm_catalogue_load') }}</button></form>{% endif %}
 <section class="card"><h2>{{ t('fm_new') }}</h2>
   <form method="post" action="/formations" class="grid">
     <label>{{ t('d_title') }} *<input name="titre" required></label><label>{{ t('fm_audience') }}<input name="public_cible"></label>

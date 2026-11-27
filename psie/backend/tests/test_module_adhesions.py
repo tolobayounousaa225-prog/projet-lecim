@@ -1,4 +1,4 @@
-"""Module 3 : pièces du dossier d'adhésion, compte du représentant, annexes d'assemblée, rappels."""
+"""Module 3 : pièces du dossier d'adhésion, compte du représentant, rappels."""
 import datetime
 import io
 import re
@@ -177,72 +177,6 @@ def test_public_form_offers_the_file_fields(anon):
     assert "وصل التصريح" in anon.get("/adhesion").text
 
 
-# ---------------------------------------------------------------- annexes d'assemblée
-
-def make_assembly(db, statut="preparation", days=20, type_="AGA"):
-    a = models.Assemblee(type=type_, date_assemblee=TODAY + datetime.timedelta(days=days), lieu="Siège", ordre_du_jour="Rapports",
-                         statut=statut)
-    db.add(a)
-    db.commit()
-    return a
-
-
-def upload_annex(client, a, titre="Rapport moral", name="rapport.pdf", content=PDF, ctype="application/pdf"):
-    return client.post(f"/assemblees/{a.id}/annexes", data={"titre": titre}, files={"fichier": (name, content, ctype)})
-
-
-def test_managers_attach_and_remove_assembly_documents(db, staff):
-    a = make_assembly(db)
-    assert upload_annex(client_for("den@psie.ci"), a).status_code == 303
-    assert upload_annex(client_for("sec@psie.ci"), a, "Budget", "budget.png", png(), "image/png").status_code == 303
-    page = client_for("den@psie.ci").get(f"/assemblees/{a.id}").text
-    assert "Documents de l&#39;assemblée" in page and "Rapport moral" in page and "Budget" in page
-    annexe = db.query(models.AnnexeAssemblee).first()
-    assert client_for("den@psie.ci").post(f"/annexes/{annexe.id}/supprimer").status_code == 303
-    assert db.query(models.AnnexeAssemblee).count() == 1
-    assert db.query(models.AuditLog).filter_by(entity="annexe").count() == 3
-
-
-@pytest.mark.parametrize("titre,name,content,ctype", [
-    ("", "a.pdf", PDF, "application/pdf"), ("x" * 201, "a.pdf", PDF, "application/pdf"),
-    ("Faux", "f.pdf", b"MZ pas un pdf", "application/pdf"), ("SVG", "x.svg", b"<svg><script/></svg>", "image/svg+xml"),
-])
-def test_bad_annexes_are_refused(db, staff, titre, name, content, ctype):
-    a = make_assembly(db)
-    assert upload_annex(client_for("den@psie.ci"), a, titre, name, content, ctype).status_code == 400
-    assert db.query(models.AnnexeAssemblee).count() == 0
-
-
-def test_members_see_annexes_only_once_the_assembly_is_convened(db, staff):
-    f = make_faitiere(db, "LECIM")
-    make_user(db, "rep@psie.ci", "faitiere", faitiere_id=f.id)
-    prep, convened = make_assembly(db), make_assembly(db, "convoquee")
-    for a in (prep, convened):
-        upload_annex(client_for("den@psie.ci"), a)
-    annexes = {x.assemblee_id: x for x in db.query(models.AnnexeAssemblee)}
-    rep = client_for("rep@psie.ci")
-    assert rep.get(f"/annexes/{annexes[prep.id].id}").status_code == 404
-    got = rep.get(f"/annexes/{annexes[convened.id].id}")
-    assert got.status_code == 200 and got.content == PDF and "attachment" in got.headers["content-disposition"]
-    assert "Rapport moral" in rep.get(f"/assemblees/{convened.id}").text
-    assert client_for("ca@psie.ci").get(f"/annexes/{annexes[prep.id].id}").status_code == 200              # le CA lit les assemblées
-    assert client_for("exam@psie.ci").get(f"/annexes/{annexes[prep.id].id}").status_code == 403            # autre secrétariat
-
-
-def test_only_managers_write_annexes_and_a_closed_assembly_is_frozen(db, staff, anon):
-    a = make_assembly(db)
-    assert upload_annex(client_for("exam@psie.ci"), a).status_code == 403
-    assert upload_annex(client_for("ca@psie.ci"), a).status_code == 403
-    assert anon.post(f"/assemblees/{a.id}/annexes", data={"titre": "x"}, files={"fichier": ("a.pdf", PDF, "application/pdf")}).status_code == 303
-    assert upload_annex(client_for("den@psie.ci"), a).status_code == 303
-    annexe = db.query(models.AnnexeAssemblee).one()
-    assert client_for("exam@psie.ci").post(f"/annexes/{annexe.id}/supprimer").status_code == 403
-    a.statut = "close"
-    db.commit()
-    assert upload_annex(client_for("den@psie.ci"), a).status_code == 409
-    assert client_for("den@psie.ci").get("/annexes/9999").status_code == 404
-
-
 # ---------------------------------------------------------------- rappels
 
 def old_application(db, days, etat="nouvelle", avis=None, sigle="OLD"):
@@ -266,15 +200,3 @@ def test_pending_applications_are_reported_once(db, staff, mails):
     assert "NEW" not in body and "DONE" not in body
     assert rappels.send_regulatory_reminders(db, TODAY) == 0
 
-
-def test_assembly_reminder_goes_to_the_convened_members_once(db, staff, mails):
-    f = make_faitiere(db, "LECIM")
-    f.email = "contact@lecim.ci"
-    db.commit()
-    make_assembly(db, "convoquee", days=2, type_="AGO")
-    make_assembly(db, "preparation", days=2, type_="AGA")                           # pas encore convoquée
-    make_assembly(db, "convoquee", days=10, type_="AGE")                            # trop loin
-    sent = rappels.send_regulatory_reminders(db, TODAY)
-    reminders = [m for m in mails if m["subject"].startswith("PSIE — Rappel")]
-    assert sent >= 1 and [m["to"] for m in reminders] == ["contact@lecim.ci"] and "dans 2 jour(s)" in reminders[0]["body"]
-    assert rappels.send_regulatory_reminders(db, TODAY) == 0

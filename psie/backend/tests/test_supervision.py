@@ -101,3 +101,39 @@ def test_notifications_of_the_viewed_account_stay_unread(db, world):
     den.get(f"/notifications/{n.id}/ouvrir")
     db.expire_all()
     assert db.get(models.Notification, n.id).lue_at is None
+
+
+def test_portals_of_every_role_can_be_previewed_without_any_account(db, world):
+    """L'administrateur voit le portail de chaque secrétariat même si aucun compte n'existe pour ce rôle."""
+    import html
+    adm = client_for("adm@psie.ci")
+    page = adm.get("/supervision").text
+    for role in ("Secrétariat Formation", "Secrétariat Examens", "Commissaire aux comptes", "Directeur Exécutif National"):
+        assert role in html.unescape(page)
+    assert "/supervision/apercu/formation" in page and f"/supervision/apercu/faitiere/{world.id}" in page
+    r = adm.post("/supervision/apercu/formation")                                          # aucun compte « formation » n'existe
+    assert r.status_code == 303 and "view_as" in r.headers.get("set-cookie", "")
+    home = html.unescape(adm.get("/admin").text)
+    assert "Aperçu : Secrétariat Formation" in home and "/formations" in home and "/cotisations" not in home
+    assert adm.get("/formations").status_code == 200 and adm.get("/cotisations").status_code == 403   # exactement les droits du rôle
+    assert adm.post("/formations", data={"titre": "x"}).status_code in (303, 403)                # l'écriture dépend du rôle ...
+    w = adm.post("/cotisations/bareme", data={"annee": "2027", "montant": "1"})
+    assert w.status_code == 403 and db.query(models.BaremeCotisation).count() == 0
+    assert db.query(models.Formation).count() == 0                                           # ... mais aucune modification en aperçu
+    entry = db.query(models.AuditLog).filter_by(action="consultation_compte").one()
+    assert entry.user_email == "adm@psie.ci" and "formation" in entry.detail
+    assert db.query(models.User).filter(models.User.email.like("apercu-%")).count() == 0         # la personne virtuelle n'est jamais enregistrée
+    adm.post("/supervision/quitter")
+    adm.cookies.delete("view_as")
+
+
+def test_federation_portal_preview_and_who_may_use_it(db, world):
+    adm = client_for("adm@psie.ci")
+    assert adm.post(f"/supervision/apercu/faitiere/{world.id}").status_code == 303
+    assert adm.get("/portail", follow_redirects=False).status_code in (200, 303)
+    adm.cookies.delete("view_as")
+    assert adm.post("/supervision/apercu/admin").status_code == 404 and adm.post("/supervision/apercu/inconnu").status_code == 404
+    assert adm.post("/supervision/apercu/faitiere/9999").status_code == 404
+    assert client_for("com@psie.ci").post("/supervision/apercu/formation").status_code == 403
+    assert client_for("rep@psie.ci").post("/supervision/apercu/formation").status_code == 403
+    assert client_for("com@psie.ci").get("/supervision").status_code == 403

@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session
 
-from .. import models, notifier, pdfs
+from .. import formations_catalogue, models, notifier, pdfs
 from ..audit import log_action
 from ..config import settings
 from ..database import get_db
@@ -62,6 +62,22 @@ def formations_list(request: Request, user: models.User = Depends(get_current_us
         for i in db.query(models.InscriptionFormation).filter_by(faitiere_id=user.faitiere_id).filter(models.InscriptionFormation.statut != "annule"):
             mine.setdefault(i.session_id, []).append(i)
     return render(request, "formations.html", user, items=items, can_write=_staff_write(user), mine=mine, today=datetime.date.today())
+
+
+@router.post("/formations/catalogue")
+def formation_catalogue(user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Charge le catalogue proposé (14 formations). Les formations dont le titre existe déjà sont laissées telles quelles."""
+    _need_write(user)
+    have = {f.titre for f in db.query(models.Formation)}
+    added = 0
+    for entry in formations_catalogue.CATALOGUE:
+        if entry[0] in have:
+            continue
+        db.add(models.Formation(titre=entry[0], public_cible=entry[1], duree=entry[2], description=formations_catalogue.description(entry)))
+        added += 1
+    log_action(db, user, "creation", "formations", None, f"catalogue proposé : {added} formation(s) ajoutée(s)")
+    db.commit()
+    return RedirectResponse("/formations", status_code=303)
 
 
 @router.post("/formations")

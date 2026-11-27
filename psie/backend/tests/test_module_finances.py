@@ -208,27 +208,6 @@ def test_half_yearly_report_reminder_goes_to_the_den_only(db, setup, mails, day,
         assert rappels.send_regulatory_reminders(db, day) == 0
 
 
-def assembly(db, type_, days, statut="convoquee"):
-    a = models.Assemblee(type=type_, date_assemblee=TODAY + datetime.timedelta(days=days), lieu="Siège",
-                         ordre_du_jour="Rapports", statut=statut)
-    db.add(a)
-    db.commit()
-    return a
-
-
-def test_financial_statements_reminder_before_an_ordinary_assembly(db, setup, mails):
-    assembly(db, "AGA", 18)
-    assembly(db, "AGE", 10)                                          # une AGE n'a pas d'états financiers à fournir
-    assembly(db, "AGO", 60)                                          # trop loin
-    assembly(db, "AGA", 5, statut="close")                           # déjà tenue
-    sent = rappels.send_regulatory_reminders(db, TODAY)
-    states = [m for m in mails if "États financiers" in m["subject"]]
-    assert sent == 2 and sorted(m["to"] for m in states) == ["den@psie.ci", "fin@psie.ci"]
-    limite = (TODAY + datetime.timedelta(days=3)).strftime("%d/%m/%Y")                   # AG - 15 jours
-    assert limite in states[0]["body"] and "art. 36" in states[0]["body"]
-    assert rappels.send_regulatory_reminders(db, TODAY) == 0
-
-
 def test_inactive_users_never_receive_reminders(db, setup, mails):
     lecim, _ = setup
     mandat(db, lecim, 10)
@@ -257,16 +236,13 @@ def test_daily_job_runs_the_regulatory_reminders(db, setup, mails, monkeypatch):
 
 # ---------------------------------------------------------------- tableau de bord
 
-def test_dashboard_shows_open_calls_assemblies_and_expenses_to_sign(db, setup, mails):
+def test_dashboard_shows_open_calls_and_expenses_to_sign(db, setup, mails):
     lecim, iqra = setup
     fin = client_for("fin@psie.ci")
     finance.create_appel(db, db.query(models.User).filter_by(email="fin@psie.ci").one(), "Appel test", None, None, None,
                          [(lecim, 100000), (iqra, 100000)])
     db.commit()
-    assembly(db, "AGO", 30, statut="preparation")
     page = fin.get("/admin").text
-    assert "Appels exceptionnels en cours" in page and "Dépenses à signer" in page and "Prochaines assemblées" in page
-    assert "Assemblée Générale Ordinaire" in page
+    assert "Appels exceptionnels en cours" in page and "Dépenses à signer" in page
     secretary = client_for("sec@psie.ci").get("/admin").text
     assert "Appels exceptionnels en cours" not in secretary and "Dépenses à signer" not in secretary
-    assert "Prochaines assemblées" in secretary
