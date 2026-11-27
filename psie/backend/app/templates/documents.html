@@ -2,7 +2,7 @@
 {% block title %}{{ t('nav_documents') }}{% endblock %}
 {% block content %}
 <h1>{{ t('nav_documents') }}</h1>
-<form method="get" class="inline card">
+<form method="get" class="card filters">
   <label>{{ t('d_category') }} <select name="categorie"><option value="">{{ t('d_all') }}</option>{% for k in cats %}<option value="{{ k }}"{% if k == categorie %} selected{% endif %}>{{ lbl('doc_cat', k) }}</option>{% endfor %}</select></label>
   <label>{{ t('d_search') }} <input name="q" value="{{ q }}"></label><button class="btn">OK</button>
 </form>

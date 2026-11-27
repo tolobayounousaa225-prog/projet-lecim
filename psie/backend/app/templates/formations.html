@@ -6,7 +6,7 @@
 <section class="card">
   <h2>{{ f.titre }}</h2>
   {% if f.description %}<p>{{ f.description }}</p>{% endif %}
-  <p class="muted">{% if f.public_cible %}{{ t('fm_audience') }} : {{ f.public_cible }}{% endif %}{% if f.duree %} · {{ t('fm_duration') }} : {{ f.duree }}{% endif %}</p>
+  <p class="muted">{% if f.public_cible %}{{ t('fm_audience') }} : {{ f.public_cible }}{% endif %}{% if f.public_cible and f.duree %} · {% endif %}{% if f.duree %}{{ t('fm_duration') }} : {{ f.duree }}{% endif %}</p>
   <div class="table-wrap"><table>
     <thead><tr><th>{{ t('m_date') }}</th><th>{{ t('e_locality') }}</th><th>{{ t('fm_places') }}</th><th>{{ t('status') }}</th><th><span class="sr-only">{{ t('a11y_actions') }}</span></th></tr></thead>
     <tbody>{% for s in f.sessions if can_write or s.statut != 'annulee' %}

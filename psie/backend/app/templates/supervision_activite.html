@@ -11,7 +11,7 @@
   <section class="card"><h2>{{ t('sv_logins') }}</h2>
     {% if logins %}<ul>{% for l in logins %}<li>{{ l.created_at.strftime('%d/%m/%Y %H:%M') }}</li>{% endfor %}</ul>{% else %}<p class="muted">{{ t('sv_never') }}</p>{% endif %}</section>
 </div>
-<form method="get" class="card inline">
+<form method="get" class="card filters">
   <label>{{ t('a_from') }}<input type="date" name="debut" value="{{ debut }}"></label><label>{{ t('a_to') }}<input type="date" name="fin" value="{{ fin }}"></label>
   <button class="btn">OK</button>
 </form>

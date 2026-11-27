@@ -3,7 +3,7 @@ couleurs prises dans la feuille de style (mode sombre compris). Tous les textes 
 
 from markupsafe import Markup, escape
 
-W = 640
+W = 520
 
 
 def _fmt(v: float) -> str:
@@ -22,7 +22,7 @@ def bars(items: list[tuple[str, float]], title: str, unit: str = "") -> Markup:
     if not items:
         return Markup("")
     top = max(max(v for _, v in items), 1.0)
-    row, label_w, bar_w = 28, 130, W - 130 - 90
+    row, label_w, bar_w = 28, 112, W - 112 - 70
     body = []
     for i, (label, v) in enumerate(items):
         y = i * row + 6
@@ -40,7 +40,7 @@ def stacked(items: list[tuple[str, list[float]]], series: list[str], title: str)
     if not items:
         return Markup("")
     top = max(max(sum(v) for _, v in items), 1.0)
-    row, label_w, bar_w = 28, 130, W - 130 - 90
+    row, label_w, bar_w = 28, 112, W - 112 - 70
     body = []
     for i, (label, vals) in enumerate(items):
         y = i * row + 28
