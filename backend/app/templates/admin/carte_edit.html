@@ -1,0 +1,72 @@
+{% extends "admin/base.html" %}
+{% block title %}Corriger la carte de {{ carte.full_name_snapshot }}{% endblock %}
+{% block content %}
+<h1>Corriger les informations</h1>
+<p style="color:var(--text-muted); margin-top:-8px;"><a href="/admin/cartes/{{ carte.id }}">&larr; Retour à la demande</a></p>
+
+<div class="form-card" style="max-width:560px;">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <p style="color:var(--text-muted); font-size:0.9rem; margin-top:0;">
+    À utiliser en cas d'erreur constatée dans les informations saisies par le demandeur
+    (ex. photo d'une autre personne téléversée, faute de frappe sur le nom...). La
+    correction s'applique immédiatement, quel que soit le statut de la demande ; si une
+    carte avait déjà été imprimée, pensez à la réimprimer après correction.
+  </p>
+  <form method="post" action="/admin/cartes/{{ carte.id }}/edit" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="full_name">Nom complet (tel qu'il doit apparaître sur la carte)</label>
+      <input type="text" id="full_name" name="full_name" required maxlength="255" value="{{ carte.full_name_snapshot }}">
+    </div>
+    <div class="form-group">
+      <label for="photo">Photo d'identité</label>
+      {% if carte.photo_path %}
+      <div style="margin-bottom:8px;">
+        <img src="/admin/cartes/{{ carte.id }}/photo" alt="Photo actuelle" style="width:90px; border-radius:6px; border:1px solid var(--border);" onerror="this.style.display='none'">
+      </div>
+      {% endif %}
+      <input type="file" id="photo" name="photo" accept=".jpg,.jpeg,.png,.webp">
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Laissez vide pour conserver la photo actuelle.</p>
+    </div>
+    <div class="form-group">
+      <label for="date_naissance">Date de naissance</label>
+      <input type="date" id="date_naissance" name="date_naissance" value="{{ carte.date_naissance.isoformat() if carte.date_naissance else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="lieu_naissance">Lieu de naissance</label>
+      <input type="text" id="lieu_naissance" name="lieu_naissance" maxlength="255" value="{{ carte.lieu_naissance or '' }}">
+    </div>
+    <div class="form-group">
+      <label for="cni_numero">N° CNI / pièce d'identité</label>
+      <input type="text" id="cni_numero" name="cni_numero" maxlength="50" value="{{ carte.cni_numero or '' }}">
+    </div>
+    <div class="form-group">
+      <label for="ville">Ville / résidence</label>
+      <input type="text" id="ville" name="ville" maxlength="255" value="{{ carte.ville or '' }}">
+    </div>
+    <div class="form-group">
+      <label for="adresse">Adresse complète (quartier, commune)</label>
+      <input type="text" id="adresse" name="adresse" maxlength="255" value="{{ carte.adresse or '' }}">
+    </div>
+    <div class="form-group">
+      <label for="telephone">Téléphone</label>
+      <input type="text" id="telephone" name="telephone" maxlength="50" value="{{ carte.telephone or '' }}">
+    </div>
+    <div class="form-group">
+      <label for="email_personnel">E-mail personnel</label>
+      <input type="email" id="email_personnel" name="email_personnel" maxlength="255" value="{{ carte.email_personnel or '' }}">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="contact_urgence_nom">Contact d'urgence — nom</label>
+        <input type="text" id="contact_urgence_nom" name="contact_urgence_nom" maxlength="255" value="{{ carte.contact_urgence_nom or '' }}">
+      </div>
+      <div class="form-group">
+        <label for="contact_urgence_telephone">Contact d'urgence — téléphone</label>
+        <input type="text" id="contact_urgence_telephone" name="contact_urgence_telephone" maxlength="50" value="{{ carte.contact_urgence_telephone or '' }}">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer la correction</button>
+    <a href="/admin/cartes/{{ carte.id }}" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

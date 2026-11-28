@@ -1,0 +1,54 @@
+{% extends "admin/base.html" %}
+{% block title %}Corriger la carte de {{ carte.eleve_nom }}{% endblock %}
+{% block content %}
+<h1>Corriger les informations</h1>
+<p style="color:var(--text-muted); margin-top:-8px;"><a href="/admin/cartes-scolaires/{{ carte.id }}">&larr; Retour à la demande</a></p>
+
+<div class="form-card" style="max-width:560px;">
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+  <p style="color:var(--text-muted); font-size:0.9rem; margin-top:0;">
+    À utiliser en cas d'erreur constatée dans les informations saisies par l'établissement
+    (ex. photo d'un autre élève téléversée, faute de frappe sur le nom...). La correction
+    s'applique immédiatement, quel que soit le statut de la demande ; si une carte avait déjà
+    été imprimée, pensez à la réimprimer après correction.
+  </p>
+  <form method="post" action="/admin/cartes-scolaires/{{ carte.id }}/edit" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="eleve_nom">Nom complet de l'élève</label>
+      <input type="text" id="eleve_nom" name="eleve_nom" required value="{{ carte.eleve_nom }}">
+    </div>
+    <div class="form-group">
+      <label for="eleve_sexe">Sexe</label>
+      <select id="eleve_sexe" name="eleve_sexe">
+        <option value="" {% if not carte.eleve_sexe %}selected{% endif %}>—</option>
+        <option value="M" {% if carte.eleve_sexe == "M" %}selected{% endif %}>Masculin</option>
+        <option value="F" {% if carte.eleve_sexe == "F" %}selected{% endif %}>Féminin</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="eleve_date_naissance">Date de naissance</label>
+      <input type="date" id="eleve_date_naissance" name="eleve_date_naissance" value="{{ carte.eleve_date_naissance.isoformat() if carte.eleve_date_naissance else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="classe">Classe</label>
+      <input type="text" id="classe" name="classe" required value="{{ carte.classe }}" placeholder="Ex : CM2, 3ème...">
+    </div>
+    <div class="form-group">
+      <label for="annee_scolaire">Année scolaire</label>
+      <input type="text" id="annee_scolaire" name="annee_scolaire" required value="{{ carte.annee_scolaire }}">
+    </div>
+    <div class="form-group">
+      <label for="photo">Photo de l'élève</label>
+      {% if carte.photo_path %}
+      <div style="margin-bottom:8px;">
+        <img src="/admin/cartes-scolaires/{{ carte.id }}/photo" alt="Photo actuelle" style="width:90px; border-radius:6px; border:1px solid var(--border);" onerror="this.style.display='none'">
+      </div>
+      {% endif %}
+      <input type="file" id="photo" name="photo" accept=".jpg,.jpeg,.png,.webp,.gif">
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Laissez vide pour conserver la photo actuelle.</p>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer la correction</button>
+    <a href="/admin/cartes-scolaires/{{ carte.id }}" class="btn btn-outline">Annuler</a>
+  </form>
+</div>
+{% endblock %}

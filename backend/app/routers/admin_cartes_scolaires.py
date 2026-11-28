@@ -2,7 +2,7 @@ import datetime
 import secrets
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, Request, status
+from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
 from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import IntegrityError
@@ -13,6 +13,7 @@ from ..card_pdf import generate_student_card_pdf, generate_student_card_pdf_rect
 from ..database import get_db
 from ..deps import require_cartes_scolaires_access_web
 from ..notifications import notify
+from .admin_files import ALLOWED_PHOTO_EXT
 
 router = APIRouter(prefix="/admin/cartes-scolaires", tags=["admin-cartes-scolaires"])
 
@@ -20,6 +21,7 @@ templates_dir = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
 CARTE_VALIDITE_ANNEES = 1
+CARTES_SCOLAIRES_PHOTOS_DIR = "cartes_scolaires"
 
 
 def _next_matricule(db: Session) -> str:
@@ -75,6 +77,70 @@ def carte_scolaire_detail(
         "admin/carte_scolaire_detail.html",
         {"admin": user, "carte": carte, "active": "cartes_scolaires"},
     )
+
+
+@router.get("/{carte_id}/edit")
+def carte_scolaire_edit_form(
+    carte_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_cartes_scolaires_access_web),
+):
+    carte = db.get(models.CarteScolaire, carte_id)
+    if not carte:
+        return RedirectResponse(url="/admin/cartes-scolaires", status_code=status.HTTP_303_SEE_OTHER)
+    return templates.TemplateResponse(
+        request,
+        "admin/carte_scolaire_edit.html",
+        {"admin": user, "carte": carte, "active": "cartes_scolaires", "error": None},
+    )
+
+
+@router.post("/{carte_id}/edit")
+async def carte_scolaire_edit_submit(
+    carte_id: int,
+    request: Request,
+    eleve_nom: str = Form(...),
+    eleve_sexe: str = Form(""),
+    eleve_date_naissance: str = Form(""),
+    classe: str = Form(...),
+    annee_scolaire: str = Form(...),
+    photo: UploadFile | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_cartes_scolaires_access_web),
+):
+    """Correction par le BEN d'une information saisie par l'etablissement (ex.
+    photo d'un autre eleve televersee par erreur) — modifie la demande en
+    place, quel que soit son statut."""
+    carte = db.get(models.CarteScolaire, carte_id)
+    if not carte:
+        return RedirectResponse(url="/admin/cartes-scolaires", status_code=status.HTTP_303_SEE_OTHER)
+
+    if photo is not None and photo.filename:
+        try:
+            stored_name, _original = await storage.save_upload(db, photo, CARTES_SCOLAIRES_PHOTOS_DIR, ALLOWED_PHOTO_EXT)
+        except ValueError as exc:
+            return templates.TemplateResponse(
+                request,
+                "admin/carte_scolaire_edit.html",
+                {"admin": user, "carte": carte, "active": "cartes_scolaires", "error": str(exc)},
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        storage.delete_stored_file(db, carte.photo_path)
+        carte.photo_path = f"{CARTES_SCOLAIRES_PHOTOS_DIR}/{stored_name}"
+
+    carte.eleve_nom = eleve_nom
+    carte.eleve_sexe = eleve_sexe or None
+    carte.eleve_date_naissance = datetime.date.fromisoformat(eleve_date_naissance) if eleve_date_naissance else None
+    carte.classe = classe
+    carte.annee_scolaire = annee_scolaire
+
+    audit.log(
+        db, user, "update", "Carte scolaire", carte.id,
+        f"A corrige les informations de la carte de {carte.eleve_nom}",
+    )
+    db.commit()
+    return RedirectResponse(url=f"/admin/cartes-scolaires/{carte_id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/{carte_id}/photo")

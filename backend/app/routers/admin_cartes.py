@@ -474,6 +474,92 @@ def carte_detail(
     )
 
 
+@router.get("/cartes/{carte_id}/edit")
+def carte_edit_form(
+    carte_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_cartes_gestion_web),
+):
+    carte = db.get(models.CarteMembre, carte_id)
+    if not carte:
+        return RedirectResponse(url="/admin/cartes", status_code=status.HTTP_303_SEE_OTHER)
+    return templates.TemplateResponse(
+        request,
+        "admin/carte_edit.html",
+        {"admin": user, "carte": carte, "active": "cartes", "error": None},
+    )
+
+
+@router.post("/cartes/{carte_id}/edit")
+async def carte_edit_submit(
+    carte_id: int,
+    request: Request,
+    full_name: str = Form(...),
+    date_naissance: str = Form(""),
+    lieu_naissance: str = Form(""),
+    ville: str = Form(""),
+    adresse: str = Form(""),
+    telephone: str = Form(""),
+    cni_numero: str = Form(""),
+    contact_urgence_nom: str = Form(""),
+    contact_urgence_telephone: str = Form(""),
+    email_personnel: str = Form(""),
+    photo: UploadFile | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_cartes_gestion_web),
+):
+    """Correction par le secretariat d'une information saisie par le demandeur
+    (ex. photo d'une autre personne televersee par erreur) — modifie la demande
+    en place, quel que soit son statut ; a l'admin de retelecharger le PDF si la
+    carte etait deja validee/imprimee."""
+    carte = db.get(models.CarteMembre, carte_id)
+    if not carte:
+        return RedirectResponse(url="/admin/cartes", status_code=status.HTTP_303_SEE_OTHER)
+
+    def _edit_error(message: str):
+        return templates.TemplateResponse(
+            request,
+            "admin/carte_edit.html",
+            {"admin": user, "carte": carte, "active": "cartes", "error": message},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    too_long = _carte_field_too_long(
+        full_name=full_name, lieu_naissance=lieu_naissance, ville=ville, telephone=telephone,
+        cni_numero=cni_numero, adresse=adresse, contact_urgence_nom=contact_urgence_nom,
+        contact_urgence_telephone=contact_urgence_telephone, email_personnel=email_personnel,
+    )
+    if too_long:
+        return _edit_error(too_long)
+
+    if photo is not None and photo.filename:
+        try:
+            stored_name, _original = await storage.save_upload(db, photo, CARTES_PHOTOS_DIR, ALLOWED_PHOTO_EXT)
+        except ValueError as exc:
+            return _edit_error(str(exc))
+        storage.delete_stored_file(db, carte.photo_path)
+        carte.photo_path = f"{CARTES_PHOTOS_DIR}/{stored_name}"
+
+    carte.full_name_snapshot = full_name
+    carte.date_naissance = datetime.date.fromisoformat(date_naissance) if date_naissance else None
+    carte.lieu_naissance = lieu_naissance or None
+    carte.ville = ville or None
+    carte.adresse = adresse or None
+    carte.telephone = telephone or None
+    carte.cni_numero = cni_numero or None
+    carte.contact_urgence_nom = contact_urgence_nom or None
+    carte.contact_urgence_telephone = contact_urgence_telephone or None
+    carte.email_personnel = email_personnel or None
+
+    audit.log(
+        db, user, "update", "Carte de membre", carte.id,
+        f"A corrige les informations de la carte de {carte.full_name_snapshot}",
+    )
+    db.commit()
+    return RedirectResponse(url=f"/admin/cartes/{carte_id}", status_code=status.HTTP_303_SEE_OTHER)
+
+
 @router.get("/cartes/{carte_id}/photo")
 def carte_photo(
     carte_id: int,
