@@ -94,7 +94,7 @@ TEXTS: dict[str, dict[str, str]] = {
     "nav_group_site": {"fr": "Site vitrine", "ar": "الموقع التعريفي"},
     "nav_group_admin": {"fr": "Administration", "ar": "الإدارة"},
     "nav_group_my_space": {"fr": "Mon espace", "ar": "فضائي"},
-    "hello": {"fr": "Bonjour", "ar": "مرحبا"},
+    "hello": {"fr": "As-salâmu ʿalaykum", "ar": "السلام عليكم ورحمة الله"},
     "dash_welcome_sub": {"fr": "Voici ce qui concerne votre secrétariat.", "ar": "إليكم ما يخص أمانتكم."},
     "dash_nothing": {"fr": "Aucune rubrique de gestion n'est encore ouverte à votre compte. L'administrateur peut vous en ouvrir depuis « Accès par rubrique ».",
                      "ar": "لم تُفتح لحسابكم بعد أقسام تسيير. يمكن للمسؤول فتحها من «الوصول حسب الأقسام»."},
